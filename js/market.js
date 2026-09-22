@@ -1,4 +1,4 @@
-import { createPlayer, displayPlayer, FIELD_STAT_KEYS, STAT_LABELS } from './data.js';
+import { calculateOverall, createPlayer, displayPlayer, FIELD_STAT_KEYS, STAT_LABELS } from './data.js';
 import { createRandom, weightedPick } from './random.js';
 
 const DRAFT_DISTRIBUTION = [['G', 35], ['F', 35], ['E', 20], ['D', 8], ['C', 2]];
@@ -6,6 +6,34 @@ const AUCTION_DISTRIBUTION = [['F', 15], ['E', 25], ['D', 25], ['C', 20], ['B', 
 const RANGE = { G: [50,55], F: [56,60], E: [61,65], D: [66,70], C: [71,75], B: [76,80], A: [81,85], S: [86,90] };
 const POSITIONS = ['GK', 'FIXO', 'ALA', 'ALA', 'PIVO'];
 const BASE_VALUE = { G: 3, F: 6, E: 9, D: 14, C: 19, B: 26, A: 35, S: 48, SS: 62 };
+const POSITION_PROFILES = {
+  GK: [
+    { shoot: -14, speed: -5, defense: -6, dribble: -12, pass: -9, gk: 12 },
+    { shoot: -12, speed: 2, defense: -2, dribble: -4, pass: 1, gk: 7 },
+    { shoot: -10, speed: -1, defense: -4, dribble: -3, pass: 4, gk: 7 }
+  ],
+  FIXO: [
+    { shoot: -12, speed: 1, defense: 12, dribble: -6, pass: 3 },
+    { shoot: -10, speed: 0, defense: 5, dribble: -2, pass: 10 },
+    { shoot: -9, speed: 9, defense: 7, dribble: -3, pass: 2 }
+  ],
+  ALA: [
+    { shoot: 2, speed: 11, defense: -12, dribble: 4, pass: 0 },
+    { shoot: 0, speed: 2, defense: -10, dribble: 6, pass: 9 },
+    { shoot: 9, speed: 2, defense: -12, dribble: 7, pass: -1 }
+  ],
+  PIVO: [
+    { shoot: 13, speed: -1, defense: -13, dribble: 4, pass: -2 },
+    { shoot: 8, speed: -5, defense: -7, dribble: -2, pass: 6 },
+    { shoot: 6, speed: 0, defense: -12, dribble: 11, pass: 3 }
+  ]
+};
+const ADJUSTMENT_ORDER = {
+  GK: ['gk', 'defense', 'speed', 'pass', 'dribble'],
+  FIXO: ['defense', 'pass', 'speed', 'dribble', 'shoot'],
+  ALA: ['speed', 'dribble', 'pass', 'shoot', 'defense'],
+  PIVO: ['shoot', 'dribble', 'pass', 'speed', 'defense']
+};
 
 export const SPECIAL_ABILITIES = {
   GK: ['ショットストッパー', 'ビッグセーバー', 'ロングレンジキラー', '反応型', '安定感', '守護神'],
@@ -31,9 +59,31 @@ const GROWTH_COMMENTS = {
 };
 
 function tier(distribution, rng) { return weightedPick(distribution, ([, weight]) => weight, rng)[0]; }
+const clampAbility = value => Math.max(50, Math.min(99, Math.round(value)));
+
+function createVariedStats(player, tierName, rng) {
+  const [min, max] = RANGE[tierName];
+  const targetOverall = rng.int(min, max);
+  const profile = rng.pick(POSITION_PROFILES[player.primaryPosition]);
+  const keys = player.primaryPosition === 'GK' ? [...FIELD_STAT_KEYS, 'gk'] : FIELD_STAT_KEYS;
+  for (const key of keys) player.stats[key] = clampAbility(targetOverall + profile[key] + rng.int(-4, 4));
+  if (player.primaryPosition !== 'GK') player.stats.gk = 50;
+
+  const initialDifference = targetOverall - calculateOverall(player);
+  for (const key of keys) player.stats[key] = clampAbility(player.stats[key] + initialDifference);
+
+  for (let attempts = 0; calculateOverall(player) !== targetOverall && attempts < 300; attempts++) {
+    const direction = calculateOverall(player) < targetOverall ? 1 : -1;
+    const key = ADJUSTMENT_ORDER[player.primaryPosition].find(name => direction > 0 ? player.stats[name] < 99 : player.stats[name] > 50);
+    if (!key) break;
+    player.stats[key] += direction;
+  }
+  player.marketTier = tierName;
+}
+
 function playerForTier(id, position, tierName, age, rng) {
-  const p = createPlayer(id, position, rng, { initial: false }); const [min, max] = RANGE[tierName];
-  for (const key of Object.keys(p.stats)) p.stats[key] = position === 'GK' && key !== 'gk' ? rng.int(50, 58) : rng.int(min, max);
+  const p = createPlayer(id, position, rng, { initial: false });
+  createVariedStats(p, tierName, rng);
   p.age = age; p.isInitial = false; p.contractYears = 3; p.specialAbility = rng.next() < .4 ? abilityFor(position, rng) : null; p.scoutComment = createScoutComment(p, rng); return p;
 }
 function abilityFor(position, rng) { return rng.pick(SPECIAL_ABILITIES[position]); }
