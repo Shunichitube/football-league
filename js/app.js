@@ -1,8 +1,8 @@
 import { createLeague, playCurrentRound, standings } from './league.js';
 import { STAT_LABELS } from './data.js';
 import { createRandom } from './random.js';
-import { addPlayer, createAuctionPool, createDraftPool, cpuBid, cpuCandidatePick } from './market.js';
-import { escapeHtml as e, renderPlayerCard, renderPlayerDetail, renderRosterPanel } from './ui.js';
+import { addPlayer, createAuctionPool, createDraftPool, cpuBid, cpuCandidatePick } from './market.js?v=0.5.1';
+import { escapeHtml as e, renderPlayerCard, renderPlayerDetail, renderRosterPanel } from './ui.js?v=0.5.1';
 const app=document.querySelector('#app');let s={view:'title',league:null,draft:null,auction:null,match:null,round:0,note:'',rosterOpen:false,detailPlayerId:null};
 const me=()=>s.league.clubs.find(c=>c.id===1);const player=p=>renderPlayerCard(p);
 function head(){let c=me(),r=standings(s.league).find(x=>x.club.id===1);return `<header><a data-nav="home" class="brand">FOOTBALL <b>LEAGUE</b></a><span>シーズン ${s.league.season} / 10</span><span>${e(c.name)}・${r.rank}位・${c.funds}pt</span></header>`}
