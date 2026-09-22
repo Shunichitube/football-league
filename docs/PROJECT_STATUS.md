@@ -66,6 +66,8 @@ Stage 9の実装:
 - 所属選手パネルのポジション人数（GK 1 / FIXO 1 / ALA 2 / PIVO 1）を確認
 - 公開カードと詳細HTMLに内部能力値および `hiddenGrowth` が含まれないことを確認
 - `node --check js/app.js` / `node --check js/ui.js`：構文エラーなし
+- GitHub Pages公開版で、新規開始 → ドラフト能力表示 → 所属選手パネル → 選手詳細 → 閉じる、を実操作確認
+- 公開版の所属人数がGK 1 / FIXO 1 / ALA 2 / PIVO 1で、操作後の画面エラーがないことを確認
 - `git diff --check`：空白エラーなし
 
 ## 次に行うこと

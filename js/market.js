@@ -43,7 +43,7 @@ export function createScoutComment(player, rng) {
   const currentKey = [...keys].sort((a, b) => player.stats[b] - player.stats[a])[0];
   const growthKey = [...keys].sort((a, b) => player.hiddenGrowth[b] - player.hiddenGrowth[a])[0];
   const ageHint = player.age <= 20 ? '若く、今後を見ながら育てたい' : player.age <= 24 ? '伸び盛りの年代にいる' : player.age >= 29 ? '経験を生かせる年齢だ' : '完成度と成長余地の両方を見極めたい';
-  const currentHint = `現在は${STAT_LABELS[currentKey]}${displayPlayer(player).ranks[currentKey]}が目を引く`;
+  const currentHint = `現在は${STAT_LABELS[currentKey]} ${displayPlayer(player).ranks[currentKey]}が目を引く`;
   const growthHint = rng.pick(GROWTH_COMMENTS[growthKey]);
   const abilityHint = player.specialAbility ? `「${player.specialAbility}」という明確な持ち味もある` : '際立った特能はまだ見えていない';
   const values = keys.map(key => player.hiddenGrowth[key]);
