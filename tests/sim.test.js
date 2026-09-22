@@ -8,6 +8,7 @@ import { createAuctionPool, createDraftPool, createScoutComment, cpuBid, SPECIAL
 import { processOffseason, renewalFee, trainingSkills } from '../js/development.js';
 import { exportSave, importSave } from '../js/storage.js';
 import { runBatch } from '../js/batch.js';
+import { positionCounts, renderPlayerCard, renderPlayerDetail, renderRosterPanel } from '../js/ui.js';
 
 function match(seed) { const source = createRandom(seed); const home = createClub({ id: 1, name: 'HOME', color: '#fff', seed: source }); const away = createClub({ id: 2, name: 'AWAY', color: '#000', seed: source }); return simulateMatch(home, away, createRandom(`${seed}:match:1`)); }
 test('同じseedは同じ試合結果になる', () => assert.deepEqual(match('repeatable'), match('repeatable')));
@@ -75,4 +76,30 @@ test('スカウトコメントは能力別成長傾向で変わり、レア成�
   p.hiddenGrowth={shoot:1.30,speed:1.30,defense:1.30,dribble:1.30,pass:1.30};
   assert.match(createScoutComment(p,{pick:a=>a[0],next:()=>0}),/天才肌かもしれない/);
   assert.doesNotMatch(shoot,/成長率|確実に|必ず/);
+});
+
+test('主要選手カードは全能力をランク表示し、内部能力値を表示しない', () => {
+  const p=createPlayer(501,'ALA',createRandom('ui-card'));
+  p.age=21; p.contractYears=2; p.stats={shoot:83,speed:79,defense:67,dribble:76,pass:71,gk:50}; p.specialAbility='ドリブラー';
+  const html=renderPlayerCard(p);
+  for(const label of ['総合','シュート','走力','守備','ドリブル','パス','★ ドリブラー','契約2年','選手詳細']) assert.match(html,new RegExp(label));
+  for(const internal of ['83','79','67','76','71']) assert.doesNotMatch(html,new RegExp(`>${internal}<`));
+  assert.doesNotMatch(html,/hiddenGrowth/);
+});
+
+test('GKカード・選手詳細はGKランクと特殊能力の説明を表示する', () => {
+  const p=createPlayer(502,'GK',createRandom('ui-gk')); p.specialAbility='守護神'; p.stats.gk=86;
+  const card=renderPlayerCard(p), detail=renderPlayerDetail(p);
+  assert.match(card,/<dt>GK<\/dt><dd>S<\/dd>/);
+  assert.match(detail,/ゴール前で総合的に力を発揮する/);
+  assert.match(detail,/今季成績/);
+  assert.doesNotMatch(detail,/>86</);
+});
+
+test('所属選手パネルはポジション人数と全選手の公開情報を表示する', () => {
+  const club=createClub({id:7,name:'TEST CLUB',color:'#fff',seed:createRandom('roster-panel')});
+  assert.deepEqual(positionCounts(club.roster).map(x=>x.count),[1,1,2,1]);
+  const html=renderRosterPanel(club);
+  assert.match(html,/所属選手/); assert.match(html,/GK <b>1<\/b>/); assert.match(html,/ALA <b>2<\/b>/);
+  for(const p of club.roster) assert.match(html,new RegExp(p.name));
 });
