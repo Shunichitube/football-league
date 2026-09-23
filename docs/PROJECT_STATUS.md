@@ -96,6 +96,7 @@ Stage 9の実装:
 - CPUの契約更新・放出判断と、最低5人・GK最低1人の維持を確認
 - CPU5クラブの毎シーズン編成・戦術設定を確認
 - `node --check js/cpu.js` / `node --check js/app.js`：構文エラーなし
+- GitHub Pages公開版で `v0.6.0・Stage 11`、新規ゲーム開始、ドラフト24候補表示、画面エラーなしを実操作確認
 - `git diff --check`：空白エラーなし
 
 ## 次に行うこと
