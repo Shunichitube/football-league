@@ -19,7 +19,8 @@ PCは2カラム、スマホは1カラムで最低幅320pxに対応する。ペ�
 | HOME | 現在順位、勝点、資金、戦績、次節、ランキング・ニュース |
 | SQUAD | 戦術、簡易コート、PIVO/ALA/ALA/FIXO/GK、控え、配置エラー |
 | PLAYER DETAIL | 年齢、国籍、ポジション、ランク能力、調子、契約、成績、特殊能力 |
-| MATCH PREVIEW / VIEW / RESULT | スタメン、スコアボード、イベントログ、結果、POTM、Rating |
+| SEASON RESULT | 最終順位、勝点、勝分敗、得失点、10試合結果一覧 |
+| MATCH DETAIL | スコア、得点者、アシスト、MVP、選手成績、調子、イベントログ |
 | TABLE / STATS / RECORDS | 順位、個人成績、歴代・クラブ・選手記録 |
 | オフシーズン | 育成、成長結果、契約、ドラフト、オークション、次季開始 |
 
@@ -43,4 +44,13 @@ TITLE、NEW GAME SETUP、HOME、SQUAD、MATCH PREVIEW、MATCH VIEW、MATCH RESUL
 
 ## 画面遷移
 
-基本の最終形は TITLE → NEW GAME → Season 1 DRAFT → AUCTION → SQUAD → HOME → MATCH PREVIEW → MATCH VIEW → MATCH RESULT → HOME。各シーズン終了後はSEASON END → DEVELOPMENT → GROWTH RESULT → CONTRACT → DRAFT → AUCTION → NEXT SEASONへ進む。Stage 1では NEW GAME → SQUAD → HOME → MATCH PREVIEW → MATCH VIEW → MATCH RESULT → HOME の部分だけを有効にする。
+通常フローは TITLE → NEW GAME → Season 1 DRAFT → AUCTION → SQUAD／TACTIC → シーズンをシミュレート → SEASON RESULT → MATCH DETAIL／STATS。1節ずつ進める操作は通常フローとして使用しない。各シーズン終了後はSEASON RESULT → DEVELOPMENT → GROWTH RESULT → CONTRACT → DRAFT → AUCTION → SQUAD／TACTIC → 次シーズン一括進行とする。
+
+### シーズン結果実装（Stage 15）
+
+- 「シーズンをシミュレート」で残り全節を処理し、通常の開幕時は人間クラブ10試合・リーグ全30試合を完了する。
+- 終了後は最終順位、勝点、勝、分、敗、得点、失点、得失点差を表示する。
+- 人間クラブの10試合を第1〜10節、ホーム／アウェー、対戦相手、スコア、○／△／●付きで一覧表示する。
+- 一覧から各試合のスコア、得点者、アシスト、MVP、評価、得点、アシスト、シュート、攻撃貢献、守備成功、セーブ、調子、イベントを確認できる。
+- 所属選手のシーズン個人成績では、出場、得点、アシスト、平均評価、シュート、攻撃貢献、守備成功、セーブを表示する。
+- 能力カードはSS〜Gのランクのみを表示し、内部能力値と `hiddenGrowth` は表示しない。
