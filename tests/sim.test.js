@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 import { createRandom } from '../js/random.js';
 import { calculateOverall, createClub, createPlayer, displayPlayer, FIRST_NAMES, LAST_NAMES } from '../js/data.js';
 import { simulateMatch } from '../js/sim.js';
-import { createLeague, createSchedule, playCurrentRound, standings, startNextSeason } from '../js/league.js';
-import { createAuctionPool, createDraftPool, createScoutComment, cpuBid, SPECIAL_ABILITIES } from '../js/market.js';
+import { applySeasonFinances, createLeague, createSchedule, playCurrentRound, standings, startNextSeason } from '../js/league.js';
+import { addPlayer, createAuctionPool, createDraftPool, createScoutComment, cpuBid, resolveSimultaneousDraftCycle, SPECIAL_ABILITIES } from '../js/market.js';
 import { processOffseason, renewalFee, trainingSkills } from '../js/development.js';
 import { exportSave, importSave } from '../js/storage.js';
 import { runBatch } from '../js/batch.js';
 import { positionCounts, renderPlayerCard, renderPlayerDetail, renderRosterPanel } from '../js/ui.js';
-import { autoSetCpuTactic, manageCpuContracts, prepareCpuClubs, processLeagueOffseason, selectBestLineup, selectCpuTraining } from '../js/cpu.js';
+import { autoSetCpuTactic, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup, selectCpuTraining } from '../js/cpu.js';
 
 function match(seed) { const source = createRandom(seed); const home = createClub({ id: 1, name: 'HOME', color: '#fff', seed: source }); const away = createClub({ id: 2, name: 'AWAY', color: '#000', seed: source }); return simulateMatch(home, away, createRandom(`${seed}:match:1`)); }
 test('同じseedは同じ試合結果になる', () => assert.deepEqual(match('repeatable'), match('repeatable')));
@@ -189,4 +189,87 @@ test('CPU5クラブは毎シーズンの編成と戦術設定を完了する', (
   assert.equal(result.length,5);
   assert.ok(result.every(row=>row.lineup.length===5));
   assert.ok(result.every(row=>['BALANCED','POSSESSION','DRIBBLE','COUNTER'].includes(row.tactic)));
+});
+
+test('Season 1ドラフトは6クラブ同時指名で競合抽選し、外れクラブを再指名へ残す', () => {
+  const league=createLeague({name:'YOU',color:'#fff',seed:'simultaneous'});
+  const candidate=createDraftPool('simultaneous',1)[0];
+  const pending=league.clubs.map(club=>club.id);
+  const first=resolveSimultaneousDraftCycle({clubs:league.clubs,candidates:[candidate],pendingClubIds:pending,humanClubId:1,humanPickId:candidate.id,rng:{int:()=>0,next:()=>0}});
+  assert.equal(first.acquired.length,1);
+  assert.equal(first.acquired[0].contested,true);
+  assert.equal(first.acquired[0].contenderIds.length,6);
+  assert.equal(first.pendingClubIds.length,5);
+  assert.equal(league.clubs.reduce((sum,club)=>sum+club.roster.length,0),31);
+  const second=resolveSimultaneousDraftCycle({clubs:league.clubs,candidates:first.candidates,pendingClubIds:first.pendingClubIds,humanClubId:1,rng:createRandom('decline')});
+  assert.equal(second.pendingClubIds.length,0);
+  assert.equal(second.declinedIds.length,5);
+});
+
+test('完全同時指名を4巡行うと全6クラブが各巡1人を獲得する', () => {
+  const league=createLeague({name:'YOU',color:'#fff',seed:'four-rounds'});
+  let pool=createDraftPool(league.seed,1); const rng=createRandom('four-rounds:resolve');
+  for(let round=1;round<=4;round++){
+    let pending=league.clubs.map(club=>club.id), guard=0;
+    while(pending.length&&guard++<30){
+      const result=resolveSimultaneousDraftCycle({clubs:league.clubs,candidates:pool,pendingClubIds:pending,humanClubId:1,humanPickId:pending.includes(1)?pool[0]?.id:null,rng});
+      pool=result.candidates; pending=result.pendingClubIds;
+    }
+    assert.equal(pending.length,0);
+  }
+  assert.deepEqual(league.clubs.map(club=>club.roster.length),[9,9,9,9,9,9]);
+});
+
+test('全クラブへ年間100ptと順位賞金を加算し、持越しを150ptに制限する', () => {
+  const league=createLeague({name:'YOU',color:'#fff',seed:'finances'});
+  league.clubs.forEach((club,index)=>{club.funds=[10,49,60,100,149,150][index];});
+  const summary=applySeasonFinances(league);
+  assert.equal(summary.length,6);
+  assert.equal(summary.find(row=>row.rank===1).prize,10);
+  assert.equal(summary.find(row=>row.rank===2).prize,5);
+  assert.deepEqual(league.clubs.map(club=>club.funds),[120,150,150,150,150,150]);
+  assert.deepEqual(applySeasonFinances(league),[]);
+  assert.deepEqual(league.clubs.map(club=>club.funds),[120,150,150,150,150,150]);
+});
+
+test('Season 2以降も固有IDのドラフト候補と競売候補を生成する', () => {
+  const draft1=createDraftPool('yearly-market',1), draft2=createDraftPool('yearly-market',2);
+  const auction1=createAuctionPool('yearly-market',1), auction2=createAuctionPool('yearly-market',2);
+  assert.equal(draft2.length,24); assert.equal(auction2.length,18);
+  assert.equal(new Set([...draft1,...draft2,...auction1,...auction2].map(player=>player.id)).size,84);
+  assert.notDeepEqual(draft1.map(player=>player.name),draft2.map(player=>player.name));
+});
+
+test('補強・試合・資金・育成・契約を含む10シーズンサイクルを全6クラブで完走する', () => {
+  const league=createLeague({name:'YOU',color:'#fff',seed:'ten-season-cycle'});
+  const marketSeasons=[];
+  for(let season=1;season<=10;season++){
+    marketSeasons.push(season);
+    prepareCpuMarketSpace(league);
+    let pool=createDraftPool(league.seed,season), rng=createRandom(`${league.seed}:draft:${season}`);
+    for(let round=1;round<=4;round++){
+      let pending=league.clubs.filter(club=>club.funds>=1&&club.roster.length<12).map(club=>club.id), guard=0;
+      while(pending.length&&guard++<40){
+        const result=resolveSimultaneousDraftCycle({clubs:league.clubs,candidates:pool,pendingClubIds:pending,humanClubId:1,humanPickId:pending.includes(1)?pool[0]?.id:null,rng});
+        pool=result.candidates; pending=result.pendingClubIds;
+      }
+      assert.equal(pending.length,0);
+    }
+    const auction=createAuctionPool(league.seed,season), auctionRng=createRandom(`${league.seed}:auction:${season}`);
+    for(const player of auction){
+      const bids=league.clubs.map(club=>({club,bid:club.id===1?0:cpuBid(club,player,auctionRng)}));
+      const high=Math.max(...bids.map(row=>row.bid));
+      if(high>0){const top=bids.filter(row=>row.bid===high);const winner=top[auctionRng.int(0,top.length-1)];addPlayer(winner.club,player,high);}
+    }
+    prepareCpuClubs(league);
+    while(!league.completed) playCurrentRound(league);
+    assert.equal(applySeasonFinances(league).length,6);
+    const summaries=processLeagueOffseason(league,new Map());
+    assert.equal(summaries.length,6);
+    if(season<10) assert.equal(startNextSeason(league),true); else assert.equal(startNextSeason(league),false);
+  }
+  assert.deepEqual(marketSeasons,[1,2,3,4,5,6,7,8,9,10]);
+  assert.equal(league.history.length,10);
+  assert.ok(league.clubs.every(club=>club.roster.length>=5&&club.roster.some(player=>player.primaryPosition==='GK')),JSON.stringify(league.clubs.map(club=>({name:club.name,count:club.roster.length,positions:club.roster.map(player=>player.primaryPosition)}))));
+  assert.ok(league.clubs.every(club=>club.funds<=150));
 });
