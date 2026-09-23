@@ -48,6 +48,8 @@ TITLE、NEW GAME SETUP、HOME、SQUAD、MATCH PREVIEW、MATCH VIEW、MATCH RESUL
 
 通常フローは TITLE → NEW GAME → Season 1 DRAFT → AUCTION → SQUAD／TACTIC → シーズンをシミュレート → SEASON RESULT → MATCH DETAIL／STATS。1節ずつ進める操作は通常フローとして使用しない。各シーズン終了後はSEASON RESULT → DEVELOPMENT → GROWTH RESULT → CONTRACT → DRAFT → AUCTION → SQUAD／TACTIC → 次シーズン一括進行とする。
 
+Season 2以降のドラフト画面では、第1巡を完全同時指名、第2〜4巡を前年順位順指名として表示する。
+
 ### シーズン結果実装（Stage 15）
 
 - 「シーズンをシミュレート」で残り全節を処理し、通常の開幕時は人間クラブ10試合・リーグ全30試合を完了する。
