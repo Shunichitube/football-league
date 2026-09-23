@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import { createRandom } from '../js/random.js';
 import { calculateOverall, createClub, createPlayer, displayPlayer, FIRST_NAMES, LAST_NAMES } from '../js/data.js';
 import { simulateMatch } from '../js/sim.js';
-import { applySeasonFinances, clubsForController, createLeague, createSchedule, playCurrentRound, standings, startNextSeason } from '../js/league.js';
+import { applySeasonFinances, clubsForController, createLeague, createSchedule, playCurrentRound, simulateRemainingSeason, standings, startNextSeason } from '../js/league.js';
 import { cpuBid, createAuctionPool, createDraftPool, createScoutComment, resolveAuctionActions, resolveDraftActions, SPECIAL_ABILITIES } from '../js/market.js';
 import { processOffseason, renewalFee, trainingSkills } from '../js/development.js';
 import { exportSave, importSave } from '../js/storage.js';
 import { runBatch } from '../js/batch.js';
-import { positionCounts, renderLineupEditor, renderPlayerCard, renderPlayerDetail, renderRosterPanel } from '../js/ui.js';
+import { matchOutcomeForClub, positionCounts, renderLineupEditor, renderMatchDetail, renderPlayerCard, renderPlayerDetail, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from '../js/ui.js';
 import { autoSetCpuTactic, decideCpuAuctionAction, decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup, selectCpuTraining } from '../js/cpu.js';
 import { ACTION_TYPES, applyClubAction, createLineupPlacement, LINEUP_SLOTS, positionSuitability, validateLineup } from '../js/rules.js';
 
@@ -18,6 +18,38 @@ test('同じseedは同じ試合結果になる', () => assert.deepEqual(match('r
 test('1試合は80フェーズを完走し、初期ロスターは5人', () => { const r = match('complete'); assert.equal(r.phases, 80); assert.equal(r.playerResults.length, 10); assert.ok(r.score.home >= 0 && r.score.away >= 0); });
 test('6クラブの日程は全30試合で、各クラブが10試合になる', () => { const schedule = createSchedule([1, 2, 3, 4, 5, 6]); assert.equal(schedule.length, 10); assert.equal(schedule.flatMap(r => r.fixtures).length, 30); const count = new Map([1,2,3,4,5,6].map(id => [id, 0])); schedule.flatMap(r => r.fixtures).forEach(f => { count.set(f.homeId, count.get(f.homeId) + 1); count.set(f.awayId, count.get(f.awayId) + 1); }); assert.deepEqual([...count.values()], [10,10,10,10,10,10]); });
 test('リーグは10節・全30試合を完走し、順位表の勝点を正常に集計する', () => { const league = createLeague({ name: 'YOU', color: '#fff', seed: 'season' }); while (!league.completed) playCurrentRound(league); const table = standings(league); assert.equal(league.currentRound, 11); assert.equal(table.reduce((n, row) => n + row.played, 0), 60); assert.equal(table.reduce((n, row) => n + row.wins, 0), table.reduce((n, row) => n + row.losses, 0)); assert.ok(table.every(row => row.played === 10 && row.points >= 0)); });
+test('シーズン一括進行は10節・全30試合を処理し、人間クラブ10試合を保存する', () => {
+  const league=createLeague({name:'YOU',color:'#fff',seed:'bulk-season'}), result=simulateRemainingSeason(league);
+  assert.equal(result.rounds.length,10);
+  assert.equal(result.matchesProcessed,30);
+  assert.equal(result.humanMatches.length,10);
+  assert.equal(league.seasonResults.length,10);
+  assert.equal(league.completed,true);
+  assert.equal(league.currentRound,11);
+  assert.ok(standings(league).every(row=>row.played===10));
+});
+test('途中節からの一括進行は残り試合だけを処理し、保存結果を10試合へ揃える', () => {
+  const league=createLeague({name:'YOU',color:'#fff',seed:'remaining-season'});
+  playCurrentRound(league);
+  const result=simulateRemainingSeason(league);
+  assert.equal(result.rounds.length,9);
+  assert.equal(result.matchesProcessed,27);
+  assert.equal(league.seasonResults.length,10);
+  assert.deepEqual(league.seasonResults.map(match=>match.round),[1,2,3,4,5,6,7,8,9,10]);
+});
+test('保存した人間クラブ戦は節・対戦・スコア・選手成績・イベント・試合ごとの調子を保持する', () => {
+  const league=createLeague({name:'YOU',color:'#fff',seed:'saved-matches'});
+  simulateRemainingSeason(league);
+  for(const match of league.seasonResults){
+    assert.ok(match.round>=1&&match.round<=10);
+    assert.ok(match.fixture.homeId===1||match.fixture.awayId===1);
+    assert.ok(Number.isInteger(match.result.score.home)&&Number.isInteger(match.result.score.away));
+    assert.equal(match.result.playerResults.length,10);
+    assert.ok(match.result.events.length>0);
+    assert.equal(Object.keys(match.result.forms).length,10);
+    assert.ok(match.result.playerResults.every(row=>['↑','−','↓'].includes(match.result.forms[row.player.id])));
+  }
+});
 test('市場候補は仕様数で生成され、CPU入札は資金と登録上限を超えない', () => { const league = createLeague({ name: 'YOU', color: '#fff', seed: 'market' }); const draft = createDraftPool('market'), auction = createAuctionPool('market'); assert.equal(draft.length, 24); assert.equal(auction.length, 18); const bid = cpuBid(league.clubs[1], auction[0], createRandom('bid')); assert.ok(bid >= 0 && bid <= 95); league.clubs[1].roster = Array(12).fill({}); assert.equal(cpuBid(league.clubs[1], auction[0], createRandom('full')), 0); });
 test('市場候補はOverallティアを保ちながら能力ランクが個別にばらける', () => {
   const players=Array.from({length:100},(_,i)=>[...createDraftPool(`varied-${i}`),...createAuctionPool(`varied-${i}`)]).flat();
@@ -373,6 +405,53 @@ test('変更したスタメンだけが実際の試合へ出場する', () => {
   assert.equal(result.playerResults.length,10);
   assert.ok(ids.includes(bench.id));
   assert.ok(!ids.includes(replacedId));
+});
+
+test('シーズン結果一覧は10試合を○△●とホーム・アウェー付きで表示する', () => {
+  const league=createLeague({name:'YOU',color:'#fff',seed:'season-list'});
+  simulateRemainingSeason(league);
+  const html=renderSeasonMatchList(league.seasonResults,league.clubs[0].id);
+  assert.equal((html.match(/data-season-match=/g)||[]).length,10);
+  assert.match(html,/第1節/);
+  assert.match(html,/ホーム|アウェー/);
+  assert.match(html,/○|△|●/);
+  const outcome=matchOutcomeForClub(league.seasonResults[0],league.clubs[0].id);
+  assert.ok(['○','△','●'].includes(outcome.mark));
+  assert.ok(outcome.opponent.name);
+});
+
+test('試合詳細は指定されたスコア・得点者・アシスト・MVP・全選手成績・調子・イベントを表示する', () => {
+  const league=createLeague({name:'YOU',color:'#fff',seed:'match-detail'});
+  simulateRemainingSeason(league);
+  const match=league.seasonResults[0], html=renderMatchDetail(match);
+  assert.match(html,/試合詳細/);
+  assert.match(html,/得点者/);
+  assert.match(html,/アシスト/);
+  assert.match(html,/試合MVP/);
+  assert.match(html,/評価/);
+  assert.match(html,/シュート/);
+  assert.match(html,/攻撃貢献/);
+  assert.match(html,/守備成功/);
+  assert.match(html,/セーブ/);
+  assert.match(html,/調子/);
+  assert.match(html,/試合イベント/);
+  assert.equal((html.match(/match-player-result/g)||[]).length,10);
+  assert.doesNotMatch(html,/hiddenGrowth/);
+});
+
+test('所属選手のシーズン個人成績は出場・得点・アシスト・平均評価・全指定指標を表示する', () => {
+  const league=createLeague({name:'YOU',color:'#fff',seed:'season-player-stats'});
+  simulateRemainingSeason(league);
+  const club=league.clubs[0], html=renderSeasonPlayerStats(club);
+  assert.match(html,/出場 10/);
+  assert.match(html,/得点/);
+  assert.match(html,/アシスト/);
+  assert.match(html,/平均評価/);
+  assert.match(html,/シュート/);
+  assert.match(html,/攻撃貢献/);
+  assert.match(html,/守備成功/);
+  assert.match(html,/セーブ/);
+  assert.doesNotMatch(html,/hiddenGrowth/);
 });
 
 test('試合結果はcontrollerTypeに依存しない', () => {
