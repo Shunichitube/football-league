@@ -1,11 +1,10 @@
 import { calculateOverall } from './data.js';
 import { processOffseason, renewalFee } from './development.js';
 import { createRandom } from './random.js';
-import { cpuBid, cpuCandidatePick } from './market.js?v=0.8.0';
-import { ACTION_TYPES, applyClubAction } from './rules.js?v=0.8.0';
+import { cpuBid, cpuCandidatePick } from './market.js?v=0.9.0';
+import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=0.9.0';
 
 const LINEUP_ROLES = ['FIXO', 'ALA', 'ALA', 'PIVO'];
-const ADJACENT = { FIXO: ['ALA'], ALA: ['FIXO', 'PIVO'], PIVO: ['ALA'] };
 const REQUIRED = { GK: 1, FIXO: 1, ALA: 2, PIVO: 1 };
 const FOCUS_KEYS = {
   GK: ['gk'],
@@ -19,12 +18,6 @@ const TACTIC_ABILITIES = {
   COUNTER: ['スピードスター', 'カウンター起点', 'ハードワーカー']
 };
 
-function positionFit(player, role) {
-  if (player.primaryPosition === role) return 1;
-  if (player.primaryPosition === 'GK' || role === 'GK') return 0;
-  return ADJACENT[player.primaryPosition]?.includes(role) ? .95 : .85;
-}
-
 function bestFieldAssignment(players) {
   let best = null;
   function assign(roleIndex, available, chosen, score) {
@@ -34,7 +27,7 @@ function bestFieldAssignment(players) {
     }
     const role = LINEUP_ROLES[roleIndex];
     for (const player of available) {
-      const fit = positionFit(player, role);
+      const fit = positionSuitability(player, role);
       if (!fit) continue;
       assign(roleIndex + 1, available.filter(candidate => candidate.id !== player.id), [...chosen, player], score + calculateOverall(player) * fit);
     }
@@ -57,7 +50,7 @@ export function selectBestLineup(club) {
 }
 
 export function chooseCpuTactic(club) {
-  const starters = club.lineup.map(id => club.roster.find(player => player.id === id)).filter(Boolean).filter(player => player.primaryPosition !== 'GK');
+  const starters = club.lineup.slice(1).map(id => club.roster.find(player => player.id === id)).filter(Boolean);
   if (!starters.length) return club.tactic;
   const average = key => starters.reduce((sum, player) => sum + player.stats[key], 0) / starters.length;
   const abilityBonus = tactic => starters.filter(player => TACTIC_ABILITIES[tactic].includes(player.specialAbility)).length * 1.5;
