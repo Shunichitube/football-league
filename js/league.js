@@ -1,5 +1,5 @@
 import { createClub } from './data.js';
-import { simulateMatch } from './sim.js';
+import { simulateMatch } from './sim.js?v=0.9.1';
 import { createRandom } from './random.js';
 
 const CPU_CLUBS = [
