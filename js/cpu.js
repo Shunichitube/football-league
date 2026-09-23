@@ -1,0 +1,131 @@
+import { calculateOverall } from './data.js';
+import { processOffseason, renewalFee } from './development.js';
+import { createRandom } from './random.js';
+
+const LINEUP_ROLES = ['FIXO', 'ALA', 'ALA', 'PIVO'];
+const ADJACENT = { FIXO: ['ALA'], ALA: ['FIXO', 'PIVO'], PIVO: ['ALA'] };
+const REQUIRED = { GK: 1, FIXO: 1, ALA: 2, PIVO: 1 };
+const FOCUS_KEYS = {
+  GK: ['gk'],
+  FIXO: ['defense', 'pass', 'speed'],
+  ALA: ['speed', 'dribble', 'pass', 'shoot'],
+  PIVO: ['shoot', 'dribble', 'pass']
+};
+const TACTIC_ABILITIES = {
+  POSSESSION: ['チャンスメイカー', 'ビルドアップ', 'ポストプレーヤー'],
+  DRIBBLE: ['ドリブラー', '個人技', 'カットイン'],
+  COUNTER: ['スピードスター', 'カウンター起点', 'ハードワーカー']
+};
+
+function positionFit(player, role) {
+  if (player.primaryPosition === role) return 1;
+  if (player.primaryPosition === 'GK' || role === 'GK') return 0;
+  return ADJACENT[player.primaryPosition]?.includes(role) ? .95 : .85;
+}
+
+function bestFieldAssignment(players) {
+  let best = null;
+  function assign(roleIndex, available, chosen, score) {
+    if (roleIndex === LINEUP_ROLES.length) {
+      if (!best || score > best.score) best = { players: [...chosen], score };
+      return;
+    }
+    const role = LINEUP_ROLES[roleIndex];
+    for (const player of available) {
+      const fit = positionFit(player, role);
+      if (!fit) continue;
+      assign(roleIndex + 1, available.filter(candidate => candidate.id !== player.id), [...chosen, player], score + calculateOverall(player) * fit);
+    }
+  }
+  assign(0, players, [], 0);
+  return best?.players || [];
+}
+
+export function selectBestLineup(club) {
+  const keeper = club.roster.filter(player => player.primaryPosition === 'GK').sort((a, b) => calculateOverall(b) - calculateOverall(a))[0];
+  const field = bestFieldAssignment(club.roster.filter(player => player.primaryPosition !== 'GK'));
+  if (!keeper || field.length < 4) return club.lineup.filter(id => club.roster.some(player => player.id === id)).slice(0, 5);
+  club.lineup = [keeper.id, ...field.map(player => player.id)];
+  return club.lineup;
+}
+
+export function autoSetCpuTactic(club) {
+  const starters = club.lineup.map(id => club.roster.find(player => player.id === id)).filter(Boolean).filter(player => player.primaryPosition !== 'GK');
+  if (!starters.length) return club.tactic;
+  const average = key => starters.reduce((sum, player) => sum + player.stats[key], 0) / starters.length;
+  const abilityBonus = tactic => starters.filter(player => TACTIC_ABILITIES[tactic].includes(player.specialAbility)).length * 1.5;
+  const scores = {
+    POSSESSION: average('pass') + abilityBonus('POSSESSION'),
+    DRIBBLE: average('dribble') + abilityBonus('DRIBBLE'),
+    COUNTER: average('speed') + abilityBonus('COUNTER')
+  };
+  const values = Object.values(scores);
+  club.tactic = Math.max(...values) - Math.min(...values) < 2 ? 'BALANCED' : Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
+  return club.tactic;
+}
+
+function publicDevelopmentScore(player, club) {
+  const overall = calculateOverall(player);
+  const isStarter = club.lineup.includes(player.id);
+  return Math.max(0, 31 - player.age) * 2 + Math.max(0, 85 - overall) * .35 + (isStarter ? 8 : 0) + Math.min(10, player.season.appearances) * .4;
+}
+
+function trainingFocus(player) {
+  return [...FOCUS_KEYS[player.primaryPosition]].sort((a, b) => player.stats[a] - player.stats[b])[0];
+}
+
+export function selectCpuTraining(club) {
+  const selected = [...club.roster].sort((a, b) => publicDevelopmentScore(b, club) - publicDevelopmentScore(a, club) || calculateOverall(b) - calculateOverall(a)).slice(0, 2);
+  return new Map(selected.map(player => [player.id, trainingFocus(player)]));
+}
+
+export function manageCpuContracts(club) {
+  const decisions = [];
+  const due = club.roster.filter(player => player.contractYears <= 0).sort((a, b) => calculateOverall(b) - calculateOverall(a));
+  for (const player of due) {
+    const remaining = club.roster.filter(candidate => candidate.id !== player.id);
+    const mustKeep = remaining.length < 5 || (player.primaryPosition === 'GK' && !remaining.some(candidate => candidate.primaryPosition === 'GK'));
+    const samePosition = club.roster.filter(candidate => candidate.primaryPosition === player.primaryPosition).length;
+    const positionExcess = samePosition > REQUIRED[player.primaryPosition];
+    const teamAverage = club.roster.reduce((sum, candidate) => sum + calculateOverall(candidate), 0) / club.roster.length;
+    const overall = calculateOverall(player);
+    const fee = renewalFee(player);
+    const important = club.lineup.includes(player.id) || player.season.appearances >= 5;
+    const releaseForAge = player.age >= 33 && positionExcess && !important;
+    const releaseForLevel = overall < teamAverage - 5 && positionExcess && !important;
+    const canAfford = club.funds >= fee;
+    const renew = mustKeep || (canAfford && !releaseForAge && !releaseForLevel);
+    if (renew) {
+      club.funds = Math.max(0, club.funds - fee);
+      player.contractYears = 3;
+      decisions.push({ player, action: 'RENEW', fee });
+    } else {
+      club.roster = club.roster.filter(candidate => candidate.id !== player.id);
+      decisions.push({ player, action: 'RELEASE', fee: 0 });
+    }
+  }
+  return decisions;
+}
+
+export function prepareCpuClubs(league) {
+  const cpuClubs = league.clubs.filter(club => club.id !== league.humanClubId);
+  for (const club of cpuClubs) {
+    selectBestLineup(club);
+    autoSetCpuTactic(club);
+  }
+  return cpuClubs.map(club => ({ clubId: club.id, lineup: [...club.lineup], tactic: club.tactic }));
+}
+
+export function processLeagueOffseason(league, humanTraining = new Map()) {
+  const summaries = [];
+  for (const club of league.clubs) {
+    const isHuman = club.id === league.humanClubId;
+    const training = isHuman ? humanTraining : selectCpuTraining(club);
+    const growth = processOffseason(club, training, createRandom(`${league.seed}:offseason:${league.season}:club:${club.id}`));
+    const contracts = isHuman ? [] : manageCpuContracts(club);
+    selectBestLineup(club);
+    if (!isHuman) autoSetCpuTactic(club);
+    summaries.push({ clubId: club.id, training: [...training.entries()], growth, contracts, lineup: [...club.lineup], tactic: club.tactic });
+  }
+  return summaries;
+}
