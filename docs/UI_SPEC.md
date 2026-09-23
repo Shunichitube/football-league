@@ -23,6 +23,16 @@ PCは2カラム、スマホは1カラムで最低幅320pxに対応する。ペ�
 | TABLE / STATS / RECORDS | 順位、個人成績、歴代・クラブ・選手記録 |
 | オフシーズン | 育成、成長結果、契約、ドラフト、オークション、次季開始 |
 
+### SQUAD実装（Stage 14）
+
+- GK / FIXO / ALA / ALA / PIVOの5枠を表示する。
+- 所属選手を選択して配置枠を押すと、共通の `SET_LINEUP` 処理を通して `club.lineup` へ反映する。
+- スタメンと控えを分離し、双方のカードで名前、年齢、本職、総合、能力ランク、GK能力（GKのみ）、特殊能力を確認できる。
+- 同一選手の重複、5枠未設定、所属外選手、GKのフィールド枠配置はエラーとして表示する。
+- 本職以外への配置は警告を表示する。内部能力値と適性補正値は表示しない。
+- 5人の有効なスタメンが揃っていない場合、試合開始操作を無効にする。
+- 既存の選手詳細表示は維持する。
+
 ## Stage 1画面範囲
 
 TITLE、NEW GAME SETUP、HOME、SQUAD、MATCH PREVIEW、MATCH VIEW、MATCH RESULTを実装する。HOME上の「次の試合」は単発試合であり、リーグ順位・ドラフト等はStage 2以降で追加する。結果ログは5〜10秒程度で進め、SKIP TO RESULTを備える。
@@ -34,4 +44,3 @@ TITLE、NEW GAME SETUP、HOME、SQUAD、MATCH PREVIEW、MATCH VIEW、MATCH RESUL
 ## 画面遷移
 
 基本の最終形は TITLE → NEW GAME → Season 1 DRAFT → AUCTION → SQUAD → HOME → MATCH PREVIEW → MATCH VIEW → MATCH RESULT → HOME。各シーズン終了後はSEASON END → DEVELOPMENT → GROWTH RESULT → CONTRACT → DRAFT → AUCTION → NEXT SEASONへ進む。Stage 1では NEW GAME → SQUAD → HOME → MATCH PREVIEW → MATCH VIEW → MATCH RESULT → HOME の部分だけを有効にする。
-
