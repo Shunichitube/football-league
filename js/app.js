@@ -2,13 +2,13 @@ import { applySeasonFinances, awards, createLeague, simulateRemainingSeason, sta
 import { STAT_LABELS } from './data.js';
 import { createRandom } from './random.js';
 import { createAuctionPool, createDraftPool, resolveAuctionActions, resolveDraftActions } from './market.js?v=0.12.0';
-import { escapeHtml as e, renderLineupEditor, renderMatchDetail, renderPlayerCard, renderPlayerDetail, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=0.12.1';
-import { decideCpuAuctionAction, decideCpuDraftAction, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=0.12.0';
-import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=0.12.0';
+import { escapeHtml as e, renderLineupEditor, renderMatchDetail, renderPlayerCard, renderPlayerDetail, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=0.13.0';
+import { decideCpuAuctionAction, decideCpuDraftAction, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=0.13.0';
+import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=0.13.0';
 const app=document.querySelector('#app');let s={view:'title',league:null,draft:null,auction:null,match:null,round:0,note:'',rosterOpen:false,detailPlayerId:null,selectedLineupPlayerId:null,lineupMessage:'',lineupError:false,seasonSimulation:null};
 const me=()=>s.league.clubs.find(c=>c.controllerType==='HUMAN')||s.league.clubs.find(c=>c.id===s.league.humanClubId);const player=p=>renderPlayerCard(p);
 function head(){let c=me(),r=standings(s.league).find(x=>x.club.id===c.id);return `<header><a data-nav="home" class="brand">FOOTBALL <b>LEAGUE</b></a><span>シーズン ${s.league.season} / 10</span><span>${e(c.name)}・${r.rank}位・${c.funds}pt</span></header>`}
-function title(){return `<main class="title"><p>5人制クラブ運営ゲーム</p><h1>FOOTBALL<br><b>LEAGUE</b></h1><button data-a="setup">新しく始める</button><footer>v0.12.1・Stage 17</footer></main>`}
+function title(){return `<main class="title"><p>5人制クラブ運営ゲーム</p><h1>FOOTBALL<br><b>LEAGUE</b></h1><button data-a="setup">新しく始める</button><footer>v0.13.0・Stage 18</footer></main>`}
 function setup(){return `<main class="setup"><h2>クラブを作成</h2><label>クラブ名<input id="name" placeholder="東京ファイブ"></label><label>チームカラー<input id="color" type="color" value="#4ade80"></label><label>シード（任意）<input id="seed" placeholder="同じ値なら同じ展開"></label><button data-a="start">ゲーム開始</button><button data-a="title" class="subtle">戻る</button></main>`}
 function draft(){let d=s.draft,c=me(),canPick=d.pendingClubIds.includes(c.id),simultaneous=d.mode==='SIMULTANEOUS';return `${head()}<main><p class="eyebrow">シーズン${s.league.season} ドラフト・第${d.round}/4巡</p><div class="screen-heading"><h2>${simultaneous?'完全同時指名':'前年順位順指名'}</h2><button data-stage10="roster" class="subtle">所属選手を見る</button></div><p class="hint">${simultaneous?'6クラブが同時に指名し、重複時だけ抽選します。外れたクラブは再指名します。':'前年順位に基づく指名順で、1クラブずつ指名します。'}${e(s.note)}</p><p>資金 <b>${c.funds}pt</b>・登録 ${c.roster.length}/12人</p><section class="candidate-grid">${d.pool.map(p=>`<article class="candidate">${player(p)}<p class="scout-comment"><b>スカウト：</b>${e(p.scoutComment)}</p>${canPick?`<button data-p="${p.id}">この選手を指名</button>`:''}</article>`).join('')}</section><button data-a="skipDraft" class="subtle">残りの指名を辞退</button></main>`}
 function auction(){let a=s.auction,p=a.pool[a.i],c=me();if(!p)return `${head()}<main><section class="hero"><p>競売完了</p><h2>市場が終了しました</h2><button data-a="squad">編成へ進む</button></section></main>`;return `${head()}<main><p class="eyebrow">競売 ${a.i+1}/${a.pool.length}</p><div class="screen-heading"><h2>秘密入札</h2><button data-stage10="roster" class="subtle">所属選手を見る</button></div><p class="hint">${e(s.note)}</p><article class="candidate">${player(p)}<p class="scout-comment"><b>スカウト：</b>${e(p.scoutComment)}</p></article><label>入札額<input id="bid" type="number" min="0" max="${c.funds}" value="0"></label><button data-a="bid">入札する</button><button data-a="pass" class="subtle">見送る</button><p>資金 ${c.funds}pt・登録 ${c.roster.length}/12人</p></main>`}
@@ -27,7 +27,7 @@ function prepareDraftRound(d){d.mode=draftMode(d.round);if(d.mode==='SIMULTANEOU
 function nextOrderedPick(d){d.orderIndex++;while(d.orderIndex<d.order.length&&!draftEligibleIds().includes(d.order[d.orderIndex]))d.orderIndex++;d.pendingClubIds=d.orderIndex<d.order.length?[d.order[d.orderIndex]]:[]}
 function advanceDraftRound(){let d=s.draft;if(d.pendingClubIds.length)return false;if(d.round>=4){startAuction();return true}d.round++;prepareDraftRound(d);return false}
 function runCpuDraft(){let guard=0;while(s.view==='draft'&&guard++<100){let d=s.draft,humanId=me().id;if(d.pendingClubIds.includes(humanId))break;if(!d.pendingClubIds.length){if(advanceDraftRound())break;continue}const actions=d.pendingClubIds.map(id=>s.league.clubs.find(club=>club.id===id)).filter(club=>club?.controllerType==='CPU').map(club=>decideCpuDraftAction(club,d.pool,d.rng)).filter(Boolean);const result=resolveDraftActions({clubs:s.league.clubs,candidates:d.pool,pendingClubIds:d.pendingClubIds,actions,rng:d.rng});d.pool=result.candidates;if(d.mode==='ORDERED')nextOrderedPick(d);else d.pendingClubIds=result.pendingClubIds;if(!result.acquired.length&&result.declinedIds.length===0&&d.mode==='SIMULTANEOUS')d.pendingClubIds=[]}}
-function beginDraft(){const season=s.league.season;prepareCpuMarketSpace(s.league);s.match=null;s.seasonSimulation=null;s.draft={pool:createDraftPool(s.league.seed,season),round:1,rng:createRandom(`${s.league.seed}:season:${season}:draft`),pendingClubIds:[],humanDeclined:false};prepareDraftRound(s.draft);s.view='draft';s.note=`シーズン${season}ドラフトを開始します。`;runCpuDraft()}
+function beginDraft(){const season=s.league.season;s.league.releasePhaseOpen=false;s.match=null;s.seasonSimulation=null;s.draft={pool:createDraftPool(s.league.seed,season),round:1,rng:createRandom(`${s.league.seed}:season:${season}:draft`),pendingClubIds:[],humanDeclined:false};prepareDraftRound(s.draft);s.view='draft';s.note=`シーズン${season}ドラフトを開始します。`;runCpuDraft()}
 function pickDraft(p){let d=s.draft,humanId=me().id;if(!d.pendingClubIds.includes(humanId))return;const actions=d.pendingClubIds.map(id=>s.league.clubs.find(club=>club.id===id)).map(club=>club?.controllerType==='CPU'?decideCpuDraftAction(club,d.pool,d.rng):club?.id===humanId?{type:ACTION_TYPES.DRAFT_PICK,clubId:club.id,playerId:p.id}:null).filter(Boolean);const result=resolveDraftActions({clubs:s.league.clubs,candidates:d.pool,pendingClubIds:d.pendingClubIds,actions,rng:d.rng});d.pool=result.candidates;const acquired=result.acquired.find(row=>row.clubId===humanId);if(d.mode==='ORDERED')nextOrderedPick(d);else d.pendingClubIds=result.pendingClubIds;if(!acquired&&d.mode==='SIMULTANEOUS'){s.note=`${p.name}は競合抽選で外れました。外れクラブとして再指名してください。`;return}s.note=`${p.name}を${acquired?.contested?'競合抽選で':''}獲得しました。`;runCpuDraft()}
 function bid(amount){let a=s.auction,p=a.pool[a.i],human=me(),actions=s.league.clubs.map(club=>club.controllerType==='CPU'?decideCpuAuctionAction(club,p,a.rng):club.id===human.id?{type:ACTION_TYPES.AUCTION_BID,clubId:club.id,playerId:p.id,bid:club.roster.length<12?amount:0}:null).filter(Boolean),result=resolveAuctionActions({clubs:s.league.clubs,player:p,actions,rng:a.rng});if(result.winner)s.league.releasedPlayers=(s.league.releasedPlayers||[]).filter(candidate=>candidate.id!==p.id);s.note=result.winner?`落札 — ${result.winner.name} が ${result.bid}ptで獲得しました。`:`${p.name}は見送りになりました。`;a.i++;if(a.i>=a.pool.length)prepareCpuClubs(s.league)}
 app.addEventListener('click',ev=>{let a=ev.target.closest('[data-a]')?.dataset.a,n=ev.target.closest('[data-nav]')?.dataset.nav,p=ev.target.closest('[data-p]')?.dataset.p,m=ev.target.closest('[data-season-match]')?.dataset.seasonMatch;if(m!==undefined){s.match=s.league.seasonResults[Number(m)];s.view='matchDetail';return render()}if(n){s.view=n;if(n!=='squad'){s.selectedLineupPlayerId=null;s.lineupMessage='';s.lineupError=false}return render()}if(p){let x=s.draft.pool.find(q=>q.id===p);if(x&&me().funds>=1&&me().roster.length<12)pickDraft(x);return render()}if(a==='setup'||a==='title'){s.view=a;return render()}if(a==='start'){let name=document.querySelector('#name').value.trim();if(!name)return alert('クラブ名を入力してください。');let seed=document.querySelector('#seed').value.trim()||String(Date.now());s.league=createLeague({name,color:document.querySelector('#color').value,seed});s.offseasonComplete=false;beginDraft();return render()}if(a==='skipDraft'){s.draft.humanDeclined=true;if(s.draft.mode==='ORDERED')nextOrderedPick(s.draft);else s.draft.pendingClubIds=s.draft.pendingClubIds.filter(id=>id!==me().id);runCpuDraft();return render()}if(a==='bid'||a==='pass'){let n=a==='pass'?0:Number(document.querySelector('#bid').value);if(n<0||n>me().funds)return alert('入札額を確認してください。');bid(n);return render()}if(a==='squad'){s.view='squad';return render()}if(a==='season'){let lineup=validateLineup(me());if(!lineup.ok)return alert(lineup.error);s.seasonSimulation=simulateRemainingSeason(s.league);s.view='seasonResults';return render()}});render();
@@ -50,7 +50,11 @@ function stage4Render() {
   }
   if (s.view === 'contracts') {
     const c=me(), due=c.roster.filter(p=>p.contractYears<=0);
-    app.innerHTML = `${head()}<main><p class="eyebrow">契約</p><h2>契約確認</h2>${due.length ? due.map(p=>`<article class="candidate">${player(p)}<p>更新費 ${renewalFee(p)}pt</p><button data-renew="${p.id}">契約更新</button><button data-release="${p.id}" class="subtle">放出</button></article>`).join('') : '<p class="hint">今季の契約満了者はいません。</p>'}<button data-stage4="done" ${due.length?'disabled':''}>${s.league.season>=10?'10シーズンを完了':'次年度ドラフトへ進む'}</button></main>`; return;
+    app.innerHTML = `${head()}<main><p class="eyebrow">契約</p><h2>契約確認</h2>${due.length ? due.map(p=>`<article class="candidate">${player(p)}<p>更新費 ${renewalFee(p)}pt</p><button data-renew="${p.id}">契約更新</button><button data-release="${p.id}" class="subtle">放出</button></article>`).join('') : '<p class="hint">今季の契約満了者はいません。</p>'}<button data-stage4="releasePhase" ${due.length?'disabled':''}>選手整理へ進む</button></main>`; return;
+  }
+  if (s.view === 'release') {
+    const c=me();
+    app.innerHTML = `${head()}<main><p class="eyebrow">選手整理</p><h2>放出フェイズ</h2><p class="hint">市場開始前にロスターを整理できます。登録選手は最低5人、GKは最低1人必要です。選手詳細から放出できます。</p><section class="candidate-grid">${c.roster.map(player).join('')}</section><button data-stage4="releaseDone">選手整理を終了してドラフトへ進む</button></main>`; return;
   }
   stage4BaseRender();
   if (s.view === 'home' && s.league?.completed && !s.offseasonComplete) app.querySelector('main')?.insertAdjacentHTML('beforeend', '<button data-stage4="offseason">オフシーズンへ進む</button>');
@@ -63,13 +67,14 @@ app.addEventListener('click', ev => {
   const releaseId = ev.target.closest('[data-release]')?.dataset.release;
   if (trainingId) { if (s.training.has(trainingId)) s.training.delete(trainingId); else if (s.training.size < 2) s.training.set(trainingId, null); return render(); }
   if (renewId) { applyClubAction(me(),{type:ACTION_TYPES.RENEW_CONTRACT,clubId:me().id,playerId:renewId}); return render(); }
-  if (releaseId) { applyClubAction(me(),{type:ACTION_TYPES.RELEASE_PLAYER,clubId:me().id,playerId:releaseId},s.league); selectBestLineup(me()); return render(); }
+  if (releaseId) { applyClubAction(me(),{type:ACTION_TYPES.RELEASE_PLAYER,clubId:me().id,playerId:releaseId,contractDecision:true},s.league); selectBestLineup(me()); return render(); }
   if (!action) return;
   if (action==='offseason') { s.financeSummary=applySeasonFinances(s.league); s.training=new Map(); s.view='development'; }
   if (action==='confirm') s.view='focus';
   if (action==='grow') { const focus=new Map([...s.training.keys()].map(id=>[id,document.querySelector(`[data-focus="${id}"]`).value])); const summaries=processLeagueOffseason(s.league,focus); s.growth=summaries.find(x=>x.clubId===me().id).growth; s.cpuOffseason=summaries.filter(x=>s.league.clubs.find(club=>club.id===x.clubId)?.controllerType==='CPU'); s.view='growth'; }
   if (action==='contracts') s.view='contracts';
-  if (action==='done') { const advanced=startNextSeason(s.league); if(advanced){s.offseasonComplete=false;beginDraft()}else{s.offseasonComplete=true;s.view='home'} }
+  if (action==='releasePhase') { s.league.releasePhaseOpen=true; s.cpuReleaseSummary=prepareCpuMarketSpace(s.league); s.view='release'; }
+  if (action==='releaseDone') { const advanced=startNextSeason(s.league); if(advanced){s.offseasonComplete=false;beginDraft()}else{s.league.releasePhaseOpen=false;s.offseasonComplete=true;s.view='home'} }
   render();
 });
 
@@ -145,16 +150,16 @@ function stage10Render() {
   stage10BaseRender();
   if (!s.league || (!s.rosterOpen && !s.detailPlayerId)) return;
   const selected = s.detailPlayerId ? stage10Players().find(player => player.id === s.detailPlayerId) : null;
-  const allowRelease = selected && me().roster.some(player => player.id === selected.id);
-  document.body.insertAdjacentHTML('beforeend', `<div class="overlay-backdrop" data-stage10="close"></div>${selected ? renderPlayerDetail(selected, { allowRelease }) : renderRosterPanel(me())}`);
+  const allowRelease = selected && s.league.releasePhaseOpen && me().roster.some(player => player.id === selected.id);
+  document.body.insertAdjacentHTML('beforeend', `<div class="overlay-backdrop" data-stage10="close"></div>${selected ? renderPlayerDetail(selected, { allowRelease, releaseMessage: s.releaseMessage }) : renderRosterPanel(me())}`);
 }
 render = stage10Render;
 document.addEventListener('click', event => {
   const detailId = event.target.closest('[data-detail]')?.dataset.detail;
   const action = event.target.closest('[data-stage10]')?.dataset.stage10;
-  if (detailId) { s.detailPlayerId=detailId; s.rosterOpen=false; render(); return; }
+  if (detailId) { s.detailPlayerId=detailId; s.rosterOpen=false; s.releaseMessage=''; render(); return; }
   if (action==='roster') { s.rosterOpen=true; s.detailPlayerId=null; render(); }
-  if (action==='release') { const playerId=event.target.closest('[data-release-player]')?.dataset.releasePlayer; if(playerId){applyClubAction(me(),{type:ACTION_TYPES.RELEASE_PLAYER,clubId:me().id,playerId},s.league);selectBestLineup(me());s.rosterOpen=false;s.detailPlayerId=null;render();} }
+  if (action==='release') { const playerId=event.target.closest('[data-release-player]')?.dataset.releasePlayer; if(playerId){const result=applyClubAction(me(),{type:ACTION_TYPES.RELEASE_PLAYER,clubId:me().id,playerId},s.league);if(!result.ok){s.releaseMessage=result.error;render();return}selectBestLineup(me());s.releaseMessage='';s.rosterOpen=false;s.detailPlayerId=null;render();} }
   if (action==='close') { s.rosterOpen=false; s.detailPlayerId=null; document.querySelectorAll('.overlay-backdrop,.overlay-panel').forEach(node=>node.remove()); }
 });
 document.addEventListener('keydown', event => { if(event.key==='Escape'&&(s.rosterOpen||s.detailPlayerId)){s.rosterOpen=false;s.detailPlayerId=null;render();} });
