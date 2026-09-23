@@ -7,12 +7,30 @@
 - ゲーム仕様: `docs/GAME_SPEC.md`
 - UI仕様: `docs/UI_SPEC.md`
 - 優先差分仕様: `docs/ADDITIONAL_SPEC_v0.5.md`
-- v0.5と既存仕様が競合する箇所は、v0.5を優先する
+- 最新優先差分仕様: `docs/INTEGRATED_ADDITIONAL_SPEC.md`
+- 統合追加修正仕様書、v0.5、既存仕様の順で、競合箇所のみ新しい文書を優先する
 - PITCH LAB / soccer-Simulatorとは完全に別リポジトリ・別コードベース
 
 ## 現在位置
 
-**Stage 12 — 年度サイクル・市場・資金の完成／実装・検証完了**
+**Stage 13 — Club／Controller分離と共通ルール処理／実装・検証完了**
+
+Stage 13の実装:
+
+- 統合追加修正仕様書を `docs/INTEGRATED_ADDITIONAL_SPEC.md` として保存
+- 同一Club構造へ `controllerType: HUMAN / CPU` を追加
+- HumanClub / CPUClubの別データ型は作らず、全クラブで同じデータ形式を維持
+- CPUのドラフト指名・競売入札を、状態変更ではなくAction生成として分離
+- 人間とCPUの `DRAFT_PICK` を同じ指名集計・競合抽選処理へ提出
+- 人間とCPUの `AUCTION_BID` を同じ入札検証・落札・資金減算・移籍処理へ提出
+- 編成、戦術、育成選択、契約更新、放出の共通Action型と検証処理を追加
+- CPUのスタメン・戦術・契約判断を意思決定と共通状態更新へ分離
+- 試合シミュレーションは `controllerType` を参照せず、クラブ・スタメン・戦術・seedだけを使用
+- 新規処理から「クラブID 1だけが人間」という固定参照を除去
+- 旧セーブに `controllerType` がない場合、読込時に既存 `humanClubId` から補完
+- Cloudflare、REMOTE通信、ログイン、ルーム、WebSocket等は実装していない
+
+Stage 12の実装:
 
 Stage 12の実装:
 
@@ -84,7 +102,7 @@ Stage 9の実装:
 
 2026-09-23に以下を確認済み。
 
-- `npm test`：32件成功
+- `npm test`：38件成功
 - 既存の同seed再現、80フェーズ、全30試合、10シーズン、セーブ、100リーグ・3,000試合バッチが継続成功
 - 特殊能力生成率が36〜44%の範囲に収まり、全24種が生成可能
 - 能力別 `hiddenGrowth` の範囲と能力別成長差を確認
@@ -113,6 +131,13 @@ Stage 9の実装:
 - Season 2以降のドラフト・競売候補が毎年固有IDで生成されることを確認
 - 10シーズンすべてで補強・30試合・資金更新・育成・契約・世代交代を完走
 - 10シーズン終了時も全CPUクラブが5人以上とGKを維持することを確認
+- ClubとControllerが同じClub構造の `controllerType` で分離されることを確認
+- HUMANを2クラブへ増やしてもController抽出が固定IDに依存しないことを確認
+- 人間とCPUのドラフトActionが同じ共通ルール処理を使用することを確認
+- 人間とCPUの競売Actionが同じ共通ルールで資金・移籍を処理することを確認
+- 編成・戦術・契約ActionがController種別に依存しないことを確認
+- `controllerType` をHUMAN / CPU / REMOTE相当に変更しても同seedの試合結果が変わらないことを確認
+- `controllerType` を持たない旧セーブがHUMAN 1 / CPU 5へ補完されることを確認
 - `node --check js/cpu.js` / `node --check js/app.js`：構文エラーなし
 - GitHub Pages公開版で `v0.6.0・Stage 11`、新規ゲーム開始、ドラフト24候補表示、画面エラーなしを実操作確認
 - GitHub Pages公開版で `v0.7.1・Stage 12`、完全同時指名表示、24候補表示、1巡目獲得後の第2巡移行、画面エラーなしを実操作確認
@@ -120,9 +145,12 @@ Stage 9の実装:
 
 ## 次に行うこと
 
-**正本仕様のStage 1〜12はすべて実装完了**
+**Stage 14 — 人間クラブの編成機能**
 
-- 追加Stageは未定義
-- 今後の改修は、新しい仕様書または不具合報告を受けて別途区分する
+- GK / FIXO / ALA / ALA / PIVOの5枠
+- 選手選択から配置枠への反映
+- 重複・5人未満の禁止と適性外警告
+- スタメンと控えの分離表示
+- 既存ランクカードと選手詳細の維持
 
-Stage 12完了をもって、`ADDITIONAL_SPEC_v0.5.md` の実装工程は完了。
+Stage 14は未着手。明示的に続行するまで開始しない。
