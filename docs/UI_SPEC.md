@@ -42,6 +42,8 @@ TITLE、NEW GAME SETUP、HOME、SQUAD、MATCH PREVIEW、MATCH VIEW、MATCH RESUL
 
 能力・OverallはSS〜Gのランクだけとし、`83` のような内部数値を表示しない。成長後に同ランクなら `B ↑`、ランク変化なら `B → A` と表示する。調子は↑ / − / ↓と文字を併記する。クラブカラーはヘッダー、カード、表、試合カードのアクセントに使い、背景全体には使わない。
 
+成長結果では、覚醒した選手に「覚醒！」、後天的に特殊能力を得た選手に「特殊能力を習得！」「★ 特能名」を表示する。内部能力値およびhiddenGrowthは表示しない。
+
 ## 画面遷移
 
 通常フローは TITLE → NEW GAME → Season 1 DRAFT → AUCTION → SQUAD／TACTIC → シーズンをシミュレート → SEASON RESULT → MATCH DETAIL／STATS。1節ずつ進める操作は通常フローとして使用しない。各シーズン終了後はSEASON RESULT → DEVELOPMENT → GROWTH RESULT → CONTRACT → DRAFT → AUCTION → SQUAD／TACTIC → 次シーズン一括進行とする。
