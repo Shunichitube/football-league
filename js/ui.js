@@ -43,6 +43,7 @@ export function renderPlayerDetail(player, options = {}) {
     ${renderPlayerCard(player, { details: false })}
     <section class="detail-section"><h3>${display.specialAbility ? `★ ${escapeHtml(display.specialAbility)}` : '特殊能力なし'}</h3><p>${escapeHtml(description)}</p></section>
     <section class="detail-section"><h3>今季成績</h3><p>出場 ${season.appearances || 0}・得点 ${season.goals || 0}・アシスト ${season.assists || 0}・シュート ${season.shots || 0}・守備成功 ${season.defensiveStops || 0}・セーブ ${season.saves || 0}</p></section>
+    ${options.releaseMessage ? `<p class="lineup-error">${escapeHtml(options.releaseMessage)}</p>` : ''}
     ${options.allowRelease ? `<button type="button" data-stage10="release" data-release-player="${escapeHtml(player.id)}" class="subtle">この選手を放出</button>` : ''}
   </section>`;
 }
