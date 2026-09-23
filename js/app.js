@@ -1,13 +1,13 @@
-import { applySeasonFinances, awards, createLeague, playCurrentRound, standings, startNextSeason } from './league.js?v=0.7.0';
+import { applySeasonFinances, awards, createLeague, playCurrentRound, standings, startNextSeason } from './league.js?v=0.7.1';
 import { STAT_LABELS } from './data.js';
 import { createRandom } from './random.js';
-import { addPlayer, createAuctionPool, createDraftPool, cpuBid, resolveSimultaneousDraftCycle } from './market.js?v=0.7.0';
-import { escapeHtml as e, renderPlayerCard, renderPlayerDetail, renderRosterPanel } from './ui.js?v=0.7.0';
-import { prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=0.7.0';
+import { addPlayer, createAuctionPool, createDraftPool, cpuBid, resolveSimultaneousDraftCycle } from './market.js?v=0.7.1';
+import { escapeHtml as e, renderPlayerCard, renderPlayerDetail, renderRosterPanel } from './ui.js?v=0.7.1';
+import { prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=0.7.1';
 const app=document.querySelector('#app');let s={view:'title',league:null,draft:null,auction:null,match:null,round:0,note:'',rosterOpen:false,detailPlayerId:null};
 const me=()=>s.league.clubs.find(c=>c.id===1);const player=p=>renderPlayerCard(p);
 function head(){let c=me(),r=standings(s.league).find(x=>x.club.id===1);return `<header><a data-nav="home" class="brand">FOOTBALL <b>LEAGUE</b></a><span>シーズン ${s.league.season} / 10</span><span>${e(c.name)}・${r.rank}位・${c.funds}pt</span></header>`}
-function title(){return `<main class="title"><p>5人制クラブ運営ゲーム</p><h1>FOOTBALL<br><b>LEAGUE</b></h1><button data-a="setup">新しく始める</button><footer>v0.7.0・Stage 12</footer></main>`}
+function title(){return `<main class="title"><p>5人制クラブ運営ゲーム</p><h1>FOOTBALL<br><b>LEAGUE</b></h1><button data-a="setup">新しく始める</button><footer>v0.7.1・Stage 12</footer></main>`}
 function setup(){return `<main class="setup"><h2>クラブを作成</h2><label>クラブ名<input id="name" placeholder="東京ファイブ"></label><label>チームカラー<input id="color" type="color" value="#4ade80"></label><label>シード（任意）<input id="seed" placeholder="同じ値なら同じ展開"></label><button data-a="start">ゲーム開始</button><button data-a="title" class="subtle">戻る</button></main>`}
 function draft(){let d=s.draft,c=me(),canPick=d.pendingClubIds.includes(s.league.humanClubId);return `${head()}<main><p class="eyebrow">シーズン${s.league.season} ドラフト・第${d.round}/4巡</p><div class="screen-heading"><h2>完全同時指名</h2><button data-stage10="roster" class="subtle">所属選手を見る</button></div><p class="hint">6クラブが同時に指名し、重複時だけ抽選します。外れたクラブは再指名します。${e(s.note)}</p><p>資金 <b>${c.funds}pt</b>・登録 ${c.roster.length}/12人</p><section class="candidate-grid">${d.pool.map(p=>`<article class="candidate">${player(p)}<p class="scout-comment"><b>スカウト：</b>${e(p.scoutComment)}</p>${canPick?`<button data-p="${p.id}">この選手を指名</button>`:''}</article>`).join('')}</section><button data-a="skipDraft" class="subtle">残りの指名を辞退</button></main>`}
 function auction(){let a=s.auction,p=a.pool[a.i],c=me();if(!p)return `${head()}<main><section class="hero"><p>競売完了</p><h2>市場が終了しました</h2><button data-a="squad">編成へ進む</button></section></main>`;return `${head()}<main><p class="eyebrow">競売 ${a.i+1}/${a.pool.length}</p><div class="screen-heading"><h2>秘密入札</h2><button data-stage10="roster" class="subtle">所属選手を見る</button></div><p class="hint">${e(s.note)}</p><article class="candidate">${player(p)}<p class="scout-comment"><b>スカウト：</b>${e(p.scoutComment)}</p></article><label>入札額<input id="bid" type="number" min="0" max="${c.funds}" value="0"></label><button data-a="bid">入札する</button><button data-a="pass" class="subtle">見送る</button><p>資金 ${c.funds}pt・登録 ${c.roster.length}/12人</p></main>`}
