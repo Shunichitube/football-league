@@ -116,6 +116,30 @@ export function prepareCpuClubs(league) {
   return cpuClubs.map(club => ({ clubId: club.id, lineup: [...club.lineup], tactic: club.tactic }));
 }
 
+export function prepareCpuMarketSpace(league) {
+  const released = [];
+  for (const club of league.clubs.filter(candidate => candidate.id !== league.humanClubId)) {
+    const futureCount = position => club.roster.filter(player => player.primaryPosition === position && player.age < 34).length;
+    const shortages = Object.entries(REQUIRED).reduce((sum, [position, count]) => sum + Math.max(0, count - futureCount(position)), 0);
+    for (let slots = Math.min(shortages, 4); slots > 0 && club.roster.length >= 12; slots--) {
+      const candidates = club.roster.filter(player => {
+        if (player.primaryPosition === 'GK' && club.roster.filter(candidate => candidate.primaryPosition === 'GK').length <= 1) return false;
+        return club.roster.length > 5;
+      }).sort((a, b) => {
+        const aSurplus = futureCount(a.primaryPosition) > REQUIRED[a.primaryPosition] ? 1 : 0;
+        const bSurplus = futureCount(b.primaryPosition) > REQUIRED[b.primaryPosition] ? 1 : 0;
+        return bSurplus - aSurplus || b.age - a.age || calculateOverall(a) - calculateOverall(b);
+      });
+      const player = candidates[0];
+      if (!player) break;
+      club.roster = club.roster.filter(candidate => candidate.id !== player.id);
+      released.push({ clubId: club.id, player });
+    }
+    selectBestLineup(club);
+  }
+  return released;
+}
+
 export function processLeagueOffseason(league, humanTraining = new Map()) {
   const summaries = [];
   for (const club of league.clubs) {
