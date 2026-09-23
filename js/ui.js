@@ -34,7 +34,7 @@ export function renderRosterPanel(club) {
   </section>`;
 }
 
-export function renderPlayerDetail(player) {
+export function renderPlayerDetail(player, options = {}) {
   const display = displayPlayer(player);
   const season = player.season || {};
   const description = display.specialAbility ? SPECIAL_ABILITY_DESCRIPTIONS[display.specialAbility] : '現在、確認されている特殊能力はありません。';
@@ -43,6 +43,7 @@ export function renderPlayerDetail(player) {
     ${renderPlayerCard(player, { details: false })}
     <section class="detail-section"><h3>${display.specialAbility ? `★ ${escapeHtml(display.specialAbility)}` : '特殊能力なし'}</h3><p>${escapeHtml(description)}</p></section>
     <section class="detail-section"><h3>今季成績</h3><p>出場 ${season.appearances || 0}・得点 ${season.goals || 0}・アシスト ${season.assists || 0}・シュート ${season.shots || 0}・守備成功 ${season.defensiveStops || 0}・セーブ ${season.saves || 0}</p></section>
+    ${options.allowRelease ? `<button type="button" data-stage10="release" data-release-player="${escapeHtml(player.id)}" class="subtle">この選手を放出</button>` : ''}
   </section>`;
 }
 
