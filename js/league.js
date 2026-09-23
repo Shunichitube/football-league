@@ -28,7 +28,7 @@ export function createSchedule(clubIds) {
 export function createLeague({ name, color, seed }) {
   const rng = createRandom(`${seed}:clubs`);
   const clubs = [createClub({ id: 1, name, color, seed: rng, controllerType: 'HUMAN' }), ...CPU_CLUBS.map(([cpuName, cpuColor], index) => createClub({ id: index + 2, name: cpuName, color: cpuColor, seed: rng, controllerType: 'CPU' }))];
-  return { seed, season: 1, history: [], humanClubId: 1, clubs, schedule: createSchedule(clubs.map(c => c.id)), currentRound: 1, records: Object.fromEntries(clubs.map(c => [c.id, blankRecord()])), completed: false };
+  return { seed, season: 1, history: [], humanClubId: 1, clubs, schedule: createSchedule(clubs.map(c => c.id)), currentRound: 1, records: Object.fromEntries(clubs.map(c => [c.id, blankRecord()])), seasonResults: [], completed: false };
 }
 
 export function clubsForController(league, controllerType) { return league.clubs.filter(club => club.controllerType === controllerType); }
@@ -48,6 +48,24 @@ function applyResult(league, fixture, result) {
   for (const row of result.playerResults) { const p = row.player; p.season.appearances++; p.season.goals += row.goals; p.season.assists += row.assists; p.season.shots += row.shots; p.season.attackContributions += row.attackContributions; p.season.defensiveStops += row.defensiveStops; p.season.saves += row.saves; p.season.conceded += row.conceded; p.season.ratingTotal += row.rating; }
 }
 
+function clonePlayer(player) {
+  return { ...player, stats: { ...player.stats }, hiddenGrowth: typeof player.hiddenGrowth === 'object' ? { ...player.hiddenGrowth } : player.hiddenGrowth, season: { ...player.season }, career: { ...player.career } };
+}
+
+function snapshotMatch(round, match) {
+  return {
+    round,
+    fixture: { ...match.fixture, home: { ...match.fixture.home }, away: { ...match.fixture.away } },
+    result: {
+      score: { ...match.result.score },
+      phases: match.result.phases,
+      forms: { ...match.result.forms },
+      events: match.result.events.map(event => ({ ...event })),
+      playerResults: match.result.playerResults.map(row => ({ ...row, player: clonePlayer(row.player) }))
+    }
+  };
+}
+
 export function playCurrentRound(league) {
   if (league.completed) throw new Error('Season is complete');
   const round = league.schedule[league.currentRound - 1];
@@ -59,9 +77,25 @@ export function playCurrentRound(league) {
   });
   const humanIds = new Set(clubsForController(league, 'HUMAN').map(club => club.id));
   const userMatch = results.find(x => humanIds.has(x.fixture.homeId) || humanIds.has(x.fixture.awayId));
+  league.seasonResults ||= [];
+  for (const match of results.filter(x => humanIds.has(x.fixture.homeId) || humanIds.has(x.fixture.awayId))) {
+    const key = `${round.round}:${match.fixture.homeId}:${match.fixture.awayId}`;
+    if (!league.seasonResults.some(saved => `${saved.round}:${saved.fixture.homeId}:${saved.fixture.awayId}` === key)) league.seasonResults.push(snapshotMatch(round.round, match));
+  }
   league.currentRound++;
   league.completed = league.currentRound > league.schedule.length;
   return { round: round.round, results, userMatch };
+}
+
+export function simulateRemainingSeason(league) {
+  const rounds = [];
+  let matchesProcessed = 0;
+  while (!league.completed) {
+    const round = playCurrentRound(league);
+    rounds.push(round);
+    matchesProcessed += round.results.length;
+  }
+  return { rounds, matchesProcessed, humanMatches: [...(league.seasonResults || [])] };
 }
 
 export function awards(league) { const players=league.clubs.flatMap(c=>c.roster.map(p=>({p,c,r:p.season.appearances?p.season.ratingTotal/p.season.appearances:0}))).filter(x=>x.p.season.appearances>=5); const byPos=pos=>players.filter(x=>x.p.primaryPosition===pos).sort((a,b)=>b.r-a.r)[0]; const best5=['GK','FIXO','ALA','ALA','PIVO'].map(byPos).filter(Boolean); const mvp=[...players].sort((a,b)=>b.r-a.r)[0]||null; return {best5,mvp}; }
@@ -94,6 +128,7 @@ export function startNextSeason(league) {
   league.schedule=createSchedule(league.clubs.map(c=>c.id));
   league.currentRound=1;
   league.records=Object.fromEntries(league.clubs.map(c=>[c.id,blankRecord()]));
+  league.seasonResults=[];
   league.completed=false;
   league.clubs.flatMap(c=>c.roster).forEach(p=>{p.season={appearances:0,goals:0,assists:0,shots:0,attackContributions:0,defensiveStops:0,saves:0,conceded:0,ratingTotal:0};});
   return true;
