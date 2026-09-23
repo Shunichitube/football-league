@@ -3,15 +3,17 @@ import assert from 'node:assert/strict';
 import { createRandom } from '../js/random.js';
 import { calculateOverall, createClub, createPlayer, displayPlayer, FIRST_NAMES, LAST_NAMES } from '../js/data.js';
 import { simulateMatch } from '../js/sim.js';
-import { applySeasonFinances, createLeague, createSchedule, playCurrentRound, standings, startNextSeason } from '../js/league.js';
-import { addPlayer, createAuctionPool, createDraftPool, createScoutComment, cpuBid, resolveSimultaneousDraftCycle, SPECIAL_ABILITIES } from '../js/market.js';
+import { applySeasonFinances, clubsForController, createLeague, createSchedule, playCurrentRound, standings, startNextSeason } from '../js/league.js';
+import { cpuBid, createAuctionPool, createDraftPool, createScoutComment, resolveAuctionActions, resolveDraftActions, SPECIAL_ABILITIES } from '../js/market.js';
 import { processOffseason, renewalFee, trainingSkills } from '../js/development.js';
 import { exportSave, importSave } from '../js/storage.js';
 import { runBatch } from '../js/batch.js';
 import { positionCounts, renderPlayerCard, renderPlayerDetail, renderRosterPanel } from '../js/ui.js';
-import { autoSetCpuTactic, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup, selectCpuTraining } from '../js/cpu.js';
+import { autoSetCpuTactic, decideCpuAuctionAction, decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup, selectCpuTraining } from '../js/cpu.js';
+import { ACTION_TYPES, applyClubAction } from '../js/rules.js';
 
 function match(seed) { const source = createRandom(seed); const home = createClub({ id: 1, name: 'HOME', color: '#fff', seed: source }); const away = createClub({ id: 2, name: 'AWAY', color: '#000', seed: source }); return simulateMatch(home, away, createRandom(`${seed}:match:1`)); }
+function draftActions(league,pending,pool,rng,humanPickId=pool[0]?.id){return pending.map(id=>league.clubs.find(club=>club.id===id)).map(club=>club.controllerType==='CPU'?decideCpuDraftAction(club,pool,rng):{type:ACTION_TYPES.DRAFT_PICK,clubId:club.id,playerId:humanPickId}).filter(Boolean);}
 test('同じseedは同じ試合結果になる', () => assert.deepEqual(match('repeatable'), match('repeatable')));
 test('1試合は80フェーズを完走し、初期ロスターは5人', () => { const r = match('complete'); assert.equal(r.phases, 80); assert.equal(r.playerResults.length, 10); assert.ok(r.score.home >= 0 && r.score.away >= 0); });
 test('6クラブの日程は全30試合で、各クラブが10試合になる', () => { const schedule = createSchedule([1, 2, 3, 4, 5, 6]); assert.equal(schedule.length, 10); assert.equal(schedule.flatMap(r => r.fixtures).length, 30); const count = new Map([1,2,3,4,5,6].map(id => [id, 0])); schedule.flatMap(r => r.fixtures).forEach(f => { count.set(f.homeId, count.get(f.homeId) + 1); count.set(f.awayId, count.get(f.awayId) + 1); }); assert.deepEqual([...count.values()], [10,10,10,10,10,10]); });
@@ -40,6 +42,7 @@ test('オフシーズンは年齢・契約を進め、育成対象は選択可�
 test('調子・戦術・特殊能力を含む試合は能力値を恒久的に変更しない', () => { const source = createRandom('tactic'); const home = createClub({ id: 1, name: 'HOME', color: '#fff', seed: source }); const away = createClub({ id: 2, name: 'AWAY', color: '#000', seed: source }); home.tactic = 'COUNTER'; away.tactic = 'POSSESSION'; home.roster[4].specialAbility = 'フィニッシャー'; away.roster[0].specialAbility = 'ショットストッパー'; const before = JSON.stringify(home.roster.map(p => p.stats)); const result = simulateMatch(home, away, createRandom('tactic-match')); assert.equal(result.phases, 80); assert.equal(JSON.stringify(home.roster.map(p => p.stats)), before); assert.equal(Object.keys(result.forms).length, 10); });
 test('10シーズンの履歴を保存して完走できる', () => { const l=createLeague({name:'YOU',color:'#fff',seed:'ten'}); for(let i=0;i<10;i++){while(!l.completed)playCurrentRound(l); startNextSeason(l);} assert.equal(l.history.length,10); assert.equal(l.history[0].table.length,6); });
 test('ExportしたJSONはImportでき、不正形式は拒否する', () => { const state={league:createLeague({name:'YOU',color:'#fff',seed:'save'})}; assert.equal(importSave(exportSave(state)).league.seed,'save'); assert.throws(()=>importSave('{}')); });
+test('旧セーブはcontrollerTypeを補完して読み込める', () => { const state={league:createLeague({name:'YOU',color:'#fff',seed:'legacy-controller'})}; state.league.clubs.forEach(club=>delete club.controllerType); const restored=importSave(exportSave(state)); assert.equal(restored.league.clubs.filter(club=>club.controllerType==='HUMAN').length,1); assert.equal(restored.league.clubs.filter(club=>club.controllerType==='CPU').length,5); });
 test('バッチ検証は100リーグを完走し、集計値を返す', () => { const r=runBatch(100); assert.equal(r.leagues,100); assert.equal(r.matches,3000); assert.ok(r.averageGoals>0 && r.drawRate>=0 && r.drawRate<=1); });
 
 test('名前候補は苗字150種・名前100種以上でseeded randomから生成される', () => {
@@ -195,13 +198,14 @@ test('Season 1ドラフトは6クラブ同時指名で競合抽選し、外れ�
   const league=createLeague({name:'YOU',color:'#fff',seed:'simultaneous'});
   const candidate=createDraftPool('simultaneous',1)[0];
   const pending=league.clubs.map(club=>club.id);
-  const first=resolveSimultaneousDraftCycle({clubs:league.clubs,candidates:[candidate],pendingClubIds:pending,humanClubId:1,humanPickId:candidate.id,rng:{int:()=>0,next:()=>0}});
+  const actions=league.clubs.map(club=>({type:ACTION_TYPES.DRAFT_PICK,clubId:club.id,playerId:candidate.id}));
+  const first=resolveDraftActions({clubs:league.clubs,candidates:[candidate],pendingClubIds:pending,actions,rng:{int:()=>0,next:()=>0}});
   assert.equal(first.acquired.length,1);
   assert.equal(first.acquired[0].contested,true);
   assert.equal(first.acquired[0].contenderIds.length,6);
   assert.equal(first.pendingClubIds.length,5);
   assert.equal(league.clubs.reduce((sum,club)=>sum+club.roster.length,0),31);
-  const second=resolveSimultaneousDraftCycle({clubs:league.clubs,candidates:first.candidates,pendingClubIds:first.pendingClubIds,humanClubId:1,rng:createRandom('decline')});
+  const second=resolveDraftActions({clubs:league.clubs,candidates:first.candidates,pendingClubIds:first.pendingClubIds,actions:[],rng:createRandom('decline')});
   assert.equal(second.pendingClubIds.length,0);
   assert.equal(second.declinedIds.length,5);
 });
@@ -212,7 +216,8 @@ test('完全同時指名を4巡行うと全6クラブが各巡1人を獲得す�
   for(let round=1;round<=4;round++){
     let pending=league.clubs.map(club=>club.id), guard=0;
     while(pending.length&&guard++<30){
-      const result=resolveSimultaneousDraftCycle({clubs:league.clubs,candidates:pool,pendingClubIds:pending,humanClubId:1,humanPickId:pending.includes(1)?pool[0]?.id:null,rng});
+      const actions=draftActions(league,pending,pool,rng);
+      const result=resolveDraftActions({clubs:league.clubs,candidates:pool,pendingClubIds:pending,actions,rng});
       pool=result.candidates; pending=result.pendingClubIds;
     }
     assert.equal(pending.length,0);
@@ -250,16 +255,16 @@ test('補強・試合・資金・育成・契約を含む10シーズンサイク
     for(let round=1;round<=4;round++){
       let pending=league.clubs.filter(club=>club.funds>=1&&club.roster.length<12).map(club=>club.id), guard=0;
       while(pending.length&&guard++<40){
-        const result=resolveSimultaneousDraftCycle({clubs:league.clubs,candidates:pool,pendingClubIds:pending,humanClubId:1,humanPickId:pending.includes(1)?pool[0]?.id:null,rng});
+        const actions=draftActions(league,pending,pool,rng);
+        const result=resolveDraftActions({clubs:league.clubs,candidates:pool,pendingClubIds:pending,actions,rng});
         pool=result.candidates; pending=result.pendingClubIds;
       }
       assert.equal(pending.length,0);
     }
     const auction=createAuctionPool(league.seed,season), auctionRng=createRandom(`${league.seed}:auction:${season}`);
     for(const player of auction){
-      const bids=league.clubs.map(club=>({club,bid:club.id===1?0:cpuBid(club,player,auctionRng)}));
-      const high=Math.max(...bids.map(row=>row.bid));
-      if(high>0){const top=bids.filter(row=>row.bid===high);const winner=top[auctionRng.int(0,top.length-1)];addPlayer(winner.club,player,high);}
+      const actions=league.clubs.map(club=>club.controllerType==='CPU'?decideCpuAuctionAction(club,player,auctionRng):{type:ACTION_TYPES.AUCTION_BID,clubId:club.id,playerId:player.id,bid:0});
+      resolveAuctionActions({clubs:league.clubs,player,actions,rng:auctionRng});
     }
     prepareCpuClubs(league);
     while(!league.completed) playCurrentRound(league);
@@ -272,4 +277,54 @@ test('補強・試合・資金・育成・契約を含む10シーズンサイク
   assert.equal(league.history.length,10);
   assert.ok(league.clubs.every(club=>club.roster.length>=5&&club.roster.some(player=>player.primaryPosition==='GK')),JSON.stringify(league.clubs.map(club=>({name:club.name,count:club.roster.length,positions:club.roster.map(player=>player.primaryPosition)}))));
   assert.ok(league.clubs.every(club=>club.funds<=150));
+});
+
+test('ClubとControllerは同一Club構造のcontrollerTypeで分離される', () => {
+  const league=createLeague({name:'YOU',color:'#fff',seed:'controllers'});
+  assert.equal(clubsForController(league,'HUMAN').length,1);
+  assert.equal(clubsForController(league,'CPU').length,5);
+  const keys=club=>Object.keys(club).filter(key=>key!=='controllerType').sort();
+  assert.deepEqual(keys(league.clubs[0]),keys(league.clubs[1]));
+  league.clubs[1].controllerType='HUMAN';
+  assert.equal(clubsForController(league,'HUMAN').length,2);
+});
+
+test('人間とCPUのドラフトActionは同じ共通ルールで処理される', () => {
+  const league=createLeague({name:'YOU',color:'#fff',seed:'draft-actions'}), pool=createDraftPool('draft-actions',1), rng=createRandom('draft-actions:resolve');
+  const pending=league.clubs.map(club=>club.id), actions=draftActions(league,pending,pool,rng,pool[0].id);
+  assert.ok(actions.every(action=>action.type===ACTION_TYPES.DRAFT_PICK));
+  const result=resolveDraftActions({clubs:league.clubs,candidates:pool,pendingClubIds:pending,actions,rng});
+  assert.ok(result.acquired.length>=1);
+  assert.equal(league.clubs.reduce((sum,club)=>sum+club.roster.length,0),30+result.acquired.length);
+});
+
+test('人間とCPUの競売Actionは同じ共通ルールで資金・移籍を処理する', () => {
+  const league=createLeague({name:'YOU',color:'#fff',seed:'auction-actions'}), player=createAuctionPool('auction-actions',1)[0], rng=createRandom('auction-actions:resolve');
+  const actions=league.clubs.map(club=>club.controllerType==='CPU'?decideCpuAuctionAction(club,player,rng):{type:ACTION_TYPES.AUCTION_BID,clubId:club.id,playerId:player.id,bid:10});
+  const before=league.clubs.reduce((sum,club)=>sum+club.roster.length,0), result=resolveAuctionActions({clubs:league.clubs,player,actions,rng});
+  assert.ok(result.winner);
+  assert.equal(league.clubs.reduce((sum,club)=>sum+club.roster.length,0),before+1);
+  assert.equal(result.winner.funds,100-result.bid);
+});
+
+test('編成・戦術・契約はControllerに依存しない共通Actionで更新する', () => {
+  const league=createLeague({name:'YOU',color:'#fff',seed:'club-actions'}), human=league.clubs[0], cpu=league.clubs[1];
+  for(const club of [human,cpu]){
+    const reversed=[...club.lineup].reverse();
+    assert.equal(applyClubAction(club,{type:ACTION_TYPES.SET_LINEUP,clubId:club.id,lineup:reversed}).ok,true);
+    assert.deepEqual(club.lineup,reversed);
+    assert.equal(applyClubAction(club,{type:ACTION_TYPES.SET_TACTIC,clubId:club.id,tactic:'COUNTER'}).ok,true);
+    assert.equal(club.tactic,'COUNTER');
+  }
+  assert.equal(applyClubAction(human,{type:ACTION_TYPES.SET_LINEUP,clubId:human.id,lineup:[human.roster[0].id,human.roster[0].id]}).ok,false);
+  const due=human.roster[0];due.contractYears=0;const funds=human.funds;
+  const renewed=applyClubAction(human,{type:ACTION_TYPES.RENEW_CONTRACT,clubId:human.id,playerId:due.id});
+  assert.equal(renewed.ok,true);assert.equal(due.contractYears,3);assert.equal(human.funds,funds-renewed.fee);
+});
+
+test('試合結果はcontrollerTypeに依存しない', () => {
+  const rngA=createRandom('controller-match'),rngB=createRandom('controller-match');
+  const homeA=createClub({id:1,name:'A',color:'#fff',seed:rngA,controllerType:'HUMAN'}),awayA=createClub({id:2,name:'B',color:'#000',seed:rngA,controllerType:'CPU'});
+  const homeB=structuredClone(homeA),awayB=structuredClone(awayA);homeB.controllerType='REMOTE';awayB.controllerType='HUMAN';
+  assert.deepEqual(simulateMatch(homeA,awayA,createRandom('same-controller-match')),simulateMatch(homeB,awayB,createRandom('same-controller-match')));
 });
