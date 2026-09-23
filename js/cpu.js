@@ -138,7 +138,7 @@ export function prepareCpuMarketSpace(league) {
   for (const club of league.clubs.filter(candidate => candidate.controllerType === 'CPU')) {
     for (let releasedCount = 0; releasedCount < 3 && club.roster.length > 5;) {
       const average = club.roster.reduce((sum, player) => sum + calculateOverall(player), 0) / club.roster.length;
-      const candidates = club.roster.filter(player => club.roster.filter(candidate => candidate.primaryPosition === player.primaryPosition).length > REQUIRED[player.primaryPosition]);
+      const candidates = club.roster.filter(player => player.primaryPosition !== 'GK' || club.roster.filter(candidate => candidate.primaryPosition === 'GK').length > 1);
       const scored = candidates.map(player => {
         const positionPlayers = club.roster.filter(candidate => candidate.primaryPosition === player.primaryPosition);
         const positionRank = [...positionPlayers].sort((a,b) => calculateOverall(b) - calculateOverall(a)).findIndex(candidate => candidate.id === player.id);
@@ -147,10 +147,14 @@ export function prepareCpuMarketSpace(league) {
         const age = player.age >= 33 ? 4 : player.age >= 30 ? 2 : 0;
         const youngProtection = player.age <= 23 ? -6 : 0;
         const special = player.specialAbility ? -1 : 0;
-        return { player, score: weak + (positionRank > 0 ? 3 : 0) + bench + age + youngProtection + special };
+        const excess = positionPlayers.length > REQUIRED[player.primaryPosition] ? 3 : 0;
+        const shortage = positionPlayers.length < REQUIRED[player.primaryPosition] ? -4 : 0;
+        return { player, score: weak + (positionRank > 0 ? 3 : 0) + bench + age + youngProtection + special + excess + shortage };
       }).sort((a,b) => b.score - a.score || a.player.age - b.player.age);
       const target = scored[0];
-      if (!target || target.score < 7) break;
+      const openSlots = 12 - club.roster.length;
+      const threshold = openSlots >= 3 ? 9 : openSlots === 2 ? 8 : 7;
+      if (!target || target.score < threshold) break;
       const result = applyClubAction(club, { type: ACTION_TYPES.RELEASE_PLAYER, clubId: club.id, playerId: target.player.id }, league);
       if (!result.ok) break;
       released.push({ clubId: club.id, player: result.player });
