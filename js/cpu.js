@@ -1,8 +1,8 @@
 import { calculateOverall } from './data.js';
-import { processOffseason, renewalFee } from './development.js?v=0.11.0';
+import { processOffseason, renewalFee } from './development.js?v=0.12.0';
 import { createRandom } from './random.js';
-import { cpuBid, cpuCandidatePick } from './market.js?v=0.9.0';
-import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=0.9.0';
+import { cpuBid, cpuCandidatePick } from './market.js?v=0.12.0';
+import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=0.12.0';
 
 const LINEUP_ROLES = ['FIXO', 'ALA', 'ALA', 'PIVO'];
 const REQUIRED = { GK: 1, FIXO: 1, ALA: 2, PIVO: 1 };
@@ -115,10 +115,10 @@ export function decideCpuContractActions(club) {
   return actions;
 }
 
-export function manageCpuContracts(club) {
+export function manageCpuContracts(club, league = null) {
   const decisions = [];
   for (const action of decideCpuContractActions(club)) {
-    const result=applyClubAction(club,action);
+    const result=applyClubAction(club,action,league);
     if(result.ok) decisions.push({player:result.player,action:action.type===ACTION_TYPES.RENEW_CONTRACT?'RENEW':'RELEASE',fee:result.fee||0});
   }
   return decisions;
@@ -150,6 +150,7 @@ export function prepareCpuMarketSpace(league) {
       const player = candidates[0];
       if (!player) break;
       club.roster = club.roster.filter(candidate => candidate.id !== player.id);
+      if (!player.isInitial) { league.releasedPlayers ||= []; if (!league.releasedPlayers.some(candidate => candidate.id === player.id)) league.releasedPlayers.push(player); }
       released.push({ clubId: club.id, player });
     }
     selectBestLineup(club);
@@ -165,7 +166,7 @@ export function processLeagueOffseason(league, humanTraining = new Map()) {
     const mappedTraining=humanTraining.get?.(club.id);
     const training = isCpu ? selectCpuTraining(club) : mappedTraining instanceof Map ? mappedTraining : club.id===humanClubs[0]?.id ? humanTraining : new Map();
     const growth = processOffseason(club, training, createRandom(`${league.seed}:offseason:${league.season}:club:${club.id}`));
-    const contracts = isCpu ? manageCpuContracts(club) : [];
+    const contracts = isCpu ? manageCpuContracts(club, league) : [];
     selectBestLineup(club);
     if (isCpu) autoSetCpuTactic(club);
     summaries.push({ clubId: club.id, training: [...training.entries()], growth, contracts, lineup: [...club.lineup], tactic: club.tactic });
