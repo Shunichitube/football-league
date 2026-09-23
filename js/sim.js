@@ -1,9 +1,20 @@
 import { CONFIG } from './config.js';
 import { weightedPick } from './random.js';
+import { LINEUP_SLOTS, positionSuitability } from './rules.js?v=0.9.0';
 
 const avg = (players, key) => players.reduce((sum, p) => sum + p.stats[key], 0) / players.length;
-const fielders = club => club.lineup.map(id => club.roster.find(p => p.id === id)).filter(p => p.primaryPosition !== 'GK');
-const keeper = club => club.lineup.map(id => club.roster.find(p => p.id === id)).find(p => p.primaryPosition === 'GK');
+function assignedPlayer(club, index) {
+  const player = club.roster.find(candidate => candidate.id === club.lineup[index]);
+  if (!player) return null;
+  const role = LINEUP_SLOTS[index];
+  const fit = positionSuitability(player, role);
+  const stats = { ...player.stats };
+  if (role === 'GK') stats.gk *= fit;
+  else for (const key of ['shoot', 'speed', 'defense', 'dribble', 'pass']) stats[key] *= fit;
+  return { ...player, primaryPosition: role, stats };
+}
+const fielders = club => LINEUP_SLOTS.slice(1).map((_, index) => assignedPlayer(club, index + 1)).filter(Boolean);
+const keeper = club => assignedPlayer(club, 0);
 const luck = (rng, range) => rng.int(-range, range);
 
 function ratingBase(players) { return Object.fromEntries(players.map(p => [p.id, 6])); }
@@ -20,7 +31,8 @@ function formatTime(phase) { const seconds = phase * CONFIG.phaseSeconds; return
 function logEvent(phase, kind, player, extra = '', side = null) { return { time: formatTime(phase), kind, player: player.name, extra, side }; }
 
 export function simulateMatch(home, away, rng) {
-  const all = [...home.roster, ...away.roster];
+  const starters = club => club.lineup.map(id => club.roster.find(player => player.id === id)).filter(Boolean);
+  const all = [...starters(home), ...starters(away)];
   const originalStats = new Map(all.map(p => [p.id, { ...p.stats }]));
   const forms = Object.fromEntries(all.map(p => { const roll = rng.next(); const factor = roll < .2 ? 1.05 : roll < .8 ? 1 : .95; for (const key of Object.keys(p.stats)) p.stats[key] = Math.round(p.stats[key] * factor); return [p.id, factor > 1 ? '↑' : factor < 1 ? '↓' : '−']; }));
   const ratings = ratingBase(all); const stat = new Map(all.map(p => [p.id, { shots: 0, goals: 0, assists: 0, attackContributions: 0, defensiveStops: 0, saves: 0, conceded: 0 }]));
