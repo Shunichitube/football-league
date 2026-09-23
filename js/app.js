@@ -1,12 +1,13 @@
 import { createLeague, playCurrentRound, standings } from './league.js';
 import { STAT_LABELS } from './data.js';
 import { createRandom } from './random.js';
-import { addPlayer, createAuctionPool, createDraftPool, cpuBid, cpuCandidatePick } from './market.js?v=0.5.2';
-import { escapeHtml as e, renderPlayerCard, renderPlayerDetail, renderRosterPanel } from './ui.js?v=0.5.2';
+import { addPlayer, createAuctionPool, createDraftPool, cpuBid, cpuCandidatePick } from './market.js?v=0.6.0';
+import { escapeHtml as e, renderPlayerCard, renderPlayerDetail, renderRosterPanel } from './ui.js?v=0.6.0';
+import { prepareCpuClubs, processLeagueOffseason, selectBestLineup } from './cpu.js?v=0.6.0';
 const app=document.querySelector('#app');let s={view:'title',league:null,draft:null,auction:null,match:null,round:0,note:'',rosterOpen:false,detailPlayerId:null};
 const me=()=>s.league.clubs.find(c=>c.id===1);const player=p=>renderPlayerCard(p);
 function head(){let c=me(),r=standings(s.league).find(x=>x.club.id===1);return `<header><a data-nav="home" class="brand">FOOTBALL <b>LEAGUE</b></a><span>シーズン ${s.league.season} / 10</span><span>${e(c.name)}・${r.rank}位・${c.funds}pt</span></header>`}
-function title(){return `<main class="title"><p>5人制クラブ運営ゲーム</p><h1>FOOTBALL<br><b>LEAGUE</b></h1><button data-a="setup">新しく始める</button><footer>v0.5.2・Stage 10</footer></main>`}
+function title(){return `<main class="title"><p>5人制クラブ運営ゲーム</p><h1>FOOTBALL<br><b>LEAGUE</b></h1><button data-a="setup">新しく始める</button><footer>v0.6.0・Stage 11</footer></main>`}
 function setup(){return `<main class="setup"><h2>クラブを作成</h2><label>クラブ名<input id="name" placeholder="東京ファイブ"></label><label>チームカラー<input id="color" type="color" value="#4ade80"></label><label>シード（任意）<input id="seed" placeholder="同じ値なら同じ展開"></label><button data-a="start">ゲーム開始</button><button data-a="title" class="subtle">戻る</button></main>`}
 function draft(){let d=s.draft,c=me();return `${head()}<main><p class="eyebrow">シーズン1 ドラフト・第${d.round}/4巡</p><div class="screen-heading"><h2>同時秘密指名</h2><button data-stage10="roster" class="subtle">所属選手を見る</button></div><p class="hint">1ptで獲得。${e(s.note)}</p><p>資金 <b>${c.funds}pt</b>・登録 ${c.roster.length}/12人</p><section class="candidate-grid">${d.pool.map(p=>`<article class="candidate">${player(p)}<p class="scout-comment"><b>スカウト：</b>${e(p.scoutComment)}</p><button data-p="${p.id}">この選手を指名</button></article>`).join('')}</section><button data-a="skipDraft" class="subtle">残りの指名を辞退</button></main>`}
 function auction(){let a=s.auction,p=a.pool[a.i],c=me();if(!p)return `${head()}<main><section class="hero"><p>競売完了</p><h2>市場が終了しました</h2><button data-a="squad">編成へ進む</button></section></main>`;return `${head()}<main><p class="eyebrow">競売 ${a.i+1}/${a.pool.length}</p><div class="screen-heading"><h2>秘密入札</h2><button data-stage10="roster" class="subtle">所属選手を見る</button></div><p class="hint">${e(s.note)}</p><article class="candidate">${player(p)}<p class="scout-comment"><b>スカウト：</b>${e(p.scoutComment)}</p></article><label>入札額<input id="bid" type="number" min="0" max="${c.funds}" value="0"></label><button data-a="bid">入札する</button><button data-a="pass" class="subtle">見送る</button><p>資金 ${c.funds}pt・登録 ${c.roster.length}/12人</p></main>`}
@@ -18,11 +19,11 @@ function stats(){const rows=s.league.clubs.flatMap(club=>club.roster.map(p=>({p,
 function result(){let x=s.match,r=x.result,b=[...r.playerResults].sort((a,b)=>b.rating-a.rating)[0];return `${head()}<main><p>第${s.round}節 結果</p><div class="scoreboard"><span>${e(x.fixture.home.name)}</span><b>${r.score.home} - ${r.score.away}</b><span>${e(x.fixture.away.name)}</span></div><section class="potm"><p>最優秀選手</p>${player(b.player)}<b>評価 ${b.rating.toFixed(1)}</b></section><h2>出場選手</h2><section class="candidate-grid">${[...r.playerResults].sort((a,b)=>b.rating-a.rating).map(row=>`<article class="candidate">${player(row.player)}<p>評価 ${row.rating.toFixed(1)}・得点 ${row.goals}・アシスト ${row.assists}</p></article>`).join('')}</section><div class="log static">${r.events.map(x=>`<p>${x.time} <b>${x.kind}</b> ${e(x.player)}</p>`).join('')}</div><button data-a="continue">ホームへ戻る</button></main>`}
 function render(){app.innerHTML=s.view==='title'?title():s.view==='setup'?setup():s.view==='draft'?draft():s.view==='auction'?auction():s.view==='table'?table():s.view==='stats'?stats():s.view==='squad'?squad():s.view==='result'?result():home()}
 function pickDraft(p){let d=s.draft,c=me(),cpu=s.league.clubs.filter(x=>x.id!==1),rival=cpu[0],rPick=cpuCandidatePick(rival,d.pool,d.rng),won=rPick.id!==p.id||d.rng.int(0,1)===0;if(won){addPlayer(c,p,1);d.pool=d.pool.filter(x=>x.id!==p.id);s.note=`${p.name}を獲得しました。`;d.round++}else{s.note=`${p.name}は競合抽選で外れました。再指名してください。`;addPlayer(rival,p,1);d.pool=d.pool.filter(x=>x.id!==p.id);return}for(const x of cpu){let q=cpuCandidatePick(x,d.pool,d.rng);if(q&&x.funds>=1){addPlayer(x,q,1);d.pool=d.pool.filter(z=>z.id!==q.id)}}if(d.round>4){s.auction={pool:createAuctionPool(s.league.seed),i:0,rng:createRandom(`${s.league.seed}:auction`)};s.view='auction';s.note='ドラフト終了。オークションを開始します。'}}
-function bid(amount){let a=s.auction,p=a.pool[a.i],bids=s.league.clubs.map(c=>({c,n:c.id===1?amount:cpuBid(c,p,a.rng)})),high=Math.max(...bids.map(x=>x.n));if(high>0){let top=bids.filter(x=>x.n===high),w=top[a.rng.int(0,top.length-1)];addPlayer(w.c,p,high);s.note=`落札 — ${w.c.name} が ${high}ptで獲得しました。`}else s.note=`${p.name}は見送りになりました。`;a.i++}
+function bid(amount){let a=s.auction,p=a.pool[a.i],bids=s.league.clubs.map(c=>({c,n:c.id===1?amount:cpuBid(c,p,a.rng)})),high=Math.max(...bids.map(x=>x.n));if(high>0){let top=bids.filter(x=>x.n===high),w=top[a.rng.int(0,top.length-1)];addPlayer(w.c,p,high);s.note=`落札 — ${w.c.name} が ${high}ptで獲得しました。`}else s.note=`${p.name}は見送りになりました。`;a.i++;if(a.i>=a.pool.length)prepareCpuClubs(s.league)}
 app.addEventListener('click',ev=>{let a=ev.target.closest('[data-a]')?.dataset.a,n=ev.target.closest('[data-nav]')?.dataset.nav,p=ev.target.closest('[data-p]')?.dataset.p;if(n){s.view=n;return render()}if(p){let x=s.draft.pool.find(q=>q.id===p);if(x&&me().funds>=1)pickDraft(x);return render()}if(a==='setup'||a==='title'){s.view=a;return render()}if(a==='start'){let name=document.querySelector('#name').value.trim();if(!name)return alert('クラブ名を入力してください。');let seed=document.querySelector('#seed').value.trim()||String(Date.now());s.league=createLeague({name,color:document.querySelector('#color').value,seed});s.draft={pool:createDraftPool(seed),round:1,rng:createRandom(`${seed}:draft`)};s.note='シーズン1ドラフトを開始します。';s.view='draft';return render()}if(a==='skipDraft'){s.auction={pool:createAuctionPool(s.league.seed),i:0,rng:createRandom(`${s.league.seed}:auction`)};s.view='auction';return render()}if(a==='bid'||a==='pass'){let n=a==='pass'?0:Number(document.querySelector('#bid').value);if(n<0||n>me().funds)return alert('入札額を確認してください。');bid(n);return render()}if(a==='squad'){s.view='squad';return render()}if(a==='match'){let r=playCurrentRound(s.league);s.round=r.round;s.match=r.userMatch;s.view='result';return render()}if(a==='continue'){s.view='home';return render()}});render();
 
 // Stage 4 off-season screens are layered onto the existing season flow.
-import { processOffseason, renewalFee, trainingSkills } from './development.js';
+import { renewalFee, trainingSkills } from './development.js';
 const stage4BaseRender = render;
 function stage4Render() {
   if (s.view === 'development') {
@@ -34,7 +35,7 @@ function stage4Render() {
     app.innerHTML = `${head()}<main><p class="eyebrow">育成</p><h2>重点能力を選択</h2>${picks.map(id => { const p=c.roster.find(x=>x.id===id); return `<section class="candidate">${player(p)}<label>重点育成<select data-focus="${id}">${trainingSkills(p).map(k=>`<option value="${k}">${STAT_LABELS[k]}</option>`).join('')}</select></label></section>`; }).join('')}<button data-stage4="grow">育成を実行</button></main>`; return;
   }
   if (s.view === 'growth') {
-    app.innerHTML = `${head()}<main><p class="eyebrow">成長結果</p><h2>シーズン後の変化</h2><section class="candidate-grid">${s.growth.map(x => `<article class="candidate">${player(x.player)}<p>年齢 ${x.player.age - 1} → ${x.player.age}</p><p>${x.retired ? '35歳で引退' : x.changes.map(c=>`${STAT_LABELS[c.key]} ${c.from} → ${c.to}`).join('<br>') || 'ランク変化なし'}</p></article>`).join('')}</section><button data-stage4="contracts">契約確認へ進む</button></main>`; return;
+    app.innerHTML = `${head()}<main><p class="eyebrow">成長結果</p><h2>シーズン後の変化</h2><p class="hint">CPU5クラブも育成・成長・衰退・加齢・契約判断を完了しました。</p><section class="candidate-grid">${s.growth.map(x => `<article class="candidate">${player(x.player)}<p>年齢 ${x.player.age - 1} → ${x.player.age}</p><p>${x.retired ? '35歳で引退' : x.changes.map(c=>`${STAT_LABELS[c.key]} ${c.from} → ${c.to}`).join('<br>') || 'ランク変化なし'}</p></article>`).join('')}</section><button data-stage4="contracts">契約確認へ進む</button></main>`; return;
   }
   if (s.view === 'contracts') {
     const c=me(), due=c.roster.filter(p=>p.contractYears<=0);
@@ -51,11 +52,11 @@ app.addEventListener('click', ev => {
   const releaseId = ev.target.closest('[data-release]')?.dataset.release;
   if (trainingId) { if (s.training.has(trainingId)) s.training.delete(trainingId); else if (s.training.size < 2) s.training.set(trainingId, null); return render(); }
   if (renewId) { const p=me().roster.find(x=>x.id===renewId), fee=renewalFee(p); if (me().funds >= fee) { me().funds -= fee; p.contractYears=3; } return render(); }
-  if (releaseId) { me().roster=me().roster.filter(p=>p.id!==releaseId); return render(); }
+  if (releaseId) { me().roster=me().roster.filter(p=>p.id!==releaseId); selectBestLineup(me()); return render(); }
   if (!action) return;
   if (action==='offseason') { s.training=new Map(); s.view='development'; }
   if (action==='confirm') s.view='focus';
-  if (action==='grow') { const focus=new Map([...s.training.keys()].map(id=>[id,document.querySelector(`[data-focus="${id}"]`).value])); s.growth=processOffseason(me(),focus,createRandom(`${s.league.seed}:offseason:1`)); s.view='growth'; }
+  if (action==='grow') { const focus=new Map([...s.training.keys()].map(id=>[id,document.querySelector(`[data-focus="${id}"]`).value])); const summaries=processLeagueOffseason(s.league,focus); s.growth=summaries.find(x=>x.clubId===s.league.humanClubId).growth; s.cpuOffseason=summaries.filter(x=>x.clubId!==s.league.humanClubId); s.view='growth'; }
   if (action==='contracts') s.view='contracts';
   if (action==='done') s.view='home';
   render();
@@ -78,7 +79,7 @@ import { awards, startNextSeason } from './league.js';
 const stage6BaseRender = render;
 function stage6Render() { stage6BaseRender(); if (s.view==='home' && s.league?.completed) { const a=awards(s.league); app.querySelector('main')?.insertAdjacentHTML('beforeend', `<section class="season-awards"><p class="eyebrow">シーズン${s.league.season} 表彰</p><h2>最優秀選手</h2>${a.mvp?player(a.mvp.p):'<p>該当者なし</p>'}<h2>ベスト5</h2><div class="candidate-grid">${a.best5.map(x=>player(x.p)).join('')}</div><button data-stage6="next">次のシーズンへ</button>${s.league.season===10?'<button data-stage6="history" class="subtle">10シーズンの歴史</button>':''}</section>`); } if(s.view==='history'){app.innerHTML=`${head()}<main><p class="eyebrow">10シーズン完了</p><h2>シーズン記録</h2>${s.league.history.map(h=>`<section class="candidate"><b>シーズン${h.season}・優勝 ${e(h.champion)}</b><p>最優秀選手 ${e(h.mvp||'—')}</p></section>`).join('')}</main>`;} }
 render=stage6Render;
-app.addEventListener('click',ev=>{const x=ev.target.closest('[data-stage6]')?.dataset.stage6;if(x==='next'){if(startNextSeason(s.league))s.view='home';render()}if(x==='history'){s.view='history';render()}});
+app.addEventListener('click',ev=>{const x=ev.target.closest('[data-stage6]')?.dataset.stage6;if(x==='next'){if(startNextSeason(s.league)){prepareCpuClubs(s.league);s.view='home'}render()}if(x==='history'){s.view='history';render()}});
 
 import { exportSave, importSave, loadSlot, saveSlot } from './storage.js';
 const stage7BaseRender = render;
