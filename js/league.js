@@ -27,9 +27,11 @@ export function createSchedule(clubIds) {
 
 export function createLeague({ name, color, seed }) {
   const rng = createRandom(`${seed}:clubs`);
-  const clubs = [createClub({ id: 1, name, color, seed: rng }), ...CPU_CLUBS.map(([cpuName, cpuColor], index) => createClub({ id: index + 2, name: cpuName, color: cpuColor, seed: rng }))];
+  const clubs = [createClub({ id: 1, name, color, seed: rng, controllerType: 'HUMAN' }), ...CPU_CLUBS.map(([cpuName, cpuColor], index) => createClub({ id: index + 2, name: cpuName, color: cpuColor, seed: rng, controllerType: 'CPU' }))];
   return { seed, season: 1, history: [], humanClubId: 1, clubs, schedule: createSchedule(clubs.map(c => c.id)), currentRound: 1, records: Object.fromEntries(clubs.map(c => [c.id, blankRecord()])), completed: false };
 }
+
+export function clubsForController(league, controllerType) { return league.clubs.filter(club => club.controllerType === controllerType); }
 
 export function standings(league) {
   return league.clubs.map(club => ({ club, ...league.records[club.id], goalDifference: league.records[club.id].goalsFor - league.records[club.id].goalsAgainst }))
@@ -55,7 +57,8 @@ export function playCurrentRound(league) {
     applyResult(league, fixture, result);
     return { fixture: { ...fixture, home: cloneSide(home), away: cloneSide(away) }, result };
   });
-  const userMatch = results.find(x => x.fixture.homeId === league.humanClubId || x.fixture.awayId === league.humanClubId);
+  const humanIds = new Set(clubsForController(league, 'HUMAN').map(club => club.id));
+  const userMatch = results.find(x => humanIds.has(x.fixture.homeId) || humanIds.has(x.fixture.awayId));
   league.currentRound++;
   league.completed = league.currentRound > league.schedule.length;
   return { round: round.round, results, userMatch };
