@@ -10,17 +10,52 @@ export const ACTION_TYPES = Object.freeze({
   RELEASE_PLAYER: 'RELEASE_PLAYER'
 });
 
+export const LINEUP_SLOTS = Object.freeze(['GK', 'FIXO', 'ALA', 'ALA', 'PIVO']);
+const ADJACENT_POSITIONS = Object.freeze({ FIXO: ['ALA'], ALA: ['FIXO', 'PIVO'], PIVO: ['ALA'] });
+
 const TACTICS = new Set(['BALANCED', 'POSSESSION', 'DRIBBLE', 'COUNTER']);
+
+export function positionSuitability(player, slotPosition) {
+  if (!player) return 0;
+  if (slotPosition === 'GK') return player.primaryPosition === 'GK' ? 1 : .5;
+  if (player.primaryPosition === 'GK') return 0;
+  if (player.primaryPosition === slotPosition) return 1;
+  return ADJACENT_POSITIONS[player.primaryPosition]?.includes(slotPosition) ? .95 : .85;
+}
+
+export function validateLineup(club, lineup = club?.lineup) {
+  if (!club || !Array.isArray(lineup) || lineup.length !== LINEUP_SLOTS.length) return { ok: false, error: 'スタメン5枠をすべて設定してください。', warnings: [] };
+  if (new Set(lineup).size !== LINEUP_SLOTS.length) return { ok: false, error: '同一選手を重複配置できません。', warnings: [] };
+  const players = lineup.map(id => club.roster.find(player => player.id === id));
+  if (players.some(player => !player)) return { ok: false, error: '所属していない選手は配置できません。', warnings: [] };
+  const invalidKeeper = players.find((player, index) => LINEUP_SLOTS[index] !== 'GK' && player.primaryPosition === 'GK');
+  if (invalidKeeper) return { ok: false, error: 'GKはフィールド枠へ配置できません。', warnings: [] };
+  const warnings = players.flatMap((player, index) => {
+    const slot = LINEUP_SLOTS[index];
+    if (player.primaryPosition === slot) return [];
+    return [`${player.name}：本職${player.primaryPosition}から${slot}への適性外配置`];
+  });
+  return { ok: true, warnings };
+}
+
+export function createLineupPlacement(lineup, playerId, slotIndex) {
+  if (!Array.isArray(lineup) || slotIndex < 0 || slotIndex >= LINEUP_SLOTS.length) return null;
+  const next = [...lineup];
+  const previousIndex = next.indexOf(playerId);
+  const displacedId = next[slotIndex];
+  next[slotIndex] = playerId;
+  if (previousIndex >= 0 && previousIndex !== slotIndex) next[previousIndex] = displacedId;
+  return next;
+}
 
 export function applyClubAction(club, action) {
   if (!club || action.clubId !== club.id) return { ok: false, error: 'クラブが一致しません。' };
   if (action.type === ACTION_TYPES.SET_LINEUP) {
     const lineup = Array.isArray(action.lineup) ? action.lineup : [];
-    const unique = new Set(lineup);
-    if (lineup.length !== 5 || unique.size !== 5) return { ok: false, error: 'スタメンは重複なしの5人で指定してください。' };
-    if (lineup.some(id => !club.roster.some(player => player.id === id))) return { ok: false, error: '所属していない選手は配置できません。' };
+    const validation = validateLineup(club, lineup);
+    if (!validation.ok) return validation;
     club.lineup = [...lineup];
-    return { ok: true, lineup: [...club.lineup] };
+    return { ok: true, lineup: [...club.lineup], warnings: validation.warnings };
   }
   if (action.type === ACTION_TYPES.SET_TACTIC) {
     if (!TACTICS.has(action.tactic)) return { ok: false, error: '戦術が不正です。' };
