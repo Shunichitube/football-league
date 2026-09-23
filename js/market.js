@@ -1,6 +1,6 @@
 import { calculateOverall, createPlayer, displayPlayer, FIELD_STAT_KEYS, STAT_LABELS } from './data.js';
 import { createRandom, weightedPick } from './random.js';
-import { ACTION_TYPES } from './rules.js?v=0.8.0';
+import { ACTION_TYPES } from './rules.js?v=0.9.0';
 
 const DRAFT_DISTRIBUTION = [['G', 35], ['F', 35], ['E', 20], ['D', 8], ['C', 2]];
 const AUCTION_DISTRIBUTION = [['F', 15], ['E', 25], ['D', 25], ['C', 20], ['B', 10], ['A', 4], ['S', 1]];
