@@ -6,6 +6,7 @@ const AUCTION_DISTRIBUTION = [['F', 15], ['E', 25], ['D', 25], ['C', 20], ['B', 
 const RANGE = { G: [50,55], F: [56,60], E: [61,65], D: [66,70], C: [71,75], B: [76,80], A: [81,85], S: [86,90] };
 const POSITIONS = ['GK', 'FIXO', 'ALA', 'ALA', 'PIVO'];
 const BASE_VALUE = { G: 3, F: 6, E: 9, D: 14, C: 19, B: 26, A: 35, S: 48, SS: 62 };
+const REQUIRED_POSITIONS = { GK: 1, FIXO: 1, ALA: 2, PIVO: 1 };
 const POSITION_PROFILES = {
   GK: [
     { shoot: -14, speed: -5, defense: -6, dribble: -12, pass: -9, gk: 12 },
@@ -106,19 +107,59 @@ export function createScoutComment(player, rng) {
   else if (average >= 1.12 && rng.next() < .18) rare = '非常に高い成長性を感じる';
   return [currentHint, ageHint, growthHint, abilityHint, rare].filter(Boolean).join('。') + '。';
 }
-export function createDraftPool(seed) { const rng = createRandom(`${seed}:draft-pool`); return Array.from({ length: 24 }, (_, i) => playerForTier(1000 + i, POSITIONS[i % POSITIONS.length], tier(DRAFT_DISTRIBUTION, rng), rng.int(18,22), rng)); }
-export function createAuctionPool(seed) { const rng = createRandom(`${seed}:auction-pool`); return Array.from({ length: 18 }, (_, i) => playerForTier(2000 + i, POSITIONS[i % POSITIONS.length], tier(AUCTION_DISTRIBUTION, rng), rng.int(22,31), rng)); }
+export function createDraftPool(seed, season = 1) { const rng = createRandom(`${seed}:season:${season}:draft-pool`); return Array.from({ length: 24 }, (_, i) => playerForTier(season * 10000 + 1000 + i, POSITIONS[i % POSITIONS.length], tier(DRAFT_DISTRIBUTION, rng), rng.int(18,22), rng)); }
+export function createAuctionPool(seed, season = 1) { const rng = createRandom(`${seed}:season:${season}:auction-pool`); return Array.from({ length: 18 }, (_, i) => playerForTier(season * 10000 + 2000 + i, POSITIONS[i % POSITIONS.length], tier(AUCTION_DISTRIBUTION, rng), rng.int(22,31), rng)); }
 export function publicValue(player) { return BASE_VALUE[displayPlayer(player).overallRank]; }
 export function cpuCandidatePick(club, candidates, rng) {
-  const positions = new Set(club.roster.map(p => p.primaryPosition));
-  return [...candidates].sort((a,b) => cpuDraftScore(club, b, positions, rng) - cpuDraftScore(club, a, positions, rng))[0];
+  const futureCounts = Object.fromEntries(Object.keys(REQUIRED_POSITIONS).map(position => [position, club.roster.filter(player => player.primaryPosition === position && player.age < 34).length]));
+  return [...candidates].sort((a,b) => cpuDraftScore(club, b, futureCounts, rng) - cpuDraftScore(club, a, futureCounts, rng))[0];
 }
-function cpuDraftScore(club, player, positions, rng) { return publicValue(player) * 3 + (23 - player.age) * 1.5 + (!positions.has(player.primaryPosition) ? 8 : 0) + rng.next() * 3; }
+function cpuDraftScore(club, player, futureCounts, rng) { const need=futureCounts[player.primaryPosition] < REQUIRED_POSITIONS[player.primaryPosition]; return publicValue(player) * 3 + (23 - player.age) * 1.5 + (need ? 100 : 0) + rng.next() * 3; }
 export function cpuBid(club, player, rng) {
   if (club.roster.length >= 12 || club.funds < 6) return 0;
-  const shortage = club.roster.filter(p => p.primaryPosition === player.primaryPosition).length < 1 ? rng.int(5,10) : 0;
+  const futureCount = club.roster.filter(p => p.primaryPosition === player.primaryPosition && p.age < 34).length;
+  const shortage = futureCount < REQUIRED_POSITIONS[player.primaryPosition] ? rng.int(15,25) : 0;
   const age = player.age <= 23 ? 3 : player.age >= 30 ? -3 : 0;
   const value = Math.max(0, Math.round((publicValue(player) + shortage + age) * (.75 + rng.next() * .3)));
   return Math.min(value, Math.max(0, club.funds - 5));
 }
 export function addPlayer(club, player, cost) { if (club.roster.length >= 12) return false; club.roster.push(player); club.funds -= cost; return true; }
+
+export function resolveSimultaneousDraftCycle({ clubs, candidates, pendingClubIds, humanClubId, humanPickId = null, rng }) {
+  const eligible = pendingClubIds.filter(id => {
+    const club = clubs.find(candidate => candidate.id === id);
+    return club && club.funds >= 1 && club.roster.length < 12;
+  });
+  const selections = eligible.map(clubId => {
+    const club = clubs.find(candidate => candidate.id === clubId);
+    const player = clubId === humanClubId
+      ? candidates.find(candidate => candidate.id === humanPickId)
+      : cpuCandidatePick(club, candidates, rng);
+    return player ? { club, player } : null;
+  }).filter(Boolean);
+  const selectedClubIds = new Set(selections.map(selection => selection.club.id));
+  const groups = new Map();
+  for (const selection of selections) {
+    const group = groups.get(selection.player.id) || [];
+    group.push(selection);
+    groups.set(selection.player.id, group);
+  }
+  const acquired = [];
+  const winnerIds = new Set();
+  const acquiredPlayerIds = new Set();
+  for (const group of groups.values()) {
+    const winner = group[rng.int(0, group.length - 1)];
+    if (addPlayer(winner.club, winner.player, 1)) {
+      acquired.push({ clubId: winner.club.id, player: winner.player, contested: group.length > 1, contenderIds: group.map(row => row.club.id) });
+      winnerIds.add(winner.club.id);
+      acquiredPlayerIds.add(winner.player.id);
+    }
+  }
+  const declinedIds = pendingClubIds.filter(id => !eligible.includes(id) || !selectedClubIds.has(id));
+  return {
+    candidates: candidates.filter(player => !acquiredPlayerIds.has(player.id)),
+    pendingClubIds: pendingClubIds.filter(id => !winnerIds.has(id) && !declinedIds.includes(id)),
+    acquired,
+    declinedIds
+  };
+}
