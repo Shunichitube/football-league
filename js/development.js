@@ -1,6 +1,6 @@
 import { rankOf } from './config.js';
 import { calculateOverall, FIELD_STAT_KEYS } from './data.js';
-import { SPECIAL_ABILITIES } from './market.js?v=0.11.0';
+import { SPECIAL_ABILITIES } from './market.js?v=0.12.0';
 import { weightedPick } from './random.js';
 
 const ageBase = age => age <= 19 ? 2.4 : age <= 21 ? 2 : age <= 23 ? 1.6 : age <= 25 ? 1 : age <= 28 ? .4 : 0;
@@ -62,8 +62,18 @@ export function processOffseason(club, training, rng) {
       const value = player.stats[key]; let delta = 0;
       if (player.age < 30) delta = Math.min(3, Math.round(ageBase(player.age) * growthFor(player, key) * appearanceModifier(player) * (focus === key ? 1.4 : 1) * highModifier(value) * (.75 + rng.next() * .5)));
       if (player.age === 29 && key === 'speed' && rng.next() < .3) delta = -1;
-      if (player.age === 30 && key === 'speed') delta = -rng.int(1, 2);
-      if (player.age >= 30 && key !== 'speed' && rng.next() < (player.age <= 30 ? .2 : player.age <= 32 ? .35 : .5)) delta = -1;
+      if (player.age === 30) {
+        if (key === 'speed') delta = -rng.int(1, 2);
+        else if (key !== 'gk' && rng.next() < .2) delta = -1;
+      }
+      if (player.age >= 31 && player.age <= 32) {
+        if (key === 'speed') delta = -rng.int(1, 2);
+        else if (key === 'gk' ? rng.next() < .2 : rng.next() < .35) delta = -1;
+      }
+      if (player.age >= 33 && player.age <= 34) {
+        if (key === 'speed') delta = -rng.int(2, 3);
+        else if (key === 'gk' ? rng.next() < .4 : rng.next() < .5) delta = -1;
+      }
       player.stats[key] = Math.max(50, Math.min(99, value + delta));
       if (player.stats[key] > value) grew.push(key);
     }
