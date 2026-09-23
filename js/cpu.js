@@ -2,7 +2,7 @@ import { calculateOverall } from './data.js';
 import { processOffseason, renewalFee } from './development.js?v=0.12.0';
 import { createRandom } from './random.js';
 import { cpuBid, cpuCandidatePick } from './market.js?v=0.12.0';
-import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=0.12.0';
+import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=0.13.0';
 
 const LINEUP_ROLES = ['FIXO', 'ALA', 'ALA', 'PIVO'];
 const REQUIRED = { GK: 1, FIXO: 1, ALA: 2, PIVO: 1 };
@@ -108,7 +108,7 @@ export function decideCpuContractActions(club) {
       actions.push({ type:ACTION_TYPES.RENEW_CONTRACT,clubId:club.id,playerId:player.id,protectMinimum:mustKeep });
       shadow.funds=Math.max(0,shadow.funds-fee);
     } else {
-      actions.push({ type:ACTION_TYPES.RELEASE_PLAYER,clubId:club.id,playerId:player.id });
+      actions.push({ type:ACTION_TYPES.RELEASE_PLAYER,clubId:club.id,playerId:player.id,contractDecision:true });
       shadow.roster=remaining;
     }
   }
@@ -136,22 +136,25 @@ export function prepareCpuClubs(league) {
 export function prepareCpuMarketSpace(league) {
   const released = [];
   for (const club of league.clubs.filter(candidate => candidate.controllerType === 'CPU')) {
-    const futureCount = position => club.roster.filter(player => player.primaryPosition === position && player.age < 34).length;
-    const shortages = Object.entries(REQUIRED).reduce((sum, [position, count]) => sum + Math.max(0, count - futureCount(position)), 0);
-    for (let slots = Math.min(shortages, 4); slots > 0 && club.roster.length >= 12; slots--) {
-      const candidates = club.roster.filter(player => {
-        if (player.primaryPosition === 'GK' && club.roster.filter(candidate => candidate.primaryPosition === 'GK').length <= 1) return false;
-        return club.roster.length > 5;
-      }).sort((a, b) => {
-        const aSurplus = futureCount(a.primaryPosition) > REQUIRED[a.primaryPosition] ? 1 : 0;
-        const bSurplus = futureCount(b.primaryPosition) > REQUIRED[b.primaryPosition] ? 1 : 0;
-        return bSurplus - aSurplus || b.age - a.age || calculateOverall(a) - calculateOverall(b);
-      });
-      const player = candidates[0];
-      if (!player) break;
-      club.roster = club.roster.filter(candidate => candidate.id !== player.id);
-      if (!player.isInitial) { league.releasedPlayers ||= []; if (!league.releasedPlayers.some(candidate => candidate.id === player.id)) league.releasedPlayers.push(player); }
-      released.push({ clubId: club.id, player });
+    for (let releasedCount = 0; releasedCount < 3 && club.roster.length > 5;) {
+      const average = club.roster.reduce((sum, player) => sum + calculateOverall(player), 0) / club.roster.length;
+      const candidates = club.roster.filter(player => club.roster.filter(candidate => candidate.primaryPosition === player.primaryPosition).length > REQUIRED[player.primaryPosition]);
+      const scored = candidates.map(player => {
+        const positionPlayers = club.roster.filter(candidate => candidate.primaryPosition === player.primaryPosition);
+        const positionRank = [...positionPlayers].sort((a,b) => calculateOverall(b) - calculateOverall(a)).findIndex(candidate => candidate.id === player.id);
+        const weak = average - calculateOverall(player);
+        const bench = club.lineup.includes(player.id) ? 0 : 3;
+        const age = player.age >= 33 ? 4 : player.age >= 30 ? 2 : 0;
+        const youngProtection = player.age <= 23 ? -6 : 0;
+        const special = player.specialAbility ? -1 : 0;
+        return { player, score: weak + (positionRank > 0 ? 3 : 0) + bench + age + youngProtection + special };
+      }).sort((a,b) => b.score - a.score || a.player.age - b.player.age);
+      const target = scored[0];
+      if (!target || target.score < 7) break;
+      const result = applyClubAction(club, { type: ACTION_TYPES.RELEASE_PLAYER, clubId: club.id, playerId: target.player.id }, league);
+      if (!result.ok) break;
+      released.push({ clubId: club.id, player: result.player });
+      releasedCount++;
     }
     selectBestLineup(club);
   }
