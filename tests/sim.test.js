@@ -9,6 +9,7 @@ import { processOffseason, renewalFee, trainingSkills } from '../js/development.
 import { exportSave, importSave } from '../js/storage.js';
 import { runBatch } from '../js/batch.js';
 import { positionCounts, renderPlayerCard, renderPlayerDetail, renderRosterPanel } from '../js/ui.js';
+import { autoSetCpuTactic, manageCpuContracts, prepareCpuClubs, processLeagueOffseason, selectBestLineup, selectCpuTraining } from '../js/cpu.js';
 
 function match(seed) { const source = createRandom(seed); const home = createClub({ id: 1, name: 'HOME', color: '#fff', seed: source }); const away = createClub({ id: 2, name: 'AWAY', color: '#000', seed: source }); return simulateMatch(home, away, createRandom(`${seed}:match:1`)); }
 test('同じseedは同じ試合結果になる', () => assert.deepEqual(match('repeatable'), match('repeatable')));
@@ -121,4 +122,71 @@ test('所属選手パネルはポジション人数と全選手の公開情報�
   const html=renderRosterPanel(club);
   assert.match(html,/所属選手/); assert.match(html,/GK <b>1<\/b>/); assert.match(html,/ALA <b>2<\/b>/);
   for(const p of club.roster) assert.match(html,new RegExp(p.name));
+});
+
+test('CPUは新加入の強い選手を含めてスタメン5人を再選出する', () => {
+  const league=createLeague({name:'YOU',color:'#fff',seed:'cpu-lineup'}), club=league.clubs[1];
+  const signing=createPlayer(9901,'ALA',createRandom('cpu-signing'));
+  signing.stats={shoot:95,speed:95,defense:95,dribble:95,pass:95};
+  club.roster.push(signing);
+  selectBestLineup(club);
+  const starters=club.lineup.map(id=>club.roster.find(p=>p.id===id));
+  assert.equal(new Set(club.lineup).size,5);
+  assert.equal(starters.filter(p=>p.primaryPosition==='GK').length,1);
+  assert.ok(club.lineup.includes(signing.id));
+});
+
+test('CPUはスタメン能力に応じて戦術を自動変更する', () => {
+  const league=createLeague({name:'YOU',color:'#fff',seed:'cpu-tactic'}), club=league.clubs[1];
+  selectBestLineup(club);
+  const field=club.lineup.map(id=>club.roster.find(p=>p.id===id)).filter(p=>p.primaryPosition!=='GK');
+  field.forEach(p=>Object.assign(p.stats,{pass:90,dribble:60,speed:60}));
+  assert.equal(autoSetCpuTactic(club),'POSSESSION');
+  field.forEach(p=>Object.assign(p.stats,{pass:60,dribble:60,speed:90}));
+  assert.equal(autoSetCpuTactic(club),'COUNTER');
+  field.forEach(p=>Object.assign(p.stats,{pass:70,dribble:70,speed:70}));
+  assert.equal(autoSetCpuTactic(club),'BALANCED');
+});
+
+test('CPU育成対象は公開能力・年齢・起用実績から2人を選びhiddenGrowthを参照しない', () => {
+  const league=createLeague({name:'YOU',color:'#fff',seed:'cpu-training'}), club=league.clubs[1];
+  const before=[...selectCpuTraining(club).entries()];
+  club.roster.forEach((p,i)=>{p.hiddenGrowth={shoot:i%2?99:0,speed:99,defense:0,dribble:99,pass:0,gk:99};});
+  const after=[...selectCpuTraining(club).entries()];
+  assert.equal(before.length,2);
+  assert.deepEqual(after,before);
+});
+
+test('全6クラブへ加齢・成長・衰退・契約年数処理を適用する', () => {
+  const league=createLeague({name:'YOU',color:'#fff',seed:'all-offseason'});
+  const veteran=league.clubs[1].roster[1]; veteran.age=29; veteran.stats.speed=80;
+  const tracked=league.clubs.map(club=>({club,id:club.roster[1].id,age:club.roster[1].age,contract:club.roster[1].contractYears}));
+  const speedBefore=veteran.stats.speed;
+  const summaries=processLeagueOffseason(league,new Map());
+  assert.equal(summaries.length,6);
+  for(const row of tracked){const p=row.club.roster.find(player=>player.id===row.id);assert.ok(p);assert.equal(p.age,row.age+1);assert.equal(p.contractYears,row.contract-1);}
+  assert.ok(veteran.stats.speed<speedBefore);
+  assert.ok(summaries.slice(1).every(row=>row.training.length===2));
+});
+
+test('CPUは契約満了者を更新・放出しつつ最低5人とGKを維持する', () => {
+  const league=createLeague({name:'YOU',color:'#fff',seed:'cpu-contract'}), club=league.clubs[1];
+  const strong=createPlayer(9902,'PIVO',createRandom('strong-contract'));
+  strong.stats={shoot:95,speed:90,defense:80,dribble:92,pass:88}; strong.contractYears=0;
+  const weak=createPlayer(9903,'PIVO',createRandom('weak-contract'));
+  weak.stats={shoot:35,speed:35,defense:35,dribble:35,pass:35}; weak.age=34; weak.contractYears=0;
+  club.roster.push(strong,weak); selectBestLineup(club); club.funds=100;
+  const decisions=manageCpuContracts(club);
+  assert.equal(decisions.find(row=>row.player.id===strong.id)?.action,'RENEW');
+  assert.equal(decisions.find(row=>row.player.id===weak.id)?.action,'RELEASE');
+  assert.ok(club.roster.length>=5);
+  assert.ok(club.roster.some(p=>p.primaryPosition==='GK'));
+});
+
+test('CPU5クラブは毎シーズンの編成と戦術設定を完了する', () => {
+  const league=createLeague({name:'YOU',color:'#fff',seed:'cpu-prepare'});
+  const result=prepareCpuClubs(league);
+  assert.equal(result.length,5);
+  assert.ok(result.every(row=>row.lineup.length===5));
+  assert.ok(result.every(row=>['BALANCED','POSSESSION','DRIBBLE','COUNTER'].includes(row.tactic)));
 });
