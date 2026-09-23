@@ -109,7 +109,12 @@ export function createScoutComment(player, rng) {
   return [currentHint, ageHint, growthHint, abilityHint, rare].filter(Boolean).join('。') + '。';
 }
 export function createDraftPool(seed, season = 1) { const rng = createRandom(`${seed}:season:${season}:draft-pool`); return Array.from({ length: 24 }, (_, i) => playerForTier(season * 10000 + 1000 + i, POSITIONS[i % POSITIONS.length], tier(DRAFT_DISTRIBUTION, rng), rng.int(18,22), rng)); }
-export function createAuctionPool(seed, season = 1) { const rng = createRandom(`${seed}:season:${season}:auction-pool`); return Array.from({ length: 18 }, (_, i) => playerForTier(season * 10000 + 2000 + i, POSITIONS[i % POSITIONS.length], tier(AUCTION_DISTRIBUTION, rng), rng.int(22,31), rng)); }
+export function createAuctionPool(seed, season = 1, releasedPlayers = []) {
+  const rng = createRandom(`${seed}:season:${season}:auction-pool`);
+  const returning = [...releasedPlayers].sort(() => rng.next() - .5).slice(0, 18);
+  const generated = Array.from({ length: 18 - returning.length }, (_, i) => playerForTier(season * 10000 + 2000 + i, POSITIONS[i % POSITIONS.length], tier(AUCTION_DISTRIBUTION, rng), rng.int(22,31), rng));
+  return [...returning, ...generated];
+}
 export function publicValue(player) { return BASE_VALUE[displayPlayer(player).overallRank]; }
 export function cpuCandidatePick(club, candidates, rng) {
   const futureCounts = Object.fromEntries(Object.keys(REQUIRED_POSITIONS).map(position => [position, club.roster.filter(player => player.primaryPosition === position && player.age < 34).length]));
