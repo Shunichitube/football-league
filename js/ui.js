@@ -1,5 +1,5 @@
 import { displayPlayer, STAT_LABELS } from './data.js';
-import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.5.2';
+import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.6.0';
 
 export const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
 
