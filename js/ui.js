@@ -1,5 +1,5 @@
 import { displayPlayer, STAT_LABELS } from './data.js';
-import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.9.0';
+import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.14.0';
 import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.9.0';
 
 export const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
@@ -15,7 +15,7 @@ export function renderPlayerCard(player, options = {}) {
   const details = options.details !== false ? `<button type="button" data-detail="${escapeHtml(player.id)}" class="detail-button subtle">選手詳細</button>` : '';
   return `<article class="player-card">
     <div class="player-title"><b>${escapeHtml(display.name)}</b><strong class="overall-rank">総合 ${display.overallRank}</strong></div>
-    <span>${display.primaryPosition}・${display.age}歳・${escapeHtml(display.nationality || '日本')}・契約${display.contractYears}年</span>
+    <span>${display.primaryPosition}・${display.age}歳・契約${display.contractYears}年</span>
     <dl class="ability-grid">${publicAbilities(player).map(ability => `<div><dt>${ability.label}</dt><dd>${ability.rank}</dd></div>`).join('')}</dl>
     <p class="special-ability">${display.specialAbility ? `★ ${escapeHtml(display.specialAbility)}` : '特殊能力なし'}</p>
     ${details}
@@ -48,10 +48,12 @@ export function renderPlayerDetail(player, options = {}) {
   </section>`;
 }
 
-export function renderLineupEditor(club, selectedPlayerId = null, message = '', messageIsError = false) {
+export function renderLineupEditor(club, selectedPlayerId = null, message = '', messageIsError = false, benchSort = 'position') {
   const validation = validateLineup(club);
   const starterIds = new Set(club.lineup || []);
-  const bench = club.roster.filter(player => !starterIds.has(player.id));
+  const positionOrder = { GK: 0, FIXO: 1, ALA: 2, PIVO: 3 };
+  const rankOrder = { SS: 0, S: 1, A: 2, B: 3, C: 4, D: 5, E: 6, F: 7, G: 8 };
+  const bench = club.roster.map((player, index) => ({ player, index })).filter(row => !starterIds.has(row.player.id)).sort((a, b) => benchSort === 'overall' ? rankOrder[displayPlayer(a.player).overallRank] - rankOrder[displayPlayer(b.player).overallRank] || a.index - b.index : positionOrder[a.player.primaryPosition] - positionOrder[b.player.primaryPosition] || a.index - b.index).map(row => row.player);
   const selected = club.roster.find(player => player.id === selectedPlayerId);
   const warnings = validation.ok ? validation.warnings : [];
   const status = message || validation.error || (warnings.length ? '適性外配置があります。警告内容を確認してください。' : 'スタメン5人を設定済みです。');
@@ -71,7 +73,7 @@ export function renderLineupEditor(club, selectedPlayerId = null, message = '', 
         <button type="button" data-lineup-slot="${index}" ${selected ? '' : 'disabled'}>この枠に配置</button>
       </section>`;
     }).join('')}</div>
-    <h3>控え</h3>
+    <div class="bench-heading"><h3>控え</h3><label>並び順<select data-bench-sort><option value="position" ${benchSort === 'position' ? 'selected' : ''}>ポジション順</option><option value="overall" ${benchSort === 'overall' ? 'selected' : ''}>総合ランク順</option></select></label></div>
     <div class="candidate-grid bench-grid">${bench.length ? bench.map(player => `<article class="candidate bench-player ${selectedPlayerId === player.id ? 'selected-player' : ''}">${renderPlayerCard(player)}<button type="button" data-lineup-player="${escapeHtml(player.id)}" class="${selectedPlayerId === player.id ? '' : 'subtle'}">${selectedPlayerId === player.id ? '選択中' : 'この選手を選択'}</button></article>`).join('') : '<p class="hint">控え選手はいません。</p>'}</div>
   </section>`;
 }
@@ -90,7 +92,7 @@ export function renderSeasonMatchList(matches, clubId) {
     return `<button type="button" class="season-match-row" data-season-match="${index}">
       <span><b>第${match.round}節</b><small>${outcome.isHome ? 'ホーム' : 'アウェー'}</small></span>
       <strong class="result-mark">${outcome.mark} ${outcome.goalsFor} - ${outcome.goalsAgainst}</strong>
-      <span>${escapeHtml(outcome.opponent.name)}<small>${outcome.label}</small></span>
+      <span><i class="club-color-dot" style="--club:${escapeHtml(outcome.opponent.color)}"></i>${escapeHtml(outcome.opponent.name)}<small>${outcome.label}</small></span>
     </button>`;
   }).join('')}</section>`;
 }
@@ -101,7 +103,7 @@ export function renderMatchDetail(match) {
   const scorers = rows.filter(row => row.goals > 0).map(row => `${escapeHtml(row.player.name)}${row.goals > 1 ? ` ×${row.goals}` : ''}`).join('、') || 'なし';
   const assists = rows.filter(row => row.assists > 0).map(row => `${escapeHtml(row.player.name)}${row.assists > 1 ? ` ×${row.assists}` : ''}`).join('、') || 'なし';
   return `<main class="match-detail"><p class="eyebrow">第${match.round}節 試合詳細</p>
-    <div class="scoreboard"><span>${escapeHtml(match.fixture.home.name)}</span><b>${match.result.score.home} - ${match.result.score.away}</b><span>${escapeHtml(match.fixture.away.name)}</span></div>
+    <div class="scoreboard"><span><i class="club-color-dot" style="--club:${escapeHtml(match.fixture.home.color)}"></i>${escapeHtml(match.fixture.home.name)}</span><b>${match.result.score.home} - ${match.result.score.away}</b><span><i class="club-color-dot" style="--club:${escapeHtml(match.fixture.away.color)}"></i>${escapeHtml(match.fixture.away.name)}</span></div>
     <section class="match-summary"><p><b>得点者：</b>${scorers}</p><p><b>アシスト：</b>${assists}</p><p><b>試合MVP：</b>${escapeHtml(mvp.player.name)}（評価 ${mvp.rating.toFixed(1)}）</p></section>
     <h2>各選手の成績</h2><section class="candidate-grid">${rows.map(row => `<article class="candidate match-player-result">${renderPlayerCard(row.player)}<p><b>調子 ${match.result.forms[row.player.id] || '−'}</b>・評価 ${row.rating.toFixed(1)}</p><p>得点 ${row.goals}・アシスト ${row.assists}・シュート ${row.shots}</p><p>攻撃貢献 ${row.attackContributions}・守備成功 ${row.defensiveStops}・セーブ ${row.saves}</p></article>`).join('')}</section>
     <h2>試合イベント</h2><div class="log static">${match.result.events.map(event => `<p>${event.time} <b>${escapeHtml(event.kind)}</b> ${escapeHtml(event.player)}${event.extra ? `・${escapeHtml(event.extra)}` : ''}</p>`).join('')}</div>
