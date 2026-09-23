@@ -8,9 +8,9 @@ import { cpuBid, createAuctionPool, createDraftPool, createScoutComment, resolve
 import { processOffseason, renewalFee, trainingSkills } from '../js/development.js';
 import { exportSave, importSave } from '../js/storage.js';
 import { runBatch } from '../js/batch.js';
-import { positionCounts, renderPlayerCard, renderPlayerDetail, renderRosterPanel } from '../js/ui.js';
+import { positionCounts, renderLineupEditor, renderPlayerCard, renderPlayerDetail, renderRosterPanel } from '../js/ui.js';
 import { autoSetCpuTactic, decideCpuAuctionAction, decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup, selectCpuTraining } from '../js/cpu.js';
-import { ACTION_TYPES, applyClubAction } from '../js/rules.js';
+import { ACTION_TYPES, applyClubAction, createLineupPlacement, LINEUP_SLOTS, positionSuitability, validateLineup } from '../js/rules.js';
 
 function match(seed) { const source = createRandom(seed); const home = createClub({ id: 1, name: 'HOME', color: '#fff', seed: source }); const away = createClub({ id: 2, name: 'AWAY', color: '#000', seed: source }); return simulateMatch(home, away, createRandom(`${seed}:match:1`)); }
 function draftActions(league,pending,pool,rng,humanPickId=pool[0]?.id){return pending.map(id=>league.clubs.find(club=>club.id===id)).map(club=>club.controllerType==='CPU'?decideCpuDraftAction(club,pool,rng):{type:ACTION_TYPES.DRAFT_PICK,clubId:club.id,playerId:humanPickId}).filter(Boolean);}
@@ -310,9 +310,9 @@ test('人間とCPUの競売Actionは同じ共通ルールで資金・移籍を�
 test('編成・戦術・契約はControllerに依存しない共通Actionで更新する', () => {
   const league=createLeague({name:'YOU',color:'#fff',seed:'club-actions'}), human=league.clubs[0], cpu=league.clubs[1];
   for(const club of [human,cpu]){
-    const reversed=[...club.lineup].reverse();
-    assert.equal(applyClubAction(club,{type:ACTION_TYPES.SET_LINEUP,clubId:club.id,lineup:reversed}).ok,true);
-    assert.deepEqual(club.lineup,reversed);
+    const rearranged=[club.lineup[0],club.lineup[4],club.lineup[3],club.lineup[2],club.lineup[1]];
+    assert.equal(applyClubAction(club,{type:ACTION_TYPES.SET_LINEUP,clubId:club.id,lineup:rearranged}).ok,true);
+    assert.deepEqual(club.lineup,rearranged);
     assert.equal(applyClubAction(club,{type:ACTION_TYPES.SET_TACTIC,clubId:club.id,tactic:'COUNTER'}).ok,true);
     assert.equal(club.tactic,'COUNTER');
   }
@@ -320,6 +320,59 @@ test('編成・戦術・契約はControllerに依存しない共通Actionで更�
   const due=human.roster[0];due.contractYears=0;const funds=human.funds;
   const renewed=applyClubAction(human,{type:ACTION_TYPES.RENEW_CONTRACT,clubId:human.id,playerId:due.id});
   assert.equal(renewed.ok,true);assert.equal(due.contractYears,3);assert.equal(human.funds,funds-renewed.fee);
+});
+
+test('人間編成は5枠・重複禁止・適性外警告を共通ルールで判定する', () => {
+  const club=createLeague({name:'YOU',color:'#fff',seed:'human-lineup'}).clubs[0];
+  assert.deepEqual(LINEUP_SLOTS,['GK','FIXO','ALA','ALA','PIVO']);
+  assert.equal(validateLineup(club,club.lineup.slice(0,4)).ok,false);
+  assert.equal(validateLineup(club,[club.lineup[0],club.lineup[1],club.lineup[2],club.lineup[3],club.lineup[3]]).ok,false);
+  const outOfPosition=[club.lineup[0],club.lineup[4],club.lineup[2],club.lineup[3],club.lineup[1]];
+  const result=applyClubAction(club,{type:ACTION_TYPES.SET_LINEUP,clubId:club.id,lineup:outOfPosition});
+  assert.equal(result.ok,true);
+  assert.equal(result.warnings.length,2);
+  assert.equal(positionSuitability(club.roster.find(player=>player.id===outOfPosition[1]),'FIXO'),.85);
+  assert.equal(positionSuitability(club.roster.find(player=>player.id===outOfPosition[0]),'GK'),1);
+});
+
+test('編成配置は既存スタメンの移動時に入替え、同一選手を重複させない', () => {
+  const club=createLeague({name:'YOU',color:'#fff',seed:'lineup-swap'}).clubs[0];
+  const next=createLineupPlacement(club.lineup,club.lineup[4],1);
+  assert.equal(next[1],club.lineup[4]);
+  assert.equal(next[4],club.lineup[1]);
+  assert.equal(new Set(next).size,5);
+  assert.equal(applyClubAction(club,{type:ACTION_TYPES.SET_LINEUP,clubId:club.id,lineup:next}).ok,true);
+});
+
+test('編成画面はスタメン5枠と控えを分離し、カード上で能力ランクを表示する', () => {
+  const club=createLeague({name:'YOU',color:'#fff',seed:'lineup-ui'}).clubs[0];
+  const bench=createPlayer('bench','ALA',createRandom('lineup-ui-bench'));
+  club.roster.push(bench);
+  const html=renderLineupEditor(club,bench.id);
+  assert.equal((html.match(/data-lineup-slot=/g)||[]).length,5);
+  assert.match(html,/スタメン/);
+  assert.match(html,/控え/);
+  assert.match(html,/シュート/);
+  assert.match(html,/走力/);
+  assert.match(html,/守備/);
+  assert.match(html,/ドリブル/);
+  assert.match(html,/パス/);
+  assert.doesNotMatch(html,/hiddenGrowth/);
+});
+
+test('変更したスタメンだけが実際の試合へ出場する', () => {
+  const rng=createRandom('lineup-match-clubs');
+  const home=createClub({id:1,name:'HOME',color:'#fff',seed:rng}),away=createClub({id:2,name:'AWAY',color:'#000',seed:rng});
+  const bench=createPlayer('lineup-match-bench','PIVO',createRandom('lineup-match-bench'));
+  home.roster.push(bench);
+  const replacedId=home.lineup[4];
+  const next=createLineupPlacement(home.lineup,bench.id,4);
+  assert.equal(applyClubAction(home,{type:ACTION_TYPES.SET_LINEUP,clubId:home.id,lineup:next}).ok,true);
+  const result=simulateMatch(home,away,createRandom('lineup-match'));
+  const ids=result.playerResults.map(row=>row.player.id);
+  assert.equal(result.playerResults.length,10);
+  assert.ok(ids.includes(bench.id));
+  assert.ok(!ids.includes(replacedId));
 });
 
 test('試合結果はcontrollerTypeに依存しない', () => {
