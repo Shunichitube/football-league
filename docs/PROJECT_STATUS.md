@@ -115,6 +115,7 @@ Stage 9の実装:
 - 10シーズン終了時も全CPUクラブが5人以上とGKを維持することを確認
 - `node --check js/cpu.js` / `node --check js/app.js`：構文エラーなし
 - GitHub Pages公開版で `v0.6.0・Stage 11`、新規ゲーム開始、ドラフト24候補表示、画面エラーなしを実操作確認
+- GitHub Pages公開版で `v0.7.1・Stage 12`、完全同時指名表示、24候補表示、1巡目獲得後の第2巡移行、画面エラーなしを実操作確認
 - `git diff --check`：空白エラーなし
 
 ## 次に行うこと
