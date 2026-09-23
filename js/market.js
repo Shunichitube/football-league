@@ -1,5 +1,6 @@
 import { calculateOverall, createPlayer, displayPlayer, FIELD_STAT_KEYS, STAT_LABELS } from './data.js';
 import { createRandom, weightedPick } from './random.js';
+import { ACTION_TYPES } from './rules.js?v=0.8.0';
 
 const DRAFT_DISTRIBUTION = [['G', 35], ['F', 35], ['E', 20], ['D', 8], ['C', 2]];
 const AUCTION_DISTRIBUTION = [['F', 15], ['E', 25], ['D', 25], ['C', 20], ['B', 10], ['A', 4], ['S', 1]];
@@ -125,16 +126,16 @@ export function cpuBid(club, player, rng) {
 }
 export function addPlayer(club, player, cost) { if (club.roster.length >= 12) return false; club.roster.push(player); club.funds -= cost; return true; }
 
-export function resolveSimultaneousDraftCycle({ clubs, candidates, pendingClubIds, humanClubId, humanPickId = null, rng }) {
+export function resolveDraftActions({ clubs, candidates, pendingClubIds, actions, rng }) {
   const eligible = pendingClubIds.filter(id => {
     const club = clubs.find(candidate => candidate.id === id);
     return club && club.funds >= 1 && club.roster.length < 12;
   });
+  const actionByClub = new Map((actions || []).filter(action => action.type === ACTION_TYPES.DRAFT_PICK).map(action => [action.clubId, action]));
   const selections = eligible.map(clubId => {
     const club = clubs.find(candidate => candidate.id === clubId);
-    const player = clubId === humanClubId
-      ? candidates.find(candidate => candidate.id === humanPickId)
-      : cpuCandidatePick(club, candidates, rng);
+    const action = actionByClub.get(clubId);
+    const player = candidates.find(candidate => candidate.id === action?.playerId);
     return player ? { club, player } : null;
   }).filter(Boolean);
   const selectedClubIds = new Set(selections.map(selection => selection.club.id));
@@ -162,4 +163,19 @@ export function resolveSimultaneousDraftCycle({ clubs, candidates, pendingClubId
     acquired,
     declinedIds
   };
+}
+
+export function resolveAuctionActions({ clubs, player, actions, rng }) {
+  const bids = (actions || []).filter(action => action.type === ACTION_TYPES.AUCTION_BID && action.playerId === player.id).map(action => {
+    const club = clubs.find(candidate => candidate.id === action.clubId);
+    const bid = Number(action.bid);
+    const valid = club && club.roster.length < 12 && Number.isFinite(bid) && bid >= 0 && bid <= club.funds;
+    return valid ? { club, bid } : null;
+  }).filter(Boolean);
+  const high = Math.max(0, ...bids.map(row => row.bid));
+  if (high <= 0) return { winner: null, bid: 0 };
+  const top = bids.filter(row => row.bid === high);
+  const winner = top[rng.int(0, top.length - 1)];
+  if (!addPlayer(winner.club, player, high)) return { winner: null, bid: 0 };
+  return { winner: winner.club, bid: high };
 }
