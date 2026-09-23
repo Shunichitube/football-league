@@ -4,6 +4,7 @@ function normalizeControllers(state) {
   if(!league?.clubs) return state;
   const legacyHumanId=league.humanClubId ?? league.clubs[0]?.id;
   for(const club of league.clubs) if(!club.controllerType) club.controllerType=club.id===legacyHumanId?'HUMAN':'CPU';
+  if(!Array.isArray(league.seasonResults)) league.seasonResults=[];
   return state;
 }
 export function saveSlot(slot, state) { if (!Number.isInteger(slot) || slot < 1 || slot > 3) throw new Error('Invalid save slot'); localStorage.setItem(`${KEY}${slot}`, JSON.stringify({ version: 1, savedAt: new Date().toISOString(), state })); }
