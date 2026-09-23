@@ -1,4 +1,4 @@
-import { renewalFee } from './development.js';
+import { renewalFee } from './development.js?v=0.12.0';
 
 export const ACTION_TYPES = Object.freeze({
   DRAFT_PICK: 'DRAFT_PICK',
@@ -48,7 +48,7 @@ export function createLineupPlacement(lineup, playerId, slotIndex) {
   return next;
 }
 
-export function applyClubAction(club, action) {
+export function applyClubAction(club, action, league = null) {
   if (!club || action.clubId !== club.id) return { ok: false, error: 'クラブが一致しません。' };
   if (action.type === ACTION_TYPES.SET_LINEUP) {
     const lineup = Array.isArray(action.lineup) ? action.lineup : [];
@@ -82,6 +82,10 @@ export function applyClubAction(club, action) {
     if (!player) return { ok: false, error: '所属選手が見つかりません。' };
     club.roster = club.roster.filter(candidate => candidate.id !== player.id);
     club.lineup = club.lineup.filter(id => id !== player.id);
+    if (!player.isInitial && league) {
+      league.releasedPlayers ||= [];
+      if (!league.releasedPlayers.some(candidate => candidate.id === player.id)) league.releasedPlayers.push(player);
+    }
     return { ok: true, player };
   }
   return { ok: false, error: '未対応のActionです。' };
