@@ -80,6 +80,9 @@ export function applyClubAction(club, action, league = null) {
   if (action.type === ACTION_TYPES.RELEASE_PLAYER) {
     const player = club.roster.find(candidate => candidate.id === action.playerId);
     if (!player) return { ok: false, error: '所属選手が見つかりません。' };
+    if (league && !league.releasePhaseOpen && !action.contractDecision) return { ok: false, error: '選手の放出はオフシーズンの選手整理フェイズでのみ行えます。' };
+    if (club.roster.length <= 5) return { ok: false, error: '登録選手は最低5人必要です。' };
+    if (player.primaryPosition === 'GK' && club.roster.filter(candidate => candidate.primaryPosition === 'GK').length <= 1) return { ok: false, error: 'GKを0人にはできません。' };
     club.roster = club.roster.filter(candidate => candidate.id !== player.id);
     club.lineup = club.lineup.filter(id => id !== player.id);
     if (!player.isInitial && league) {
