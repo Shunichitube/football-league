@@ -62,4 +62,36 @@ export function playCurrentRound(league) {
 }
 
 export function awards(league) { const players=league.clubs.flatMap(c=>c.roster.map(p=>({p,c,r:p.season.appearances?p.season.ratingTotal/p.season.appearances:0}))).filter(x=>x.p.season.appearances>=5); const byPos=pos=>players.filter(x=>x.p.primaryPosition===pos).sort((a,b)=>b.r-a.r)[0]; const best5=['GK','FIXO','ALA','ALA','PIVO'].map(byPos).filter(Boolean); const mvp=[...players].sort((a,b)=>b.r-a.r)[0]||null; return {best5,mvp}; }
-export function startNextSeason(league) { const table=standings(league), trophy=awards(league); league.history.push({season:league.season, table:table.map(x=>({club:x.club.name,rank:x.rank,points:x.points,goals:x.goalsFor,against:x.goalsAgainst})), champion:table[0].club.name, mvp:trophy.mvp?.p.name||null, best5:trophy.best5.map(x=>x.p.name)}); if(league.season>=10) return false; league.season++; league.schedule=createSchedule(league.clubs.map(c=>c.id)); league.currentRound=1; league.records=Object.fromEntries(league.clubs.map(c=>[c.id,blankRecord()])); league.completed=false; league.clubs.flatMap(c=>c.roster).forEach(p=>{p.season={appearances:0,goals:0,assists:0,shots:0,attackContributions:0,defensiveStops:0,saves:0,conceded:0,ratingTotal:0};}); return true; }
+
+function recordSeasonHistory(league) {
+  if (league.history.some(entry => entry.season === league.season)) return;
+  const table=standings(league), trophy=awards(league);
+  league.history.push({season:league.season, table:table.map(x=>({club:x.club.name,rank:x.rank,points:x.points,goals:x.goalsFor,against:x.goalsAgainst})), champion:table[0].club.name, mvp:trophy.mvp?.p.name||null, best5:trophy.best5.map(x=>x.p.name)});
+}
+
+export function applySeasonFinances(league) {
+  if (league.financesAppliedSeason === league.season) return [];
+  recordSeasonHistory(league);
+  const ranks = new Map(standings(league).map(row => [row.club.id, row.rank]));
+  const summary = league.clubs.map(club => {
+    const rank = ranks.get(club.id);
+    const prize = rank === 1 ? 10 : rank === 2 ? 5 : 0;
+    const before = club.funds;
+    club.funds = Math.min(150, club.funds + 100 + prize);
+    return { clubId: club.id, rank, before, base: 100, prize, after: club.funds };
+  });
+  league.financesAppliedSeason = league.season;
+  return summary;
+}
+
+export function startNextSeason(league) {
+  recordSeasonHistory(league);
+  if(league.season>=10) return false;
+  league.season++;
+  league.schedule=createSchedule(league.clubs.map(c=>c.id));
+  league.currentRound=1;
+  league.records=Object.fromEntries(league.clubs.map(c=>[c.id,blankRecord()]));
+  league.completed=false;
+  league.clubs.flatMap(c=>c.roster).forEach(p=>{p.season={appearances:0,goals:0,assists:0,shots:0,attackContributions:0,defensiveStops:0,saves:0,conceded:0,ratingTotal:0};});
+  return true;
+}
