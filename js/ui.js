@@ -73,3 +73,44 @@ export function renderLineupEditor(club, selectedPlayerId = null, message = '', 
     <div class="candidate-grid bench-grid">${bench.length ? bench.map(player => `<article class="candidate bench-player ${selectedPlayerId === player.id ? 'selected-player' : ''}">${renderPlayerCard(player)}<button type="button" data-lineup-player="${escapeHtml(player.id)}" class="${selectedPlayerId === player.id ? '' : 'subtle'}">${selectedPlayerId === player.id ? '選択中' : 'この選手を選択'}</button></article>`).join('') : '<p class="hint">控え選手はいません。</p>'}</div>
   </section>`;
 }
+
+export function matchOutcomeForClub(match, clubId) {
+  const isHome = match.fixture.homeId === clubId;
+  const goalsFor = isHome ? match.result.score.home : match.result.score.away;
+  const goalsAgainst = isHome ? match.result.score.away : match.result.score.home;
+  const opponent = isHome ? match.fixture.away : match.fixture.home;
+  return { isHome, goalsFor, goalsAgainst, opponent, mark: goalsFor > goalsAgainst ? '○' : goalsFor < goalsAgainst ? '●' : '△', label: goalsFor > goalsAgainst ? '勝利' : goalsFor < goalsAgainst ? '敗戦' : '引分' };
+}
+
+export function renderSeasonMatchList(matches, clubId) {
+  return `<section class="season-match-list">${matches.map((match, index) => {
+    const outcome = matchOutcomeForClub(match, clubId);
+    return `<button type="button" class="season-match-row" data-season-match="${index}">
+      <span><b>第${match.round}節</b><small>${outcome.isHome ? 'ホーム' : 'アウェー'}</small></span>
+      <strong class="result-mark">${outcome.mark} ${outcome.goalsFor} - ${outcome.goalsAgainst}</strong>
+      <span>${escapeHtml(outcome.opponent.name)}<small>${outcome.label}</small></span>
+    </button>`;
+  }).join('')}</section>`;
+}
+
+export function renderMatchDetail(match) {
+  const rows = [...match.result.playerResults].sort((a, b) => b.rating - a.rating);
+  const mvp = rows[0];
+  const scorers = rows.filter(row => row.goals > 0).map(row => `${escapeHtml(row.player.name)}${row.goals > 1 ? ` ×${row.goals}` : ''}`).join('、') || 'なし';
+  const assists = rows.filter(row => row.assists > 0).map(row => `${escapeHtml(row.player.name)}${row.assists > 1 ? ` ×${row.assists}` : ''}`).join('、') || 'なし';
+  return `<main class="match-detail"><p class="eyebrow">第${match.round}節 試合詳細</p>
+    <div class="scoreboard"><span>${escapeHtml(match.fixture.home.name)}</span><b>${match.result.score.home} - ${match.result.score.away}</b><span>${escapeHtml(match.fixture.away.name)}</span></div>
+    <section class="match-summary"><p><b>得点者：</b>${scorers}</p><p><b>アシスト：</b>${assists}</p><p><b>試合MVP：</b>${escapeHtml(mvp.player.name)}（評価 ${mvp.rating.toFixed(1)}）</p></section>
+    <h2>各選手の成績</h2><section class="candidate-grid">${rows.map(row => `<article class="candidate match-player-result">${renderPlayerCard(row.player)}<p><b>調子 ${match.result.forms[row.player.id] || '−'}</b>・評価 ${row.rating.toFixed(1)}</p><p>得点 ${row.goals}・アシスト ${row.assists}・シュート ${row.shots}</p><p>攻撃貢献 ${row.attackContributions}・守備成功 ${row.defensiveStops}・セーブ ${row.saves}</p></article>`).join('')}</section>
+    <h2>試合イベント</h2><div class="log static">${match.result.events.map(event => `<p>${event.time} <b>${escapeHtml(event.kind)}</b> ${escapeHtml(event.player)}${event.extra ? `・${escapeHtml(event.extra)}` : ''}</p>`).join('')}</div>
+    <button type="button" data-nav="seasonResults" class="subtle">シーズン結果へ戻る</button>
+  </main>`;
+}
+
+export function renderSeasonPlayerStats(club) {
+  const rows = [...club.roster].sort((a, b) => b.season.goals - a.season.goals || b.season.assists - a.season.assists || b.season.appearances - a.season.appearances);
+  return `<section class="candidate-grid season-player-stats">${rows.map(player => {
+    const average = player.season.appearances ? (player.season.ratingTotal / player.season.appearances).toFixed(1) : '—';
+    return `<article class="candidate">${renderPlayerCard(player)}<p>出場 ${player.season.appearances}・得点 ${player.season.goals}・アシスト ${player.season.assists}</p><p>平均評価 ${average}・シュート ${player.season.shots}・攻撃貢献 ${player.season.attackContributions}</p><p>守備成功 ${player.season.defensiveStops}・セーブ ${player.season.saves}</p></article>`;
+  }).join('')}</section>`;
+}
