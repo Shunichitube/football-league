@@ -28,7 +28,7 @@ export function createSchedule(clubIds) {
 export function createLeague({ name, color, seed }) {
   const rng = createRandom(`${seed}:clubs`);
   const clubs = [createClub({ id: 1, name, color, seed: rng, controllerType: 'HUMAN' }), ...CPU_CLUBS.map(([cpuName, cpuColor], index) => createClub({ id: index + 2, name: cpuName, color: cpuColor, seed: rng, controllerType: 'CPU' }))];
-  return { seed, season: 1, history: [], humanClubId: 1, clubs, schedule: createSchedule(clubs.map(c => c.id)), currentRound: 1, records: Object.fromEntries(clubs.map(c => [c.id, blankRecord()])), seasonResults: [], fixtureResults: [], releasedPlayers: [], completed: false };
+  return { seed, season: 1, history: [], careerRecords: [], humanClubId: 1, clubs, schedule: createSchedule(clubs.map(c => c.id)), currentRound: 1, records: Object.fromEntries(clubs.map(c => [c.id, blankRecord()])), seasonResults: [], fixtureResults: [], releasedPlayers: [], completed: false };
 }
 
 export function clubsForController(league, controllerType) { return league.clubs.filter(club => club.controllerType === controllerType); }
@@ -52,13 +52,20 @@ export function standings(league) {
   return ranked.map((row, index) => ({ ...row, rank: index + 1 }));
 }
 
+function archiveCareer(league, player) {
+  league.careerRecords ||= [];
+  const record = { id: player.id, name: player.name, position: player.primaryPosition, career: { ...(player.career || {}) } };
+  const index = league.careerRecords.findIndex(candidate => candidate.id === player.id);
+  if (index >= 0) league.careerRecords[index] = record; else league.careerRecords.push(record);
+}
+
 function applyResult(league, fixture, result) {
   const home = league.records[fixture.homeId]; const away = league.records[fixture.awayId]; const { home: homeGoals, away: awayGoals } = result.score;
   home.played++; away.played++; home.goalsFor += homeGoals; home.goalsAgainst += awayGoals; away.goalsFor += awayGoals; away.goalsAgainst += homeGoals;
   if (homeGoals > awayGoals) { home.wins++; home.points += 3; away.losses++; }
   else if (homeGoals < awayGoals) { away.wins++; away.points += 3; home.losses++; }
   else { home.draws++; away.draws++; home.points++; away.points++; }
-  for (const row of result.playerResults) { const p = row.player; p.season.appearances++; p.season.goals += row.goals; p.season.assists += row.assists; p.season.shots += row.shots; p.season.attackContributions += row.attackContributions; p.season.defensiveStops += row.defensiveStops; p.season.saves += row.saves; p.season.conceded += row.conceded; p.season.ratingTotal += row.rating; }
+  for (const row of result.playerResults) { const p = row.player; p.season.appearances++; p.season.goals += row.goals; p.season.assists += row.assists; p.season.shots += row.shots; p.season.attackContributions += row.attackContributions; p.season.defensiveStops += row.defensiveStops; p.season.saves += row.saves; p.season.conceded += row.conceded; p.season.ratingTotal += row.rating; p.career ||= { appearances: 0, goals: 0, assists: 0, shots: 0, attackContributions: 0, defensiveStops: 0, saves: 0, conceded: 0, ratingTotal: 0 }; p.career.appearances++; p.career.goals += row.goals; p.career.assists += row.assists; p.career.shots += row.shots; p.career.attackContributions += row.attackContributions; p.career.defensiveStops += row.defensiveStops; p.career.saves += row.saves; p.career.conceded += row.conceded; p.career.ratingTotal += row.rating; archiveCareer(league, p); }
 }
 
 function clonePlayer(player) {
@@ -112,13 +119,16 @@ export function simulateRemainingSeason(league) {
   return { rounds, matchesProcessed, humanMatches: [...(league.seasonResults || [])] };
 }
 
-export function awards(league) { const players=league.clubs.flatMap(c=>c.roster.map(p=>({p,c,r:p.season.appearances?p.season.ratingTotal/p.season.appearances:0}))).filter(x=>x.p.season.appearances>=5); const byPos=pos=>players.filter(x=>x.p.primaryPosition===pos).sort((a,b)=>b.r-a.r)[0]; const best5=['GK','FIXO','ALA','ALA','PIVO'].map(byPos).filter(Boolean); const mvp=[...players].sort((a,b)=>b.r-a.r)[0]||null; return {best5,mvp}; }
+export function awards(league) { const players=league.clubs.flatMap(c=>c.roster.map(p=>({p,c,r:p.season.appearances?p.season.ratingTotal/p.season.appearances:0}))).filter(x=>x.p.season.appearances>=5); const byPos=pos=>players.filter(x=>x.p.primaryPosition===pos).sort((a,b)=>b.r-a.r)[0]; const alas=players.filter(x=>x.p.primaryPosition==='ALA').sort((a,b)=>b.r-a.r).slice(0,2); const best5=[byPos('GK'),byPos('FIXO'),...alas,byPos('PIVO')].filter(Boolean); const mvp=[...players].sort((a,b)=>b.r-a.r)[0]||null; return {best5,mvp}; }
 
 function recordSeasonHistory(league) {
   if (league.history.some(entry => entry.season === league.season)) return;
   const table=standings(league), trophy=awards(league);
-  league.history.push({season:league.season, table:table.map(x=>({club:x.club.name,rank:x.rank,points:x.points,goals:x.goalsFor,against:x.goalsAgainst})), champion:table[0].club.name, mvp:trophy.mvp?.p.name||null, best5:trophy.best5.map(x=>x.p.name)});
+  for (const player of league.clubs.flatMap(club => club.roster)) archiveCareer(league, player);
+  league.history.push({season:league.season, table:table.map(x=>({club:x.club.name,clubId:x.club.id,color:x.club.color,rank:x.rank,points:x.points,goals:x.goalsFor,against:x.goalsAgainst})), champion:table[0].club.name, championColor:table[0].club.color, mvp:trophy.mvp?.p.name||null, best5:trophy.best5.map(x=>({name:x.p.name,position:x.p.primaryPosition,clubId:x.c.id,color:x.c.color}))});
 }
+
+export function finalizeSeason(league) { recordSeasonHistory(league); return { history: league.history, awards: awards(league) }; }
 
 export function applySeasonFinances(league) {
   if (league.financesAppliedSeason === league.season) return [];
