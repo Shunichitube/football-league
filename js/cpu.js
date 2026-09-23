@@ -1,5 +1,5 @@
 import { calculateOverall } from './data.js';
-import { processOffseason, renewalFee } from './development.js';
+import { processOffseason, renewalFee } from './development.js?v=0.11.0';
 import { createRandom } from './random.js';
 import { cpuBid, cpuCandidatePick } from './market.js?v=0.9.0';
 import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=0.9.0';
