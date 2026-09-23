@@ -1,6 +1,8 @@
 import { calculateOverall } from './data.js';
 import { processOffseason, renewalFee } from './development.js';
 import { createRandom } from './random.js';
+import { cpuBid, cpuCandidatePick } from './market.js?v=0.8.0';
+import { ACTION_TYPES, applyClubAction } from './rules.js?v=0.8.0';
 
 const LINEUP_ROLES = ['FIXO', 'ALA', 'ALA', 'PIVO'];
 const ADJACENT = { FIXO: ['ALA'], ALA: ['FIXO', 'PIVO'], PIVO: ['ALA'] };
@@ -41,15 +43,20 @@ function bestFieldAssignment(players) {
   return best?.players || [];
 }
 
-export function selectBestLineup(club) {
+export function chooseBestLineup(club) {
   const keeper = club.roster.filter(player => player.primaryPosition === 'GK').sort((a, b) => calculateOverall(b) - calculateOverall(a))[0];
   const field = bestFieldAssignment(club.roster.filter(player => player.primaryPosition !== 'GK'));
   if (!keeper || field.length < 4) return club.lineup.filter(id => club.roster.some(player => player.id === id)).slice(0, 5);
-  club.lineup = [keeper.id, ...field.map(player => player.id)];
+  return [keeper.id, ...field.map(player => player.id)];
+}
+
+export function selectBestLineup(club) {
+  const lineup = chooseBestLineup(club);
+  applyClubAction(club, { type: ACTION_TYPES.SET_LINEUP, clubId: club.id, lineup });
   return club.lineup;
 }
 
-export function autoSetCpuTactic(club) {
+export function chooseCpuTactic(club) {
   const starters = club.lineup.map(id => club.roster.find(player => player.id === id)).filter(Boolean).filter(player => player.primaryPosition !== 'GK');
   if (!starters.length) return club.tactic;
   const average = key => starters.reduce((sum, player) => sum + player.stats[key], 0) / starters.length;
@@ -60,9 +67,17 @@ export function autoSetCpuTactic(club) {
     COUNTER: average('speed') + abilityBonus('COUNTER')
   };
   const values = Object.values(scores);
-  club.tactic = Math.max(...values) - Math.min(...values) < 2 ? 'BALANCED' : Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
+  return Math.max(...values) - Math.min(...values) < 2 ? 'BALANCED' : Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
+}
+
+export function autoSetCpuTactic(club) {
+  const tactic = chooseCpuTactic(club);
+  applyClubAction(club, { type: ACTION_TYPES.SET_TACTIC, clubId: club.id, tactic });
   return club.tactic;
 }
+
+export function decideCpuDraftAction(club, candidates, rng) { const player=cpuCandidatePick(club,candidates,rng); return player ? { type:ACTION_TYPES.DRAFT_PICK,clubId:club.id,playerId:player.id } : null; }
+export function decideCpuAuctionAction(club, player, rng) { return { type:ACTION_TYPES.AUCTION_BID,clubId:club.id,playerId:player.id,bid:cpuBid(club,player,rng) }; }
 
 function publicDevelopmentScore(player, club) {
   const overall = calculateOverall(player);
@@ -79,36 +94,45 @@ export function selectCpuTraining(club) {
   return new Map(selected.map(player => [player.id, trainingFocus(player)]));
 }
 
-export function manageCpuContracts(club) {
-  const decisions = [];
-  const due = club.roster.filter(player => player.contractYears <= 0).sort((a, b) => calculateOverall(b) - calculateOverall(a));
+export function decideCpuContractActions(club) {
+  const actions = [];
+  const shadow = { ...club, roster: [...club.roster], lineup: [...club.lineup] };
+  const due = shadow.roster.filter(player => player.contractYears <= 0).sort((a, b) => calculateOverall(b) - calculateOverall(a));
   for (const player of due) {
-    const remaining = club.roster.filter(candidate => candidate.id !== player.id);
+    const remaining = shadow.roster.filter(candidate => candidate.id !== player.id);
     const mustKeep = remaining.length < 5 || (player.primaryPosition === 'GK' && !remaining.some(candidate => candidate.primaryPosition === 'GK'));
-    const samePosition = club.roster.filter(candidate => candidate.primaryPosition === player.primaryPosition).length;
+    const samePosition = shadow.roster.filter(candidate => candidate.primaryPosition === player.primaryPosition).length;
     const positionExcess = samePosition > REQUIRED[player.primaryPosition];
-    const teamAverage = club.roster.reduce((sum, candidate) => sum + calculateOverall(candidate), 0) / club.roster.length;
+    const teamAverage = shadow.roster.reduce((sum, candidate) => sum + calculateOverall(candidate), 0) / shadow.roster.length;
     const overall = calculateOverall(player);
     const fee = renewalFee(player);
-    const important = club.lineup.includes(player.id) || player.season.appearances >= 5;
+    const important = shadow.lineup.includes(player.id) || player.season.appearances >= 5;
     const releaseForAge = player.age >= 33 && positionExcess && !important;
     const releaseForLevel = overall < teamAverage - 5 && positionExcess && !important;
-    const canAfford = club.funds >= fee;
+    const canAfford = shadow.funds >= fee;
     const renew = mustKeep || (canAfford && !releaseForAge && !releaseForLevel);
     if (renew) {
-      club.funds = Math.max(0, club.funds - fee);
-      player.contractYears = 3;
-      decisions.push({ player, action: 'RENEW', fee });
+      actions.push({ type:ACTION_TYPES.RENEW_CONTRACT,clubId:club.id,playerId:player.id,protectMinimum:mustKeep });
+      shadow.funds=Math.max(0,shadow.funds-fee);
     } else {
-      club.roster = club.roster.filter(candidate => candidate.id !== player.id);
-      decisions.push({ player, action: 'RELEASE', fee: 0 });
+      actions.push({ type:ACTION_TYPES.RELEASE_PLAYER,clubId:club.id,playerId:player.id });
+      shadow.roster=remaining;
     }
+  }
+  return actions;
+}
+
+export function manageCpuContracts(club) {
+  const decisions = [];
+  for (const action of decideCpuContractActions(club)) {
+    const result=applyClubAction(club,action);
+    if(result.ok) decisions.push({player:result.player,action:action.type===ACTION_TYPES.RENEW_CONTRACT?'RENEW':'RELEASE',fee:result.fee||0});
   }
   return decisions;
 }
 
 export function prepareCpuClubs(league) {
-  const cpuClubs = league.clubs.filter(club => club.id !== league.humanClubId);
+  const cpuClubs = league.clubs.filter(club => club.controllerType === 'CPU');
   for (const club of cpuClubs) {
     selectBestLineup(club);
     autoSetCpuTactic(club);
@@ -118,7 +142,7 @@ export function prepareCpuClubs(league) {
 
 export function prepareCpuMarketSpace(league) {
   const released = [];
-  for (const club of league.clubs.filter(candidate => candidate.id !== league.humanClubId)) {
+  for (const club of league.clubs.filter(candidate => candidate.controllerType === 'CPU')) {
     const futureCount = position => club.roster.filter(player => player.primaryPosition === position && player.age < 34).length;
     const shortages = Object.entries(REQUIRED).reduce((sum, [position, count]) => sum + Math.max(0, count - futureCount(position)), 0);
     for (let slots = Math.min(shortages, 4); slots > 0 && club.roster.length >= 12; slots--) {
@@ -142,13 +166,15 @@ export function prepareCpuMarketSpace(league) {
 
 export function processLeagueOffseason(league, humanTraining = new Map()) {
   const summaries = [];
+  const humanClubs=league.clubs.filter(club=>club.controllerType==='HUMAN');
   for (const club of league.clubs) {
-    const isHuman = club.id === league.humanClubId;
-    const training = isHuman ? humanTraining : selectCpuTraining(club);
+    const isCpu = club.controllerType === 'CPU';
+    const mappedTraining=humanTraining.get?.(club.id);
+    const training = isCpu ? selectCpuTraining(club) : mappedTraining instanceof Map ? mappedTraining : club.id===humanClubs[0]?.id ? humanTraining : new Map();
     const growth = processOffseason(club, training, createRandom(`${league.seed}:offseason:${league.season}:club:${club.id}`));
-    const contracts = isHuman ? [] : manageCpuContracts(club);
+    const contracts = isCpu ? manageCpuContracts(club) : [];
     selectBestLineup(club);
-    if (!isHuman) autoSetCpuTactic(club);
+    if (isCpu) autoSetCpuTactic(club);
     summaries.push({ clubId: club.id, training: [...training.entries()], growth, contracts, lineup: [...club.lineup], tactic: club.tactic });
   }
   return summaries;
