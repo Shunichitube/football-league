@@ -28,15 +28,28 @@ export function createSchedule(clubIds) {
 export function createLeague({ name, color, seed }) {
   const rng = createRandom(`${seed}:clubs`);
   const clubs = [createClub({ id: 1, name, color, seed: rng, controllerType: 'HUMAN' }), ...CPU_CLUBS.map(([cpuName, cpuColor], index) => createClub({ id: index + 2, name: cpuName, color: cpuColor, seed: rng, controllerType: 'CPU' }))];
-  return { seed, season: 1, history: [], humanClubId: 1, clubs, schedule: createSchedule(clubs.map(c => c.id)), currentRound: 1, records: Object.fromEntries(clubs.map(c => [c.id, blankRecord()])), seasonResults: [], completed: false };
+  return { seed, season: 1, history: [], humanClubId: 1, clubs, schedule: createSchedule(clubs.map(c => c.id)), currentRound: 1, records: Object.fromEntries(clubs.map(c => [c.id, blankRecord()])), seasonResults: [], fixtureResults: [], releasedPlayers: [], completed: false };
 }
 
 export function clubsForController(league, controllerType) { return league.clubs.filter(club => club.controllerType === controllerType); }
 
 export function standings(league) {
-  return league.clubs.map(club => ({ club, ...league.records[club.id], goalDifference: league.records[club.id].goalsFor - league.records[club.id].goalsAgainst }))
-    .sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference || b.goalsFor - a.goalsFor || a.club.id - b.club.id)
-    .map((row, index) => ({ ...row, rank: index + 1 }));
+  const rows = league.clubs.map(club => ({ club, ...league.records[club.id], goalDifference: league.records[club.id].goalsFor - league.records[club.id].goalsAgainst }));
+  const primary = (a, b) => b.points - a.points || b.goalDifference - a.goalDifference || b.goalsFor - a.goalsFor;
+  const ranked = [];
+  for (let start = 0, ordered = [...rows].sort(primary); start < ordered.length;) {
+    let end = start + 1; while (end < ordered.length && primary(ordered[start], ordered[end]) === 0) end++;
+    const group = ordered.slice(start, end), ids = new Set(group.map(row => row.club.id)), direct = new Map(group.map(row => [row.club.id, { points: 0, difference: 0, goals: 0 }]));
+    for (const match of league.fixtureResults || []) if (ids.has(match.homeId) && ids.has(match.awayId)) {
+      const home = direct.get(match.homeId), away = direct.get(match.awayId), { homeGoals, awayGoals } = match;
+      home.goals += homeGoals; away.goals += awayGoals; home.difference += homeGoals - awayGoals; away.difference += awayGoals - homeGoals;
+      if (homeGoals > awayGoals) home.points += 3; else if (homeGoals < awayGoals) away.points += 3; else { home.points++; away.points++; }
+    }
+    const tieRng = createRandom(`${league.seed}:season:${league.season}:tiebreak:${group.map(row => row.club.id).sort((a,b)=>a-b).join('-')}`), random = new Map([...group].sort((a,b)=>a.club.id-b.club.id).map(row => [row.club.id, tieRng.next()]));
+    ranked.push(...group.sort((a, b) => direct.get(b.club.id).points - direct.get(a.club.id).points || direct.get(b.club.id).difference - direct.get(a.club.id).difference || direct.get(b.club.id).goals - direct.get(a.club.id).goals || random.get(b.club.id) - random.get(a.club.id)));
+    start = end;
+  }
+  return ranked.map((row, index) => ({ ...row, rank: index + 1 }));
 }
 
 function applyResult(league, fixture, result) {
@@ -73,6 +86,7 @@ export function playCurrentRound(league) {
     const home = league.clubs.find(c => c.id === fixture.homeId); const away = league.clubs.find(c => c.id === fixture.awayId);
     const result = simulateMatch(home, away, createRandom(`${league.seed}:round:${round.round}:match:${index}`));
     applyResult(league, fixture, result);
+    (league.fixtureResults ||= []).push({ homeId: fixture.homeId, awayId: fixture.awayId, homeGoals: result.score.home, awayGoals: result.score.away });
     return { fixture: { ...fixture, home: cloneSide(home), away: cloneSide(away) }, result };
   });
   const humanIds = new Set(clubsForController(league, 'HUMAN').map(club => club.id));
@@ -124,11 +138,13 @@ export function applySeasonFinances(league) {
 export function startNextSeason(league) {
   recordSeasonHistory(league);
   if(league.season>=10) return false;
+  league.previousStandings = standings(league).map(row => ({ clubId: row.club.id, rank: row.rank }));
   league.season++;
   league.schedule=createSchedule(league.clubs.map(c=>c.id));
   league.currentRound=1;
   league.records=Object.fromEntries(league.clubs.map(c=>[c.id,blankRecord()]));
   league.seasonResults=[];
+  league.fixtureResults=[];
   league.completed=false;
   league.clubs.flatMap(c=>c.roster).forEach(p=>{p.season={appearances:0,goals:0,assists:0,shots:0,attackContributions:0,defensiveStops:0,saves:0,conceded:0,ratingTotal:0};});
   return true;
