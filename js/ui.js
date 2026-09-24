@@ -1,6 +1,6 @@
-import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.16.6';
-import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.16.6';
-import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.16.6';
+import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.16.7';
+import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.16.7';
+import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.16.7';
 
 export const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
 
@@ -30,14 +30,14 @@ export function renderPlayerCard(player, options = {}) {
     <div class="player-profile">
       <div class="player-title"><b>${escapeHtml(display.name)}</b><strong class="overall-rank">総合 ${display.overallRank}</strong></div>
       <span class="position-badge">${positionLabel(display.primaryPosition)}</span>
-      <p>年齢 ${display.age}歳・契約${display.contractYears}年</p>
-      <p>適正ポジション：${fitPositions(display.primaryPosition)}</p>
-      <p>伸びやすい能力：${growthHint(player)}</p>
+      <p class="player-meta">年齢 <b>${display.age}歳</b></p>
+      <p class="player-meta">契約 <b>${display.contractYears}年</b></p>
+      <p class="growth-expectation">成長期待：<b>${growthHint(player)}</b></p>
+      ${specialAbility}
       ${release}
     </div>
     <div class="player-abilities">
       <dl class="ability-grid">${publicAbilities(player).map(ability => `<div><dt>${ability.label}</dt><dd><span>${ability.rank}</span><i class="rank-bar rank-${ability.rank}"><b></b></i></dd></div>`).join('')}</dl>
-      ${specialAbility}
     </div>
   </article>`;
 }
