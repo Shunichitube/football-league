@@ -1,5 +1,5 @@
 import { createClub } from './data.js';
-import { simulateMatch } from './sim.js?v=0.9.1';
+import { simulateMatch } from './sim.js?v=0.16.0';
 import { createRandom } from './random.js';
 
 const CPU_CLUBS = [
@@ -65,7 +65,7 @@ function applyResult(league, fixture, result) {
   if (homeGoals > awayGoals) { home.wins++; home.points += 3; away.losses++; }
   else if (homeGoals < awayGoals) { away.wins++; away.points += 3; home.losses++; }
   else { home.draws++; away.draws++; home.points++; away.points++; }
-  for (const row of result.playerResults) { const p = row.player; p.season.appearances++; p.season.goals += row.goals; p.season.assists += row.assists; p.season.shots += row.shots; p.season.attackContributions += row.attackContributions; p.season.defensiveStops += row.defensiveStops; p.season.saves += row.saves; p.season.conceded += row.conceded; p.season.ratingTotal += row.rating; p.career ||= { appearances: 0, goals: 0, assists: 0, shots: 0, attackContributions: 0, defensiveStops: 0, saves: 0, conceded: 0, ratingTotal: 0 }; p.career.appearances++; p.career.goals += row.goals; p.career.assists += row.assists; p.career.shots += row.shots; p.career.attackContributions += row.attackContributions; p.career.defensiveStops += row.defensiveStops; p.career.saves += row.saves; p.career.conceded += row.conceded; p.career.ratingTotal += row.rating; archiveCareer(league, p); }
+  for (const row of result.playerResults) { const p = row.player; p.season.appearances++; p.season.goals += row.goals; p.season.assists += row.assists; p.season.shots += row.shots; p.season.attackContributions += row.attackContributions; p.season.defensiveStops += row.defensiveStops; p.season.saves += row.saves; p.season.conceded += row.conceded; p.season.ratingTotal += row.rating; p.season.playedPhases = (p.season.playedPhases || 0) + (row.playedPhases || 0); p.career ||= { appearances: 0, goals: 0, assists: 0, shots: 0, attackContributions: 0, defensiveStops: 0, saves: 0, conceded: 0, ratingTotal: 0, playedPhases: 0 }; p.career.appearances++; p.career.goals += row.goals; p.career.assists += row.assists; p.career.shots += row.shots; p.career.attackContributions += row.attackContributions; p.career.defensiveStops += row.defensiveStops; p.career.saves += row.saves; p.career.conceded += row.conceded; p.career.ratingTotal += row.rating; p.career.playedPhases = (p.career.playedPhases || 0) + (row.playedPhases || 0); archiveCareer(league, p); }
 }
 
 function clonePlayer(player) {
@@ -156,6 +156,6 @@ export function startNextSeason(league) {
   league.seasonResults=[];
   league.fixtureResults=[];
   league.completed=false;
-  league.clubs.flatMap(c=>c.roster).forEach(p=>{p.season={appearances:0,goals:0,assists:0,shots:0,attackContributions:0,defensiveStops:0,saves:0,conceded:0,ratingTotal:0};});
+  league.clubs.flatMap(c=>c.roster).forEach(p=>{p.season={appearances:0,goals:0,assists:0,shots:0,attackContributions:0,defensiveStops:0,saves:0,conceded:0,ratingTotal:0,playedPhases:0};});
   return true;
 }
