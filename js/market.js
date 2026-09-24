@@ -1,4 +1,4 @@
-import { calculateOverall, createPlayer, displayPlayer, FIELD_STAT_KEYS, STAT_LABELS } from './data.js';
+import { calculateOverall, createPlayer, displayPlayer, FIELD_STAT_KEYS, STAT_LABELS } from './data.js?v=0.16.0';
 import { createRandom, weightedPick } from './random.js';
 import { ACTION_TYPES } from './rules.js?v=0.16.0';
 
