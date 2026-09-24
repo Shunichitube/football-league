@@ -1,12 +1,12 @@
 import { rankOf } from './config.js';
-import { calculateOverall, FIELD_STAT_KEYS } from './data.js';
-import { SPECIAL_ABILITIES } from './market.js?v=0.12.0';
+import { calculateOverall, FIELD_STAT_KEYS, FIELD_PLAYER_STAT_KEYS } from './data.js';
+import { SPECIAL_ABILITIES } from './market.js?v=0.16.0';
 import { weightedPick } from './random.js';
 
 const ageBase = age => age <= 19 ? 2.4 : age <= 21 ? 2 : age <= 23 ? 1.6 : age <= 25 ? 1 : age <= 28 ? .4 : 0;
 const highModifier = value => value <= 75 ? 1 : value <= 80 ? .8 : value <= 85 ? .65 : value <= 90 ? .45 : .25;
 const appearanceModifier = player => player.season.appearances >= 7 ? 1 : player.season.appearances >= 3 ? .85 : .7;
-const skills = player => player.primaryPosition === 'GK' ? [...FIELD_STAT_KEYS, 'gk'] : FIELD_STAT_KEYS;
+const skills = player => player.primaryPosition === 'GK' ? [...FIELD_STAT_KEYS, 'gk'] : FIELD_PLAYER_STAT_KEYS;
 const growthFor = (player, key) => typeof player.hiddenGrowth === 'number' ? player.hiddenGrowth : player.hiddenGrowth?.[key] ?? 1;
 
 const weightedDistinctSkills = (player, rng) => {
@@ -33,16 +33,19 @@ function learnedAbilityFor(player, gainedKeys, rng) {
       if (grew('defense') || season.defensiveStops) value += ['ボールハンター', 'カバーリング', 'パスカット', '最終防衛線'].includes(ability) ? 3 : 0;
       if (grew('pass') || player.stats.pass >= 75) value += ability === 'ビルドアップ' ? 3 : 0;
       if (grew('speed')) value += ability === 'カウンター起点' ? 2 : 0;
+      if (grew('stamina')) value += ability === '回復力' ? 2 : 0;
     } else if (player.primaryPosition === 'ALA') {
       if (grew('speed')) value += ['スピードスター', 'ハードワーカー'].includes(ability) ? 3 : 0;
       if (grew('dribble')) value += ['ドリブラー', 'カットイン'].includes(ability) ? 3 : 0;
       if (grew('pass') || season.assists) value += ability === 'チャンスメイカー' ? 3 : 0;
       const values = FIELD_STAT_KEYS.map(key => player.stats[key]);
       if (Math.max(...values) - Math.min(...values) <= 8) value += ability === '万能型' ? 2 : 0;
+      if (grew('stamina')) value += ability === '回復力' ? 2 : 0;
     } else if (player.primaryPosition === 'PIVO') {
       if (grew('shoot') || season.goals) value += ['フィニッシャー', 'ミドルシューター', '勝負強さ', 'エース'].includes(ability) ? 3 : 0;
       if (grew('pass') || season.assists) value += ability === 'ポストプレーヤー' ? 3 : 0;
       if (grew('dribble')) value += ability === '個人技' ? 3 : 0;
+      if (grew('stamina')) value += ability === '回復力' ? 2 : 0;
     }
     return value;
   };
