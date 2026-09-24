@@ -1,5 +1,5 @@
 import { displayPlayer, STAT_LABELS } from './data.js';
-import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.14.0';
+import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.15.0';
 import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.9.0';
 
 export const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
@@ -16,7 +16,7 @@ export function renderPlayerCard(player, options = {}) {
   return `<article class="player-card">
     <div class="player-title"><b>${escapeHtml(display.name)}</b><strong class="overall-rank">総合 ${display.overallRank}</strong></div>
     <span>${display.primaryPosition}・${display.age}歳・契約${display.contractYears}年</span>
-    <dl class="ability-grid">${publicAbilities(player).map(ability => `<div><dt>${ability.label}</dt><dd>${ability.rank}</dd></div>`).join('')}</dl>
+    <dl class="ability-grid">${publicAbilities(player).map(ability => `<div><dt>${ability.label}</dt><dd><span>${ability.rank}</span><i class="rank-bar rank-${ability.rank}"><b></b></i></dd></div>`).join('')}</dl>
     <p class="special-ability">${display.specialAbility ? `★ ${escapeHtml(display.specialAbility)}` : '特殊能力なし'}</p>
     ${details}
   </article>`;
