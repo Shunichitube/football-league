@@ -54,6 +54,7 @@ export function processOffseason(club, training, rng) {
   const results = [];
   for (const player of [...club.roster]) {
     const before = Object.fromEntries(Object.entries(player.stats).map(([key, value]) => [key, rankOf(value)]));
+    const gkBefore = player.stats.gk;
     const ageBefore = player.age;
     player.age++;
     const focus = training.get(player.id);
@@ -76,6 +77,11 @@ export function processOffseason(club, training, rng) {
       }
       player.stats[key] = Math.max(50, Math.min(99, value + delta));
       if (player.stats[key] > value) grew.push(key);
+    }
+    // 32〜34歳のGKは、GK能力だけを毎年ちょうど1表示ランク下げる。
+    if (player.primaryPosition === 'GK' && player.age >= 32 && player.age <= 34) {
+      const nextRankCap = { SS: 90, S: 85, A: 80, B: 75, C: 70, D: 65, E: 60, F: 55, G: 50 };
+      player.stats.gk = nextRankCap[rankOf(gkBefore)];
     }
     const awakeningRate = Math.min(.06, (.03 + (focus ? .02 : 0) + (player.season.appearances >= 7 ? .01 : 0)) * ((player.awakeningCount || 0) ? .25 : 1));
     const awakeningKeys = ageBefore >= 18 && ageBefore <= 23 && rng.next() < awakeningRate ? weightedDistinctSkills(player, rng) : [];
