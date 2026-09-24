@@ -1,4 +1,4 @@
-import { ensurePlayerCompatibility } from './data.js?v=0.16.1';
+import { ensurePlayerCompatibility } from './data.js?v=0.16.2';
 import { createRandom } from './random.js';
 
 const KEY = 'football-league:slot:';
