@@ -1,5 +1,5 @@
 import { applySeasonFinances, awards, createLeague, finalizeSeason, simulateRemainingSeason, standings, startNextSeason } from './league.js?v=0.16.0';
-import { STAT_LABELS } from './data.js';
+import { STAT_LABELS } from './data.js?v=0.16.0';
 import { createRandom } from './random.js';
 import { createAuctionPool, createDraftPool, resolveAuctionActions, resolveDraftActions } from './market.js?v=0.16.0';
 import { escapeHtml as e, renderLineupEditor, renderMatchDetail, renderPlayerCard, renderPlayerDetail, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=0.16.0';
