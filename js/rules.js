@@ -1,4 +1,4 @@
-import { renewalFee } from './development.js?v=0.16.2';
+import { renewalFee } from './development.js?v=0.16.3';
 
 export const ACTION_TYPES = Object.freeze({
   DRAFT_PICK: 'DRAFT_PICK',
@@ -14,6 +14,8 @@ export const LINEUP_SLOTS = Object.freeze(['GK', 'FIXO', 'ALA', 'ALA', 'PIVO']);
 const ADJACENT_POSITIONS = Object.freeze({ FIXO: ['ALA'], ALA: ['FIXO', 'PIVO'], PIVO: ['ALA'] });
 
 const TACTICS = new Set(['BALANCED', 'POSSESSION', 'DRIBBLE', 'COUNTER']);
+const POSITION_LABELS = { GK: 'GK', FIXO: 'DF', ALA: 'MF', PIVO: 'FW' };
+const positionLabel = position => POSITION_LABELS[position] || position;
 
 export function positionSuitability(player, slotPosition) {
   if (!player) return 0;
@@ -33,7 +35,7 @@ export function validateLineup(club, lineup = club?.lineup) {
   const warnings = players.flatMap((player, index) => {
     const slot = LINEUP_SLOTS[index];
     if (player.primaryPosition === slot) return [];
-    return [`${player.name}：本職${player.primaryPosition}から${slot}への適性外配置`];
+    return [`${player.name}：本職${positionLabel(player.primaryPosition)}から${positionLabel(slot)}への適性外配置`];
   });
   return { ok: true, warnings };
 }
