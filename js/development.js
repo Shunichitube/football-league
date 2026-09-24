@@ -1,6 +1,6 @@
 import { rankOf } from './config.js';
-import { calculateOverall, FIELD_STAT_KEYS, FIELD_PLAYER_STAT_KEYS } from './data.js?v=0.17.0';
-import { SPECIAL_ABILITIES } from './market.js?v=0.17.0';
+import { calculateOverall, FIELD_STAT_KEYS, FIELD_PLAYER_STAT_KEYS } from './data.js?v=0.17.1';
+import { SPECIAL_ABILITIES } from './market.js?v=0.17.1';
 import { weightedPick } from './random.js';
 
 const RANKS = ['G', 'F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS'];
@@ -64,6 +64,7 @@ function learnedAbilityFor(player, gainedKeys, rng) {
 export function trainingSkills(player) { return skills(player); }
 export function createContractEvents(club, rng) {
   return club.roster.map(player => {
+    if (player.contractYears <= 1) return null;
     const rank = rankOf(calculateOverall(player));
     const rule = CONTRACT_EVENTS[rank];
     if (!rule || rng.next() >= rule.rate) return null;

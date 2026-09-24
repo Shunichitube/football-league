@@ -1,6 +1,6 @@
-import { calculateOverall, createPlayer, displayPlayer, FIELD_STAT_KEYS, STAT_LABELS } from './data.js?v=0.17.0';
+import { calculateOverall, createPlayer, displayPlayer, FIELD_STAT_KEYS, STAT_LABELS } from './data.js?v=0.17.1';
 import { createRandom, weightedPick } from './random.js';
-import { ACTION_TYPES } from './rules.js?v=0.17.0';
+import { ACTION_TYPES } from './rules.js?v=0.17.1';
 
 const DRAFT_DISTRIBUTION = [['G', 35], ['F', 35], ['E', 20], ['D', 8], ['C', 2]];
 // 新規に生成する競売選手だけに適用する分布。放出選手は能力を保持したまま戻る。
