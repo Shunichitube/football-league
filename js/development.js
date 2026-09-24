@@ -1,6 +1,6 @@
 import { rankOf } from './config.js';
-import { calculateOverall, FIELD_STAT_KEYS, FIELD_PLAYER_STAT_KEYS } from './data.js?v=0.16.2';
-import { SPECIAL_ABILITIES } from './market.js?v=0.16.2';
+import { calculateOverall, FIELD_STAT_KEYS, FIELD_PLAYER_STAT_KEYS } from './data.js?v=0.16.3';
+import { SPECIAL_ABILITIES } from './market.js?v=0.16.3';
 import { weightedPick } from './random.js';
 
 const ageBase = age => age <= 19 ? 2.4 : age <= 21 ? 2 : age <= 23 ? 1.6 : age <= 25 ? 1 : age <= 28 ? .4 : 0;
