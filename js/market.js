@@ -3,7 +3,8 @@ import { createRandom, weightedPick } from './random.js';
 import { ACTION_TYPES } from './rules.js?v=0.9.0';
 
 const DRAFT_DISTRIBUTION = [['G', 35], ['F', 35], ['E', 20], ['D', 8], ['C', 2]];
-const AUCTION_DISTRIBUTION = [['F', 15], ['E', 25], ['D', 25], ['C', 20], ['B', 10], ['A', 4], ['S', 1]];
+// 新規に生成する競売選手だけに適用する分布。放出選手は能力を保持したまま戻る。
+const AUCTION_DISTRIBUTION = [['F', 15], ['E', 30], ['D', 30], ['C', 20], ['B', 4], ['A', 1]];
 const RANGE = { G: [50,55], F: [56,60], E: [61,65], D: [66,70], C: [71,75], B: [76,80], A: [81,85], S: [86,90] };
 const POSITIONS = ['GK', 'FIXO', 'ALA', 'ALA', 'PIVO'];
 const BASE_VALUE = { G: 3, F: 6, E: 9, D: 14, C: 19, B: 26, A: 35, S: 48, SS: 62 };
@@ -117,6 +118,8 @@ export function createAuctionPool(seed, season = 1, releasedPlayers = []) {
 }
 export function publicValue(player) { return BASE_VALUE[displayPlayer(player).overallRank]; }
 export function cpuCandidatePick(club, candidates, rng) {
+  // 複数の空き枠を持って市場へ入ったCPUは、競売用に1枠を残す。
+  if (club.reserveAuctionSlot && club.roster.length >= 11) return null;
   const futureCounts = Object.fromEntries(Object.keys(REQUIRED_POSITIONS).map(position => [position, club.roster.filter(player => player.primaryPosition === position && player.age < 34).length]));
   return [...candidates].sort((a,b) => cpuDraftScore(club, b, futureCounts, rng) - cpuDraftScore(club, a, futureCounts, rng))[0];
 }
@@ -125,8 +128,12 @@ export function cpuBid(club, player, rng) {
   if (club.roster.length >= 12 || club.funds < 6) return 0;
   const futureCount = club.roster.filter(p => p.primaryPosition === player.primaryPosition && p.age < 34).length;
   const shortage = futureCount < REQUIRED_POSITIONS[player.primaryPosition] ? rng.int(15,25) : 0;
+  const samePosition = club.roster.filter(p => p.primaryPosition === player.primaryPosition);
+  const bestCurrent = samePosition.length ? Math.max(...samePosition.map(publicValue)) : null;
+  // 表示総合ランクだけを比較し、明確な上位ランクなら補強候補にする。
+  const upgrade = bestCurrent !== null && publicValue(player) > bestCurrent ? rng.int(8,16) : 0;
   const age = player.age <= 23 ? 3 : player.age >= 30 ? -3 : 0;
-  const value = Math.max(0, Math.round((publicValue(player) + shortage + age) * (.75 + rng.next() * .3)));
+  const value = Math.max(0, Math.round((publicValue(player) + shortage + upgrade + age) * (.75 + rng.next() * .3)));
   return Math.min(value, Math.max(0, club.funds - 5));
 }
 export function addPlayer(club, player, cost) { if (club.roster.length >= 12) return false; club.roster.push(player); club.funds -= cost; return true; }
