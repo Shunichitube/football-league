@@ -1,4 +1,4 @@
-import { calculateOverall } from './data.js';
+import { calculateOverall } from './data.js?v=0.16.0';
 import { processOffseason, renewalFee } from './development.js?v=0.16.0';
 import { createRandom } from './random.js';
 import { cpuBid, cpuCandidatePick } from './market.js?v=0.16.0';
