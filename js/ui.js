@@ -1,6 +1,6 @@
-import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.16.5';
-import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.16.5';
-import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.16.5';
+import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.16.6';
+import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.16.6';
+import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.16.6';
 
 export const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
 
@@ -21,7 +21,11 @@ const growthHint = player => {
 
 export function renderPlayerCard(player, options = {}) {
   const display = displayPlayer(player);
-  const details = options.details !== false ? `<button type="button" data-detail="${escapeHtml(player.id)}" class="detail-button subtle">選手詳細</button>` : '';
+  const description = display.specialAbility ? SPECIAL_ABILITY_DESCRIPTIONS[display.specialAbility] : '';
+  const specialAbility = display.specialAbility
+    ? `<details class="special-ability-detail"><summary>★ ${escapeHtml(display.specialAbility)} <span>詳細</span></summary><p>${escapeHtml(description)}</p></details>`
+    : '<p class="special-ability none">―</p>';
+  const release = options.allowRelease ? `<button type="button" data-stage10="release" data-release-player="${escapeHtml(player.id)}" class="subtle release-button">この選手を放出</button>` : '';
   return `<article class="player-card">
     <div class="player-profile">
       <div class="player-title"><b>${escapeHtml(display.name)}</b><strong class="overall-rank">総合 ${display.overallRank}</strong></div>
@@ -29,11 +33,11 @@ export function renderPlayerCard(player, options = {}) {
       <p>年齢 ${display.age}歳・契約${display.contractYears}年</p>
       <p>適正ポジション：${fitPositions(display.primaryPosition)}</p>
       <p>伸びやすい能力：${growthHint(player)}</p>
-      ${details}
+      ${release}
     </div>
     <div class="player-abilities">
       <dl class="ability-grid">${publicAbilities(player).map(ability => `<div><dt>${ability.label}</dt><dd><span>${ability.rank}</span><i class="rank-bar rank-${ability.rank}"><b></b></i></dd></div>`).join('')}</dl>
-      <p class="special-ability">${display.specialAbility ? `★ ${escapeHtml(display.specialAbility)}` : '―'}</p>
+      ${specialAbility}
     </div>
   </article>`;
 }
@@ -42,11 +46,11 @@ export function positionCounts(roster) {
   return ['GK', 'DF', 'MF', 'FW'].map(position => ({ position, label: positionLabel(position), count: roster.filter(player => player.primaryPosition === position).length }));
 }
 
-export function renderRosterPanel(club) {
+export function renderRosterPanel(club, options = {}) {
   return `<section class="overlay-panel roster-panel" role="dialog" aria-modal="true" aria-label="所属選手">
     <div class="overlay-heading"><div><p class="eyebrow">${escapeHtml(club.name)}</p><h2>所属選手</h2></div><button type="button" data-stage10="close" class="subtle">閉じる</button></div>
     <div class="position-counts">${positionCounts(club.roster).map(row => `<span>${row.label} <b>${row.count}</b></span>`).join('')}</div>
-    <div class="candidate-grid">${club.roster.map(player => renderPlayerCard(player)).join('')}</div>
+    <div class="candidate-grid">${club.roster.map(player => renderPlayerCard(player, { allowRelease: Boolean(options.allowRelease) })).join('')}</div>
   </section>`;
 }
 
