@@ -1,9 +1,19 @@
+import { ensurePlayerCompatibility } from './data.js?v=0.16.0';
+import { createRandom } from './random.js';
+
 const KEY = 'football-league:slot:';
 function normalizeControllers(state) {
   const league=state?.league;
   if(!league?.clubs) return state;
   const legacyHumanId=league.humanClubId ?? league.clubs[0]?.id;
   for(const club of league.clubs) if(!club.controllerType) club.controllerType=club.id===legacyHumanId?'HUMAN':'CPU';
+  const allPlayers=[
+    ...league.clubs.flatMap(club=>club.roster||[]),
+    ...(league.releasedPlayers||[]),
+    ...(state.draft?.pool||[]),
+    ...(state.auction?.pool||[])
+  ];
+  for(const player of allPlayers) ensurePlayerCompatibility(player, createRandom(`${league.seed||'legacy'}:compat:stamina:${player.id}`));
   if(!Array.isArray(league.seasonResults)) league.seasonResults=[];
   return state;
 }
