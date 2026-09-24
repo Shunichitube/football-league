@@ -1,7 +1,10 @@
 import { rankOf } from './config.js';
 
 export const FIELD_STAT_KEYS = ['shoot', 'speed', 'defense', 'dribble', 'pass'];
-export const STAT_LABELS = { shoot: 'シュート', speed: '走力', defense: '守備', dribble: 'ドリブル', pass: 'パス', gk: 'GK' };
+export const FIELD_PLAYER_STAT_KEYS = [...FIELD_STAT_KEYS, 'stamina'];
+export const STAT_LABELS = { shoot: 'シュート', speed: '走力', defense: '守備', dribble: 'ドリブル', pass: 'パス', stamina: 'スタミナ', gk: 'GK' };
+const STAMINA_DISTRIBUTION = [['G', 12], ['F', 18], ['E', 22], ['D', 20], ['C', 14], ['B', 8], ['A', 4], ['S', 1], ['SS', 1]];
+const RANK_RANGE = { G: [50,55], F: [56,60], E: [61,65], D: [66,70], C: [71,75], B: [76,80], A: [81,85], S: [86,90], SS: [91,99] };
 
 // The seeded RNG draws first and last names independently. These broad pools
 // keep duplicate full names uncommon without deriving names from player IDs.
@@ -19,8 +22,23 @@ const OVERALL_WEIGHTS = {
 function growthProfile(position, rng, initial) {
   const min = initial ? 55 : 70;
   const max = initial ? 75 : 130;
-  const keys = position === 'GK' ? [...FIELD_STAT_KEYS, 'gk'] : FIELD_STAT_KEYS;
+  const keys = position === 'GK' ? [...FIELD_STAT_KEYS, 'gk'] : FIELD_PLAYER_STAT_KEYS;
   return Object.fromEntries(keys.map(key => [key, rng.int(min, max) / 100]));
+}
+
+function weightedTier(distribution, rng) {
+  const total = distribution.reduce((sum, [, weight]) => sum + weight, 0);
+  let roll = rng.next() * total;
+  for (const [rank, weight] of distribution) {
+    roll -= weight;
+    if (roll <= 0) return rank;
+  }
+  return distribution.at(-1)[0];
+}
+
+function staminaValue(rng) {
+  const [min, max] = RANK_RANGE[weightedTier(STAMINA_DISTRIBUTION, rng)];
+  return rng.int(min, max);
 }
 
 export function createPlayer(id, position, rng, options = {}) {
@@ -29,10 +47,11 @@ export function createPlayer(id, position, rng, options = {}) {
   const ability = () => options.initial ? rng.int(50, 55) : rng.int(50, 70);
   const stats = { shoot: ability(), speed: ability(), defense: ability(), dribble: ability(), pass: ability(), gk: position === 'GK' ? ability() : 50 };
   if (position === 'GK') stats.gk = options.initial ? rng.int(50, 55) : rng.int(55, 70);
+  if (position !== 'GK') stats.stamina = staminaValue(rng);
   return { id: `p-${id}`, name: `${last} ${first}`, age: 25, nationality: '日本', primaryPosition: position, stats, isInitial: Boolean(options.initial), specialAbility: null, contractYears: 3, hiddenGrowth: growthProfile(position, rng, Boolean(options.initial)), season: blankSeason(), career: blankSeason() };
 }
 
-function blankSeason() { return { appearances: 0, goals: 0, assists: 0, shots: 0, attackContributions: 0, defensiveStops: 0, saves: 0, conceded: 0, ratingTotal: 0 }; }
+export function blankSeason() { return { appearances: 0, goals: 0, assists: 0, shots: 0, attackContributions: 0, defensiveStops: 0, saves: 0, conceded: 0, ratingTotal: 0, playedPhases: 0 }; }
 
 export function createClub({ id, name, color, seed, initial = true, controllerType = 'CPU' }) {
   const players = POSITIONS.map((position, i) => createPlayer(id * 10 + i, position, seed, { initial }));
@@ -46,7 +65,22 @@ export function calculateOverall(player) {
 
 export function displayPlayer(player) {
   const s = player.stats;
-  return { ...player, overallRank: rankOf(calculateOverall(player)), ranks: { shoot: rankOf(s.shoot), speed: rankOf(s.speed), defense: rankOf(s.defense), dribble: rankOf(s.dribble), pass: rankOf(s.pass), gk: rankOf(s.gk) } };
+  return { ...player, overallRank: rankOf(calculateOverall(player)), ranks: { shoot: rankOf(s.shoot), speed: rankOf(s.speed), defense: rankOf(s.defense), dribble: rankOf(s.dribble), pass: rankOf(s.pass), stamina: s.stamina ? rankOf(s.stamina) : null, gk: rankOf(s.gk) } };
 }
 
 export function playerById(club, id) { return club.roster.find(p => p.id === id); }
+
+export function ensurePlayerCompatibility(player, rng) {
+  if (!player?.stats) return player;
+  if (player.primaryPosition !== 'GK' && typeof player.stats.stamina !== 'number') player.stats.stamina = staminaValue(rng);
+  if (player.primaryPosition === 'GK' && 'stamina' in player.stats) delete player.stats.stamina;
+  if (!player.hiddenGrowth || typeof player.hiddenGrowth === 'number') {
+    const base = typeof player.hiddenGrowth === 'number' ? player.hiddenGrowth : 1;
+    player.hiddenGrowth = Object.fromEntries((player.primaryPosition === 'GK' ? [...FIELD_STAT_KEYS, 'gk'] : FIELD_PLAYER_STAT_KEYS).map(key => [key, base]));
+  } else if (player.primaryPosition !== 'GK' && typeof player.hiddenGrowth.stamina !== 'number') {
+    player.hiddenGrowth.stamina = rng.int(70, 130) / 100;
+  }
+  if (player.primaryPosition === 'GK' && player.hiddenGrowth && typeof player.hiddenGrowth === 'object') delete player.hiddenGrowth.stamina;
+  for (const bucket of ['season', 'career']) if (player[bucket] && typeof player[bucket].playedPhases !== 'number') player[bucket].playedPhases = 0;
+  return player;
+}
