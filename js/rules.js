@@ -1,4 +1,4 @@
-import { renewalFee } from './development.js?v=0.16.3';
+import { renewalFee } from './development.js?v=0.16.4';
 
 export const ACTION_TYPES = Object.freeze({
   DRAFT_PICK: 'DRAFT_PICK',
@@ -10,11 +10,11 @@ export const ACTION_TYPES = Object.freeze({
   RELEASE_PLAYER: 'RELEASE_PLAYER'
 });
 
-export const LINEUP_SLOTS = Object.freeze(['GK', 'FIXO', 'ALA', 'ALA', 'PIVO']);
-const ADJACENT_POSITIONS = Object.freeze({ FIXO: ['ALA'], ALA: ['FIXO', 'PIVO'], PIVO: ['ALA'] });
+export const LINEUP_SLOTS = Object.freeze(['GK', 'DF', 'MF', 'MF', 'FW']);
+const ADJACENT_POSITIONS = Object.freeze({ DF: ['MF'], MF: ['DF', 'FW'], FW: ['MF'] });
 
 const TACTICS = new Set(['BALANCED', 'POSSESSION', 'DRIBBLE', 'COUNTER']);
-const POSITION_LABELS = { GK: 'GK', FIXO: 'DF', ALA: 'MF', PIVO: 'FW' };
+const POSITION_LABELS = { GK: 'GK', DF: 'DF', MF: 'MF', FW: 'FW' };
 const positionLabel = position => POSITION_LABELS[position] || position;
 
 export function positionSuitability(player, slotPosition) {

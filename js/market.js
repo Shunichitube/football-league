@@ -1,31 +1,31 @@
-import { calculateOverall, createPlayer, displayPlayer, FIELD_STAT_KEYS, STAT_LABELS } from './data.js?v=0.16.3';
+import { calculateOverall, createPlayer, displayPlayer, FIELD_STAT_KEYS, STAT_LABELS } from './data.js?v=0.16.4';
 import { createRandom, weightedPick } from './random.js';
-import { ACTION_TYPES } from './rules.js?v=0.16.3';
+import { ACTION_TYPES } from './rules.js?v=0.16.4';
 
 const DRAFT_DISTRIBUTION = [['G', 35], ['F', 35], ['E', 20], ['D', 8], ['C', 2]];
 // 新規に生成する競売選手だけに適用する分布。放出選手は能力を保持したまま戻る。
 const AUCTION_DISTRIBUTION = [['F', 15], ['E', 30], ['D', 30], ['C', 20], ['B', 4], ['A', 1]];
 const RANGE = { G: [50,55], F: [56,60], E: [61,65], D: [66,70], C: [71,75], B: [76,80], A: [81,85], S: [86,90] };
-const POSITIONS = ['GK', 'FIXO', 'ALA', 'ALA', 'PIVO'];
+const POSITIONS = ['GK', 'DF', 'MF', 'MF', 'FW'];
 const BASE_VALUE = { G: 3, F: 6, E: 9, D: 14, C: 19, B: 26, A: 35, S: 48, SS: 62 };
-const REQUIRED_POSITIONS = { GK: 1, FIXO: 1, ALA: 2, PIVO: 1 };
+const REQUIRED_POSITIONS = { GK: 1, DF: 1, MF: 2, FW: 1 };
 const POSITION_PROFILES = {
   GK: [
     { shoot: -14, speed: -5, defense: -6, dribble: -12, pass: -9, gk: 12 },
     { shoot: -12, speed: 2, defense: -2, dribble: -4, pass: 1, gk: 7 },
     { shoot: -10, speed: -1, defense: -4, dribble: -3, pass: 4, gk: 7 }
   ],
-  FIXO: [
+  DF: [
     { shoot: -12, speed: 1, defense: 12, dribble: -6, pass: 3 },
     { shoot: -10, speed: 0, defense: 5, dribble: -2, pass: 10 },
     { shoot: -9, speed: 9, defense: 7, dribble: -3, pass: 2 }
   ],
-  ALA: [
+  MF: [
     { shoot: 2, speed: 11, defense: -12, dribble: 4, pass: 0 },
     { shoot: 0, speed: 2, defense: -10, dribble: 6, pass: 9 },
     { shoot: 9, speed: 2, defense: -12, dribble: 7, pass: -1 }
   ],
-  PIVO: [
+  FW: [
     { shoot: 13, speed: -1, defense: -13, dribble: 4, pass: -2 },
     { shoot: 8, speed: -5, defense: -7, dribble: -2, pass: 6 },
     { shoot: 6, speed: 0, defense: -12, dribble: 11, pass: 3 }
@@ -33,16 +33,16 @@ const POSITION_PROFILES = {
 };
 const ADJUSTMENT_ORDER = {
   GK: ['gk', 'defense', 'speed', 'pass', 'dribble'],
-  FIXO: ['defense', 'pass', 'speed', 'dribble', 'shoot'],
-  ALA: ['speed', 'dribble', 'pass', 'shoot', 'defense'],
-  PIVO: ['shoot', 'dribble', 'pass', 'speed', 'defense']
+  DF: ['defense', 'pass', 'speed', 'dribble', 'shoot'],
+  MF: ['speed', 'dribble', 'pass', 'shoot', 'defense'],
+  FW: ['shoot', 'dribble', 'pass', 'speed', 'defense']
 };
 
 export const SPECIAL_ABILITIES = {
   GK: ['ショットストッパー', 'ビッグセーバー', 'ロングレンジキラー', '反応型', '安定感', '守護神'],
-  FIXO: ['ボールハンター', 'カバーリング', 'パスカット', 'カウンター起点', 'ビルドアップ', '最終防衛線', '回復力'],
-  ALA: ['スピードスター', 'ドリブラー', 'チャンスメイカー', 'カットイン', 'ハードワーカー', '万能型', '回復力'],
-  PIVO: ['フィニッシャー', 'ミドルシューター', 'ポストプレーヤー', '個人技', '勝負強さ', 'エース', '回復力']
+  DF: ['ボールハンター', 'カバーリング', 'パスカット', 'カウンター起点', 'ビルドアップ', '最終防衛線', '回復力'],
+  MF: ['スピードスター', 'ドリブラー', 'チャンスメイカー', 'カットイン', 'ハードワーカー', '万能型', '回復力'],
+  FW: ['フィニッシャー', 'ミドルシューター', 'ポストプレーヤー', '個人技', '勝負強さ', 'エース', '回復力']
 };
 
 export const SPECIAL_ABILITY_DESCRIPTIONS = {

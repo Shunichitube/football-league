@@ -1,5 +1,5 @@
-import { createClub } from './data.js?v=0.16.3';
-import { simulateMatch } from './sim.js?v=0.16.3';
+import { createClub } from './data.js?v=0.16.4';
+import { simulateMatch } from './sim.js?v=0.16.4';
 import { createRandom } from './random.js';
 
 const CPU_CLUBS = [
@@ -119,7 +119,7 @@ export function simulateRemainingSeason(league) {
   return { rounds, matchesProcessed, humanMatches: [...(league.seasonResults || [])] };
 }
 
-export function awards(league) { const players=league.clubs.flatMap(c=>c.roster.map(p=>({p,c,r:p.season.appearances?p.season.ratingTotal/p.season.appearances:0}))).filter(x=>x.p.season.appearances>=5); const byPos=pos=>players.filter(x=>x.p.primaryPosition===pos).sort((a,b)=>b.r-a.r)[0]; const alas=players.filter(x=>x.p.primaryPosition==='ALA').sort((a,b)=>b.r-a.r).slice(0,2); const best5=[byPos('GK'),byPos('FIXO'),...alas,byPos('PIVO')].filter(Boolean); const mvp=[...players].sort((a,b)=>b.r-a.r)[0]||null; return {best5,mvp}; }
+export function awards(league) { const players=league.clubs.flatMap(c=>c.roster.map(p=>({p,c,r:p.season.appearances?p.season.ratingTotal/p.season.appearances:0}))).filter(x=>x.p.season.appearances>=5); const byPos=pos=>players.filter(x=>x.p.primaryPosition===pos).sort((a,b)=>b.r-a.r)[0]; const alas=players.filter(x=>x.p.primaryPosition==='MF').sort((a,b)=>b.r-a.r).slice(0,2); const best5=[byPos('GK'),byPos('DF'),...alas,byPos('FW')].filter(Boolean); const mvp=[...players].sort((a,b)=>b.r-a.r)[0]||null; return {best5,mvp}; }
 
 function recordSeasonHistory(league) {
   if (league.history.some(entry => entry.season === league.season)) return;

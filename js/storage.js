@@ -1,7 +1,8 @@
-import { ensurePlayerCompatibility } from './data.js?v=0.16.3';
+import { ensurePlayerCompatibility } from './data.js?v=0.16.4';
 import { createRandom } from './random.js';
 
 const KEY = 'football-league:slot:';
+const LEGACY_POSITIONS = { FIXO: 'DF', ALA: 'MF', PIVO: 'FW' };
 function normalizeControllers(state) {
   const league=state?.league;
   if(!league?.clubs) return state;
@@ -14,6 +15,7 @@ function normalizeControllers(state) {
     ...(state.auction?.pool||[])
   ];
   for(const player of allPlayers) ensurePlayerCompatibility(player, createRandom(`${league.seed||'legacy'}:compat:stamina:${player.id}`));
+  for(const season of league.history||[]) for(const row of season.best5||[]) if(row?.position) row.position=LEGACY_POSITIONS[row.position]||row.position;
   if(!Array.isArray(league.seasonResults)) league.seasonResults=[];
   return state;
 }

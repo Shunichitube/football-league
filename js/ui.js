@@ -1,6 +1,6 @@
-import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.16.3';
-import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.16.3';
-import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.16.3';
+import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.16.4';
+import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.16.4';
+import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.16.4';
 
 export const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
 
@@ -10,7 +10,7 @@ const publicAbilities = player => {
   return keys.filter(key => display.ranks[key]).map(key => ({ key, label: STAT_LABELS[key], rank: display.ranks[key] }));
 };
 const positionLabel = position => POSITION_LABELS[position] || position;
-const slotLabel = (slot, index) => `${positionLabel(slot)}${slot === 'ALA' ? ` ${index === 2 ? '1' : '2'}` : ''}`;
+const slotLabel = (slot, index) => `${positionLabel(slot)}${slot === 'MF' ? ` ${index === 2 ? '1' : '2'}` : ''}`;
 
 export function renderPlayerCard(player, options = {}) {
   const display = displayPlayer(player);
@@ -25,7 +25,7 @@ export function renderPlayerCard(player, options = {}) {
 }
 
 export function positionCounts(roster) {
-  return ['GK', 'FIXO', 'ALA', 'PIVO'].map(position => ({ position, label: positionLabel(position), count: roster.filter(player => player.primaryPosition === position).length }));
+  return ['GK', 'DF', 'MF', 'FW'].map(position => ({ position, label: positionLabel(position), count: roster.filter(player => player.primaryPosition === position).length }));
 }
 
 export function renderRosterPanel(club) {
@@ -53,7 +53,7 @@ export function renderPlayerDetail(player, options = {}) {
 export function renderLineupEditor(club, selectedPlayerId = null, message = '', messageIsError = false, benchSort = 'position') {
   const validation = validateLineup(club);
   const starterIds = new Set(club.lineup || []);
-  const positionOrder = { GK: 0, FIXO: 1, ALA: 2, PIVO: 3 };
+  const positionOrder = { GK: 0, DF: 1, MF: 2, FW: 3 };
   const rankOrder = { SS: 0, S: 1, A: 2, B: 3, C: 4, D: 5, E: 6, F: 7, G: 8 };
   const bench = club.roster.map((player, index) => ({ player, index })).filter(row => !starterIds.has(row.player.id)).sort((a, b) => benchSort === 'overall' ? rankOrder[displayPlayer(a.player).overallRank] - rankOrder[displayPlayer(b.player).overallRank] || a.index - b.index : positionOrder[a.player.primaryPosition] - positionOrder[b.player.primaryPosition] || a.index - b.index).map(row => row.player);
   const selected = club.roster.find(player => player.id === selectedPlayerId);

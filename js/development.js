@@ -1,6 +1,6 @@
 import { rankOf } from './config.js';
-import { calculateOverall, FIELD_STAT_KEYS, FIELD_PLAYER_STAT_KEYS } from './data.js?v=0.16.3';
-import { SPECIAL_ABILITIES } from './market.js?v=0.16.3';
+import { calculateOverall, FIELD_STAT_KEYS, FIELD_PLAYER_STAT_KEYS } from './data.js?v=0.16.4';
+import { SPECIAL_ABILITIES } from './market.js?v=0.16.4';
 import { weightedPick } from './random.js';
 
 const ageBase = age => age <= 19 ? 2.4 : age <= 21 ? 2 : age <= 23 ? 1.6 : age <= 25 ? 1 : age <= 28 ? .4 : 0;
@@ -29,19 +29,19 @@ function learnedAbilityFor(player, gainedKeys, rng) {
     if (player.primaryPosition === 'GK') {
       if (season.saves) value += season.saves / 3;
       if (player.stats.gk >= 75) value += 1;
-    } else if (player.primaryPosition === 'FIXO') {
+    } else if (player.primaryPosition === 'DF') {
       if (grew('defense') || season.defensiveStops) value += ['ボールハンター', 'カバーリング', 'パスカット', '最終防衛線'].includes(ability) ? 3 : 0;
       if (grew('pass') || player.stats.pass >= 75) value += ability === 'ビルドアップ' ? 3 : 0;
       if (grew('speed')) value += ability === 'カウンター起点' ? 2 : 0;
       if (grew('stamina')) value += ability === '回復力' ? 2 : 0;
-    } else if (player.primaryPosition === 'ALA') {
+    } else if (player.primaryPosition === 'MF') {
       if (grew('speed')) value += ['スピードスター', 'ハードワーカー'].includes(ability) ? 3 : 0;
       if (grew('dribble')) value += ['ドリブラー', 'カットイン'].includes(ability) ? 3 : 0;
       if (grew('pass') || season.assists) value += ability === 'チャンスメイカー' ? 3 : 0;
       const values = FIELD_STAT_KEYS.map(key => player.stats[key]);
       if (Math.max(...values) - Math.min(...values) <= 8) value += ability === '万能型' ? 2 : 0;
       if (grew('stamina')) value += ability === '回復力' ? 2 : 0;
-    } else if (player.primaryPosition === 'PIVO') {
+    } else if (player.primaryPosition === 'FW') {
       if (grew('shoot') || season.goals) value += ['フィニッシャー', 'ミドルシューター', '勝負強さ', 'エース'].includes(ability) ? 3 : 0;
       if (grew('pass') || season.assists) value += ability === 'ポストプレーヤー' ? 3 : 0;
       if (grew('dribble')) value += ability === '個人技' ? 3 : 0;

@@ -1,16 +1,16 @@
-import { calculateOverall } from './data.js?v=0.16.3';
-import { processOffseason, renewalFee } from './development.js?v=0.16.3';
+import { calculateOverall } from './data.js?v=0.16.4';
+import { processOffseason, renewalFee } from './development.js?v=0.16.4';
 import { createRandom } from './random.js';
-import { cpuBid, cpuCandidatePick } from './market.js?v=0.16.3';
-import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=0.16.3';
+import { cpuBid, cpuCandidatePick } from './market.js?v=0.16.4';
+import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=0.16.4';
 
-const LINEUP_ROLES = ['FIXO', 'ALA', 'ALA', 'PIVO'];
-const REQUIRED = { GK: 1, FIXO: 1, ALA: 2, PIVO: 1 };
+const LINEUP_ROLES = ['DF', 'MF', 'MF', 'FW'];
+const REQUIRED = { GK: 1, DF: 1, MF: 2, FW: 1 };
 const FOCUS_KEYS = {
   GK: ['gk'],
-  FIXO: ['defense', 'pass', 'speed', 'stamina'],
-  ALA: ['speed', 'dribble', 'pass', 'shoot', 'stamina'],
-  PIVO: ['shoot', 'dribble', 'pass', 'stamina']
+  DF: ['defense', 'pass', 'speed', 'stamina'],
+  MF: ['speed', 'dribble', 'pass', 'shoot', 'stamina'],
+  FW: ['shoot', 'dribble', 'pass', 'stamina']
 };
 const TACTIC_ABILITIES = {
   POSSESSION: ['チャンスメイカー', 'ビルドアップ', 'ポストプレーヤー'],
