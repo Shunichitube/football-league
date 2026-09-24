@@ -1,14 +1,14 @@
-import { applySeasonFinances, awards, createLeague, finalizeSeason, simulateRemainingSeason, standings, startNextSeason } from './league.js?v=0.17.1';
-import { POSITION_LABELS, STAT_LABELS } from './data.js?v=0.17.1';
+import { applySeasonFinances, awards, createLeague, finalizeSeason, simulateRemainingSeason, standings, startNextSeason } from './league.js?v=0.17.2';
+import { POSITION_LABELS, STAT_LABELS } from './data.js?v=0.17.2';
 import { createRandom } from './random.js';
-import { createAuctionPool, createDraftPool, resolveAuctionActions, resolveDraftActions } from './market.js?v=0.17.1';
-import { escapeHtml as e, renderLineupEditor, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=0.17.1';
-import { decideCpuAuctionAction, decideCpuDraftAction, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=0.17.1';
-import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=0.17.1';
+import { createAuctionPool, createDraftPool, resolveAuctionActions, resolveDraftActions } from './market.js?v=0.17.2';
+import { escapeHtml as e, renderLineupEditor, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=0.17.2';
+import { decideCpuAuctionAction, decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=0.17.2';
+import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=0.17.2';
 const app=document.querySelector('#app');let s={view:'title',league:null,draft:null,auction:null,match:null,round:0,note:'',rosterOpen:false,detailPlayerId:null,selectedLineupPlayerId:null,lineupMessage:'',lineupError:false,seasonSimulation:null,benchSort:'position'};
 const me=()=>s.league.clubs.find(c=>c.controllerType==='HUMAN')||s.league.clubs.find(c=>c.id===s.league.humanClubId);const player=p=>renderPlayerCard(p);const positionLabel=position=>POSITION_LABELS[position]||position;
 function head(){let c=me(),r=standings(s.league).find(x=>x.club.id===c.id);return `<header><a data-nav="home" class="brand">FOOTBALL <b>LEAGUE</b></a><span>シーズン ${s.league.season} / 10</span><span><i class="club-color-dot" style="--club:${e(c.color)}"></i>${e(c.name)}・${r.rank}位・${c.funds}pt</span></header>`}
-function title(){return `<main class="title"><p>5人制クラブ運営ゲーム</p><h1>FOOTBALL<br><b>LEAGUE</b></h1><button data-a="setup">新しく始める</button><button data-stage19="loadTitle" class="subtle">続きから</button><footer>v0.17.1・Offseason System v1</footer></main>`}
+function title(){return `<main class="title"><p>5人制クラブ運営ゲーム</p><h1>FOOTBALL<br><b>LEAGUE</b></h1><button data-a="setup">新しく始める</button><button data-stage19="loadTitle" class="subtle">続きから</button><footer>v0.17.2・Offseason System v1</footer></main>`}
 function setup(){return `<main class="setup"><h2>クラブを作成</h2><label>クラブ名<input id="name" placeholder="東京ファイブ"></label><label>チームカラー<input id="color" type="color" value="#4ade80"></label><label>シード（任意）<input id="seed" placeholder="同じ値なら同じ展開"></label><button data-a="start">ゲーム開始</button><button data-a="title" class="subtle">戻る</button></main>`}
 function draft(){let d=s.draft,c=me(),canPick=d.pendingClubIds.includes(c.id),simultaneous=d.mode==='SIMULTANEOUS';return `${head()}<main><p class="eyebrow">シーズン${s.league.season} ドラフト・第${d.round}/4巡</p><div class="screen-heading"><h2>${simultaneous?'完全同時指名':'前年順位順指名'}</h2><button data-stage10="roster" class="subtle">所属選手を見る</button></div><p class="hint">${simultaneous?'6クラブが同時に指名し、重複時だけ抽選します。外れたクラブは再指名します。':'前年順位に基づく指名順で、1クラブずつ指名します。'}${e(s.note)}</p><p>資金 <b>${c.funds}pt</b>・登録 ${c.roster.length}/12人</p><section class="candidate-grid">${d.pool.map(p=>`<article class="candidate">${player(p)}<p class="scout-comment"><b>スカウト：</b>${e(p.scoutComment)}</p>${canPick?`<button data-p="${p.id}">この選手を指名</button>`:''}</article>`).join('')}</section><button data-a="skipDraft" class="subtle">残りの指名を辞退</button></main>`}
 function auction(){let a=s.auction,p=a.pool[a.i],c=me();if(!p)return `${head()}<main><section class="hero"><p>競売完了</p><h2>市場が終了しました</h2><button data-a="squad">編成へ進む</button></section></main>`;return `${head()}<main><p class="eyebrow">競売 ${a.i+1}/${a.pool.length}</p><div class="screen-heading"><h2>秘密入札</h2><button data-stage10="roster" class="subtle">所属選手を見る</button></div><p class="hint">${e(s.note)}</p><article class="candidate">${player(p)}<p class="scout-comment"><b>スカウト：</b>${e(p.scoutComment)}</p></article><label>入札額<input id="bid" type="number" min="0" max="${c.funds}" value="0"></label><button data-a="bid">入札する</button><button data-a="pass" class="subtle">見送る</button><p>資金 ${c.funds}pt・登録 ${c.roster.length}/12人</p></main>`}
@@ -33,14 +33,16 @@ function bid(amount){let a=s.auction,p=a.pool[a.i],human=me(),actions=s.league.c
 app.addEventListener('click',ev=>{let a=ev.target.closest('[data-a]')?.dataset.a,n=ev.target.closest('[data-nav]')?.dataset.nav,p=ev.target.closest('[data-p]')?.dataset.p,m=ev.target.closest('[data-season-match]')?.dataset.seasonMatch;if(m!==undefined){s.match=s.league.seasonResults[Number(m)];s.view='matchDetail';return render()}if(n){s.view=n;if(n!=='squad'){s.selectedLineupPlayerId=null;s.lineupMessage='';s.lineupError=false}return render()}if(p){let x=s.draft.pool.find(q=>q.id===p);if(x&&me().funds>=1&&me().roster.length<12)pickDraft(x);return render()}if(a==='setup'||a==='title'){s.view=a;return render()}if(a==='start'){let name=document.querySelector('#name').value.trim();if(!name)return alert('クラブ名を入力してください。');let seed=document.querySelector('#seed').value.trim()||String(Date.now());s.league=createLeague({name,color:document.querySelector('#color').value,seed});s.offseasonComplete=false;beginDraft();return render()}if(a==='skipDraft'){s.draft.humanDeclined=true;if(s.draft.mode==='ORDERED')nextOrderedPick(s.draft);else s.draft.pendingClubIds=s.draft.pendingClubIds.filter(id=>id!==me().id);runCpuDraft();return render()}if(a==='bid'||a==='pass'){let n=a==='pass'?0:Number(document.querySelector('#bid').value);if(n<0||n>me().funds)return alert('入札額を確認してください。');bid(n);return render()}if(a==='squad'){s.view='squad';return render()}if(a==='season'){let lineup=validateLineup(me());if(!lineup.ok)return alert(lineup.error);s.seasonSimulation=simulateRemainingSeason(s.league);if(s.league.season===10)finalizeSeason(s.league);s.view='seasonResults';return render()}});render();
 
 // Stage 4 off-season screens are layered onto the existing season flow.
-import { createContractEvents, createSpecialTrainingOffers, renewalFee, trainingSkills } from './development.js?v=0.17.1';
+import { createContractEvents, createSpecialTrainingOffers, renewalFee, trainingSkills } from './development.js?v=0.17.2';
 const rankScore = { SS: 9, S: 8, A: 7, B: 6, C: 5, D: 4, E: 3, F: 2, G: 1 };
 const marketRelease = (league, club, player) => { club.roster=club.roster.filter(candidate=>candidate.id!==player.id); club.lineup=club.lineup.filter(id=>id!==player.id); if(!player.isInitial){league.releasedPlayers ||= []; if(!league.releasedPlayers.some(candidate=>candidate.id===player.id)) league.releasedPlayers.push(player);} };
 const wouldBreakTeam = (club, player) => club.roster.length <= 5 || (player.primaryPosition === 'GK' && club.roster.filter(candidate=>candidate.primaryPosition==='GK').length <= 1);
-function finishOffseasonEvents(){s.specialOffers=(s.specialOffers||[]).filter(row=>me().roster.some(player=>player.id===row.playerId));s.view=s.specialOffers?.length?'specialTraining':'development'}
+function decrementContracts(){for(const club of s.league.clubs) for(const player of club.roster) player.contractYears--;}
+function finishOffseasonEvents(){s.specialOffers=(s.specialOffers||[]).filter(row=>me().roster.some(player=>player.id===row.playerId));s.view='development'}
 function runCpuOffseasonEvents(eventsByClub, offersByClub){
   s.cpuSpecialTraining = new Map();
   for(const club of s.league.clubs.filter(club=>club.controllerType==='CPU')){
+    manageCpuContracts(club,s.league);
     const events=[...(eventsByClub.get(club.id)||[])].sort((a,b)=>rankScore[b.rank]-rankScore[a.rank] || Number(b.starter)-Number(a.starter));
     for(const event of events){const player=club.roster.find(candidate=>candidate.id===event.playerId); if(!player) continue; const mustKeep=wouldBreakTeam(club,player); if((club.funds-event.cost>=50)||mustKeep) club.funds=Math.max(0,club.funds-event.cost); else marketRelease(s.league,club,player);}
     const accepted=new Set();
@@ -50,13 +52,10 @@ function runCpuOffseasonEvents(eventsByClub, offersByClub){
 }
 const stage4BaseRender = render;
 function stage4Render() {
-  if (s.view === 'retention') {
+  if (s.view === 'offseasonEvents') {
     const c=me();
-    app.innerHTML = `${head()}<main><p class="eyebrow">契約更改イベント</p><h2>残留要求</h2><p class="hint">支払わない場合、その選手は退団して次回競売市場の既存候補へ入ります。</p>${s.retentionEvents.length?s.retentionEvents.map(event=>{const p=c.roster.find(player=>player.id===event.playerId);return p?`<article class="candidate">${player(p)}<p>${event.starter?'先発':'控え'}からの要求：<b>${event.cost}pt</b></p><button data-retention-pay="${p.id}" ${c.funds>=event.cost?'':'disabled'}>支払う</button><button data-retention-release="${p.id}" class="subtle">支払わない</button></article>`:''}).join(''):'<p class="hint">今回の残留要求はありません。</p>'}<button data-stage4="retentionDone" ${s.retentionEvents.length?'disabled':''}>次へ進む</button></main>`; return;
-  }
-  if (s.view === 'specialTraining') {
-    const c=me();
-    app.innerHTML = `${head()}<main><p class="eyebrow">特別特訓</p><h2>来季へ向けた追加投資</h2><p class="hint">実行した場合、結果は成長結果画面で表示されます。通常成長・重点育成・覚醒とは重複します。</p>${s.specialOffers.length?s.specialOffers.map(offer=>{const p=c.roster.find(player=>player.id===offer.playerId);return p?`<article class="candidate">${player(p)}<p>特別特訓費用：<b>${offer.cost}pt</b></p><button data-special-pay="${p.id}" ${c.funds>=offer.cost?'':'disabled'}>実行する</button><button data-special-skip="${p.id}" class="subtle">見送る</button></article>`:''}).join(''):'<p class="hint">今回の特別特訓候補はありません。</p>'}<button data-stage4="specialDone" ${s.specialOffers.length?'disabled':''}>育成へ進む</button></main>`; return;
+    const due=c.roster.filter(p=>p.contractYears<=0), pending=due.length+s.retentionEvents.length+s.specialOffers.length;
+    app.innerHTML = `${head()}<main><p class="eyebrow">オフシーズンイベント</p><h2>契約・要求・特別特訓</h2><p class="hint">このフェーズ終了後、育成フェーズへ進みます。特別特訓の結果は成長結果で表示されます。</p><h3>年数契約</h3>${due.length?due.map(p=>`<article class="candidate">${player(p)}<p>更新費 <b>${renewalFee(p)}pt</b></p><button data-renew="${p.id}" ${c.funds>=renewalFee(p)?'':'disabled'}>契約更新</button><button data-release="${p.id}" class="subtle">更新しない</button></article>`).join(''):'<p class="hint">契約満了者はいません。</p>'}<h3>不満・先発ボーナス要求</h3>${s.retentionEvents.length?s.retentionEvents.map(event=>{const p=c.roster.find(player=>player.id===event.playerId);return p?`<article class="candidate">${player(p)}<p>${event.starter?'先発ボーナス要求':'不満による要求'}：<b>${event.cost}pt</b></p><button data-retention-pay="${p.id}" ${c.funds>=event.cost?'':'disabled'}>支払う</button><button data-retention-release="${p.id}" class="subtle">支払わない</button></article>`:''}).join(''):'<p class="hint">今回の追加要求はありません。</p>'}<h3>若手の特別特訓</h3>${s.specialOffers.length?s.specialOffers.map(offer=>{const p=c.roster.find(player=>player.id===offer.playerId);return p?`<article class="candidate">${player(p)}<p>特別特訓費用：<b>${offer.cost}pt</b></p><button data-special-pay="${p.id}" ${c.funds>=offer.cost?'':'disabled'}>実行する</button><button data-special-skip="${p.id}" class="subtle">見送る</button></article>`:''}).join(''):'<p class="hint">今回の特別特訓候補はありません。</p>'}<button data-stage4="eventsDone" ${pending?'disabled':''}>育成フェーズへ進む</button></main>`; return;
   }
   if (s.view === 'development') {
     const c = me();
@@ -68,11 +67,7 @@ function stage4Render() {
     app.innerHTML = `${head()}<main><p class="eyebrow">育成</p><h2>重点能力を選択</h2>${picks.map(id => { const p=c.roster.find(x=>x.id===id); return `<section class="candidate">${player(p)}<label>重点育成<select data-focus="${id}">${trainingSkills(p).map(k=>`<option value="${k}">${STAT_LABELS[k]}</option>`).join('')}</select></label></section>`; }).join('')}<button data-stage4="grow">育成を実行</button></main>`; return;
   }
   if (s.view === 'growth') {
-    app.innerHTML = `${head()}<main><p class="eyebrow">成長結果</p><h2>シーズン後の変化</h2><p class="hint">CPU5クラブも育成・成長・衰退・加齢・契約判断を完了しました。</p><section class="candidate-grid">${s.growth.map(x => `<article class="candidate">${player(x.player)}<p>年齢 ${x.player.age - 1} → ${x.player.age}</p>${x.awakeningKeys?.length ? `<p><b>覚醒！</b></p>` : ''}${x.specialTrainingResult?`<p><b>特別特訓：</b>${x.specialTrainingResult.label}</p>`:''}<p>${x.retired ? '35歳で引退' : x.changes.map(c=>`${STAT_LABELS[c.key]} ${c.from === c.to && c.increased ? `${c.from} ↑` : `${c.from} → ${c.to}`}`).join('<br>') || 'ランク変化なし'}</p>${x.learnedAbility ? `<p><b>特殊能力を習得！</b><br>★ ${x.learnedAbility}</p>` : ''}</article>`).join('')}</section><button data-stage4="contracts">契約確認へ進む</button></main>`; return;
-  }
-  if (s.view === 'contracts') {
-    const c=me(), due=c.roster.filter(p=>p.contractYears<=0);
-    app.innerHTML = `${head()}<main><p class="eyebrow">契約</p><h2>契約確認</h2>${due.length ? due.map(p=>`<article class="candidate">${player(p)}<p>更新費 ${renewalFee(p)}pt</p><button data-renew="${p.id}">契約更新</button><button data-release="${p.id}" class="subtle">放出</button></article>`).join('') : '<p class="hint">今季の契約満了者はいません。</p>'}<button data-stage4="releasePhase" ${due.length?'disabled':''}>選手整理へ進む</button></main>`; return;
+    app.innerHTML = `${head()}<main><p class="eyebrow">成長結果</p><h2>育成・特別特訓の結果</h2><p class="hint">CPU5クラブも育成・成長・衰退・加齢を完了しました。</p><section class="candidate-grid">${s.growth.map(x => `<article class="candidate">${player(x.player)}<p>年齢 ${x.player.age - 1} → ${x.player.age}</p>${x.awakeningKeys?.length ? `<p><b>覚醒！</b></p>` : ''}${x.specialTrainingResult?`<p><b>特別特訓：</b>${x.specialTrainingResult.label}</p>`:''}<p>${x.retired ? '35歳で引退' : x.changes.map(c=>`${STAT_LABELS[c.key]} ${c.from === c.to && c.increased ? `${c.from} ↑` : `${c.from} → ${c.to}`}`).join('<br>') || 'ランク変化なし'}</p>${x.learnedAbility ? `<p><b>特殊能力を習得！</b><br>★ ${x.learnedAbility}</p>` : ''}</article>`).join('')}</section><button data-stage4="releasePhase">放出フェイズへ進む</button></main>`; return;
   }
   if (s.view === 'release') {
     const c=me();
@@ -95,14 +90,12 @@ app.addEventListener('click', ev => {
   if (specialPay || specialSkip) { const id=specialPay||specialSkip,offer=s.specialOffers.find(row=>row.playerId===id); if(offer&&specialPay&&me().funds>=offer.cost){me().funds-=offer.cost; s.specialTrainingAccepted.add(id);} s.specialOffers=s.specialOffers.filter(row=>row.playerId!==id); return render(); }
   if (trainingId) { if (s.training.has(trainingId)) s.training.delete(trainingId); else if (s.training.size < 2) s.training.set(trainingId, null); return render(); }
   if (renewId) { applyClubAction(me(),{type:ACTION_TYPES.RENEW_CONTRACT,clubId:me().id,playerId:renewId}); return render(); }
-  if (releaseId) { applyClubAction(me(),{type:ACTION_TYPES.RELEASE_PLAYER,clubId:me().id,playerId:releaseId,contractDecision:true},s.league); selectBestLineup(me()); return render(); }
+  if (releaseId) { const result=applyClubAction(me(),{type:ACTION_TYPES.RELEASE_PLAYER,clubId:me().id,playerId:releaseId,contractDecision:true},s.league); if(!result.ok) alert(result.error); s.retentionEvents=(s.retentionEvents||[]).filter(row=>row.playerId!==releaseId); s.specialOffers=(s.specialOffers||[]).filter(row=>row.playerId!==releaseId); selectBestLineup(me()); return render(); }
   if (!action) return;
-  if (action==='offseason') { s.financeSummary=applySeasonFinances(s.league); s.training=new Map(); s.specialTrainingAccepted=new Set(); const eventsByClub=new Map(),offersByClub=new Map(); for(const club of s.league.clubs){eventsByClub.set(club.id,createContractEvents(club,createRandom(`${s.league.seed}:season:${s.league.season}:club:${club.id}:retention`))); offersByClub.set(club.id,createSpecialTrainingOffers(club,createRandom(`${s.league.seed}:season:${s.league.season}:club:${club.id}:special-training`)));} runCpuOffseasonEvents(eventsByClub,offersByClub); s.retentionEvents=eventsByClub.get(me().id)||[]; s.specialOffers=offersByClub.get(me().id)||[]; s.view=s.retentionEvents.length?'retention':s.specialOffers.length?'specialTraining':'development'; }
-  if (action==='retentionDone') finishOffseasonEvents();
-  if (action==='specialDone') s.view='development';
+  if (action==='offseason') { s.financeSummary=applySeasonFinances(s.league); decrementContracts(); s.training=new Map(); s.specialTrainingAccepted=new Set(); const eventsByClub=new Map(),offersByClub=new Map(); for(const club of s.league.clubs){eventsByClub.set(club.id,createContractEvents(club,createRandom(`${s.league.seed}:season:${s.league.season}:club:${club.id}:retention`))); offersByClub.set(club.id,createSpecialTrainingOffers(club,createRandom(`${s.league.seed}:season:${s.league.season}:club:${club.id}:special-training`)));} runCpuOffseasonEvents(eventsByClub,offersByClub); s.retentionEvents=eventsByClub.get(me().id)||[]; s.specialOffers=offersByClub.get(me().id)||[]; s.view='offseasonEvents'; }
+  if (action==='eventsDone') finishOffseasonEvents();
   if (action==='confirm') s.view='focus';
   if (action==='grow') { const focus=new Map([...s.training.keys()].map(id=>[id,document.querySelector(`[data-focus="${id}"]`).value])); const specialByClub=new Map(s.cpuSpecialTraining||[]); specialByClub.set(me().id,s.specialTrainingAccepted||new Set()); const summaries=processLeagueOffseason(s.league,focus,specialByClub); s.growth=summaries.find(x=>x.clubId===me().id).growth; s.cpuOffseason=summaries.filter(x=>s.league.clubs.find(club=>club.id===x.clubId)?.controllerType==='CPU'); s.view='growth'; }
-  if (action==='contracts') s.view='contracts';
   if (action==='releasePhase') { s.league.releasePhaseOpen=true; s.cpuReleaseSummary=prepareCpuMarketSpace(s.league); s.view='release'; }
   if (action==='releaseDone') { const advanced=startNextSeason(s.league); if(advanced){s.offseasonComplete=false;beginDraft()}else{s.league.releasePhaseOpen=false;s.offseasonComplete=true;s.view='home'} }
   render();
@@ -127,7 +120,7 @@ function stage6Render() { stage6BaseRender(); if (s.view==='home' && s.league?.c
 render=stage6Render;
 app.addEventListener('click',ev=>{const x=ev.target.closest('[data-stage6]')?.dataset.stage6;if(x==='history'){s.view='history';render()}});
 
-import { exportSave, importSave, loadSlot, saveSlot, slotInfo } from './storage.js?v=0.17.1';
+import { exportSave, importSave, loadSlot, saveSlot, slotInfo } from './storage.js?v=0.17.2';
 const stage7BaseRender = render;
 function stage7Render() { stage7BaseRender(); if (s.league) app.querySelector('header')?.insertAdjacentHTML('beforeend','<span><button data-stage7="save">保存</button><button data-stage7="export" class="subtle">書き出し</button><button data-stage7="import" class="subtle">読込</button></span>'); }
 render=stage7Render;

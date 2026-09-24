@@ -1,6 +1,6 @@
 import { rankOf } from './config.js';
-import { calculateOverall, FIELD_STAT_KEYS, FIELD_PLAYER_STAT_KEYS } from './data.js?v=0.17.1';
-import { SPECIAL_ABILITIES } from './market.js?v=0.17.1';
+import { calculateOverall, FIELD_STAT_KEYS, FIELD_PLAYER_STAT_KEYS } from './data.js?v=0.17.2';
+import { SPECIAL_ABILITIES } from './market.js?v=0.17.2';
 import { weightedPick } from './random.js';
 
 const RANKS = ['G', 'F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS'];
@@ -130,7 +130,6 @@ export function processOffseason(club, training, rng, specialTraining = new Set(
     const learnedAbility = player.specialAbility === null && rng.next() < abilityRate ? learnedAbilityFor(player, grew, rng) : null;
     if (learnedAbility) player.specialAbility = learnedAbility;
     const specialTrainingResult = specialTraining.has(player.id) ? applySpecialTraining(player, rng) : null;
-    player.contractYears--;
     const changes = skills(player).filter(key => before[key] !== rankOf(player.stats[key]) || grew.includes(key)).map(key => ({ key, from: before[key], to: rankOf(player.stats[key]), increased: grew.includes(key), awakened: awakeningKeys.includes(key) }));
     results.push({ player, changes, retired: player.age >= 35, focus, awakeningKeys, learnedAbility, specialTrainingResult });
   }

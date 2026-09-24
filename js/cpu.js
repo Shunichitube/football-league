@@ -1,8 +1,8 @@
-import { calculateOverall } from './data.js?v=0.17.1';
-import { processOffseason, renewalFee } from './development.js?v=0.17.1';
+import { calculateOverall } from './data.js?v=0.17.2';
+import { processOffseason, renewalFee } from './development.js?v=0.17.2';
 import { createRandom } from './random.js';
-import { cpuBid, cpuCandidatePick } from './market.js?v=0.17.1';
-import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=0.17.1';
+import { cpuBid, cpuCandidatePick } from './market.js?v=0.17.2';
+import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=0.17.2';
 
 const LINEUP_ROLES = ['DF', 'MF', 'MF', 'FW'];
 const REQUIRED = { GK: 1, DF: 1, MF: 2, FW: 1 };
@@ -174,10 +174,9 @@ export function processLeagueOffseason(league, humanTraining = new Map(), specia
     const training = isCpu ? selectCpuTraining(club) : mappedTraining instanceof Map ? mappedTraining : club.id===humanClubs[0]?.id ? humanTraining : new Map();
     const specialTraining = specialTrainingByClub.get(club.id) || new Set();
     const growth = processOffseason(club, training, createRandom(`${league.seed}:offseason:${league.season}:club:${club.id}`), specialTraining);
-    const contracts = isCpu ? manageCpuContracts(club, league) : [];
     selectBestLineup(club);
     if (isCpu) autoSetCpuTactic(club);
-    summaries.push({ clubId: club.id, training: [...training.entries()], growth, contracts, lineup: [...club.lineup], tactic: club.tactic });
+    summaries.push({ clubId: club.id, training: [...training.entries()], growth, lineup: [...club.lineup], tactic: club.tactic });
   }
   return summaries;
 }
