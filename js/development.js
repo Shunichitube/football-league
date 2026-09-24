@@ -1,5 +1,5 @@
 import { rankOf } from './config.js';
-import { calculateOverall, FIELD_STAT_KEYS, FIELD_PLAYER_STAT_KEYS } from './data.js';
+import { calculateOverall, FIELD_STAT_KEYS, FIELD_PLAYER_STAT_KEYS } from './data.js?v=0.16.0';
 import { SPECIAL_ABILITIES } from './market.js?v=0.16.0';
 import { weightedPick } from './random.js';
 
