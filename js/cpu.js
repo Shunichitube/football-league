@@ -1,16 +1,16 @@
 import { calculateOverall } from './data.js';
-import { processOffseason, renewalFee } from './development.js?v=0.12.0';
+import { processOffseason, renewalFee } from './development.js?v=0.16.0';
 import { createRandom } from './random.js';
-import { cpuBid, cpuCandidatePick } from './market.js?v=0.12.0';
-import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=0.13.0';
+import { cpuBid, cpuCandidatePick } from './market.js?v=0.16.0';
+import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=0.16.0';
 
 const LINEUP_ROLES = ['FIXO', 'ALA', 'ALA', 'PIVO'];
 const REQUIRED = { GK: 1, FIXO: 1, ALA: 2, PIVO: 1 };
 const FOCUS_KEYS = {
   GK: ['gk'],
-  FIXO: ['defense', 'pass', 'speed'],
-  ALA: ['speed', 'dribble', 'pass', 'shoot'],
-  PIVO: ['shoot', 'dribble', 'pass']
+  FIXO: ['defense', 'pass', 'speed', 'stamina'],
+  ALA: ['speed', 'dribble', 'pass', 'shoot', 'stamina'],
+  PIVO: ['shoot', 'dribble', 'pass', 'stamina']
 };
 const TACTIC_ABILITIES = {
   POSSESSION: ['チャンスメイカー', 'ビルドアップ', 'ポストプレーヤー'],
