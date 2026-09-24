@@ -3,6 +3,7 @@ import { rankOf } from './config.js';
 export const FIELD_STAT_KEYS = ['shoot', 'speed', 'defense', 'dribble', 'pass'];
 export const FIELD_PLAYER_STAT_KEYS = [...FIELD_STAT_KEYS, 'stamina'];
 export const STAT_LABELS = { shoot: 'シュート', speed: '走力', defense: '守備', dribble: 'ドリブル', pass: 'パス', stamina: 'スタミナ', gk: 'GK' };
+export const POSITION_LABELS = { GK: 'GK', FIXO: 'DF', ALA: 'MF', PIVO: 'FW' };
 const STAMINA_DISTRIBUTION = [['G', 12], ['F', 18], ['E', 22], ['D', 20], ['C', 14], ['B', 8], ['A', 4], ['S', 1], ['SS', 1]];
 const RANK_RANGE = { G: [50,55], F: [56,60], E: [61,65], D: [66,70], C: [71,75], B: [76,80], A: [81,85], S: [86,90], SS: [91,99] };
 
