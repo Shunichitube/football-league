@@ -1,5 +1,5 @@
 import { CONFIG } from './config.js';
-import { calculateOverall } from './data.js';
+import { calculateOverall } from './data.js?v=0.16.0';
 import { weightedPick } from './random.js';
 import { LINEUP_SLOTS, positionSuitability } from './rules.js?v=0.16.0';
 
