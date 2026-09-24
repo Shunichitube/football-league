@@ -1,26 +1,40 @@
-import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.16.4';
-import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.16.4';
-import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.16.4';
+import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.16.5';
+import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.16.5';
+import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.16.5';
 
 export const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
 
 const publicAbilities = player => {
   const display = displayPlayer(player);
-  const keys = player.primaryPosition === 'GK' ? ['shoot', 'speed', 'defense', 'dribble', 'pass', 'gk'] : ['shoot', 'speed', 'defense', 'dribble', 'pass', 'stamina'];
-  return keys.filter(key => display.ranks[key]).map(key => ({ key, label: STAT_LABELS[key], rank: display.ranks[key] }));
+  const keys = player.primaryPosition === 'GK' ? ['speed', 'pass', 'dribble', 'shoot', 'defense', 'gk'] : ['speed', 'pass', 'dribble', 'shoot', 'defense', 'stamina'];
+  return keys.filter(key => display.ranks[key]).map(key => ({ key, label: key === 'gk' ? 'GK能力' : STAT_LABELS[key], rank: display.ranks[key] }));
 };
 const positionLabel = position => POSITION_LABELS[position] || position;
 const slotLabel = (slot, index) => `${positionLabel(slot)}${slot === 'MF' ? ` ${index === 2 ? '1' : '2'}` : ''}`;
+const fitPositions = position => ({ GK: 'GK', DF: 'DF / MF', MF: 'DF / MF / FW', FW: 'MF / FW' }[position] || positionLabel(position));
+const growthHint = player => {
+  if (!player.hiddenGrowth || typeof player.hiddenGrowth !== 'object') return '―';
+  const keys = player.primaryPosition === 'GK' ? ['speed', 'pass', 'dribble', 'shoot', 'defense', 'gk'] : ['speed', 'pass', 'dribble', 'shoot', 'defense', 'stamina'];
+  const key = keys.filter(name => typeof player.hiddenGrowth[name] === 'number').sort((a, b) => player.hiddenGrowth[b] - player.hiddenGrowth[a])[0];
+  return key ? (key === 'gk' ? 'GK能力' : STAT_LABELS[key]) : '―';
+};
 
 export function renderPlayerCard(player, options = {}) {
   const display = displayPlayer(player);
   const details = options.details !== false ? `<button type="button" data-detail="${escapeHtml(player.id)}" class="detail-button subtle">選手詳細</button>` : '';
   return `<article class="player-card">
-    <div class="player-title"><b>${escapeHtml(display.name)}</b><strong class="overall-rank">総合 ${display.overallRank}</strong></div>
-    <span>${positionLabel(display.primaryPosition)}・${display.age}歳・契約${display.contractYears}年</span>
-    <dl class="ability-grid">${publicAbilities(player).map(ability => `<div><dt>${ability.label}</dt><dd><span>${ability.rank}</span><i class="rank-bar rank-${ability.rank}"><b></b></i></dd></div>`).join('')}</dl>
-    <p class="special-ability">${display.specialAbility ? `★ ${escapeHtml(display.specialAbility)}` : '特殊能力なし'}</p>
-    ${details}
+    <div class="player-profile">
+      <div class="player-title"><b>${escapeHtml(display.name)}</b><strong class="overall-rank">総合 ${display.overallRank}</strong></div>
+      <span class="position-badge">${positionLabel(display.primaryPosition)}</span>
+      <p>年齢 ${display.age}歳・契約${display.contractYears}年</p>
+      <p>適正ポジション：${fitPositions(display.primaryPosition)}</p>
+      <p>伸びやすい能力：${growthHint(player)}</p>
+      ${details}
+    </div>
+    <div class="player-abilities">
+      <dl class="ability-grid">${publicAbilities(player).map(ability => `<div><dt>${ability.label}</dt><dd><span>${ability.rank}</span><i class="rank-bar rank-${ability.rank}"><b></b></i></dd></div>`).join('')}</dl>
+      <p class="special-ability">${display.specialAbility ? `★ ${escapeHtml(display.specialAbility)}` : '―'}</p>
+    </div>
   </article>`;
 }
 

@@ -1,8 +1,8 @@
-import { calculateOverall } from './data.js?v=0.16.4';
-import { processOffseason, renewalFee } from './development.js?v=0.16.4';
+import { calculateOverall } from './data.js?v=0.16.5';
+import { processOffseason, renewalFee } from './development.js?v=0.16.5';
 import { createRandom } from './random.js';
-import { cpuBid, cpuCandidatePick } from './market.js?v=0.16.4';
-import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=0.16.4';
+import { cpuBid, cpuCandidatePick } from './market.js?v=0.16.5';
+import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=0.16.5';
 
 const LINEUP_ROLES = ['DF', 'MF', 'MF', 'FW'];
 const REQUIRED = { GK: 1, DF: 1, MF: 2, FW: 1 };
