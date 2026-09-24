@@ -1,13 +1,13 @@
 import { displayPlayer, STAT_LABELS } from './data.js';
-import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.15.0';
-import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.9.0';
+import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.16.0';
+import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.16.0';
 
 export const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
 
 const publicAbilities = player => {
   const display = displayPlayer(player);
-  const keys = player.primaryPosition === 'GK' ? ['shoot', 'speed', 'defense', 'dribble', 'pass', 'gk'] : ['shoot', 'speed', 'defense', 'dribble', 'pass'];
-  return keys.map(key => ({ key, label: STAT_LABELS[key], rank: display.ranks[key] }));
+  const keys = player.primaryPosition === 'GK' ? ['shoot', 'speed', 'defense', 'dribble', 'pass', 'gk'] : ['shoot', 'speed', 'defense', 'dribble', 'pass', 'stamina'];
+  return keys.filter(key => display.ranks[key]).map(key => ({ key, label: STAT_LABELS[key], rank: display.ranks[key] }));
 };
 
 export function renderPlayerCard(player, options = {}) {
