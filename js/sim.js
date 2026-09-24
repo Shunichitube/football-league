@@ -57,10 +57,9 @@ function abilityRoleMultiplier(player, key, context = {}) {
 
   if (key === 'defense') {
     if (stage === 1 && ['passCut', 'dribbleMarker', 'counterReturnDefender', 'shortOrigin'].includes(role) && ability === 'ボールハンター') multiplier *= 1.08;
-    if (stage === 2 && ['dribbleCover', 'passFinalDefender', 'counterFinalDefender', 'shortFinalDefender'].includes(role) && ability === 'カバーリング') multiplier *= 1.08;
+    if (stage === 2 && ['dribbleCover', 'counterFinalDefender', 'shortFinalDefender'].includes(role) && ability === 'カバーリング') multiplier *= 1.08;
     if (type === 'PASS' && role === 'passCut' && ability === 'パスカット') multiplier *= 1.06;
     if (type === 'PASS' && role === 'passFinalDefender' && ability === 'パスカット') multiplier *= 1.08;
-    if (stage === 2 && ['passFinalDefender', 'dribbleCover', 'counterFinalDefender', 'shortFinalDefender'].includes(role) && ability === '最終防衛線') multiplier *= 1.08;
   }
 
   if (key === 'pass') {
@@ -114,6 +113,12 @@ function stageChance(diff) {
   if (diff <= 12) return 'NORMAL';
   if (diff <= 18) return 'CLEAR';
   return 'BIG';
+}
+function finalDefenseChance(chance, defender) {
+  if (defender?.specialAbility !== '最終防衛線') return chance;
+  if (chance === 'BIG') return 'CLEAR';
+  if (chance === 'CLEAR') return 'NORMAL';
+  return chance;
 }
 function reboundRecoveryRate(chance, gk) {
   const base = ['BIG', 'CLEAR'].includes(chance) ? .20 : chance === 'NORMAL' ? .12 : .08;
@@ -505,7 +510,7 @@ export function simulateMatch(home, away, rng) {
       continue;
     }
 
-    const chance = stageChance(diff);
+    const chance = finalDefenseChance(stageChance(diff), secondRoles.defender);
     const contributor = secondRoles.contributor || attackers[0];
     stat.get(contributor.id).attackContributions++; ratings[contributor.id] += .08;
     const shooter = pickShooterFromRoles(type, secondRoles, attackers, attack.tactic, rng);
