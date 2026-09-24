@@ -1,6 +1,6 @@
-import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.16.8';
-import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.16.8';
-import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.16.8';
+import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.17.0';
+import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.17.0';
+import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.17.0';
 
 export const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
 

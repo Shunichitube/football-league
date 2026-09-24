@@ -1,13 +1,22 @@
 import { rankOf } from './config.js';
-import { calculateOverall, FIELD_STAT_KEYS, FIELD_PLAYER_STAT_KEYS } from './data.js?v=0.16.5';
-import { SPECIAL_ABILITIES } from './market.js?v=0.16.5';
+import { calculateOverall, FIELD_STAT_KEYS, FIELD_PLAYER_STAT_KEYS } from './data.js?v=0.17.0';
+import { SPECIAL_ABILITIES } from './market.js?v=0.17.0';
 import { weightedPick } from './random.js';
 
+const RANKS = ['G', 'F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS'];
+const RANK_MIN = { G: 50, F: 56, E: 61, D: 66, C: 71, B: 76, A: 81, S: 86, SS: 91 };
+const CONTRACT_EVENTS = {
+  SS: { rate: .70, min: 12, max: 18 }, S: { rate: .60, min: 12, max: 18 },
+  A: { rate: .50, min: 8, max: 12 }, B: { rate: .30, min: 5, max: 8 },
+  C: { rate: .20, min: 3, max: 5 }, D: { rate: .10, min: 3, max: 5 }
+};
+const SPECIAL_TRAINING_COST = { E: 8, F: 5, G: 2 };
 const ageBase = age => age <= 19 ? 2.4 : age <= 21 ? 2 : age <= 23 ? 1.6 : age <= 25 ? 1 : age <= 28 ? .4 : 0;
 const highModifier = value => value <= 75 ? 1 : value <= 80 ? .8 : value <= 85 ? .65 : value <= 90 ? .45 : .25;
 const appearanceModifier = player => player.season.appearances >= 7 ? 1 : player.season.appearances >= 3 ? .85 : .7;
 const skills = player => player.primaryPosition === 'GK' ? [...FIELD_STAT_KEYS, 'gk'] : FIELD_PLAYER_STAT_KEYS;
 const growthFor = (player, key) => typeof player.hiddenGrowth === 'number' ? player.hiddenGrowth : player.hiddenGrowth?.[key] ?? 1;
+const rankUpValue = (value, steps) => RANK_MIN[RANKS[Math.min(RANKS.length - 1, RANKS.indexOf(rankOf(value)) + steps)]];
 
 const weightedDistinctSkills = (player, rng) => {
   const remaining = [...skills(player)].filter(key => player.stats[key] < 99);
@@ -53,7 +62,29 @@ function learnedAbilityFor(player, gainedKeys, rng) {
 }
 
 export function trainingSkills(player) { return skills(player); }
-export function processOffseason(club, training, rng) {
+export function createContractEvents(club, rng) {
+  return club.roster.map(player => {
+    const rank = rankOf(calculateOverall(player));
+    const rule = CONTRACT_EVENTS[rank];
+    if (!rule || rng.next() >= rule.rate) return null;
+    return { playerId: player.id, cost: rng.int(rule.min, rule.max), rank, starter: club.lineup.includes(player.id) };
+  }).filter(Boolean);
+}
+export function createSpecialTrainingOffers(club, rng) {
+  return club.roster.map(player => {
+    const rank = rankOf(calculateOverall(player));
+    if (player.isInitial || !SPECIAL_TRAINING_COST[rank] || rng.next() >= .01) return null;
+    return { playerId: player.id, cost: SPECIAL_TRAINING_COST[rank], rank };
+  }).filter(Boolean);
+}
+function applySpecialTraining(player, rng) {
+  const roll = rng.next();
+  const result = roll < .10 ? { label: '才能が開花した！', steps: 3 } : roll < .50 ? { label: '才能の片鱗を見せた！', steps: 2 } : roll < .90 ? { label: '成長を遂げた！', steps: 1 } : { label: '何も変わらなかった…', steps: 0 };
+  const before = Object.fromEntries(skills(player).map(key => [key, rankOf(player.stats[key])]));
+  for (const key of skills(player)) if (result.steps) player.stats[key] = Math.max(player.stats[key], rankUpValue(player.stats[key], result.steps));
+  return { ...result, before, after: Object.fromEntries(skills(player).map(key => [key, rankOf(player.stats[key])])) };
+}
+export function processOffseason(club, training, rng, specialTraining = new Set()) {
   const results = [];
   for (const player of [...club.roster]) {
     const before = Object.fromEntries(Object.entries(player.stats).map(([key, value]) => [key, rankOf(value)]));
@@ -97,9 +128,10 @@ export function processOffseason(club, training, rng) {
     const abilityRate = Math.min(.05, .02 + (focus ? .01 : 0) + (awakeningKeys.length ? .02 : 0));
     const learnedAbility = player.specialAbility === null && rng.next() < abilityRate ? learnedAbilityFor(player, grew, rng) : null;
     if (learnedAbility) player.specialAbility = learnedAbility;
+    const specialTrainingResult = specialTraining.has(player.id) ? applySpecialTraining(player, rng) : null;
     player.contractYears--;
     const changes = skills(player).filter(key => before[key] !== rankOf(player.stats[key]) || grew.includes(key)).map(key => ({ key, from: before[key], to: rankOf(player.stats[key]), increased: grew.includes(key), awakened: awakeningKeys.includes(key) }));
-    results.push({ player, changes, retired: player.age >= 35, focus, awakeningKeys, learnedAbility });
+    results.push({ player, changes, retired: player.age >= 35, focus, awakeningKeys, learnedAbility, specialTrainingResult });
   }
   club.roster = club.roster.filter(p => p.age < 35);
   return results;

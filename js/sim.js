@@ -1,7 +1,7 @@
 import { CONFIG } from './config.js';
-import { calculateOverall } from './data.js?v=0.16.5';
+import { calculateOverall } from './data.js?v=0.17.0';
 import { weightedPick } from './random.js';
-import { LINEUP_SLOTS, positionSuitability } from './rules.js?v=0.16.5';
+import { LINEUP_SLOTS, positionSuitability } from './rules.js?v=0.17.0';
 
 const FIELD_KEYS = ['shoot', 'speed', 'defense', 'dribble', 'pass'];
 const avg = (players, valueOf) => players.reduce((sum, player) => sum + valueOf(player), 0) / players.length;

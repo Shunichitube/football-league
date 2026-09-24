@@ -1,4 +1,4 @@
-import { renewalFee } from './development.js?v=0.16.5';
+import { renewalFee } from './development.js?v=0.17.0';
 
 export const ACTION_TYPES = Object.freeze({
   DRAFT_PICK: 'DRAFT_PICK',

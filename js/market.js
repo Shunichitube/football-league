@@ -1,6 +1,6 @@
-import { calculateOverall, createPlayer, displayPlayer, FIELD_STAT_KEYS, STAT_LABELS } from './data.js?v=0.16.5';
+import { calculateOverall, createPlayer, displayPlayer, FIELD_STAT_KEYS, STAT_LABELS } from './data.js?v=0.17.0';
 import { createRandom, weightedPick } from './random.js';
-import { ACTION_TYPES } from './rules.js?v=0.16.5';
+import { ACTION_TYPES } from './rules.js?v=0.17.0';
 
 const DRAFT_DISTRIBUTION = [['G', 35], ['F', 35], ['E', 20], ['D', 8], ['C', 2]];
 // 新規に生成する競売選手だけに適用する分布。放出選手は能力を保持したまま戻る。
@@ -112,8 +112,12 @@ export function createScoutComment(player, rng) {
 export function createDraftPool(seed, season = 1) { const rng = createRandom(`${seed}:season:${season}:draft-pool`); return Array.from({ length: 24 }, (_, i) => playerForTier(season * 10000 + 1000 + i, POSITIONS[i % POSITIONS.length], tier(DRAFT_DISTRIBUTION, rng), rng.int(18,22), rng)); }
 export function createAuctionPool(seed, season = 1, releasedPlayers = []) {
   const rng = createRandom(`${seed}:season:${season}:auction-pool`);
-  const returning = [...releasedPlayers].sort(() => rng.next() - .5).slice(0, 18);
-  const generated = Array.from({ length: 18 - returning.length }, (_, i) => playerForTier(season * 10000 + 2000 + i, POSITIONS[i % POSITIONS.length], tier(AUCTION_DISTRIBUTION, rng), rng.int(22,31), rng));
+  const returning = [...releasedPlayers].map(player => ({ player, roll: rng.next() }))
+    .sort((a, b) => publicValue(b.player) - publicValue(a.player) || a.roll - b.roll)
+    .slice(0, 9)
+    .map(row => ({ ...row.player, marketSource: 'released' }));
+  const generatedCount = 18 - returning.length;
+  const generated = Array.from({ length: generatedCount }, (_, i) => ({ ...playerForTier(season * 10000 + 2000 + i, POSITIONS[i % POSITIONS.length], tier(AUCTION_DISTRIBUTION, rng), rng.int(22,31), rng), marketSource: 'generated' }));
   return [...returning, ...generated];
 }
 export function publicValue(player) { return BASE_VALUE[displayPlayer(player).overallRank]; }
@@ -134,7 +138,7 @@ export function cpuBid(club, player, rng) {
   const upgrade = bestCurrent !== null && publicValue(player) > bestCurrent ? rng.int(8,16) : 0;
   const age = player.age <= 23 ? 3 : player.age >= 30 ? -3 : 0;
   const value = Math.max(0, Math.round((publicValue(player) + shortage + upgrade + age) * (.75 + rng.next() * .3)));
-  return Math.min(value, Math.max(0, club.funds - 5));
+  return Math.min(value, Math.max(0, club.funds - 50));
 }
 export function addPlayer(club, player, cost) { if (club.roster.length >= 12) return false; club.roster.push(player); club.funds -= cost; return true; }
 

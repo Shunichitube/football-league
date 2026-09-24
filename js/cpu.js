@@ -1,8 +1,8 @@
-import { calculateOverall } from './data.js?v=0.16.5';
-import { processOffseason, renewalFee } from './development.js?v=0.16.5';
+import { calculateOverall } from './data.js?v=0.17.0';
+import { processOffseason, renewalFee } from './development.js?v=0.17.0';
 import { createRandom } from './random.js';
-import { cpuBid, cpuCandidatePick } from './market.js?v=0.16.5';
-import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=0.16.5';
+import { cpuBid, cpuCandidatePick } from './market.js?v=0.17.0';
+import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=0.17.0';
 
 const LINEUP_ROLES = ['DF', 'MF', 'MF', 'FW'];
 const REQUIRED = { GK: 1, DF: 1, MF: 2, FW: 1 };
@@ -165,14 +165,15 @@ export function prepareCpuMarketSpace(league) {
   return released;
 }
 
-export function processLeagueOffseason(league, humanTraining = new Map()) {
+export function processLeagueOffseason(league, humanTraining = new Map(), specialTrainingByClub = new Map()) {
   const summaries = [];
   const humanClubs=league.clubs.filter(club=>club.controllerType==='HUMAN');
   for (const club of league.clubs) {
     const isCpu = club.controllerType === 'CPU';
     const mappedTraining=humanTraining.get?.(club.id);
     const training = isCpu ? selectCpuTraining(club) : mappedTraining instanceof Map ? mappedTraining : club.id===humanClubs[0]?.id ? humanTraining : new Map();
-    const growth = processOffseason(club, training, createRandom(`${league.seed}:offseason:${league.season}:club:${club.id}`));
+    const specialTraining = specialTrainingByClub.get(club.id) || new Set();
+    const growth = processOffseason(club, training, createRandom(`${league.seed}:offseason:${league.season}:club:${club.id}`), specialTraining);
     const contracts = isCpu ? manageCpuContracts(club, league) : [];
     selectBestLineup(club);
     if (isCpu) autoSetCpuTactic(club);
