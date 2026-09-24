@@ -76,6 +76,30 @@ SHORT_COUNTER / BIG / ...
 
 そのため、今後イベント文字列を変更する場合は、`summarizeMatchResult` 側の読み取りも合わせて修正する。
 
+### 4.1 `attackTypes` の意味
+
+現時点の `summary.attackTypes` は、攻撃開始回数ではなく、主にシュート到達イベントに記録された攻撃タイプを集計している。
+
+つまり、以下に近い意味で扱う。
+
+- `PASS`: PASS攻撃からシュート・セーブ・ミス・リバウンド等まで到達した回数
+- `DRIBBLE`: DRIBBLE攻撃からシュート・セーブ・ミス・リバウンド等まで到達した回数
+- `COUNTER`: COUNTER攻撃からシュート・セーブ・ミス・リバウンド等まで到達した回数
+- `SHORT_COUNTER`: SHORT_COUNTER攻撃からシュート・セーブ・ミス・リバウンド等まで到達した回数
+
+第1攻撃開始や第2で止められた攻撃まで含む「攻撃試行数」ではない。
+
+将来的に攻撃試行数も必要になった場合は、既存の `attackTypes` を上書きせず、別項目として以下のような内部保存を追加する。
+
+- `attackAttempts`
+  - 第1攻撃開始回数
+  - PASS / DRIBBLE / COUNTER / SHORT_COUNTER 別に保存
+- `shotArrivals`
+  - 現在の `attackTypes` 相当
+  - シュート到達回数として保存
+
+UIで表示する場合も、`attackTypes` をそのまま「発生数」と表現せず、「シュート到達数」または別名で扱う。
+
 ## 5. バランス確認観点
 
 Stage E以降で、以下を中心に確認する。
@@ -96,6 +120,7 @@ Stage E以降で、以下を中心に確認する。
 - 通常再開でCOUNTERが出ていないか
 - 守備成功後再開でCOUNTERが発生しているか
 - COUNTER戦術でCOUNTER比率が上がっているか
+- 現在の `summary.attackTypes` は攻撃試行数ではなく、シュート到達数として読む
 
 ### SHORT_COUNTER
 
