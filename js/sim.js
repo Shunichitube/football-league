@@ -38,7 +38,8 @@ function assignedPlayer(player, role, fatigue = 1) {
   if (role === 'GK') stats.gk *= fit; else for (const key of FIELD_KEYS) stats[key] *= fit * fatigue;
   return { ...player, primaryPosition: role, stats };
 }
-const fieldValue = (player, key, tactic) => player.stats[key] * (player.specialAbility === '万能型' && tactic === 'BALANCED' ? 1.04 : 1);
+const statValue = (player, key) => Number(player?.stats?.[key] || 0);
+const fieldValue = (player, key, tactic) => statValue(player, key) * (player?.specialAbility === '万能型' && tactic === 'BALANCED' ? 1.04 : 1);
 function speedValue(player, attackType, tactic, defending = false) {
   let value = fieldValue(player, 'speed', tactic);
   if (!defending && attackType === 'COUNTER' && player.specialAbility === 'スピードスター') value *= 1.10;
@@ -69,29 +70,8 @@ function stageChance(diff) {
   if (diff <= 18) return 'CLEAR';
   return 'BIG';
 }
-function attackScore(type, players, goalkeeper, rng, tactic) {
-  let value = avg(players, player => {
-    let pass = fieldValue(player, 'pass', tactic), dribble = fieldValue(player, 'dribble', tactic), speed = speedValue(player, type, tactic);
-    if (type === 'PASS' && player.specialAbility === 'ビルドアップ') pass *= 1.10;
-    if (type === 'PASS' && player.specialAbility === 'チャンスメイカー') pass *= 1.08;
-    if (type === 'DRIBBLE' && ['ドリブラー', '個人技'].includes(player.specialAbility)) dribble *= 1.10;
-    return type === 'PASS' ? pass * .5 + dribble * .2 + speed * .3 : type === 'DRIBBLE' ? dribble * .6 + speed * .25 + pass * .15 : speed * .5 + pass * .3 + dribble * .2;
-  });
-  if (type === 'PASS' && players.some(player => player.specialAbility === 'ポストプレーヤー')) value *= 1.06;
-  const goalkeeperBuildUp = type === 'PASS' && goalkeeper ? goalkeeper.stats.pass * .08 + goalkeeper.stats.dribble * .02 : 0;
-  return value + tacticAttackBonus(type, tactic) + goalkeeperBuildUp + luck(rng, CONFIG.attackLuck);
-}
-function defenseScore(type, defenders, tactic) {
-  return avg(defenders, player => {
-    let defense = fieldValue(player, 'defense', tactic), speed = speedValue(player, type, tactic, true);
-    if (player.specialAbility === 'ボールハンター') defense *= 1.10;
-    if (type === 'DRIBBLE' && player.specialAbility === 'カバーリング') defense *= 1.08;
-    if (type === 'PASS' && player.specialAbility === 'パスカット') defense *= 1.08;
-    return defense * .7 + speed * .3;
-  }) + tacticDefenseBonus(tactic);
-}
 function formatTime(phase) { const seconds = phase * CONFIG.phaseSeconds; return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`; }
-function logEvent(phase, kind, player, extra = '', side = null) { return { time: formatTime(phase), kind, player: player.name, extra, side }; }
+function logEvent(phase, kind, player, extra = '', side = null) { return { time: formatTime(phase), kind, player: player?.name || 'Unknown', extra, side }; }
 function matchPlayerPool(club) {
   const starterIds = new Set(club.lineup || []);
   return club.roster.filter(player => starterIds.has(player.id) || player.primaryPosition !== 'GK');
@@ -113,7 +93,7 @@ function refreshKeeper(matchState) {
 }
 function restNeeded(player) { return player.specialAbility === '回復力' ? 7 : 10; }
 function benchState(state) { state.currentSlot = null; state.activePhases = 0; state.restRemaining = restNeeded(state.player); }
-function enterSlot(matchState, slot, state) { state.currentSlot = slot.index; slot.currentId = state.player.id; }
+function enterSlot(matchState, slot, state) { if (!state) return; state.currentSlot = slot.index; slot.currentId = state.player.id; }
 function currentState(matchState, slot) { return matchState.playerState.get(slot.currentId); }
 function decrementRest(matchState) {
   for (const state of matchState.playerState.values()) if (state.currentSlot === null && state.restRemaining > 0) state.restRemaining--;
@@ -147,7 +127,7 @@ function substituteFatigued(matchState) {
   for (const need of needs) {
     if (used.has(need.candidate.player.id) || need.candidate.currentSlot !== null || need.candidate.restRemaining > 0) continue;
     benchState(need.current);
-    enterSlot(matchState, need.slot, need.candidate);
+    enterSlot(need.slot, need.candidate);
     used.add(need.candidate.player.id);
   }
 }
@@ -178,18 +158,159 @@ function pickNeutralAttacker(home, away, homeFielders, awayFielders, rng) {
   const homeChance = Math.max(.35, Math.min(.65, homePoss / Math.max(1, homePoss + awayPoss)));
   return rng.next() < homeChance ? home : away;
 }
-function pickStopper(defenders, type, tactic, rng) {
-  return weightedPick(defenders, player => fieldValue(player, 'defense', tactic) * .7 + speedValue(player, type, tactic, true) * .3, rng);
+function availablePlayers(players, excluded = []) {
+  const blocked = new Set(excluded.filter(Boolean).map(player => player.id));
+  const filtered = players.filter(player => !blocked.has(player.id));
+  return filtered.length ? filtered : players;
 }
-function pickContributor(attackers, type, tactic, rng) {
-  return weightedPick(attackers, player => type === 'PASS'
-    ? fieldValue(player, 'pass', tactic) * (player.specialAbility === 'ビルドアップ' ? 1.10 : 1) * (player.specialAbility === 'チャンスメイカー' ? 1.08 : 1)
-    : type === 'DRIBBLE'
-      ? fieldValue(player, 'dribble', tactic) * (['ドリブラー', '個人技'].includes(player.specialAbility) ? 1.10 : 1)
-      : speedValue(player, type, tactic), rng);
+function pickRole(players, weightOf, rng, excluded = []) {
+  const pool = availablePlayers(players, excluded);
+  return weightedPick(pool, player => Math.max(0.01, weightOf(player)), rng);
 }
-function pickShooter(attackers, tactic, rng) {
-  return weightedPick(attackers, player => fieldValue(player, 'shoot', tactic) * CONFIG.positionShotWeight[player.primaryPosition] * (player.specialAbility === 'エース' ? 1.20 : 1), rng);
+function posMul(player, values) { return values[player.primaryPosition] ?? 1; }
+function weightedAbility(player, tactic, terms) {
+  return terms.reduce((sum, [key, weight]) => sum + fieldValue(player, key, tactic) * weight, 0);
+}
+
+const ROLE_WEIGHTS = {
+  passFirstPasser: (p, tactic) => fieldValue(p, 'pass', tactic) * posMul(p, { DF: 1.25, MF: 1.10, FW: .60 }),
+  passReceiver: (p, tactic) => weightedAbility(p, tactic, [['pass', .35], ['dribble', .30], ['speed', .25], ['shoot', .10]]) * posMul(p, { MF: 1.40, FW: .85, DF: .65 }),
+  passSecondReceiver: (p, tactic) => weightedAbility(p, tactic, [['shoot', .35], ['speed', .30], ['dribble', .20], ['pass', .15]]) * posMul(p, { FW: 1.45, MF: .90, DF: .50 }),
+  passSupport: (p, tactic) => weightedAbility(p, tactic, [['pass', .40], ['speed', .25], ['dribble', .20], ['shoot', .15]]) * posMul(p, { MF: 1.25, FW: 1.10, DF: .65 }),
+  passCut: (p, tactic) => weightedAbility(p, tactic, [['defense', .65], ['speed', .35]]) * posMul(p, { MF: 1.25, DF: .90, FW: .55 }),
+  passFinalDefender: (p, tactic) => weightedAbility(p, tactic, [['defense', .75], ['speed', .25]]) * posMul(p, { DF: 1.45, MF: .85, FW: .45 }),
+  dribbler: (p, tactic) => weightedAbility(p, tactic, [['dribble', .55], ['speed', .30], ['shoot', .15]]) * posMul(p, { FW: 1.20, MF: 1.20, DF: .65 }),
+  dribbleSupport: (p, tactic) => weightedAbility(p, tactic, [['pass', .35], ['speed', .25], ['dribble', .20], ['shoot', .20]]) * posMul(p, { FW: 1.20, MF: 1.20, DF: .60 }),
+  dribbleMarker: (p, tactic) => weightedAbility(p, tactic, [['defense', .60], ['speed', .40]]) * posMul(p, { MF: 1.20, DF: 1.00, FW: .55 }),
+  dribbleCover: (p, tactic) => weightedAbility(p, tactic, [['defense', .70], ['speed', .30]]) * posMul(p, { DF: 1.40, MF: .90, FW: .45 }),
+  counterOrigin: (p, tactic) => weightedAbility(p, tactic, [['defense', .35], ['pass', .40], ['speed', .25]]) * posMul(p, { DF: 1.20, MF: 1.25, FW: .70 }),
+  counterRunner: (p, tactic) => weightedAbility(p, tactic, [['speed', .45], ['dribble', .25], ['shoot', .20], ['pass', .10]]) * posMul(p, { FW: 1.40, MF: 1.00, DF: .55 }),
+  counterSupport: (p, tactic) => weightedAbility(p, tactic, [['speed', .35], ['pass', .25], ['shoot', .25], ['dribble', .15]]) * posMul(p, { FW: 1.20, MF: 1.15, DF: .55 }),
+  counterReturnDefender: (p, tactic) => weightedAbility(p, tactic, [['speed', .55], ['defense', .45]]) * posMul(p, { MF: 1.20, DF: 1.10, FW: .65 }),
+  counterFinalDefender: (p, tactic) => weightedAbility(p, tactic, [['defense', .70], ['speed', .30]]) * posMul(p, { DF: 1.45, MF: .85, FW: .45 })
+};
+
+function buildFirstStageRoles(type, attackers, defenders, attackTactic, defendTactic, rng) {
+  if (type === 'PASS') {
+    const passer = pickRole(attackers, p => ROLE_WEIGHTS.passFirstPasser(p, attackTactic), rng);
+    const receiver = pickRole(attackers, p => ROLE_WEIGHTS.passReceiver(p, attackTactic), rng, [passer]);
+    const support = pickRole(attackers, p => ROLE_WEIGHTS.passSupport(p, attackTactic), rng, [passer, receiver]);
+    const defender = pickRole(defenders, p => ROLE_WEIGHTS.passCut(p, defendTactic), rng);
+    return { passer, receiver, support, defender, contributor: passer };
+  }
+  if (type === 'DRIBBLE') {
+    const dribbler = pickRole(attackers, p => ROLE_WEIGHTS.dribbler(p, attackTactic), rng);
+    const support = pickRole(attackers, p => ROLE_WEIGHTS.dribbleSupport(p, attackTactic), rng, [dribbler]);
+    const defender = pickRole(defenders, p => ROLE_WEIGHTS.dribbleMarker(p, defendTactic), rng);
+    return { dribbler, support, defender, contributor: dribbler };
+  }
+  const origin = pickRole(attackers, p => ROLE_WEIGHTS.counterOrigin(p, attackTactic), rng);
+  const runner = pickRole(attackers, p => ROLE_WEIGHTS.counterRunner(p, attackTactic), rng, [origin]);
+  const defender = pickRole(defenders, p => ROLE_WEIGHTS.counterReturnDefender(p, defendTactic), rng);
+  return { origin, runner, defender, contributor: origin };
+}
+function firstStageScores(type, roles, attackTactic, defendTactic) {
+  if (type === 'PASS') {
+    return {
+      offense: fieldValue(roles.passer, 'pass', attackTactic) * .45
+        + fieldValue(roles.receiver, 'dribble', attackTactic) * .20
+        + speedValue(roles.receiver, type, attackTactic) * .15
+        + fieldValue(roles.receiver, 'pass', attackTactic) * .10
+        + fieldValue(roles.support, 'pass', attackTactic) * .10,
+      defense: fieldValue(roles.defender, 'defense', defendTactic) * .65 + speedValue(roles.defender, type, defendTactic, true) * .35
+    };
+  }
+  if (type === 'DRIBBLE') {
+    return {
+      offense: fieldValue(roles.dribbler, 'dribble', attackTactic) * .55
+        + speedValue(roles.dribbler, type, attackTactic) * .25
+        + fieldValue(roles.dribbler, 'pass', attackTactic) * .10
+        + fieldValue(roles.support, 'pass', attackTactic) * .10,
+      defense: fieldValue(roles.defender, 'defense', defendTactic) * .60 + speedValue(roles.defender, type, defendTactic, true) * .40
+    };
+  }
+  return {
+    offense: fieldValue(roles.origin, 'pass', attackTactic) * .40
+      + fieldValue(roles.origin, 'defense', attackTactic) * .15
+      + speedValue(roles.runner, type, attackTactic) * .30
+      + fieldValue(roles.runner, 'dribble', attackTactic) * .15,
+    defense: speedValue(roles.defender, type, defendTactic, true) * .55 + fieldValue(roles.defender, 'defense', defendTactic) * .45
+  };
+}
+function buildSecondStageRoles(type, firstAttack, attackers, defenders, attackTactic, defendTactic, rng) {
+  const firstRoles = firstAttack.roles || {};
+  if (type === 'PASS') {
+    if (firstAttack.firstType === 'PASS') {
+      const passer = firstRoles.receiver;
+      const receiver = pickRole(attackers, p => ROLE_WEIGHTS.passSecondReceiver(p, attackTactic), rng, [passer, firstRoles.passer]);
+      const support = pickRole(attackers, p => ROLE_WEIGHTS.passSupport(p, attackTactic), rng, [passer, receiver, firstRoles.passer]);
+      const defender = pickRole(defenders, p => ROLE_WEIGHTS.passFinalDefender(p, defendTactic), rng);
+      return { passer, receiver, support, defender, contributor: passer, primaryShooter: receiver };
+    }
+    const passer = firstRoles.dribbler;
+    const receiver = firstRoles.support || pickRole(attackers, p => ROLE_WEIGHTS.passSecondReceiver(p, attackTactic), rng, [passer]);
+    const support = pickRole(attackers, p => ROLE_WEIGHTS.passSupport(p, attackTactic), rng, [passer, receiver]);
+    const defender = pickRole(defenders, p => ROLE_WEIGHTS.passFinalDefender(p, defendTactic), rng);
+    return { passer, receiver, support, defender, contributor: passer, primaryShooter: receiver };
+  }
+  if (type === 'DRIBBLE') {
+    const dribbler = firstAttack.firstType === 'PASS' ? firstRoles.receiver : firstRoles.dribbler;
+    const support = firstAttack.firstType === 'DRIBBLE'
+      ? firstRoles.support
+      : pickRole(attackers, p => ROLE_WEIGHTS.dribbleSupport(p, attackTactic), rng, [dribbler, firstRoles.passer]);
+    const defender = pickRole(defenders, p => ROLE_WEIGHTS.dribbleCover(p, defendTactic), rng);
+    return { dribbler, support, defender, contributor: dribbler, primaryShooter: dribbler };
+  }
+  const runner = firstRoles.runner;
+  const support = pickRole(attackers, p => ROLE_WEIGHTS.counterSupport(p, attackTactic), rng, [runner, firstRoles.origin]);
+  const defender = pickRole(defenders, p => ROLE_WEIGHTS.counterFinalDefender(p, defendTactic), rng);
+  return { origin: firstRoles.origin, runner, support, defender, contributor: runner, primaryShooter: runner };
+}
+function secondStageScores(type, roles, attackTactic, defendTactic) {
+  if (type === 'PASS') {
+    return {
+      offense: fieldValue(roles.passer, 'pass', attackTactic) * .45
+        + speedValue(roles.receiver, type, attackTactic) * .20
+        + fieldValue(roles.receiver, 'dribble', attackTactic) * .15
+        + fieldValue(roles.receiver, 'shoot', attackTactic) * .10
+        + fieldValue(roles.support, 'pass', attackTactic) * .10,
+      defense: fieldValue(roles.defender, 'defense', defendTactic) * .70 + speedValue(roles.defender, type, defendTactic, true) * .30
+    };
+  }
+  if (type === 'DRIBBLE') {
+    return {
+      offense: fieldValue(roles.dribbler, 'dribble', attackTactic) * .45
+        + speedValue(roles.dribbler, type, attackTactic) * .20
+        + fieldValue(roles.dribbler, 'shoot', attackTactic) * .10
+        + fieldValue(roles.dribbler, 'pass', attackTactic) * .10
+        + speedValue(roles.support, type, attackTactic) * .10
+        + fieldValue(roles.support, 'shoot', attackTactic) * .05,
+      defense: fieldValue(roles.defender, 'defense', defendTactic) * .70 + speedValue(roles.defender, type, defendTactic, true) * .30
+    };
+  }
+  return {
+    offense: speedValue(roles.runner, type, attackTactic) * .35
+      + fieldValue(roles.runner, 'dribble', attackTactic) * .20
+      + fieldValue(roles.runner, 'shoot', attackTactic) * .15
+      + speedValue(roles.support, type, attackTactic) * .20
+      + fieldValue(roles.support, 'pass', attackTactic) * .10,
+    defense: fieldValue(roles.defender, 'defense', defendTactic) * .50 + speedValue(roles.defender, type, defendTactic, true) * .50
+  };
+}
+function roleDescription(type, stage, roles) {
+  if (type === 'PASS') return stage === 1 ? `${roles.passer.name}→${roles.receiver.name}` : `${roles.passer.name}→${roles.receiver.name}`;
+  if (type === 'DRIBBLE') return `${roles.dribbler.name}+${roles.support.name}`;
+  if (stage === 1) return `${roles.origin.name}→${roles.runner.name}`;
+  return `${roles.runner.name}+${roles.support.name}`;
+}
+function pickShooterFromRoles(type, roles, attackers, tactic, rng) {
+  const primary = roles.primaryShooter || roles.receiver || roles.dribbler || roles.runner;
+  const support = roles.support;
+  return weightedPick(attackers, player => {
+    let multiplier = player === primary ? 1 : player === support ? .12 : player.primaryPosition === 'FW' ? .25 : player.primaryPosition === 'MF' ? .12 : .05;
+    if (player.specialAbility === 'エース') multiplier *= 1.20;
+    return Math.max(.01, fieldValue(player, 'shoot', tactic) * multiplier);
+  }, rng);
 }
 
 export function simulateMatch(home, away, rng) {
@@ -210,7 +331,7 @@ export function simulateMatch(home, away, rng) {
     if (!activeAttack) {
       const attackClub = nextRestart.club || pickNeutralAttacker(home, away, homeFielders, awayFielders, rng);
       const type = restartAttackKind(attackClub.tactic, nextRestart.kind, rng);
-      activeAttack = { attack: attackClub, defend: opponent(attackClub, home, away), firstType: type, type, stage: 1 };
+      activeAttack = { attack: attackClub, defend: opponent(attackClub, home, away), firstType: type, type, stage: 1, roles: null };
       nextRestart = { club: null, kind: 'normal' };
     }
 
@@ -218,22 +339,23 @@ export function simulateMatch(home, away, rng) {
     const attackState = stateFor(attack, home, homeState, awayState), defendState = stateFor(defend, home, homeState, awayState);
     const attackers = fieldersFor(attack, home, homeFielders, awayFielders), defenders = fieldersFor(defend, home, homeFielders, awayFielders);
     const type = activeAttack.type;
-    const offense = attackScore(type, attackers, attackState.keeper, rng, attack.tactic);
-    const defense = defenseScore(type, defenders, defend.tactic) + luck(rng, CONFIG.attackLuck);
-    let diff = offense - defense;
-    if (activeAttack.stage === 2 && ['CLEAR', 'BIG'].includes(stageChance(Math.max(1, diff))) && defenders.some(player => player.specialAbility === '最終防衛線')) diff -= 3;
 
     if (activeAttack.stage === 1) {
+      const roles = buildFirstStageRoles(type, attackers, defenders, attack.tactic, defend.tactic, rng);
+      const scores = firstStageScores(type, roles, attack.tactic, defend.tactic);
+      const offense = scores.offense + tacticAttackBonus(type, attack.tactic) + luck(rng, CONFIG.attackLuck);
+      const defense = scores.defense + tacticDefenseBonus(defend.tactic) + luck(rng, CONFIG.attackLuck);
+      const diff = offense - defense;
       if (diff > -2) {
-        const contributor = pickContributor(attackers, type, attack.tactic, rng);
+        const contributor = roles.contributor || attackers[0];
         stat.get(contributor.id).attackContributions++; ratings[contributor.id] += .05;
         const nextType = secondStageKind(activeAttack.firstType, rng);
-        events.push(logEvent(phase, 'STAGE 1 SUCCESS', contributor, `${type} → ${nextType}`, sideKey(attack, home)));
-        activeAttack = { ...activeAttack, type: nextType, stage: 2 };
+        events.push(logEvent(phase, 'STAGE 1 SUCCESS', contributor, `${type} → ${nextType} / ${roleDescription(type, 1, roles)}`, sideKey(attack, home)));
+        activeAttack = { ...activeAttack, type: nextType, stage: 2, roles };
       } else {
-        const stopper = pickStopper(defenders, type, defend.tactic, rng);
+        const stopper = roles.defender || pickRole(defenders, p => fieldValue(p, 'defense', defend.tactic), rng);
         stat.get(stopper.id).defensiveStops++; ratings[stopper.id] += .15;
-        events.push(logEvent(phase, 'DEFENSIVE STOP', stopper, `${type} 第1阻止`, sideKey(defend, home)));
+        events.push(logEvent(phase, 'DEFENSIVE STOP', stopper, `${type} 第1阻止 / ${roleDescription(type, 1, roles)}`, sideKey(defend, home)));
         nextRestart = { club: defend, kind: 'defense' };
         activeAttack = null;
       }
@@ -241,10 +363,16 @@ export function simulateMatch(home, away, rng) {
       continue;
     }
 
+    const secondRoles = buildSecondStageRoles(type, activeAttack, attackers, defenders, attack.tactic, defend.tactic, rng);
+    const scores = secondStageScores(type, secondRoles, attack.tactic, defend.tactic);
+    const offense = scores.offense + tacticAttackBonus(type, attack.tactic) + luck(rng, CONFIG.attackLuck);
+    const defense = scores.defense + tacticDefenseBonus(defend.tactic) + luck(rng, CONFIG.attackLuck);
+    const diff = offense - defense;
+
     if (diff <= 0) {
-      const stopper = pickStopper(defenders, type, defend.tactic, rng);
+      const stopper = secondRoles.defender || pickRole(defenders, p => fieldValue(p, 'defense', defend.tactic), rng);
       stat.get(stopper.id).defensiveStops++; ratings[stopper.id] += .18;
-      events.push(logEvent(phase, 'DEFENSIVE STOP', stopper, `${type} 第2阻止`, sideKey(defend, home)));
+      events.push(logEvent(phase, 'DEFENSIVE STOP', stopper, `${type} 第2阻止 / ${roleDescription(type, 2, secondRoles)}`, sideKey(defend, home)));
       nextRestart = { club: defend, kind: 'defense' };
       activeAttack = null;
       recordPlayedPhase(homeState); recordPlayedPhase(awayState);
@@ -252,12 +380,12 @@ export function simulateMatch(home, away, rng) {
     }
 
     const chance = stageChance(diff);
-    const contributor = pickContributor(attackers, type, attack.tactic, rng);
+    const contributor = secondRoles.contributor || attackers[0];
     stat.get(contributor.id).attackContributions++; ratings[contributor.id] += .08;
-    const shooter = pickShooter(attackers, attack.tactic, rng);
+    const shooter = pickShooterFromRoles(type, secondRoles, attackers, attack.tactic, rng);
     stat.get(shooter.id).shots++; ratings[shooter.id] += .05;
     let shooterMultiplier = 1;
-    if (shooter.specialAbility === 'カットイン' && type === 'DRIBBLE') shooterMultiplier *= 1.08;
+    if (shooter.specialAbility === 'カットイン' && type === 'DRIBBLE' && shooter === secondRoles.dribbler) shooterMultiplier *= 1.08;
     if (shooter.specialAbility === 'フィニッシャー' && ['CLEAR', 'BIG'].includes(chance)) shooterMultiplier *= 1.10;
     if (shooter.specialAbility === 'ミドルシューター' && chance === 'HARD') shooterMultiplier *= 1.10;
     const attackSide = sideKey(attack, home), defendSide = sideKey(defend, home), oneBehind = score[attackSide] + 1 === score[defendSide];
@@ -276,7 +404,7 @@ export function simulateMatch(home, away, rng) {
       score[attackSide]++; stat.get(shooter.id).goals++; ratings[shooter.id] += 1.2; stat.get(gk.id).conceded++; ratings[gk.id] -= .15;
       let assist = null; const rate = type === 'PASS' ? .8 : type === 'COUNTER' ? .6 : .35;
       if (contributor !== shooter && rng.next() < rate) { assist = contributor; stat.get(assist.id).assists++; ratings[assist.id] += .7; }
-      events.push(logEvent(phase, 'GOAL', shooter, `${type} / ${chance}${assist ? ` / Assist ${assist.name}` : ''}`, attackSide));
+      events.push(logEvent(phase, 'GOAL', shooter, `${type} / ${chance} / ${roleDescription(type, 2, secondRoles)}${assist ? ` / Assist ${assist.name}` : ''}`, attackSide));
       nextRestart = { club: defend, kind: 'normal' };
     } else if (shooterScore < goalieScore - 8) {
       stat.get(gk.id).saves++; ratings[gk.id] += .12; events.push(logEvent(phase, 'SAVE', gk, `${type} / ${chance} / ${shooter.name} shot`, defendSide));
