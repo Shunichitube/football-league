@@ -83,18 +83,58 @@ Stage B — 役割選出と正式計算式を実装。
 - 守備計算式をチーム平均ベースから役割ベースへ変更
 - 役割名をイベントログの `extra` へ最小限付与
 
-### Stage Bでまだ実装しないもの
+## Stage C 実装状況
+
+Stage C — シュート処理拡張、こぼれ球、COUNTER補正・失敗デバフ、SHORT_COUNTERを実装。
+
+### 実装済み
+
+- 相手第1攻撃を大きく止めた場合のSHORT_COUNTER発動判定を追加
+  - 差 <= -10: 強いSHORT_COUNTERチャンス
+  - -10 < 差 <= -4: 弱いSHORT_COUNTERチャンス
+  - `counterIntent >= 25` でSHORT_COUNTER発動
+- `counterIntent` に以下を反映
+  - 戦術補正
+  - 守備成功補正
+  - ランナー走力補正
+  - サポート走力補正
+  - `カウンター起点` / `スピードスター`
+  - 試合状況補正
+  - COUNTER戦術の `COUNTER_TRIGGER +4`
+- SHORT_COUNTER専用役割を追加
+  - 奪取役 = 第1守備成功者
+  - ランナー
+  - サポート役
+  - 最終対応DF
+  - GK能力10%を守備側に加味
+- COUNTER / SHORT_COUNTERのシュート補正を実装
+  - COUNTER: `shotScore +5`
+  - SHORT_COUNTER: `shotScore +8`
+- COUNTER第2失敗時とSHORT_COUNTER突破失敗時に、次の守備第1判定へ `-4` デバフを追加
+- シュートまで行ったCOUNTER / SHORT_COUNTERにはデバフを付けない
+- シュート結果を拡張
+  - GK大幅優位: `GK CATCH`
+  - 中間: `SAVE` または `MISS`
+  - 僅差: `REBOUND`
+- こぼれ球処理を追加
+  - BIG / CLEAR: 攻撃側回収20%
+  - NORMAL: 攻撃側回収12%
+  - HARD: 攻撃側回収8%
+  - GK能力で攻撃側回収率を補正
+- 攻撃側がこぼれ球を回収した場合、PASS / DRIBBLE 50:50の第2攻撃から再チャンスへ移行
+- Stage B実装内の自動交代処理で、`enterSlot` 呼び出し引数が不足していた箇所を修正
+
+### Stage Cでまだ実装しないもの
 
 以下は仕様書通り後続Stageで扱う。
 
-- SHORT_COUNTER発動判定とSHORT_COUNTER専用処理
-- こぼれ球処理
-- COUNTER第2失敗デバフ
 - 特能の役割制への完全移植
 - スタミナ個別消費
 - 要約統計ログの整理
+- バランス調整
 
 ## 注意点
 
-Stage Bは役割選出と計算式の中核実装段階であり、試合バランスは未調整。
-次はStage Cとして、シュート処理の拡張、こぼれ球、COUNTER補正・失敗デバフ、SHORT_COUNTER実装を追加する。
+Stage Cまでで、試合エンジンの主要な流れは新仕様に近づいた。
+ただし、特能はまだ旧処理が一部残っており、完全な役割制移植はStage Dで行う。
+試合バランスは未調整のため、Stage D前またはStage E前に複数シーズンの得点数・シュート数・COUNTER/SHORT_COUNTER発生数を確認する必要がある。
