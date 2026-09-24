@@ -47,6 +47,49 @@ function speedValue(player, attackType, tactic, defending = false) {
   if (player.specialAbility === 'ハードワーカー') value *= 1.06;
   return value;
 }
+function abilityRoleMultiplier(player, key, context = {}) {
+  const ability = player?.specialAbility;
+  if (!ability) return 1;
+  const { type, stage, role, tactic, chance } = context;
+  let multiplier = 1;
+  if (ability === '万能型' && tactic === 'BALANCED') multiplier *= 1.04;
+  if (key === 'speed' && ability === 'ハードワーカー') multiplier *= 1.06;
+
+  if (key === 'defense') {
+    if (stage === 1 && ['passCut', 'dribbleMarker', 'counterReturnDefender', 'shortOrigin'].includes(role) && ability === 'ボールハンター') multiplier *= 1.08;
+    if (stage === 2 && ['dribbleCover', 'passFinalDefender', 'counterFinalDefender', 'shortFinalDefender'].includes(role) && ability === 'カバーリング') multiplier *= 1.08;
+    if (type === 'PASS' && role === 'passCut' && ability === 'パスカット') multiplier *= 1.06;
+    if (type === 'PASS' && role === 'passFinalDefender' && ability === 'パスカット') multiplier *= 1.08;
+    if (stage === 2 && ['passFinalDefender', 'dribbleCover', 'counterFinalDefender', 'shortFinalDefender'].includes(role) && ability === '最終防衛線') multiplier *= 1.08;
+  }
+
+  if (key === 'pass') {
+    if (role === 'passFirstPasser' && ability === 'ビルドアップ') multiplier *= 1.08;
+    if (role === 'counterOrigin' && ability === 'ビルドアップ') multiplier *= 1.05;
+    if (role === 'counterOrigin' && ability === 'カウンター起点') multiplier *= 1.08;
+    if (['passSecondPasser', 'passSupport'].includes(role) && ability === 'チャンスメイカー') multiplier *= 1.08;
+  }
+
+  if (key === 'dribble') {
+    if (['dribbler', 'secondDribbler'].includes(role) && ['ドリブラー', '個人技'].includes(ability)) multiplier *= 1.10;
+  }
+
+  if (key === 'speed') {
+    if (['dribbler', 'secondDribbler', 'counterRunner', 'shortRunner', 'counterSupport', 'shortSupport'].includes(role) && ability === 'スピードスター') multiplier *= 1.08;
+  }
+
+  if (key === 'shoot') {
+    if (role === 'passSecondReceiver' && ability === 'ポストプレーヤー') multiplier *= 1.06;
+    if (chance && ability === 'フィニッシャー' && ['CLEAR', 'BIG'].includes(chance)) multiplier *= 1.10;
+    if (chance && ability === 'ミドルシューター' && chance === 'HARD') multiplier *= 1.10;
+  }
+
+  return multiplier;
+}
+function roleValue(player, key, tactic, context = {}) {
+  const base = key === 'speed' ? statValue(player, key) : statValue(player, key);
+  return base * abilityRoleMultiplier(player, key, { ...context, tactic });
+}
 function tacticAttackBonus(type, tactic) {
   if (tactic === 'BALANCED') return 2;
   if (tactic === 'POSSESSION' && type === 'PASS') return 4;
@@ -218,29 +261,32 @@ function buildFirstStageRoles(type, attackers, defenders, attackTactic, defendTa
 function firstStageScores(type, roles, attackTactic, defendTactic) {
   if (type === 'PASS') {
     return {
-      offense: fieldValue(roles.passer, 'pass', attackTactic) * .45
-        + fieldValue(roles.receiver, 'dribble', attackTactic) * .20
-        + speedValue(roles.receiver, type, attackTactic) * .15
-        + fieldValue(roles.receiver, 'pass', attackTactic) * .10
-        + fieldValue(roles.support, 'pass', attackTactic) * .10,
-      defense: fieldValue(roles.defender, 'defense', defendTactic) * .65 + speedValue(roles.defender, type, defendTactic, true) * .35
+      offense: roleValue(roles.passer, 'pass', attackTactic, { type, stage: 1, role: 'passFirstPasser' }) * .45
+        + roleValue(roles.receiver, 'dribble', attackTactic, { type, stage: 1, role: 'passReceiver' }) * .20
+        + roleValue(roles.receiver, 'speed', attackTactic, { type, stage: 1, role: 'passReceiver' }) * .15
+        + roleValue(roles.receiver, 'pass', attackTactic, { type, stage: 1, role: 'passReceiver' }) * .10
+        + roleValue(roles.support, 'pass', attackTactic, { type, stage: 1, role: 'passSupport' }) * .10,
+      defense: roleValue(roles.defender, 'defense', defendTactic, { type, stage: 1, role: 'passCut' }) * .65
+        + roleValue(roles.defender, 'speed', defendTactic, { type, stage: 1, role: 'passCut' }) * .35
     };
   }
   if (type === 'DRIBBLE') {
     return {
-      offense: fieldValue(roles.dribbler, 'dribble', attackTactic) * .55
-        + speedValue(roles.dribbler, type, attackTactic) * .25
-        + fieldValue(roles.dribbler, 'pass', attackTactic) * .10
-        + fieldValue(roles.support, 'pass', attackTactic) * .10,
-      defense: fieldValue(roles.defender, 'defense', defendTactic) * .60 + speedValue(roles.defender, type, defendTactic, true) * .40
+      offense: roleValue(roles.dribbler, 'dribble', attackTactic, { type, stage: 1, role: 'dribbler' }) * .55
+        + roleValue(roles.dribbler, 'speed', attackTactic, { type, stage: 1, role: 'dribbler' }) * .25
+        + roleValue(roles.dribbler, 'pass', attackTactic, { type, stage: 1, role: 'dribbler' }) * .10
+        + roleValue(roles.support, 'pass', attackTactic, { type, stage: 1, role: 'dribbleSupport' }) * .10,
+      defense: roleValue(roles.defender, 'defense', defendTactic, { type, stage: 1, role: 'dribbleMarker' }) * .60
+        + roleValue(roles.defender, 'speed', defendTactic, { type, stage: 1, role: 'dribbleMarker' }) * .40
     };
   }
   return {
-    offense: fieldValue(roles.origin, 'pass', attackTactic) * .40
-      + fieldValue(roles.origin, 'defense', attackTactic) * .15
-      + speedValue(roles.runner, type, attackTactic) * .30
-      + fieldValue(roles.runner, 'dribble', attackTactic) * .15,
-    defense: speedValue(roles.defender, type, defendTactic, true) * .55 + fieldValue(roles.defender, 'defense', defendTactic) * .45
+    offense: roleValue(roles.origin, 'pass', attackTactic, { type, stage: 1, role: 'counterOrigin' }) * .40
+      + roleValue(roles.origin, 'defense', attackTactic, { type, stage: 1, role: 'counterOrigin' }) * .15
+      + roleValue(roles.runner, 'speed', attackTactic, { type, stage: 1, role: 'counterRunner' }) * .30
+      + roleValue(roles.runner, 'dribble', attackTactic, { type, stage: 1, role: 'counterRunner' }) * .15,
+    defense: roleValue(roles.defender, 'speed', defendTactic, { type, stage: 1, role: 'counterReturnDefender' }) * .55
+      + roleValue(roles.defender, 'defense', defendTactic, { type, stage: 1, role: 'counterReturnDefender' }) * .45
   };
 }
 function buildSecondStageRoles(type, firstAttack, attackers, defenders, attackTactic, defendTactic, rng) {
@@ -282,45 +328,50 @@ function buildSecondStageRoles(type, firstAttack, attackers, defenders, attackTa
 }
 function secondStageScores(type, roles, attackTactic, defendTactic) {
   if (type === 'PASS') {
+    let offense = roleValue(roles.passer, 'pass', attackTactic, { type, stage: 2, role: 'passSecondPasser' }) * .45
+      + roleValue(roles.receiver, 'speed', attackTactic, { type, stage: 2, role: 'passSecondReceiver' }) * .20
+      + roleValue(roles.receiver, 'dribble', attackTactic, { type, stage: 2, role: 'passSecondReceiver' }) * .15
+      + roleValue(roles.receiver, 'shoot', attackTactic, { type, stage: 2, role: 'passSecondReceiver' }) * .10
+      + roleValue(roles.support, 'pass', attackTactic, { type, stage: 2, role: 'passSupport' }) * .10;
+    if (roles.receiver?.specialAbility === 'ポストプレーヤー') offense *= 1.06;
     return {
-      offense: fieldValue(roles.passer, 'pass', attackTactic) * .45
-        + speedValue(roles.receiver, type, attackTactic) * .20
-        + fieldValue(roles.receiver, 'dribble', attackTactic) * .15
-        + fieldValue(roles.receiver, 'shoot', attackTactic) * .10
-        + fieldValue(roles.support, 'pass', attackTactic) * .10,
-      defense: fieldValue(roles.defender, 'defense', defendTactic) * .70 + speedValue(roles.defender, type, defendTactic, true) * .30
+      offense,
+      defense: roleValue(roles.defender, 'defense', defendTactic, { type, stage: 2, role: 'passFinalDefender' }) * .70
+        + roleValue(roles.defender, 'speed', defendTactic, { type, stage: 2, role: 'passFinalDefender' }) * .30
     };
   }
   if (type === 'DRIBBLE') {
     return {
-      offense: fieldValue(roles.dribbler, 'dribble', attackTactic) * .45
-        + speedValue(roles.dribbler, type, attackTactic) * .20
-        + fieldValue(roles.dribbler, 'shoot', attackTactic) * .10
-        + fieldValue(roles.dribbler, 'pass', attackTactic) * .10
-        + speedValue(roles.support, type, attackTactic) * .10
-        + fieldValue(roles.support, 'shoot', attackTactic) * .05,
-      defense: fieldValue(roles.defender, 'defense', defendTactic) * .70 + speedValue(roles.defender, type, defendTactic, true) * .30
+      offense: roleValue(roles.dribbler, 'dribble', attackTactic, { type, stage: 2, role: 'secondDribbler' }) * .45
+        + roleValue(roles.dribbler, 'speed', attackTactic, { type, stage: 2, role: 'secondDribbler' }) * .20
+        + roleValue(roles.dribbler, 'shoot', attackTactic, { type, stage: 2, role: 'secondDribbler' }) * .10
+        + roleValue(roles.dribbler, 'pass', attackTactic, { type, stage: 2, role: 'secondDribbler' }) * .10
+        + roleValue(roles.support, 'speed', attackTactic, { type, stage: 2, role: 'dribbleSupport' }) * .10
+        + roleValue(roles.support, 'shoot', attackTactic, { type, stage: 2, role: 'dribbleSupport' }) * .05,
+      defense: roleValue(roles.defender, 'defense', defendTactic, { type, stage: 2, role: 'dribbleCover' }) * .70
+        + roleValue(roles.defender, 'speed', defendTactic, { type, stage: 2, role: 'dribbleCover' }) * .30
     };
   }
   if (type === 'SHORT_COUNTER') {
     return {
-      offense: fieldValue(roles.origin, 'defense', attackTactic) * .20
-        + fieldValue(roles.origin, 'pass', attackTactic) * .25
-        + speedValue(roles.runner, type, attackTactic) * .30
-        + fieldValue(roles.runner, 'shoot', attackTactic) * .15
-        + speedValue(roles.support, type, attackTactic) * .10,
-      defense: fieldValue(roles.defender, 'defense', defendTactic) * .45
-        + speedValue(roles.defender, type, defendTactic, true) * .45
+      offense: roleValue(roles.origin, 'defense', attackTactic, { type, stage: 2, role: 'shortOrigin' }) * .20
+        + roleValue(roles.origin, 'pass', attackTactic, { type, stage: 2, role: 'counterOrigin' }) * .25
+        + roleValue(roles.runner, 'speed', attackTactic, { type, stage: 2, role: 'shortRunner' }) * .30
+        + roleValue(roles.runner, 'shoot', attackTactic, { type, stage: 2, role: 'shortRunner' }) * .15
+        + roleValue(roles.support, 'speed', attackTactic, { type, stage: 2, role: 'shortSupport' }) * .10,
+      defense: roleValue(roles.defender, 'defense', defendTactic, { type, stage: 2, role: 'shortFinalDefender' }) * .45
+        + roleValue(roles.defender, 'speed', defendTactic, { type, stage: 2, role: 'shortFinalDefender' }) * .45
         + statValue(roles.goalkeeper, 'gk') * .10
     };
   }
   return {
-    offense: speedValue(roles.runner, type, attackTactic) * .35
-      + fieldValue(roles.runner, 'dribble', attackTactic) * .20
-      + fieldValue(roles.runner, 'shoot', attackTactic) * .15
-      + speedValue(roles.support, type, attackTactic) * .20
-      + fieldValue(roles.support, 'pass', attackTactic) * .10,
-    defense: fieldValue(roles.defender, 'defense', defendTactic) * .50 + speedValue(roles.defender, type, defendTactic, true) * .50
+    offense: roleValue(roles.runner, 'speed', attackTactic, { type, stage: 2, role: 'counterRunner' }) * .35
+      + roleValue(roles.runner, 'dribble', attackTactic, { type, stage: 2, role: 'counterRunner' }) * .20
+      + roleValue(roles.runner, 'shoot', attackTactic, { type, stage: 2, role: 'counterRunner' }) * .15
+      + roleValue(roles.support, 'speed', attackTactic, { type, stage: 2, role: 'counterSupport' }) * .20
+      + roleValue(roles.support, 'pass', attackTactic, { type, stage: 2, role: 'passSupport' }) * .10,
+    defense: roleValue(roles.defender, 'defense', defendTactic, { type, stage: 2, role: 'counterFinalDefender' }) * .50
+      + roleValue(roles.defender, 'speed', defendTactic, { type, stage: 2, role: 'counterFinalDefender' }) * .50
   };
 }
 function buildShortCounterRoles(origin, attackers, defenders, attackTactic, defendTactic, goalkeeper, rng) {
@@ -370,9 +421,18 @@ function pickShooterFromRoles(type, roles, attackers, tactic, rng) {
   const support = roles.support;
   return weightedPick(attackers, player => {
     let multiplier = player === primary ? 1 : player === support ? .12 : player.primaryPosition === 'FW' ? .25 : player.primaryPosition === 'MF' ? .12 : .05;
+    if (player === support && type === 'PASS' && roles.receiver?.specialAbility === 'ポストプレーヤー') multiplier += .05;
     if (player.specialAbility === 'エース') multiplier *= 1.20;
     return Math.max(.01, fieldValue(player, 'shoot', tactic) * multiplier);
   }, rng);
+}
+function shotBonusForAbility(shooter, type, chance, phase, score, attackSide, defendSide, secondRoles) {
+  let bonus = 0;
+  if (shooter.specialAbility === 'カットイン' && type === 'DRIBBLE' && shooter === secondRoles.dribbler) bonus += 8;
+  if (shooter.specialAbility === 'フィニッシャー' && ['CLEAR', 'BIG'].includes(chance)) bonus += 10;
+  if (shooter.specialAbility === 'ミドルシューター' && chance === 'HARD') bonus += 10;
+  if (shooter.specialAbility === '勝負強さ' && latePhase(phase) && (score.home === score.away || score[attackSide] + 1 === score[defendSide])) bonus += 8;
+  return bonus;
 }
 
 export function simulateMatch(home, away, rng) {
@@ -450,14 +510,10 @@ export function simulateMatch(home, away, rng) {
     stat.get(contributor.id).attackContributions++; ratings[contributor.id] += .08;
     const shooter = pickShooterFromRoles(type, secondRoles, attackers, attack.tactic, rng);
     stat.get(shooter.id).shots++; ratings[shooter.id] += .05;
-    let shooterMultiplier = 1;
-    if (shooter.specialAbility === 'カットイン' && type === 'DRIBBLE' && shooter === secondRoles.dribbler) shooterMultiplier *= 1.08;
-    if (shooter.specialAbility === 'フィニッシャー' && ['CLEAR', 'BIG'].includes(chance)) shooterMultiplier *= 1.10;
-    if (shooter.specialAbility === 'ミドルシューター' && chance === 'HARD') shooterMultiplier *= 1.10;
-    const attackSide = sideKey(attack, home), defendSide = sideKey(defend, home), oneBehind = score[attackSide] + 1 === score[defendSide];
-    if (shooter.specialAbility === '勝負強さ' && latePhase(phase) && (score.home === score.away || oneBehind)) shooterMultiplier *= 1.08;
+    const attackSide = sideKey(attack, home), defendSide = sideKey(defend, home);
     const counterShotBonus = type === 'COUNTER' ? 5 : type === 'SHORT_COUNTER' ? 8 : 0;
-    const shooterScore = (fieldValue(shooter, 'shoot', attack.tactic) + CONFIG.chanceBonus[chance.toLowerCase()] + counterShotBonus + luck(rng, CONFIG.shotLuck)) * shooterMultiplier;
+    const abilityShotBonus = shotBonusForAbility(shooter, type, chance, phase, score, attackSide, defendSide, secondRoles);
+    const shooterScore = fieldValue(shooter, 'shoot', attack.tactic) + CONFIG.chanceBonus[chance.toLowerCase()] + counterShotBonus + abilityShotBonus + luck(rng, CONFIG.shotLuck);
     const gk = defendState.keeper, baseGoalieScore = gk.stats.gk * .80 + gk.stats.defense * .10 + gk.stats.speed * .10 + CONFIG.gkBaseAdvantage;
     let gkMultiplier = 1;
     if (gk.specialAbility === 'ショットストッパー' && chance === 'NORMAL') gkMultiplier *= 1.08;
