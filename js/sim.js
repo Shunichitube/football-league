@@ -25,7 +25,7 @@ function speedValue(player, attackType, tactic, defending = false) {
   return value;
 }
 function attackKind(rng, tactic) { return weightedPick(['PASS', 'DRIBBLE', 'COUNTER'], type => CONFIG.tactics[tactic][type], rng); }
-function attackScore(type, players, rng, tactic) {
+function attackScore(type, players, goalkeeper, rng, tactic) {
   let value = avg(players, player => {
     let pass = fieldValue(player, 'pass', tactic), dribble = fieldValue(player, 'dribble', tactic), speed = speedValue(player, type, tactic);
     if (type === 'PASS' && player.specialAbility === 'ビルドアップ') pass *= 1.10;
@@ -35,7 +35,8 @@ function attackScore(type, players, rng, tactic) {
   });
   if (type === 'PASS' && players.some(player => player.specialAbility === 'ポストプレーヤー')) value *= 1.06;
   const tacticBonus = tactic === 'BALANCED' || (tactic === 'POSSESSION' && type === 'PASS') || (tactic === 'DRIBBLE' && type === 'DRIBBLE') || (tactic === 'COUNTER' && type === 'COUNTER') ? CONFIG.tactics[tactic].bonus : 1;
-  return value * tacticBonus + luck(rng, CONFIG.attackLuck);
+  const goalkeeperBuildUp = type === 'PASS' && goalkeeper ? goalkeeper.stats.pass * .08 + goalkeeper.stats.dribble * .02 : 0;
+  return value * tacticBonus + goalkeeperBuildUp + luck(rng, CONFIG.attackLuck);
 }
 function defenseScore(type, defenders, tactic) {
   return avg(defenders, player => {
@@ -60,7 +61,7 @@ export function simulateMatch(home, away, rng) {
     const hf = fielders(home), af = fielders(away);
     const homePoss = avg(hf, player => fieldValue(player, 'pass', home.tactic) * .6 + fieldValue(player, 'dribble', home.tactic) * .2 + speedValue(player, 'PASS', home.tactic) * .2), awayPoss = avg(af, player => fieldValue(player, 'pass', away.tactic) * .6 + fieldValue(player, 'dribble', away.tactic) * .2 + speedValue(player, 'PASS', away.tactic) * .2);
     const homeChance = Math.max(.35, Math.min(.65, homePoss / (homePoss + awayPoss))), attack = rng.next() < homeChance ? home : away, defend = attack === home ? away : home, attackers = attack === home ? hf : af, defenders = defend === home ? hf : af, type = attackKind(rng, attack.tactic);
-    let offense = attackScore(type, attackers, rng, attack.tactic);
+    let offense = attackScore(type, attackers, keeper(attack), rng, attack.tactic);
     if (type === 'COUNTER' && counterBonusClubId === attack.id) { offense *= 1.08; counterBonusClubId = null; }
     let defense = defenseScore(type, defenders, defend.tactic) + luck(rng, CONFIG.attackLuck), chance = chanceName(offense - defense);
     if (['CLEAR', 'BIG'].includes(chance) && defenders.some(player => player.specialAbility === '最終防衛線')) { defense *= 1.05; chance = chanceName(offense - defense); }
@@ -78,7 +79,7 @@ export function simulateMatch(home, away, rng) {
     if (shooter.specialAbility === 'ミドルシューター' && chance === 'HARD') shooterMultiplier *= 1.10;
     const attackSide = attack === home ? 'home' : 'away', oneBehind = score[attackSide] + 1 === score[attackSide === 'home' ? 'away' : 'home'];
     if (shooter.specialAbility === '勝負強さ' && latePhase(phase) && (score.home === score.away || oneBehind)) shooterMultiplier *= 1.08;
-    const shooterScore = (fieldValue(shooter, 'shoot', attack.tactic) + CONFIG.chanceBonus[chance.toLowerCase()] + luck(rng, CONFIG.shotLuck)) * shooterMultiplier, gk = keeper(defend), baseGoalieScore = gk.stats.gk + CONFIG.gkBaseAdvantage;
+    const shooterScore = (fieldValue(shooter, 'shoot', attack.tactic) + CONFIG.chanceBonus[chance.toLowerCase()] + luck(rng, CONFIG.shotLuck)) * shooterMultiplier, gk = keeper(defend), baseGoalieScore = gk.stats.gk * .80 + gk.stats.defense * .10 + gk.stats.speed * .10 + CONFIG.gkBaseAdvantage;
     let gkMultiplier = 1;
     if (gk.specialAbility === 'ショットストッパー' && chance === 'NORMAL') gkMultiplier *= 1.08;
     if (gk.specialAbility === 'ビッグセーバー' && ['CLEAR', 'BIG'].includes(chance)) gkMultiplier *= 1.10;
