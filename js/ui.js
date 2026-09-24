@@ -1,6 +1,6 @@
-import { displayPlayer, STAT_LABELS } from './data.js?v=0.16.2';
-import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.16.2';
-import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.16.2';
+import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.16.3';
+import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.16.3';
+import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.16.3';
 
 export const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
 
@@ -9,13 +9,15 @@ const publicAbilities = player => {
   const keys = player.primaryPosition === 'GK' ? ['shoot', 'speed', 'defense', 'dribble', 'pass', 'gk'] : ['shoot', 'speed', 'defense', 'dribble', 'pass', 'stamina'];
   return keys.filter(key => display.ranks[key]).map(key => ({ key, label: STAT_LABELS[key], rank: display.ranks[key] }));
 };
+const positionLabel = position => POSITION_LABELS[position] || position;
+const slotLabel = (slot, index) => `${positionLabel(slot)}${slot === 'ALA' ? ` ${index === 2 ? '1' : '2'}` : ''}`;
 
 export function renderPlayerCard(player, options = {}) {
   const display = displayPlayer(player);
   const details = options.details !== false ? `<button type="button" data-detail="${escapeHtml(player.id)}" class="detail-button subtle">選手詳細</button>` : '';
   return `<article class="player-card">
     <div class="player-title"><b>${escapeHtml(display.name)}</b><strong class="overall-rank">総合 ${display.overallRank}</strong></div>
-    <span>${display.primaryPosition}・${display.age}歳・契約${display.contractYears}年</span>
+    <span>${positionLabel(display.primaryPosition)}・${display.age}歳・契約${display.contractYears}年</span>
     <dl class="ability-grid">${publicAbilities(player).map(ability => `<div><dt>${ability.label}</dt><dd><span>${ability.rank}</span><i class="rank-bar rank-${ability.rank}"><b></b></i></dd></div>`).join('')}</dl>
     <p class="special-ability">${display.specialAbility ? `★ ${escapeHtml(display.specialAbility)}` : '特殊能力なし'}</p>
     ${details}
@@ -23,13 +25,13 @@ export function renderPlayerCard(player, options = {}) {
 }
 
 export function positionCounts(roster) {
-  return ['GK', 'FIXO', 'ALA', 'PIVO'].map(position => ({ position, count: roster.filter(player => player.primaryPosition === position).length }));
+  return ['GK', 'FIXO', 'ALA', 'PIVO'].map(position => ({ position, label: positionLabel(position), count: roster.filter(player => player.primaryPosition === position).length }));
 }
 
 export function renderRosterPanel(club) {
   return `<section class="overlay-panel roster-panel" role="dialog" aria-modal="true" aria-label="所属選手">
     <div class="overlay-heading"><div><p class="eyebrow">${escapeHtml(club.name)}</p><h2>所属選手</h2></div><button type="button" data-stage10="close" class="subtle">閉じる</button></div>
-    <div class="position-counts">${positionCounts(club.roster).map(row => `<span>${row.position} <b>${row.count}</b></span>`).join('')}</div>
+    <div class="position-counts">${positionCounts(club.roster).map(row => `<span>${row.label} <b>${row.count}</b></span>`).join('')}</div>
     <div class="candidate-grid">${club.roster.map(player => renderPlayerCard(player)).join('')}</div>
   </section>`;
 }
@@ -60,14 +62,14 @@ export function renderLineupEditor(club, selectedPlayerId = null, message = '', 
   return `<section class="lineup-editor" aria-label="スタメン編成">
     <div class="lineup-status ${messageIsError || !validation.ok ? 'error' : warnings.length ? 'warning' : 'valid'}" role="status">
       <b>${escapeHtml(status)}</b>
-      ${selected ? `<span>選択中：${escapeHtml(selected.name)}（${selected.primaryPosition}）</span>` : '<span>選手を選択し、配置したい枠を押してください。</span>'}
+      ${selected ? `<span>選択中：${escapeHtml(selected.name)}（${positionLabel(selected.primaryPosition)}）</span>` : '<span>選手を選択し、配置したい枠を押してください。</span>'}
       ${warnings.length ? `<ul>${warnings.map(warning => `<li>${escapeHtml(warning)}</li>`).join('')}</ul>` : ''}
     </div>
     <h3>スタメン</h3>
     <div class="lineup-slots">${LINEUP_SLOTS.map((slot, index) => {
       const player = club.roster.find(candidate => candidate.id === club.lineup?.[index]);
       return `<section class="lineup-slot ${player && player.primaryPosition !== slot ? 'out-of-position' : ''}" data-slot-position="${slot}">
-        <div class="slot-heading"><b>${slot}${slot === 'ALA' ? ` ${index === 2 ? '1' : '2'}` : ''}</b>${player ? `<span>本職 ${player.primaryPosition}</span>` : '<span>未配置</span>'}</div>
+        <div class="slot-heading"><b>${slotLabel(slot, index)}</b>${player ? `<span>本職 ${positionLabel(player.primaryPosition)}</span>` : '<span>未配置</span>'}</div>
         ${player ? renderPlayerCard(player) : '<p class="hint">選手が配置されていません。</p>'}
         ${player ? `<button type="button" data-lineup-player="${escapeHtml(player.id)}" class="${selectedPlayerId === player.id ? '' : 'subtle'}">${selectedPlayerId === player.id ? '選択中' : 'この選手を選択'}</button>` : ''}
         <button type="button" data-lineup-slot="${index}" ${selected ? '' : 'disabled'}>この枠に配置</button>
