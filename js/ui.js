@@ -54,20 +54,6 @@ export function renderRosterPanel(club, options = {}) {
   </section>`;
 }
 
-export function renderPlayerDetail(player, options = {}) {
-  const display = displayPlayer(player);
-  const season = player.season || {};
-  const description = display.specialAbility ? SPECIAL_ABILITY_DESCRIPTIONS[display.specialAbility] : '現在、確認されている特殊能力はありません。';
-  return `<section class="overlay-panel detail-panel" role="dialog" aria-modal="true" aria-label="選手詳細">
-    <div class="overlay-heading"><div><p class="eyebrow">選手詳細</p><h2>${escapeHtml(display.name)}</h2></div><button type="button" data-stage10="close" class="subtle">閉じる</button></div>
-    ${renderPlayerCard(player, { details: false })}
-    <section class="detail-section"><h3>${display.specialAbility ? `★ ${escapeHtml(display.specialAbility)}` : '特殊能力なし'}</h3><p>${escapeHtml(description)}</p></section>
-    <section class="detail-section"><h3>今季成績</h3><p>出場 ${season.appearances || 0}・得点 ${season.goals || 0}・アシスト ${season.assists || 0}・シュート ${season.shots || 0}・守備成功 ${season.defensiveStops || 0}・セーブ ${season.saves || 0}</p></section>
-    ${options.releaseMessage ? `<p class="lineup-error">${escapeHtml(options.releaseMessage)}</p>` : ''}
-    ${options.allowRelease ? `<button type="button" data-stage10="release" data-release-player="${escapeHtml(player.id)}" class="subtle">この選手を放出</button>` : ''}
-  </section>`;
-}
-
 export function renderLineupEditor(club, selectedPlayerId = null, message = '', messageIsError = false, benchSort = 'position') {
   const validation = validateLineup(club);
   const starterIds = new Set(club.lineup || []);
