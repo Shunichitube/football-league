@@ -1,6 +1,6 @@
-import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.16.7';
-import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.16.7';
-import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.16.7';
+import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.16.8';
+import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.16.8';
+import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.16.8';
 
 export const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
 
@@ -33,12 +33,12 @@ export function renderPlayerCard(player, options = {}) {
       <p class="player-meta">年齢 <b>${display.age}歳</b></p>
       <p class="player-meta">契約 <b>${display.contractYears}年</b></p>
       <p class="growth-expectation">成長期待：<b>${growthHint(player)}</b></p>
-      ${specialAbility}
       ${release}
     </div>
     <div class="player-abilities">
       <dl class="ability-grid">${publicAbilities(player).map(ability => `<div><dt>${ability.label}</dt><dd><span>${ability.rank}</span><i class="rank-bar rank-${ability.rank}"><b></b></i></dd></div>`).join('')}</dl>
     </div>
+    <div class="player-special-row">${specialAbility}</div>
   </article>`;
 }
 
