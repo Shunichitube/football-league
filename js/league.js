@@ -9,6 +9,68 @@ const CPU_CLUBS = [
 
 const blankRecord = () => ({ played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0 });
 const cloneSide = club => ({ id: club.id, name: club.name, color: club.color });
+const BLANK_ATTACK_TYPES = Object.freeze({ PASS: 0, DRIBBLE: 0, COUNTER: 0, SHORT_COUNTER: 0 });
+const BLANK_CHANCES = Object.freeze({ HARD: 0, NORMAL: 0, CLEAR: 0, BIG: 0 });
+
+function blankSummaryBuckets() {
+  return {
+    attackTypes: { ...BLANK_ATTACK_TYPES },
+    goalsByType: { ...BLANK_ATTACK_TYPES },
+    chances: { ...BLANK_CHANCES },
+    goalsByChance: { ...BLANK_CHANCES },
+    events: { goals: 0, saves: 0, gkCatches: 0, misses: 0, rebounds: 0, defensiveStops: 0, shortCounters: 0 }
+  };
+}
+
+function parseEventMeta(event) {
+  const parts = String(event?.extra || '').split('/').map(part => part.trim());
+  const attackType = BLANK_ATTACK_TYPES.hasOwnProperty(parts[0]) ? parts[0] : null;
+  const chance = BLANK_CHANCES.hasOwnProperty(parts[1]) ? parts[1] : null;
+  return { attackType, chance };
+}
+
+function countEvent(summary, event) {
+  const { attackType, chance } = parseEventMeta(event);
+  if (attackType) summary.attackTypes[attackType]++;
+  if (chance) summary.chances[chance]++;
+  if (event.kind === 'GOAL') {
+    summary.events.goals++;
+    if (attackType) summary.goalsByType[attackType]++;
+    if (chance) summary.goalsByChance[chance]++;
+  } else if (event.kind === 'SAVE') summary.events.saves++;
+  else if (event.kind === 'GK CATCH') summary.events.gkCatches++;
+  else if (event.kind === 'MISS') summary.events.misses++;
+  else if (event.kind === 'REBOUND') summary.events.rebounds++;
+  else if (event.kind === 'DEFENSIVE STOP') summary.events.defensiveStops++;
+  else if (event.kind === 'SHORT COUNTER') summary.events.shortCounters++;
+}
+
+export function summarizeMatchResult(result) {
+  const summary = blankSummaryBuckets();
+  for (const event of result.events || []) countEvent(summary, event);
+  const shots = (result.playerResults || []).reduce((sum, row) => sum + (row.shots || 0), 0);
+  const saves = (result.playerResults || []).reduce((sum, row) => sum + (row.saves || 0), 0);
+  const defensiveStops = (result.playerResults || []).reduce((sum, row) => sum + (row.defensiveStops || 0), 0);
+  summary.score = { ...(result.score || { home: 0, away: 0 }) };
+  summary.totalGoals = (summary.score.home || 0) + (summary.score.away || 0);
+  summary.shots = shots;
+  summary.saves = saves;
+  summary.defensiveStops = defensiveStops;
+  summary.phases = result.phases || 0;
+  return summary;
+}
+
+function cloneSummary(summary) {
+  return {
+    ...summary,
+    score: { ...(summary?.score || {}) },
+    attackTypes: { ...(summary?.attackTypes || {}) },
+    goalsByType: { ...(summary?.goalsByType || {}) },
+    chances: { ...(summary?.chances || {}) },
+    goalsByChance: { ...(summary?.goalsByChance || {}) },
+    events: { ...(summary?.events || {}) }
+  };
+}
 
 export function createSchedule(clubIds) {
   const rotation = [...clubIds]; const firstHalf = [];
@@ -73,6 +135,7 @@ function clonePlayer(player) {
 }
 
 function snapshotMatch(round, match) {
+  const summary = match.result.summary || summarizeMatchResult(match.result);
   return {
     round,
     fixture: { ...match.fixture, home: { ...match.fixture.home }, away: { ...match.fixture.away } },
@@ -80,6 +143,7 @@ function snapshotMatch(round, match) {
       score: { ...match.result.score },
       phases: match.result.phases,
       forms: { ...match.result.forms },
+      summary: cloneSummary(summary),
       events: match.result.events.map(event => ({ ...event })),
       playerResults: match.result.playerResults.map(row => ({ ...row, player: clonePlayer(row.player) }))
     }
@@ -92,6 +156,7 @@ export function playCurrentRound(league) {
   const results = round.fixtures.map((fixture, index) => {
     const home = league.clubs.find(c => c.id === fixture.homeId); const away = league.clubs.find(c => c.id === fixture.awayId);
     const result = simulateMatch(home, away, createRandom(`${league.seed}:round:${round.round}:match:${index}`));
+    result.summary = summarizeMatchResult(result);
     applyResult(league, fixture, result);
     (league.fixtureResults ||= []).push({ homeId: fixture.homeId, awayId: fixture.awayId, homeGoals: result.score.home, awayGoals: result.score.away });
     return { fixture: { ...fixture, home: cloneSide(home), away: cloneSide(away) }, result };
