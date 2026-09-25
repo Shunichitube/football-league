@@ -127,7 +127,7 @@ function roomIdOf(data) {
 }
 
 function phaseLabel(phase) {
-  return ({ lobby: '待機中', 'team-setup': 'チーム準備', 'season-ready': 'シーズン開始待ち', 'season-result': 'シーズン結果' }[phase] || phase || 'ROOM');
+  return ({ lobby: '待機中', 'team-setup': 'チーム準備', 'season-ready': 'シーズン開始待ち', 'season-result': 'シーズン結果', 'offseason-events': '契約・要求・特別特訓', 'offseason-events-ready': 'イベント確定待ち', development: '育成' }[phase] || phase || 'ROOM');
 }
 
 function teamNameById(players, playerId) {
@@ -298,7 +298,8 @@ function buildSeasonResult(room) {
     season: league.season,
     matchesProcessed: simulation.matchesProcessed,
     table,
-    completedAt: new Date().toISOString()
+    completedAt: new Date().toISOString(),
+    leagueState: league
   };
 }
 
