@@ -45,6 +45,7 @@ function publicRoom(state) {
     offseasonState: state.offseasonState || null,
     growthResult: state.growthResult || null,
     draftState: state.draftState || null,
+    auctionState: state.auctionState || null,
     createdAt: state.createdAt,
     updatedAt: state.updatedAt
   };
@@ -91,6 +92,8 @@ function createInitialState(roomId, hostName) {
     growthResult: null,
     draftState: null,
     draftInputs: {},
+    auctionState: null,
+    auctionInputs: {},
     createdAt: now(),
     updatedAt: now()
   };
@@ -263,7 +266,8 @@ function setDraftWaiting(room) {
   const humans = draftHumanPending(room);
   if (!room.draftState || room.draftState.completed) {
     room.phase = 'auction';
-    room.currentWork = 'auction-sync-ready';
+    room.currentWork = 'auction-input';
+    room.auctionInputs = {};
     return room;
   }
   if (!humans.length) {
@@ -319,7 +323,57 @@ function advanceDraft(room, body) {
   if (!body?.leagueState?.clubs?.length || !body?.draftState) return null;
   room.leagueState = body.leagueState;
   room.draftState = body.draftState;
+  if (body.draftState.completed && body.auctionState) room.auctionState = body.auctionState;
   return setDraftWaiting(room);
+}
+
+function submitAuction(room, player, body) {
+  if (room.phase !== 'auction' || !room.auctionState || room.auctionState.completed) return null;
+  const club = room.leagueState?.clubs?.find(candidate => candidate.multiplayerPlayerId === player.id);
+  if (!club) return null;
+  const current = room.auctionState.pool?.[room.auctionState.index];
+  if (!current) return null;
+  const bid = Number(body?.bid ?? 0);
+  if (!Number.isFinite(bid) || bid < 0 || bid > club.funds) return null;
+  room.auctionInputs ||= {};
+  room.auctionInputs[club.id] = { bid: club.roster.length < 12 ? Math.floor(bid) : 0, submittedAt: now() };
+  player.ready = true;
+  player.phaseComplete = true;
+  if (room.players.every(candidate => {
+    const humanClub = room.leagueState.clubs.find(clubRow => clubRow.multiplayerPlayerId === candidate.id);
+    return humanClub && room.auctionInputs?.[humanClub.id] !== undefined;
+  })) {
+    room.phase = 'auction-ready';
+    room.currentWork = 'auction-resolve';
+  }
+  return room;
+}
+
+function auctionResolutionInputs(room, playerId) {
+  if (playerId !== room.hostPlayerId || room.phase !== 'auction-ready') return null;
+  return {
+    auctionInputs: room.auctionInputs || {},
+    auctionState: room.auctionState,
+    leagueState: room.leagueState
+  };
+}
+
+function advanceAuction(room, body) {
+  if (room.phase !== 'auction-ready') return null;
+  if (!body?.leagueState?.clubs?.length || !body?.auctionState) return null;
+  room.leagueState = body.leagueState;
+  room.auctionState = body.auctionState;
+  room.auctionInputs = {};
+  resetPhaseCompletion(room);
+  if (room.auctionState.completed) {
+    room.phase = 'team-setup';
+    room.currentWork = 'lineup-and-tactic';
+    room.players.forEach(resetPlayerForSetup);
+  } else {
+    room.phase = 'auction';
+    room.currentWork = 'auction-input';
+  }
+  return room;
 }
 
 export class RoomObject {
@@ -505,6 +559,32 @@ export class RoomObject {
       if (!updated) return error('ドラフト結果を確定できません。');
       await this.save(updated);
       return json({ ok: true, room: publicRoom(updated), message: updated.phase === 'auction' ? 'ドラフトが終了しました。' : '次の指名へ進みました。' });
+    }
+
+    if (action === 'submit-auction' && request.method === 'POST') {
+      const body = await readJson(request);
+      const player = room.players.find(row => row.id === body.playerId);
+      if (!player) return error('プレイヤーが見つかりません。', 404);
+      const updated = submitAuction(room, player, body);
+      if (!updated) return error('入札内容を確認してください。');
+      await this.save(updated);
+      return json({ ok: true, room: publicRoom(updated), message: '入札を保存しました。' });
+    }
+
+    if (action === 'prepare-auction-resolution' && request.method === 'POST') {
+      const body = await readJson(request);
+      const resolution = auctionResolutionInputs(room, body.playerId);
+      if (!resolution) return error('開札情報を取得できません。', 403);
+      return json({ ok: true, ...resolution });
+    }
+
+    if (action === 'advance-auction' && request.method === 'POST') {
+      const body = await readJson(request);
+      if (body.playerId !== room.hostPlayerId) return error('ホストのみ実行できます。', 403);
+      const updated = advanceAuction(room, body);
+      if (!updated) return error('競売結果を確定できません。');
+      await this.save(updated);
+      return json({ ok: true, room: publicRoom(updated), message: updated.phase === 'team-setup' ? '競売が終了しました。編成へ進みます。' : '次の競売選手へ進みました。' });
     }
 
     return error('未対応のルーム操作です。', 404);
