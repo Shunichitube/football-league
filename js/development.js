@@ -62,7 +62,11 @@ function learnedAbilityFor(player, gainedKeys, rng) {
   return weightedPick(choices, weight, rng);
 }
 
-export function trainingSkills(player) { return skills(player); }
+export function trainingSkills(player) {
+  return player.primaryPosition === 'GK'
+    ? ['speed', 'pass', 'dribble', 'shoot', 'defense', 'gk']
+    : ['speed', 'pass', 'dribble', 'shoot', 'defense', 'stamina'];
+}
 export function createContractEvents(club, rng) {
   return club.roster.map(player => {
     if (player.contractYears <= 1) return null;
