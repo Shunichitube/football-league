@@ -132,7 +132,7 @@ stats
 次フェーズ:
 
 ```txt
-offseason-contract
+offseason-events
 ```
 
 ---
