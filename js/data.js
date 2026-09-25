@@ -37,8 +37,8 @@ function growthProfile(position, rng, initial) {
   const max = initial ? 75 : 130;
   if (position !== 'GK') return Object.fromEntries(FIELD_PLAYER_STAT_KEYS.map(key => [key, rng.int(min, max) / 100]));
   const profile = Object.fromEntries(GK_HIDDEN_KEYS.map(key => [key, rng.int(min, max) / 100]));
-  profile.shoot = Math.min(profile.shoot, initial ? .65 : .90);
-  profile.dribble = Math.min(profile.dribble, initial ? .65 : .90);
+  profile.shoot = 0;
+  profile.dribble = 0;
   const focus = weightedGrowthFocus(rng);
   const peak = Math.max(...GK_GROWTH_KEYS.map(key => profile[key]));
   profile[focus] = Math.min(max / 100, Math.max(profile[focus], peak + .03));
