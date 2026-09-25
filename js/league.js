@@ -189,6 +189,14 @@ export function awards(league) { const players=league.clubs.flatMap(c=>c.roster.
 function recordSeasonHistory(league) {
   if (league.history.some(entry => entry.season === league.season)) return;
   const table=standings(league), trophy=awards(league);
+  if (trophy.mvp?.p) {
+    trophy.mvp.p.honors ||= { mvp: 0, best5: 0 };
+    trophy.mvp.p.honors.mvp = (trophy.mvp.p.honors.mvp || 0) + 1;
+  }
+  for (const row of trophy.best5) {
+    row.p.honors ||= { mvp: 0, best5: 0 };
+    row.p.honors.best5 = (row.p.honors.best5 || 0) + 1;
+  }
   for (const player of league.clubs.flatMap(club => club.roster)) archiveCareer(league, player);
   league.history.push({season:league.season, table:table.map(x=>({club:x.club.name,clubId:x.club.id,color:x.club.color,rank:x.rank,points:x.points,goals:x.goalsFor,against:x.goalsAgainst})), champion:table[0].club.name, championColor:table[0].club.color, mvp:trophy.mvp?.p.name||null, best5:trophy.best5.map(x=>({name:x.p.name,position:x.p.primaryPosition,clubId:x.c.id,color:x.c.color}))});
 }
