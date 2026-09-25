@@ -227,9 +227,16 @@ async function resolveDraft(id) {
     if (state.mode === 'ORDERED') nextOrderedPick(league, state);
     else state.pendingClubIds = result.pendingClubIds;
     advanceRoundIfNeeded(league, state);
+    const auctionState = state.completed ? {
+      pool: createAuctionPool(league.seed, league.season, league.releasedPlayers || []),
+      index: 0,
+      resolveStep: 0,
+      lastResult: null,
+      completed: false
+    } : null;
     const advanced = await requestJson('/api/rooms/' + encodeURIComponent(id) + '/advance-draft', {
       method:'POST',
-      body:JSON.stringify({ playerId:s.playerId, leagueState:league, draftState:state })
+      body:JSON.stringify({ playerId:s.playerId, leagueState:league, draftState:state, auctionState })
     });
     const nextRoom = advanced?.room || advanced;
     document.querySelector('[data-mp-refresh="'+CSS.escape(id)+'"]')?.click();
