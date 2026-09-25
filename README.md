@@ -4,7 +4,9 @@
 
 ## 現在の実装
 
-Stage 5を実装済みです。試合ごとの調子、4戦術、特殊能力の試合補正まで動作します。10年循環、表彰・記録、セーブ等は未実装です。
+6クラブ・10シーズン制のリーグ運営、シーズン一括シミュレーション、ドラフト、競売、契約、育成、覚醒、特殊能力、セーブ／ロードを段階実装中です。
+
+試合エンジンは `docs/MATCH_ENGINE_SPEC_v1.md` を基準にしつつ、GK特殊能力については `docs/GK_SPECIAL_ABILITY_SPEC_v2.md` を優先します。
 
 ## 起動
 
@@ -16,6 +18,9 @@ npm test
 
 ## ドキュメント
 
-- `docs/GAME_SPEC.md` — ゲームルール・計算仕様の正本
-- `docs/UI_SPEC.md` — UI/UX仕様の正本
+- `docs/GAME_SPEC.md` — ゲームルール・計算仕様の基礎仕様
+- `docs/UI_SPEC.md` — UI/UX仕様
+- `docs/INTEGRATED_ADDITIONAL_SPEC.md` — 編成・一括進行・覚醒・特殊能力の統合追加仕様
+- `docs/MATCH_ENGINE_SPEC_v1.md` — 現行試合エンジン仕様
+- `docs/GK_SPECIAL_ABILITY_SPEC_v2.md` — GK特殊能力の現行優先仕様
 - `docs/PROJECT_STATUS.md` — 実装済み範囲と次のStage
