@@ -1,5 +1,5 @@
 import { createClub } from './data.js?v=0.17.2';
-import { simulateMatch } from './sim.js?v=0.17.26';
+import { simulateMatch } from './sim.js?v=0.17.27';
 import { createRandom } from './random.js';
 
 const CPU_CLUBS = [
@@ -22,15 +22,16 @@ function blankSummaryBuckets() {
   };
 }
 
-function parseEventMeta(event) {
-  const parts = String(event?.extra || '').split('/').map(part => part.trim());
-  const attackType = BLANK_ATTACK_TYPES.hasOwnProperty(parts[0]) ? parts[0] : null;
-  const chance = BLANK_CHANCES.hasOwnProperty(parts[1]) ? parts[1] : null;
+function eventMeta(event) {
+  const type = event?.display?.type;
+  const chanceValue = event?.display?.chance;
+  const attackType = BLANK_ATTACK_TYPES.hasOwnProperty(type) ? type : null;
+  const chance = BLANK_CHANCES.hasOwnProperty(chanceValue) ? chanceValue : null;
   return { attackType, chance };
 }
 
 function countEvent(summary, event) {
-  const { attackType, chance } = parseEventMeta(event);
+  const { attackType, chance } = eventMeta(event);
   if (attackType) summary.attackTypes[attackType]++;
   if (chance) summary.chances[chance]++;
   if (event.kind === 'GOAL') {
