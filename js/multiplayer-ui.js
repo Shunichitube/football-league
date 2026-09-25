@@ -18,7 +18,7 @@ function injectMultiplayerStyles() {
     .multiplayer-join-box{background:#0f172a;border:1px solid var(--line);border-radius:12px;padding:.85rem;margin-top:.8rem}.multiplayer-join-box button{width:100%;margin:.3rem 0 0}
     .multiplayer-room h1{font-size:clamp(2.4rem,9vw,5rem);line-height:.9;letter-spacing:-.06em;margin:.2rem 0 1rem}.room-id{font-size:clamp(2rem,9vw,4.2rem);letter-spacing:.12em;color:var(--accent);word-break:break-all}.multiplayer-room .hero{text-align:center}
     .mp-player-list{display:grid;gap:.55rem;margin:1rem 0}.mp-player-row{display:flex;align-items:center;justify-content:space-between;gap:.8rem;background:#0f172a;border:1px solid var(--line);border-radius:10px;padding:.65rem .8rem}.mp-player-row b{font-size:1rem}.mp-ready{color:#86efac;font-weight:900}.mp-not-ready{color:#fca5a5;font-weight:900}.mp-host-badge{display:inline-flex;margin-left:.4rem;padding:.1rem .4rem;border:1px solid #facc15;border-radius:999px;color:#facc15;font-size:.65rem;font-weight:900}
-    .mp-assigned-club{display:grid;gap:.35rem;text-align:center}.mp-assigned-club b{font-size:clamp(1.7rem,7vw,3rem);color:var(--accent)}.mp-club-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.6rem;margin-top:1rem}.mp-club-card{background:#0f172a;border:1px solid var(--line);border-radius:10px;padding:.7rem}.mp-club-card.human{border-color:var(--accent)}.mp-club-card small{display:block;margin-top:.25rem}
+    .mp-assigned-club{display:grid;gap:.35rem;text-align:center}.mp-assigned-club b{font-size:clamp(1.7rem,7vw,3rem);color:var(--accent)}.mp-club-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.6rem;margin-top:1rem}.mp-club-card{background:#0f172a;border:1px solid var(--line);border-radius:10px;padding:.7rem}.mp-club-card.human{border-color:var(--accent)}.mp-club-card small{display:block;margin-top:.25rem}.mp-work-summary{background:#0f172a;border:1px solid var(--line);border-radius:12px;padding:.85rem;margin:1rem 0}.mp-work-summary b{color:#fff}.mp-incomplete{margin:.35rem 0 0;padding-left:1.2rem}.mp-incomplete li{margin:.15rem 0;color:#fca5a5;font-weight:800}
     @media(max-width:560px){.multiplayer-actions{grid-template-columns:1fr}.multiplayer-modal{padding:.9rem}.multiplayer-room .season-result-actions button{width:100%;margin:.3rem 0}.mp-player-row{align-items:flex-start;flex-direction:column}}
   </style>`);
 }
@@ -90,7 +90,7 @@ function roomIdOf(data) {
 }
 
 function phaseLabel(phase) {
-  return ({ lobby: '待機中', 'team-setup': 'チーム準備' }[phase] || phase || 'ROOM');
+  return ({ lobby: '待機中', 'team-setup': 'チーム準備', 'season-ready': 'シーズン開始待ち' }[phase] || phase || 'ROOM');
 }
 
 function teamNameById(players, playerId) {
@@ -102,10 +102,18 @@ function clubName(clubs, clubId) {
   return clubs.find(club => club.id === clubId)?.name || clubId || '開始前';
 }
 
+function playerStatus(player, phase) {
+  if (phase === 'lobby') return player.ready ? ['準備完了', 'mp-ready'] : ['未準備', 'mp-not-ready'];
+  if (phase === 'team-setup') return player.phaseComplete ? ['作業完了', 'mp-ready'] : ['作業中', 'mp-not-ready'];
+  if (phase === 'season-ready') return ['完了', 'mp-ready'];
+  return [player.ready ? '完了' : '未完了', player.ready ? 'mp-ready' : 'mp-not-ready'];
+}
+
 function renderAssignedClub(room, localPlayer) {
+  const phase = room?.phase || room?.room?.phase;
   const clubs = room?.clubs || room?.room?.clubs || [];
   const players = room?.players || room?.room?.players || [];
-  if ((room?.phase || room?.room?.phase) !== 'team-setup') return '';
+  if (!['team-setup', 'season-ready'].includes(phase)) return '';
   const assignedClub = clubs.find(club => club.playerId === localPlayer?.id) || clubs.find(club => club.id === localPlayer?.clubId);
   const yourClub = assignedClub ? assignedClub.name : '未割り当て';
   return `<section class="hero mp-assigned-club">
@@ -120,6 +128,15 @@ function renderAssignedClub(room, localPlayer) {
   </section>`;
 }
 
+function renderWorkSummary(players, phase) {
+  if (phase === 'lobby') return '';
+  if (phase === 'season-ready') return `<section class="mp-work-summary"><b>全員完了</b><p class="hint">参加クラブ全員の作業が完了したので、次フェーズへ進みました。</p></section>`;
+  if (phase !== 'team-setup') return '';
+  const done = players.filter(player => player.phaseComplete).length;
+  const incomplete = players.filter(player => !player.phaseComplete);
+  return `<section class="mp-work-summary"><b>作業状況：${done}/${players.length} 完了</b>${incomplete.length ? `<p class="hint">まだ完了していないクラブ：</p><ul class="mp-incomplete">${incomplete.map(player => `<li>${escapeHtml(player.teamName || player.name || 'クラブ')}</li>`).join('')}</ul>` : '<p class="hint">全員完了しました。次フェーズへ進みます。</p>'}</section>`;
+}
+
 function renderRoomScreen(room, playerId = null) {
   const rawId = roomIdOf(room) || room?.roomId || '未取得';
   const session = readSession(rawId);
@@ -132,6 +149,7 @@ function renderRoomScreen(room, playerId = null) {
   const isHost = localPlayerId && localPlayerId === (room?.hostPlayerId || room?.room?.hostPlayerId);
   const allReady = players.length > 0 && players.every(player => player.ready);
   const isLobby = phase === 'lobby';
+  const isTeamSetup = phase === 'team-setup';
   app.innerHTML = `<main class="multiplayer-room">
     <p class="eyebrow">MULTIPLAYER ROOM</p>
     <h1>ルーム</h1>
@@ -145,17 +163,19 @@ function renderRoomScreen(room, playerId = null) {
       <h2>現在の状態</h2>
       <p>フェーズ：<b>${escapeHtml(phaseLabel(phase))}</b></p>
       <p>参加クラブ：<b>${players.length}</b>チーム</p>
-      ${players.length ? `<div class="mp-player-list">${players.map(player => `<div class="mp-player-row" style="--accent:${escapeHtml(player.color || '#4ade80')}"><span><b>${escapeHtml(player.teamName || player.name || 'クラブ')}</b>${player.id === (room?.hostPlayerId || room?.room?.hostPlayerId) ? '<span class="mp-host-badge">HOST</span>' : ''}<br><small>${escapeHtml(isLobby ? '開始前' : clubName(clubs, player.clubId))}</small></span><span class="${player.ready ? 'mp-ready' : 'mp-not-ready'}">${player.ready ? '準備完了' : '未準備'}</span></div>`).join('')}</div>` : '<p class="hint">まだ参加クラブはありません。</p>'}
+      ${renderWorkSummary(players, phase)}
+      ${players.length ? `<div class="mp-player-list">${players.map(player => { const [label, klass] = playerStatus(player, phase); return `<div class="mp-player-row" style="--accent:${escapeHtml(player.color || '#4ade80')}"><span><b>${escapeHtml(player.teamName || player.name || 'クラブ')}</b>${player.id === (room?.hostPlayerId || room?.room?.hostPlayerId) ? '<span class="mp-host-badge">HOST</span>' : ''}<br><small>${escapeHtml(isLobby ? '開始前' : clubName(clubs, player.clubId))}</small></span><span class="${klass}">${label}</span></div>`; }).join('')}</div>` : '<p class="hint">まだ参加クラブはありません。</p>'}
     </section>
     <div class="season-result-actions">
       ${localPlayer && isLobby ? `<button type="button" data-mp-ready="${id}" data-mp-ready-value="${localPlayer.ready ? 'false' : 'true'}">${localPlayer.ready ? '準備完了解除' : '準備完了'}</button>` : ''}
       ${isHost && isLobby ? `<button type="button" data-mp-start="${id}" ${allReady ? '' : 'disabled'}>ゲーム開始</button>` : ''}
-      ${phase === 'team-setup' ? '<button type="button" disabled>編成画面へ（未実装）</button>' : ''}
+      ${localPlayer && isTeamSetup ? `<button type="button" data-mp-submit-setup="${id}" ${localPlayer.phaseComplete ? 'disabled' : ''}>${localPlayer.phaseComplete ? '作業完了済み' : '編成・戦術を完了（仮）'}</button>` : ''}
+      ${phase === 'season-ready' && isHost ? '<button type="button" disabled>シーズン実行（M5予定）</button>' : ''}
       <button type="button" data-mp-refresh="${id}" class="subtle">更新</button>
       <button type="button" data-mp-back-title class="subtle">タイトルへ戻る</button>
     </div>
     ${isHost && isLobby && !allReady ? '<p class="hint">ゲーム開始は、参加クラブ全員が準備完了になると押せます。</p>' : ''}
-    ${phase === 'team-setup' ? '<p class="hint">次は、このクラブチームで各自の編成・戦術画面へ進む処理を接続します。</p>' : ''}
+    ${isTeamSetup ? '<p class="hint">今は仮の完了ボタンです。次に実際の編成・戦術入力へ接続します。</p>' : ''}
   </main>`;
 }
 
@@ -233,6 +253,23 @@ async function setReady(roomId, ready) {
   }
 }
 
+async function submitSetup(roomId) {
+  const session = readSession(roomId);
+  if (!session?.playerId) {
+    alert('この端末の参加情報が見つかりません。入り直してください。');
+    return;
+  }
+  try {
+    const data = await requestJson(`/api/rooms/${encodeURIComponent(roomId)}/submit`, {
+      method: 'POST',
+      body: JSON.stringify({ playerId: session.playerId, lineup: [], tactic: 'BALANCED', ready: true })
+    });
+    renderRoomScreen(data?.room || data, session.playerId);
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
 async function startGame(roomId) {
   const session = readSession(roomId);
   if (!session?.playerId) {
@@ -259,7 +296,8 @@ function attachTitleButton() {
   button.dataset.mpOpen = 'true';
   button.className = 'subtle';
   button.textContent = 'マルチプレイ';
-  loadButton?.insertAdjacentElement('afterend', button);
+  if (loadButton) loadButton.insertAdjacentElement('afterend', button);
+  else title.appendChild(button);
 }
 
 const observer = new MutationObserver(attachTitleButton);
@@ -278,6 +316,8 @@ document.addEventListener('click', event => {
   if (event.target.closest('[data-mp-join]')) joinRoom();
   const readyButton = event.target.closest('[data-mp-ready]');
   if (readyButton) setReady(readyButton.dataset.mpReady, readyButton.dataset.mpReadyValue === 'true');
+  const setup = event.target.closest('[data-mp-submit-setup]')?.dataset.mpSubmitSetup;
+  if (setup) submitSetup(setup);
   const start = event.target.closest('[data-mp-start]')?.dataset.mpStart;
   if (start) startGame(start);
   const refresh = event.target.closest('[data-mp-refresh]')?.dataset.mpRefresh;
