@@ -71,7 +71,7 @@ function stage4Render() {
   }
   if (s.view === 'release') {
     const c=me();
-    app.innerHTML = `${head()}<main><p class="eyebrow">選手整理</p><h2>放出フェイズ</h2><p class="hint">市場開始前にロスターを整理できます。登録選手は最低5人、GKは最低1人必要です。選手詳細から放出できます。</p><section class="candidate-grid">${c.roster.map(player).join('')}</section><button data-stage4="releaseDone">選手整理を終了してドラフトへ進む</button></main>`; return;
+    app.innerHTML = `${head()}<main><p class="eyebrow">選手整理</p><h2>放出フェイズ</h2><p class="hint">市場開始前にロスターを整理できます。登録選手は最低5人、GKは最低1人必要です。各選手カードの放出ボタンから放出できます。</p><section class="candidate-grid">${c.roster.map(p => renderPlayerCard(p, { allowRelease: true })).join('')}</section><button data-stage4="releaseDone">選手整理を終了してドラフトへ進む</button></main>`; return;
   }
   stage4BaseRender();
   if (s.view === 'home' && s.league?.completed && !s.offseasonComplete) app.querySelector('main')?.insertAdjacentHTML('beforeend', s.league.season === 10 ? '<button data-stage6="history">10シーズンの歴史</button>' : '<button data-stage4="offseason">オフシーズンへ進む</button>');
