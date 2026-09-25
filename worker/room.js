@@ -8,6 +8,7 @@ const CLUBS = [
   { id: 'club-5', name: 'Club 5' },
   { id: 'club-6', name: 'Club 6' }
 ];
+const PLAYER_COLORS = ['#4ade80', '#60a5fa', '#facc15', '#fb7185', '#a78bfa', '#f97316'];
 
 const now = () => new Date().toISOString();
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
@@ -43,11 +44,12 @@ function publicRoom(state) {
   };
 }
 
-function createPlayer(name, role = 'guest') {
+function createPlayer(name, role = 'guest', colorIndex = 0) {
   return {
     id: crypto.randomUUID(),
     name: String(name || 'プレイヤー').trim().slice(0, 12) || 'プレイヤー',
     role,
+    color: PLAYER_COLORS[colorIndex % PLAYER_COLORS.length],
     clubId: null,
     ready: false,
     submitted: {
@@ -59,7 +61,7 @@ function createPlayer(name, role = 'guest') {
 }
 
 function createInitialState(roomId, hostName) {
-  const host = createPlayer(hostName || 'ホスト', 'host');
+  const host = createPlayer(hostName || 'ホスト', 'host', 0);
   return {
     version: 1,
     roomId,
@@ -70,6 +72,23 @@ function createInitialState(roomId, hostName) {
     createdAt: now(),
     updatedAt: now()
   };
+}
+
+function assignClubsByJoinOrder(room) {
+  for (const club of room.clubs) {
+    club.controller = 'CPU';
+    club.playerId = null;
+  }
+  room.players.forEach((player, index) => {
+    const club = room.clubs[index];
+    if (!club) return;
+    club.controller = 'HUMAN';
+    club.playerId = player.id;
+    player.clubId = club.id;
+    player.ready = false;
+  });
+  room.phase = 'team-setup';
+  return room;
 }
 
 export class RoomObject {
@@ -113,7 +132,7 @@ export class RoomObject {
       if (room.phase !== 'lobby') return error('このルームはすでに開始しています。');
       if (room.players.length >= MAX_PLAYERS) return error('参加人数が上限です。');
       const body = await readJson(request);
-      const player = createPlayer(body.playerName || body.name || 'プレイヤー');
+      const player = createPlayer(body.playerName || body.name || 'プレイヤー', 'guest', room.players.length);
       room.players.push(player);
       await this.save(room);
       return json({ ok: true, room: publicRoom(room), playerId: player.id });
@@ -164,9 +183,11 @@ export class RoomObject {
     if (action === 'run-season' && request.method === 'POST') {
       const body = await readJson(request);
       if (body.playerId !== room.hostPlayerId) return error('ホストのみ実行できます。', 403);
+      if (room.phase !== 'lobby') return error('このルームはすでに開始済みです。');
       if (!room.players.length) return error('参加者がいません。');
       if (!room.players.every(player => player.ready)) return error('全員の準備完了が必要です。');
-      return error('シーズン一括シミュレーションはM5で実装します。', 501);
+      await this.save(assignClubsByJoinOrder(room));
+      return json({ ok: true, room: publicRoom(room), message: 'クラブを自動割り当てしました。' });
     }
 
     return error('未対応のルーム操作です。', 404);
