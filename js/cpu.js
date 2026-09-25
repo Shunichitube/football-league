@@ -1,5 +1,5 @@
-import { calculateOverall } from './data.js?v=0.17.2';
-import { processOffseason, renewalFee } from './development.js?v=0.17.2';
+import { calculateOverall, createPlayer } from './data.js?v=0.17.2';
+import { processOffseason, renewalFee } from './development.js?v=0.17.3';
 import { createRandom } from './random.js';
 import { cpuBid, cpuCandidatePick } from './market.js?v=0.17.2';
 import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=0.17.2';
@@ -165,6 +165,26 @@ export function prepareCpuMarketSpace(league) {
   return released;
 }
 
+function ensureMinimumPlayableRoster(league, club) {
+  const added = [];
+  const rng = createRandom(`${league.seed}:emergency-roster:${league.season}:club:${club.id}`);
+  let serial = 0;
+  const add = position => {
+    const player = createPlayer(`emergency-${league.season}-${club.id}-${serial++}`, position, rng, { initial: true });
+    club.roster.push(player);
+    added.push(player);
+  };
+  if (!club.roster.some(player => player.primaryPosition === 'GK')) add('GK');
+  const fieldCount = () => club.roster.filter(player => player.primaryPosition !== 'GK').length;
+  const fallbackRoles = ['DF', 'MF', 'MF', 'FW'];
+  while (fieldCount() < 4) {
+    const counts = Object.fromEntries(fallbackRoles.map(role => [role, club.roster.filter(player => player.primaryPosition === role).length]));
+    const target = fallbackRoles.find(role => counts[role] < fallbackRoles.filter(item => item === role).length) || fallbackRoles[(fieldCount()) % fallbackRoles.length];
+    add(target);
+  }
+  return added;
+}
+
 export function processLeagueOffseason(league, humanTraining = new Map(), specialTrainingByClub = new Map()) {
   const summaries = [];
   const humanClubs=league.clubs.filter(club=>club.controllerType==='HUMAN');
@@ -174,9 +194,10 @@ export function processLeagueOffseason(league, humanTraining = new Map(), specia
     const training = isCpu ? selectCpuTraining(club) : mappedTraining instanceof Map ? mappedTraining : club.id===humanClubs[0]?.id ? humanTraining : new Map();
     const specialTraining = specialTrainingByClub.get(club.id) || new Set();
     const growth = processOffseason(club, training, createRandom(`${league.seed}:offseason:${league.season}:club:${club.id}`), specialTraining);
+    const emergencySignings = ensureMinimumPlayableRoster(league, club);
     selectBestLineup(club);
     if (isCpu) autoSetCpuTactic(club);
-    summaries.push({ clubId: club.id, training: [...training.entries()], growth, lineup: [...club.lineup], tactic: club.tactic });
+    summaries.push({ clubId: club.id, training: [...training.entries()], growth, emergencySignings, lineup: [...club.lineup], tactic: club.tactic });
   }
   return summaries;
 }
