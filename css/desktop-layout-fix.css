@@ -59,6 +59,17 @@
     min-width: 0;
   }
 
+  main.screen-development > .candidate {
+    display: inline-block;
+    vertical-align: top;
+    width: calc((100% - 3.25rem) / 6);
+    margin: 0 0.65rem 0.65rem 0;
+  }
+
+  main.screen-development > .candidate:nth-of-type(6n) {
+    margin-right: 0;
+  }
+
   /* Draft: 1920px desktop target = 8 columns x 3 rows. */
   main.screen-draft .eyebrow,
   main.screen-draft .screen-heading,
