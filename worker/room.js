@@ -43,6 +43,7 @@ function publicRoom(state) {
     seasonResult: state.seasonResult || null,
     leagueState: state.leagueState || null,
     offseasonState: state.offseasonState || null,
+    growthResult: state.growthResult || null,
     createdAt: state.createdAt,
     updatedAt: state.updatedAt
   };
@@ -86,6 +87,7 @@ function createInitialState(roomId, hostName) {
     seasonResult: null,
     leagueState: null,
     offseasonState: null,
+    growthResult: null,
     createdAt: now(),
     updatedAt: now()
   };
@@ -158,6 +160,7 @@ function completeSeason(room, seasonResult) {
   };
   room.leagueState = leagueState;
   room.offseasonState = null;
+  room.growthResult = null;
   resetPhaseCompletion(room);
   return room;
 }
@@ -167,6 +170,14 @@ function confirmCurrentPhase(room, player) {
     if (markPhaseComplete(room, player)) {
       room.phase = 'offseason-events';
       room.currentWork = 'contract-retention-special-training';
+      resetPhaseCompletion(room);
+    }
+    return room;
+  }
+  if (room.phase === 'growth-result') {
+    if (markPhaseComplete(room, player)) {
+      room.phase = 'release';
+      room.currentWork = 'roster-release';
       resetPhaseCompletion(room);
     }
     return room;
@@ -194,6 +205,52 @@ function advanceOffseasonEvents(room, body) {
   };
   room.phase = 'development';
   room.currentWork = 'development-selection';
+  room.growthResult = null;
+  resetPhaseCompletion(room);
+  return room;
+}
+
+function submitDevelopment(room, player, input) {
+  if (room.phase !== 'development') return null;
+  const selections = Array.isArray(input?.selections) ? input.selections.slice(0, 2) : [];
+  if (selections.length !== 2 || selections.some(row => !row?.playerId || !row?.focus)) return null;
+  player.phaseInput = { selections };
+  if (markPhaseComplete(room, player)) {
+    room.phase = 'development-ready';
+    room.currentWork = 'development-resolve';
+  }
+  return room;
+}
+
+function advanceDevelopment(room, body) {
+  if (room.phase !== 'development-ready') return null;
+  if (!body?.leagueState?.clubs?.length || !Array.isArray(body.growthResult)) return null;
+  room.leagueState = body.leagueState;
+  room.growthResult = body.growthResult;
+  room.phase = 'growth-result';
+  room.currentWork = 'growth-result-review';
+  resetPhaseCompletion(room);
+  return room;
+}
+
+function submitRelease(room, player, input) {
+  if (room.phase !== 'release') return null;
+  const releasePlayerIds = Array.isArray(input?.releasePlayerIds) ? [...new Set(input.releasePlayerIds)] : [];
+  player.phaseInput = { releasePlayerIds };
+  if (markPhaseComplete(room, player)) {
+    room.phase = 'release-ready';
+    room.currentWork = 'release-resolve';
+  }
+  return room;
+}
+
+function advanceRelease(room, body) {
+  if (room.phase !== 'release-ready') return null;
+  if (!body?.leagueState?.clubs?.length) return null;
+  room.leagueState = body.leagueState;
+  room.phase = 'draft';
+  room.currentWork = 'draft-sync-ready';
+  room.growthResult = null;
   resetPhaseCompletion(room);
   return room;
 }
@@ -317,6 +374,44 @@ export class RoomObject {
       if (!updated) return error('オフシーズンイベントを確定できません。');
       await this.save(updated);
       return json({ ok: true, room: publicRoom(updated), message: '育成フェーズへ進みました。' });
+    }
+
+    if (action === 'submit-development' && request.method === 'POST') {
+      const body = await readJson(request);
+      const player = room.players.find(row => row.id === body.playerId);
+      if (!player) return error('プレイヤーが見つかりません。', 404);
+      const updated = submitDevelopment(room, player, body.input);
+      if (!updated) return error('育成対象2名と重点能力を確認してください。');
+      await this.save(updated);
+      return json({ ok: true, room: publicRoom(updated), message: '育成入力を保存しました。' });
+    }
+
+    if (action === 'advance-development' && request.method === 'POST') {
+      const body = await readJson(request);
+      if (body.playerId !== room.hostPlayerId) return error('ホストのみ実行できます。', 403);
+      const updated = advanceDevelopment(room, body);
+      if (!updated) return error('育成結果を確定できません。');
+      await this.save(updated);
+      return json({ ok: true, room: publicRoom(updated), message: '成長結果を保存しました。' });
+    }
+
+    if (action === 'submit-release' && request.method === 'POST') {
+      const body = await readJson(request);
+      const player = room.players.find(row => row.id === body.playerId);
+      if (!player) return error('プレイヤーが見つかりません。', 404);
+      const updated = submitRelease(room, player, body.input);
+      if (!updated) return error('放出入力を保存できません。');
+      await this.save(updated);
+      return json({ ok: true, room: publicRoom(updated), message: '選手整理の入力を保存しました。' });
+    }
+
+    if (action === 'advance-release' && request.method === 'POST') {
+      const body = await readJson(request);
+      if (body.playerId !== room.hostPlayerId) return error('ホストのみ実行できます。', 403);
+      const updated = advanceRelease(room, body);
+      if (!updated) return error('選手整理を確定できません。');
+      await this.save(updated);
+      return json({ ok: true, room: publicRoom(updated), message: 'ドラフトフェーズへ進みました。' });
     }
 
     return error('未対応のルーム操作です。', 404);
