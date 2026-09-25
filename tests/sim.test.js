@@ -127,7 +127,24 @@ test('hiddenGrowthは能力別で、GKはGK能力・守備・走力・パスが�
   const focusKeys = gkPlayers.map(player => ['gk', 'defense', 'speed', 'pass'].sort((a, b) => player.hiddenGrowth[b] - player.hiddenGrowth[a])[0]);
   assert.ok(focusKeys.filter(key => key === 'gk').length > focusKeys.filter(key => key !== 'gk').length);
   assert.ok(gkPlayers.every(player => typeof player.hiddenGrowth.gk === 'number'));
+  assert.ok(gkPlayers.every(player => player.hiddenGrowth.shoot === 0));
+  assert.ok(gkPlayers.every(player => player.hiddenGrowth.dribble === 0));
   assert.ok(gkPlayers.every(player => typeof player.hiddenGrowth.stamina === 'undefined'));
+});
+
+test('GKのシュート・ドリブルは育成選択肢に残るが通常成長・覚醒・特別特訓では伸びない', () => {
+  const club = createClub({ id: 99, name: 'GK TEST', color: '#fff', seed: createRandom('gk-frozen-growth') });
+  const gk = club.roster.find(player => player.primaryPosition === 'GK');
+  gk.age = 18;
+  gk.season.appearances = 10;
+  Object.assign(gk.stats, { shoot: 50, dribble: 50, speed: 50, defense: 50, pass: 50, gk: 50 });
+  gk.hiddenGrowth = { shoot: 99, dribble: 99, speed: 1.30, defense: 1.30, pass: 1.30, gk: 1.30 };
+  assert.ok(trainingSkills(gk).includes('shoot'));
+  assert.ok(trainingSkills(gk).includes('dribble'));
+  const results = processOffseason(club, new Map([[gk.id, 'shoot']]), { next: () => 0, int: (min, max) => max }, new Set([gk.id]));
+  assert.equal(gk.stats.shoot, 50);
+  assert.equal(gk.stats.dribble, 50);
+  assert.ok(results[0].awakeningKeys.every(key => !['shoot', 'dribble'].includes(key)));
 });
 
 test('スカウトコメントは能力別成長傾向で変わる', () => {
