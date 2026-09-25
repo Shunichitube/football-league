@@ -44,6 +44,7 @@ function publicRoom(state) {
     leagueState: state.leagueState || null,
     offseasonState: state.offseasonState || null,
     growthResult: state.growthResult || null,
+    draftState: state.draftState || null,
     createdAt: state.createdAt,
     updatedAt: state.updatedAt
   };
@@ -88,6 +89,8 @@ function createInitialState(roomId, hostName) {
     leagueState: null,
     offseasonState: null,
     growthResult: null,
+    draftState: null,
+    draftInputs: {},
     createdAt: now(),
     updatedAt: now()
   };
@@ -161,6 +164,8 @@ function completeSeason(room, seasonResult) {
   room.leagueState = leagueState;
   room.offseasonState = null;
   room.growthResult = null;
+  room.draftState = null;
+  room.draftInputs = {};
   resetPhaseCompletion(room);
   return room;
 }
@@ -244,15 +249,77 @@ function submitRelease(room, player, input) {
   return room;
 }
 
+function draftHumanPending(room) {
+  const pending = new Set(room.draftState?.pendingClubIds || []);
+  return room.players.filter(player => {
+    const club = room.leagueState?.clubs?.find(candidate => candidate.multiplayerPlayerId === player.id);
+    return club && pending.has(club.id);
+  });
+}
+
+function setDraftWaiting(room) {
+  room.draftInputs = {};
+  resetPhaseCompletion(room);
+  const humans = draftHumanPending(room);
+  if (!room.draftState || room.draftState.completed) {
+    room.phase = 'auction';
+    room.currentWork = 'auction-sync-ready';
+    return room;
+  }
+  if (!humans.length) {
+    room.phase = 'draft-ready';
+    room.currentWork = 'draft-resolve';
+    return room;
+  }
+  room.phase = 'draft';
+  room.currentWork = 'draft-input';
+  return room;
+}
+
 function advanceRelease(room, body) {
   if (room.phase !== 'release-ready') return null;
-  if (!body?.leagueState?.clubs?.length) return null;
+  if (!body?.leagueState?.clubs?.length || !body?.draftState) return null;
   room.leagueState = body.leagueState;
-  room.phase = 'draft';
-  room.currentWork = 'draft-sync-ready';
+  room.draftState = body.draftState;
   room.growthResult = null;
-  resetPhaseCompletion(room);
+  return setDraftWaiting(room);
+}
+
+function submitDraft(room, player, body) {
+  if (room.phase !== 'draft') return null;
+  const club = room.leagueState?.clubs?.find(candidate => candidate.multiplayerPlayerId === player.id);
+  if (!club || !(room.draftState?.pendingClubIds || []).includes(club.id)) return null;
+  const pass = Boolean(body?.pass);
+  const playerId = pass ? null : body?.draftPlayerId;
+  if (!pass && !room.draftState?.pool?.some(candidate => String(candidate.id) === String(playerId))) return null;
+  room.draftInputs ||= {};
+  room.draftInputs[club.id] = { playerId, pass, submittedAt: now() };
+  player.phaseInput = null;
+  player.ready = true;
+  player.phaseComplete = true;
+  const humans = draftHumanPending(room);
+  if (humans.every(candidate => room.draftInputs?.[room.leagueState.clubs.find(clubRow => clubRow.multiplayerPlayerId === candidate.id)?.id])) {
+    room.phase = 'draft-ready';
+    room.currentWork = 'draft-resolve';
+  }
   return room;
+}
+
+function draftResolutionInputs(room, playerId) {
+  if (playerId !== room.hostPlayerId || room.phase !== 'draft-ready') return null;
+  return {
+    draftInputs: room.draftInputs || {},
+    draftState: room.draftState,
+    leagueState: room.leagueState
+  };
+}
+
+function advanceDraft(room, body) {
+  if (room.phase !== 'draft-ready') return null;
+  if (!body?.leagueState?.clubs?.length || !body?.draftState) return null;
+  room.leagueState = body.leagueState;
+  room.draftState = body.draftState;
+  return setDraftWaiting(room);
 }
 
 export class RoomObject {
@@ -412,6 +479,32 @@ export class RoomObject {
       if (!updated) return error('選手整理を確定できません。');
       await this.save(updated);
       return json({ ok: true, room: publicRoom(updated), message: 'ドラフトフェーズへ進みました。' });
+    }
+
+    if (action === 'submit-draft' && request.method === 'POST') {
+      const body = await readJson(request);
+      const player = room.players.find(row => row.id === body.playerId);
+      if (!player) return error('プレイヤーが見つかりません。', 404);
+      const updated = submitDraft(room, player, body);
+      if (!updated) return error('現在はこのクラブの指名ターンではありません。');
+      await this.save(updated);
+      return json({ ok: true, room: publicRoom(updated), message: 'ドラフト指名を保存しました。' });
+    }
+
+    if (action === 'prepare-draft-resolution' && request.method === 'POST') {
+      const body = await readJson(request);
+      const resolution = draftResolutionInputs(room, body.playerId);
+      if (!resolution) return error('ドラフト確定情報を取得できません。', 403);
+      return json({ ok: true, ...resolution });
+    }
+
+    if (action === 'advance-draft' && request.method === 'POST') {
+      const body = await readJson(request);
+      if (body.playerId !== room.hostPlayerId) return error('ホストのみ実行できます。', 403);
+      const updated = advanceDraft(room, body);
+      if (!updated) return error('ドラフト結果を確定できません。');
+      await this.save(updated);
+      return json({ ok: true, room: publicRoom(updated), message: updated.phase === 'auction' ? 'ドラフトが終了しました。' : '次の指名へ進みました。' });
     }
 
     return error('未対応のルーム操作です。', 404);
