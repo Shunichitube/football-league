@@ -12,8 +12,9 @@
   }
 
   main.screen-squad {
-    width: min(1840px, 98vw);
-    margin: 0.75rem auto;
+    width: calc(100vw - 24px);
+    max-width: none;
+    margin: 0.75rem 12px;
   }
 
   main.screen-auction {
@@ -32,6 +33,30 @@
     max-width: min(1440px, 96vw);
     inset: 3vh max(2vw, 0.75rem);
     padding: 0.9rem;
+  }
+
+  /* Full-width roster phases: up to 12 players = 6 columns x 2 rows. */
+  main.screen-development,
+  main.screen-growth,
+  main.screen-release {
+    width: calc(100vw - 24px);
+    max-width: none;
+    margin: 0.75rem 12px;
+  }
+
+  main.screen-development .candidate-grid,
+  main.screen-growth .candidate-grid,
+  main.screen-release .candidate-grid {
+    display: grid !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    gap: 0.65rem !important;
+    align-items: stretch !important;
+  }
+
+  main.screen-development .candidate,
+  main.screen-growth .candidate,
+  main.screen-release .candidate {
+    min-width: 0;
   }
 
   /* Draft: 1920px desktop target = 8 columns x 3 rows. */
@@ -326,8 +351,16 @@
 
   main.screen-season-results .season-awards .candidate-grid,
   .season-awards .candidate-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-    gap: 0.65rem !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0.75rem !important;
+  }
+
+  .season-awards {
+    width: calc(100vw - 48px);
+    max-width: none;
+    margin-left: calc(50% - 50vw + 24px);
+    margin-right: calc(50% - 50vw + 24px);
   }
 
   .roster-panel .candidate-grid,
@@ -478,6 +511,107 @@
     overflow: hidden;
     text-overflow: ellipsis;
     margin: 0 !important;
+  }
+
+  /* Larger card scale for 6-column roster phases, formation and awards. */
+  main.screen-development .player-card,
+  main.screen-growth .player-card,
+  main.screen-release .player-card,
+  main.screen-squad .player-card,
+  .season-awards .player-card {
+    padding: 0.68rem !important;
+    gap: 0.55rem !important;
+  }
+
+  main.screen-development .player-name,
+  main.screen-growth .player-name,
+  main.screen-release .player-name,
+  main.screen-squad .player-name,
+  .season-awards .player-name {
+    font-size: 1.05rem !important;
+  }
+
+  main.screen-development .overall-rank,
+  main.screen-growth .overall-rank,
+  main.screen-release .overall-rank,
+  main.screen-squad .overall-rank,
+  .season-awards .overall-rank {
+    font-size: 0.9rem !important;
+  }
+
+  main.screen-development .position-badge,
+  main.screen-growth .position-badge,
+  main.screen-release .position-badge,
+  main.screen-squad .position-badge,
+  .season-awards .position-badge {
+    font-size: 0.76rem !important;
+    padding: 0.16rem 0.44rem !important;
+  }
+
+  main.screen-development .player-profile p,
+  main.screen-development .player-meta,
+  main.screen-development .growth-expectation,
+  main.screen-growth .player-profile p,
+  main.screen-growth .player-meta,
+  main.screen-growth .growth-expectation,
+  main.screen-release .player-profile p,
+  main.screen-release .player-meta,
+  main.screen-release .growth-expectation,
+  main.screen-squad .player-profile p,
+  main.screen-squad .player-meta,
+  main.screen-squad .growth-expectation,
+  .season-awards .player-profile p,
+  .season-awards .player-meta,
+  .season-awards .growth-expectation {
+    font-size: 0.76rem !important;
+    line-height: 1.25 !important;
+  }
+
+  main.screen-development .ability-grid dt,
+  main.screen-growth .ability-grid dt,
+  main.screen-release .ability-grid dt,
+  main.screen-squad .ability-grid dt,
+  .season-awards .ability-grid dt {
+    font-size: 0.66rem !important;
+  }
+
+  main.screen-development .ability-grid dd,
+  main.screen-growth .ability-grid dd,
+  main.screen-release .ability-grid dd,
+  main.screen-squad .ability-grid dd,
+  .season-awards .ability-grid dd {
+    font-size: 0.78rem !important;
+    grid-template-columns: 1.15rem minmax(0, 1fr) !important;
+  }
+
+  main.screen-development .ability-grid div,
+  main.screen-growth .ability-grid div,
+  main.screen-release .ability-grid div,
+  main.screen-squad .ability-grid div,
+  .season-awards .ability-grid div {
+    grid-template-columns: 3.2rem minmax(0, 1fr) !important;
+    padding: 0.2rem 0.28rem !important;
+  }
+
+  main.screen-development .rank-bar,
+  main.screen-growth .rank-bar,
+  main.screen-release .rank-bar,
+  main.screen-squad .rank-bar,
+  .season-awards .rank-bar {
+    height: 6px !important;
+  }
+
+  main.screen-development .player-special-row .special-ability-detail summary,
+  main.screen-development .special-ability,
+  main.screen-growth .player-special-row .special-ability-detail summary,
+  main.screen-growth .special-ability,
+  main.screen-release .player-special-row .special-ability-detail summary,
+  main.screen-release .special-ability,
+  main.screen-squad .player-special-row .special-ability-detail summary,
+  main.screen-squad .special-ability,
+  .season-awards .player-special-row .special-ability-detail summary,
+  .season-awards .special-ability {
+    font-size: 0.72rem !important;
   }
 }
 
