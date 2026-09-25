@@ -70,6 +70,23 @@
     margin-right: 0;
   }
 
+  .phase-sort-heading {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin: 0.25rem 0 0.45rem;
+  }
+
+  .phase-sort-heading label {
+    margin: 0;
+    min-width: 150px;
+    font-size: 0.78rem;
+  }
+
+  .phase-sort-heading select {
+    margin-top: 0.2rem;
+  }
+
   /* Draft: 1920px desktop target = 8 columns x 3 rows. */
   main.screen-draft .eyebrow,
   main.screen-draft .screen-heading,
