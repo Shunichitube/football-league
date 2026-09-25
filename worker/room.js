@@ -156,7 +156,6 @@ export class RoomObject {
       const body = await readJson(request);
       const player = room.players.find(row => row.id === body.playerId);
       if (!player) return error('プレイヤーが見つかりません。', 404);
-      if (!player.clubId) return error('先にクラブを選択してください。');
       player.ready = Boolean(body.ready);
       await this.save(room);
       return json({ ok: true, room: publicRoom(room) });
@@ -165,9 +164,8 @@ export class RoomObject {
     if (action === 'run-season' && request.method === 'POST') {
       const body = await readJson(request);
       if (body.playerId !== room.hostPlayerId) return error('ホストのみ実行できます。', 403);
-      const humanPlayers = room.players.filter(player => player.clubId);
-      if (!humanPlayers.length) return error('人間プレイヤーのクラブが未選択です。');
-      if (!humanPlayers.every(player => player.ready)) return error('全員の準備完了が必要です。');
+      if (!room.players.length) return error('参加者がいません。');
+      if (!room.players.every(player => player.ready)) return error('全員の準備完了が必要です。');
       return error('シーズン一括シミュレーションはM5で実装します。', 501);
     }
 
