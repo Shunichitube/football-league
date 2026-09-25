@@ -1,12 +1,12 @@
 const ROOM_STORAGE_KEY = 'room-state';
 const MAX_PLAYERS = 6;
 const CLUBS = [
-  { id: 'club-1', name: 'Club 1' },
-  { id: 'club-2', name: 'Club 2' },
-  { id: 'club-3', name: 'Club 3' },
-  { id: 'club-4', name: 'Club 4' },
-  { id: 'club-5', name: 'Club 5' },
-  { id: 'club-6', name: 'Club 6' }
+  { id: 'club-1', name: 'COM1' },
+  { id: 'club-2', name: 'COM2' },
+  { id: 'club-3', name: 'COM3' },
+  { id: 'club-4', name: 'COM4' },
+  { id: 'club-5', name: 'COM5' },
+  { id: 'club-6', name: 'COM6' }
 ];
 const PLAYER_COLORS = ['#4ade80', '#60a5fa', '#facc15', '#fb7185', '#a78bfa', '#f97316'];
 
