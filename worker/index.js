@@ -99,6 +99,9 @@ export default {
       if (action === 'submit-draft' && method === 'POST') return forwardRoomAction(request, env, roomId, 'submit-draft', 'POST');
       if (action === 'prepare-draft-resolution' && method === 'POST') return forwardRoomAction(request, env, roomId, 'prepare-draft-resolution', 'POST');
       if (action === 'advance-draft' && method === 'POST') return forwardRoomAction(request, env, roomId, 'advance-draft', 'POST');
+      if (action === 'submit-auction' && method === 'POST') return forwardRoomAction(request, env, roomId, 'submit-auction', 'POST');
+      if (action === 'prepare-auction-resolution' && method === 'POST') return forwardRoomAction(request, env, roomId, 'prepare-auction-resolution', 'POST');
+      if (action === 'advance-auction' && method === 'POST') return forwardRoomAction(request, env, roomId, 'advance-auction', 'POST');
     }
 
     return notFound();
