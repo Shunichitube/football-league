@@ -237,8 +237,10 @@ test('全6クラブへ加齢・成長・衰退・契約年数処理を適用す�
   const veteran = league.clubs[1].roster[1];
   veteran.age = 29;
   veteran.stats.speed = 80;
+  veteran.stats.stamina = 80;
   const tracked = league.clubs.map(club => ({ club, id: club.roster[1].id, age: club.roster[1].age, contract: club.roster[1].contractYears }));
   const speedBefore = veteran.stats.speed;
+  const staminaBefore = veteran.stats.stamina;
   const summaries = processLeagueOffseason(league, new Map());
   assert.equal(summaries.length, 6);
   for (const row of tracked) {
@@ -248,6 +250,7 @@ test('全6クラブへ加齢・成長・衰退・契約年数処理を適用す�
     assert.equal(player.contractYears, row.contract - 1);
   }
   assert.ok(veteran.stats.speed < speedBefore);
+  assert.ok(veteran.stats.stamina < staminaBefore);
 });
 
 test('CPUは契約満了者を更新・放出しつつ最低5人とGKを維持する', () => {
