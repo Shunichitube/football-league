@@ -17,7 +17,7 @@ main
 ## 現在位置
 
 ```txt
-Stage M8: 競売同期まで実装、初年度市場フローも統一
+Stage M8-AUDIT: 1周フロー静的監査・修正完了
 ```
 
 2026-09-26、旧 `dev/multiplayer-v1` が main より大幅に古くなっていたため、main 最新版から `dev/multiplayer-v2` を作成し、マルチ専用ファイルだけを移植した。
@@ -287,3 +287,18 @@ M6〜M8を通した静的監査と、Cloudflare Worker / Durable Objectを含む
 まずはサーバー側のルーム状態とAPIを別軸で作り、既存シングルプレイの計算ロジックを壊さず利用できる形を探る。
 
 今回追加したWorkerとフロント画面はまだ実行確認前。Cloudflare上での `wrangler dev` / デプロイ確認は別途必要。
+
+
+## 2026-09-26 静的監査
+
+M6〜M8と初年度導線を通して静的監査を実施し、以下を修正した。
+
+- Season 10結果確認後にオフシーズンへ入っていたため、`game-complete` で停止するよう修正。
+- シーズン結果の自クラブ強調が metadata側の `club-1` とleague側の数値ID不一致で効かない問題を修正。
+- 初年度ゲーム開始後、ドラフト初期化の2段目通信だけ失敗すると `team-setup` に取り残される問題に対し、ホストの更新時に初年度ドラフトを再初期化できるよう修正。
+- 前シーズンの `auctionState` が次シーズン中もRoomに残る問題を解消。
+- `players[].submitted` / `players[].phaseInput` が公開Room応答へ含まれ、編成・戦術・契約判断・育成・放出内容を他参加者が取得できる問題を修正。公開状態は完了フラグだけにし、確定処理用の詳細入力はホスト専用APIから取得する。
+- `playerId` だけで他プレイヤーやホストを偽装できる状態だったため、参加時に非公開 `playerToken` を発行し、更新系APIを `x-player-token` で認証するよう修正。
+- 旧 `offseason-ready` 表示処理を削除し、現行 `offseason-events` フローへ統一。
+
+現時点でGitHub Actions/CIは設定されておらず、ブラウザ＋Cloudflare Worker/Durable Objectの実通信テストは未実施。
