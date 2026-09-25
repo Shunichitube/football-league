@@ -267,7 +267,10 @@
 
   main.screen-squad .tactic-panel {
     grid-area: tactic;
-    align-self: start;
+    align-self: stretch;
+    justify-self: stretch;
+    width: 100%;
+    max-width: none;
     margin: 0 !important;
     padding: 0.45rem 0.6rem !important;
   }
@@ -278,7 +281,16 @@
   }
 
   main.screen-squad .tactic-panel .tactic-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.4rem;
+    width: 100%;
     margin: 0.25rem 0 !important;
+  }
+
+  main.screen-squad .tactic-panel .tactic-row button {
+    width: 100%;
+    margin: 0 !important;
   }
 
   main.screen-squad .lineup-status {
@@ -307,7 +319,7 @@
     grid-area: slots;
     display: grid !important;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-template-rows: repeat(3, auto);
+    grid-template-rows: repeat(4, auto);
     gap: 0.55rem;
     align-items: start;
     position: relative;
@@ -372,12 +384,12 @@
     z-index: 1;
   }
 
-  /* GK, DF, MF, MF, FW -> visual court: FW / MF-DF-MF / GK */
+  /* GK, DF, MF, MF, FW -> visual court: FW / MF-MF / DF / GK */
   main.screen-squad .lineup-slot:nth-child(5) { grid-column: 2; grid-row: 1; }
   main.screen-squad .lineup-slot:nth-child(3) { grid-column: 1; grid-row: 2; }
-  main.screen-squad .lineup-slot:nth-child(2) { grid-column: 2; grid-row: 2; }
   main.screen-squad .lineup-slot:nth-child(4) { grid-column: 3; grid-row: 2; }
-  main.screen-squad .lineup-slot:nth-child(1) { grid-column: 2; grid-row: 3; }
+  main.screen-squad .lineup-slot:nth-child(2) { grid-column: 2; grid-row: 3; }
+  main.screen-squad .lineup-slot:nth-child(1) { grid-column: 2; grid-row: 4; }
 
 
   main.screen-squad .lineup-slot > button,
