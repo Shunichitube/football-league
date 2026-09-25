@@ -2,16 +2,13 @@
 
 この文書は、GK特殊能力に関する現行実装の正本メモとして扱う。
 
-`MATCH_ENGINE_SPEC_v1.md` や `INTEGRATED_ADDITIONAL_SPEC.md` に残っている旧GK特能名より、本書の内容を優先する。
+`MATCH_ENGINE_SPEC_v1.md` にGK特殊能力の旧記述が残る場合は、本書の内容を優先する。
 
 ## 0. 上書き対象
 
 以下の既存文書内のGK特殊能力記述は、本書で上書きする。
 
 - `MATCH_ENGINE_SPEC_v1.md` の「22. 特能反映方針 / GK」
-- `INTEGRATED_ADDITIONAL_SPEC.md` の「28. 習得可能な特殊能力 / GK」
-- `INTEGRATED_ADDITIONAL_SPEC.md` の「30. 特殊能力選択の基本対応 / GK」
-- `INTEGRATED_ADDITIONAL_SPEC.md` の「36. 特殊能力の正しい効果 / GK」
 
 旧記述にある以下のGK特殊能力は、現行仕様では使用しない。
 
