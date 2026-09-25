@@ -44,10 +44,16 @@ function publicRoom(state) {
   };
 }
 
-function createPlayer(name, role = 'guest', colorIndex = 0) {
+function normalizeTeamName(value, fallback = 'クラブ') {
+  return String(value || fallback).trim().slice(0, 12) || fallback;
+}
+
+function createPlayer(teamName, role = 'guest', colorIndex = 0) {
+  const name = normalizeTeamName(teamName, role === 'host' ? 'ホストクラブ' : 'クラブ');
   return {
     id: crypto.randomUUID(),
-    name: String(name || 'プレイヤー').trim().slice(0, 12) || 'プレイヤー',
+    name,
+    teamName: name,
     role,
     color: PLAYER_COLORS[colorIndex % PLAYER_COLORS.length],
     clubId: null,
@@ -60,34 +66,9 @@ function createPlayer(name, role = 'guest', colorIndex = 0) {
   };
 }
 
-function findClub(room, clubId) {
-  return room.clubs.find(club => club.id === clubId);
-}
-
-function validateClubId(clubId) {
-  return CLUBS.some(club => club.id === clubId);
-}
-
-function assignClub(room, player, clubId) {
-  if (!clubId) return 'クラブを選択してください。';
-  if (!validateClubId(clubId)) return 'クラブが見つかりません。';
-  const club = findClub(room, clubId);
-  if (!club) return 'クラブが見つかりません。';
-  if (club.playerId && club.playerId !== player.id) return 'このクラブは選択済みです。';
-  for (const candidate of room.clubs) if (candidate.playerId === player.id) {
-    candidate.playerId = null;
-    candidate.controller = 'CPU';
-  }
-  club.playerId = player.id;
-  club.controller = 'HUMAN';
-  player.clubId = club.id;
-  player.ready = false;
-  return null;
-}
-
-function createInitialState(roomId, hostName, hostClubId) {
-  const host = createPlayer(hostName || 'ホスト', 'host', 0);
-  const room = {
+function createInitialState(roomId, hostName) {
+  const host = createPlayer(hostName || 'ホストクラブ', 'host', 0);
+  return {
     version: 1,
     roomId,
     phase: 'lobby',
@@ -97,13 +78,20 @@ function createInitialState(roomId, hostName, hostClubId) {
     createdAt: now(),
     updatedAt: now()
   };
-  const assignError = assignClub(room, host, hostClubId);
-  return { room, assignError };
 }
 
-function startTeamSetup(room) {
+function assignClubsByJoinOrder(room) {
+  room.clubs = CLUBS.map(club => ({ ...club, controller: 'CPU', playerId: null }));
+  room.players.forEach((player, index) => {
+    const club = room.clubs[index];
+    if (!club) return;
+    club.name = player.teamName || player.name;
+    club.controller = 'HUMAN';
+    club.playerId = player.id;
+    player.clubId = club.id;
+    player.ready = false;
+  });
   room.phase = 'team-setup';
-  for (const player of room.players) player.ready = false;
   return room;
 }
 
@@ -133,9 +121,7 @@ export class RoomObject {
       const existing = await this.load();
       if (existing) return json({ ok: true, room: publicRoom(existing) });
       const body = await readJson(request);
-      const { room, assignError } = createInitialState(body.roomId, body.hostName, body.clubId || body.hostClubId);
-      if (assignError) return error(assignError);
-      await this.save(room);
+      const room = await this.save(createInitialState(body.roomId, body.hostName || body.teamName || body.clubName));
       return json({ ok: true, room: publicRoom(room), playerId: room.hostPlayerId });
     }
 
@@ -150,29 +136,17 @@ export class RoomObject {
       if (room.phase !== 'lobby') return error('このルームはすでに開始しています。');
       if (room.players.length >= MAX_PLAYERS) return error('参加人数が上限です。');
       const body = await readJson(request);
-      const player = createPlayer(body.playerName || body.name || 'プレイヤー', 'guest', room.players.length);
-      const assignError = assignClub(room, player, body.clubId);
-      if (assignError) return error(assignError);
+      const player = createPlayer(body.playerName || body.teamName || body.clubName || body.name, 'guest', room.players.length);
       room.players.push(player);
       await this.save(room);
       return json({ ok: true, room: publicRoom(room), playerId: player.id });
-    }
-
-    if (action === 'select-club' && request.method === 'POST') {
-      const body = await readJson(request);
-      const player = room.players.find(row => row.id === body.playerId);
-      if (!player) return error('プレイヤーが見つかりません。', 404);
-      const assignError = assignClub(room, player, body.clubId);
-      if (assignError) return error(assignError);
-      await this.save(room);
-      return json({ ok: true, room: publicRoom(room) });
     }
 
     if (action === 'submit' && request.method === 'POST') {
       const body = await readJson(request);
       const player = room.players.find(row => row.id === body.playerId);
       if (!player) return error('プレイヤーが見つかりません。', 404);
-      if (!player.clubId) return error('先にクラブを選択してください。');
+      if (!player.clubId) return error('ゲーム開始後に編成を送信してください。');
       player.submitted = {
         lineup: Array.isArray(body.lineup) ? body.lineup.slice(0, 5) : player.submitted.lineup,
         tactic: typeof body.tactic === 'string' ? body.tactic : player.submitted.tactic
@@ -186,7 +160,6 @@ export class RoomObject {
       const body = await readJson(request);
       const player = room.players.find(row => row.id === body.playerId);
       if (!player) return error('プレイヤーが見つかりません。', 404);
-      if (!player.clubId) return error('先にクラブを選択してください。');
       player.ready = Boolean(body.ready);
       await this.save(room);
       return json({ ok: true, room: publicRoom(room) });
@@ -197,10 +170,9 @@ export class RoomObject {
       if (body.playerId !== room.hostPlayerId) return error('ホストのみ実行できます。', 403);
       if (room.phase !== 'lobby') return error('このルームはすでに開始済みです。');
       if (!room.players.length) return error('参加者がいません。');
-      if (!room.players.every(player => player.clubId)) return error('全員のクラブ選択が必要です。');
       if (!room.players.every(player => player.ready)) return error('全員の準備完了が必要です。');
-      await this.save(startTeamSetup(room));
-      return json({ ok: true, room: publicRoom(room), message: 'チーム準備へ進みました。' });
+      await this.save(assignClubsByJoinOrder(room));
+      return json({ ok: true, room: publicRoom(room), message: 'クラブチーム名を割り当てました。' });
     }
 
     return error('未対応のルーム操作です。', 404);
