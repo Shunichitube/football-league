@@ -13,13 +13,8 @@ export function formatMatchEvents(events, clubs, nameOf = name => name) {
     return '';
   };
   events.forEach((event, index) => {
-    const { kind, extra = '', side } = event, p = name(event.player);
-    const parts = extra.split(' / '), type = parts[0].split(' ')[0];
-    // Older saved matches retain their original compact role descriptions.
-    const role = kind === 'GOAL' ? parts[2] : parts[1];
-    const [from, to] = (role || '').split('→');
-    const legacy = { type, passer: to ? from : null, receiver: to?.split('+')[0], dribbler: type === 'DRIBBLE' ? from?.split('+')[0] : null };
-    const d = event.display || legacy;
+    const { kind, side } = event, p = name(event.player);
+    const d = event.display || {};
     const next = events[index + 1], previous = events[index - 1];
     const toCorner = next?.kind === 'CORNER' && next.time === event.time;
     if (d.stage === 2 && d.shooter) {
@@ -45,7 +40,7 @@ export function formatMatchEvents(events, clubs, nameOf = name => name) {
         break;
       case 'SHORT COUNTER': add(event, `${p}がボールを奪い、そのままカウンター`); break;
       case 'LONG FEED': add(event, `${p}が前線へロングフィード`); break;
-      case 'LONG FEED FAIL': add(event, `${name(d.passer || extra.split('→')[0])}のロングフィードを${p}が止める`); break;
+      case 'LONG FEED FAIL': add(event, `${name(d.passer)}のロングフィードを${p}が止める`); break;
       case 'POWER PLAY': add(event, `GK${p}が攻撃参加。パワープレー`); break;
       case 'POWER PLAY RISK': add(event, 'パワープレーを止められる。GKの戻りが遅れている'); break;
       case 'POWER PLAY RISK TRIGGERED': add(event, `GK${p}が戻り切れず、守備が不安定になる`); break;
@@ -60,13 +55,13 @@ export function formatMatchEvents(events, clubs, nameOf = name => name) {
         else if (before <= 0 && after > 0 && score.home + score.away > 1)
           situation = `${club}が${lastLeader === other ? '逆転' : 'リード'}`;
         if (after !== 0 && (side === 'home' || side === 'away')) lastLeader = after > 0 ? side : other;
-        const assist = event.display ? d.assist : extra.match(/ \/ Assist (.+)$/)?.[1];
+        const assist = d.assist;
         add(event, `${score.home}－${score.away}　${p}がゴール${situation ? '　' + situation : ''}${assist ? '　アシスト：' + name(assist) : ''}`, true);
         break;
       }
       case 'GK CATCH':
       case 'SAVE': {
-        const shooter = name(d.shooter || parts[2]?.replace(/ shot$/, ''));
+        const shooter = name(d.shooter);
         add(event, kind === 'GK CATCH' ? `${p}が${shooter}のシュートをキャッチ`
           : toCorner ? `${p}が${shooter}のシュートを弾き出し、コーナーキック`
           : `${p}が${shooter}のシュートをセーブ`);
@@ -75,7 +70,7 @@ export function formatMatchEvents(events, clubs, nameOf = name => name) {
       case 'MISS': add(event, `${p}のシュートは枠を外れる`); break;
       case 'REBOUND':
         add(event, toCorner ? 'こぼれ球がゴールラインを割り、コーナーキック'
-          : extra.includes('attack recovers') ? `こぼれ球を${p}が拾う` : `${p}がこぼれ球を処理`);
+          : d.rebound === 'attack' ? `こぼれ球を${p}が拾う` : `${p}がこぼれ球を処理`);
         break;
       case 'CORNER':
         if (!previous || previous.time !== event.time || !['SAVE', 'REBOUND'].includes(previous.kind)) add(event, 'コーナーキック');
