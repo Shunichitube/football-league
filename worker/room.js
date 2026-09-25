@@ -32,13 +32,28 @@ async function readJson(request) {
   }
 }
 
+function publicPlayer(player) {
+  return {
+    id: player.id,
+    name: player.name,
+    teamName: player.teamName,
+    role: player.role,
+    color: player.color,
+    clubId: player.clubId,
+    ready: player.ready,
+    phaseComplete: player.phaseComplete,
+    submitted: { completed: Boolean(player.submitted?.completed) },
+    joinedAt: player.joinedAt
+  };
+}
+
 function publicRoom(state) {
   return {
     roomId: state.roomId,
     phase: state.phase,
     currentWork: state.currentWork || null,
     hostPlayerId: state.hostPlayerId,
-    players: state.players,
+    players: state.players.map(publicPlayer),
     clubs: state.clubs,
     seasonResult: state.seasonResult || null,
     leagueState: state.leagueState || null,
@@ -179,6 +194,8 @@ function completeSeason(room, seasonResult) {
   room.growthResult = null;
   room.draftState = null;
   room.draftInputs = {};
+  room.auctionState = null;
+  room.auctionInputs = {};
   resetPhaseCompletion(room);
   return room;
 }
@@ -186,9 +203,15 @@ function completeSeason(room, seasonResult) {
 function confirmCurrentPhase(room, player) {
   if (room.phase === 'season-result') {
     if (markPhaseComplete(room, player)) {
-      room.phase = 'offseason-events';
-      room.currentWork = 'contract-retention-special-training';
-      resetPhaseCompletion(room);
+      if ((room.leagueState?.season || 0) >= 10) {
+        room.phase = 'game-complete';
+        room.currentWork = 'career-complete';
+        resetPhaseCompletion(room);
+      } else {
+        room.phase = 'offseason-events';
+        room.currentWork = 'contract-retention-special-training';
+        resetPhaseCompletion(room);
+      }
     }
     return room;
   }
@@ -317,6 +340,20 @@ function submitDraft(room, player, body) {
     room.currentWork = 'draft-resolve';
   }
   return room;
+}
+
+function privatePhaseSnapshot(room, playerId, expectedPhase) {
+  if (playerId !== room.hostPlayerId || room.phase !== expectedPhase) return null;
+  return {
+    roomId: room.roomId,
+    leagueState: room.leagueState,
+    players: room.players.map(player => ({
+      id: player.id,
+      clubId: player.clubId,
+      submitted: player.submitted,
+      phaseInput: player.phaseInput
+    }))
+  };
 }
 
 function draftResolutionInputs(room, playerId) {
@@ -478,6 +515,13 @@ export class RoomObject {
       return error('まだ全員の作業が完了していません。');
     }
 
+    if (action === 'prepare-season-resolution' && request.method === 'POST') {
+      const body = await readJson(request);
+      const snapshot = privatePhaseSnapshot(room, body.playerId, 'season-ready');
+      if (!snapshot) return error('シーズン確定情報を取得できません。', 403);
+      return json({ ok: true, ...snapshot });
+    }
+
     if (action === 'complete-season' && request.method === 'POST') {
       const body = await readJson(request);
       if (body.playerId !== room.hostPlayerId) return error('ホストのみ実行できます。', 403);
@@ -507,6 +551,13 @@ export class RoomObject {
       return json({ ok: true, room: publicRoom(updated), message: 'オフシーズンイベント入力を保存しました。' });
     }
 
+    if (action === 'prepare-offseason-resolution' && request.method === 'POST') {
+      const body = await readJson(request);
+      const snapshot = privatePhaseSnapshot(room, body.playerId, 'offseason-events-ready');
+      if (!snapshot) return error('オフシーズン確定情報を取得できません。', 403);
+      return json({ ok: true, ...snapshot, offseasonState: room.offseasonState || null });
+    }
+
     if (action === 'advance-offseason-events' && request.method === 'POST') {
       const body = await readJson(request);
       if (body.playerId !== room.hostPlayerId) return error('ホストのみ実行できます。', 403);
@@ -526,6 +577,13 @@ export class RoomObject {
       return json({ ok: true, room: publicRoom(updated), message: '育成入力を保存しました。' });
     }
 
+    if (action === 'prepare-development-resolution' && request.method === 'POST') {
+      const body = await readJson(request);
+      const snapshot = privatePhaseSnapshot(room, body.playerId, 'development-ready');
+      if (!snapshot) return error('育成確定情報を取得できません。', 403);
+      return json({ ok: true, ...snapshot, offseasonState: room.offseasonState || null });
+    }
+
     if (action === 'advance-development' && request.method === 'POST') {
       const body = await readJson(request);
       if (body.playerId !== room.hostPlayerId) return error('ホストのみ実行できます。', 403);
@@ -543,6 +601,13 @@ export class RoomObject {
       if (!updated) return error('放出入力を保存できません。');
       await this.save(updated);
       return json({ ok: true, room: publicRoom(updated), message: '選手整理の入力を保存しました。' });
+    }
+
+    if (action === 'prepare-release-resolution' && request.method === 'POST') {
+      const body = await readJson(request);
+      const snapshot = privatePhaseSnapshot(room, body.playerId, 'release-ready');
+      if (!snapshot) return error('選手整理確定情報を取得できません。', 403);
+      return json({ ok: true, ...snapshot });
     }
 
     if (action === 'advance-release' && request.method === 'POST') {
