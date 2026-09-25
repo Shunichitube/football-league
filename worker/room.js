@@ -96,6 +96,19 @@ function resetPlayerForSetup(player) {
   };
 }
 
+function resetPhaseCompletion(room) {
+  room.players.forEach(player => {
+    player.ready = false;
+    player.phaseComplete = false;
+  });
+}
+
+function markPhaseComplete(room, player) {
+  player.ready = true;
+  player.phaseComplete = true;
+  return room.players.length > 0 && room.players.every(candidate => candidate.phaseComplete);
+}
+
 function assignClubsByJoinOrder(room) {
   room.clubs = CLUBS.map(club => ({ ...club, controller: 'CPU', playerId: null }));
   room.players.forEach((player, index) => {
@@ -123,9 +136,7 @@ function completeSetupWork(room, player, body) {
     completed: true,
     completedAt: now()
   };
-  player.phaseComplete = true;
-  player.ready = true;
-  if (room.players.length && room.players.every(candidate => candidate.phaseComplete)) {
+  if (markPhaseComplete(room, player)) {
     room.phase = 'season-ready';
     room.currentWork = 'season-simulation-ready';
   }
@@ -138,7 +149,19 @@ function completeSeason(room, seasonResult) {
     ...seasonResult,
     storedAt: now()
   };
+  resetPhaseCompletion(room);
   return room;
+}
+
+function confirmCurrentPhase(room, player) {
+  if (room.phase === 'season-result') {
+    if (markPhaseComplete(room, player)) {
+      room.phase = 'offseason-ready';
+      room.currentWork = 'offseason-sync-ready';
+    }
+    return room;
+  }
+  return null;
 }
 
 export class RoomObject {
@@ -231,6 +254,16 @@ export class RoomObject {
       if (!body.seasonResult?.table?.length) return error('シーズン結果が不足しています。');
       await this.save(completeSeason(room, body.seasonResult));
       return json({ ok: true, room: publicRoom(room), message: 'シーズン結果を保存しました。' });
+    }
+
+    if (action === 'confirm-phase' && request.method === 'POST') {
+      const body = await readJson(request);
+      const player = room.players.find(row => row.id === body.playerId);
+      if (!player) return error('プレイヤーが見つかりません。', 404);
+      const updated = confirmCurrentPhase(room, player);
+      if (!updated) return error('現在のフェーズでは確認完了できません。');
+      await this.save(updated);
+      return json({ ok: true, room: publicRoom(updated), message: 'フェーズ確認を保存しました。' });
     }
 
     return error('未対応のルーム操作です。', 404);
