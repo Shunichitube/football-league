@@ -1,0 +1,114 @@
+@media (min-width: 761px) {
+  main {
+    width: min(1180px, 94vw);
+  }
+
+  .overlay-panel {
+    max-width: 1180px;
+  }
+
+  .candidate-grid {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    align-items: stretch;
+  }
+
+  .candidate {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .candidate > .player-card,
+  .lineup-slot .player-card,
+  .potm .player-card,
+  .season-awards .player-card,
+  .roster-panel .player-card,
+  .bench-player .player-card {
+    display: grid;
+    grid-template-columns: minmax(0, 0.92fr) minmax(160px, 1.08fr);
+    align-items: start;
+    gap: 0.65rem;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+  }
+
+  .player-profile,
+  .player-abilities,
+  .player-title,
+  .player-special-row {
+    min-width: 0;
+  }
+
+  .player-title {
+    align-items: flex-start;
+  }
+
+  .player-name-box,
+  .player-name {
+    min-width: 0;
+    max-width: 100% !important;
+  }
+
+  .ability-grid,
+  .lineup-slot .ability-grid,
+  .candidate > .player-card .ability-grid {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .ability-grid div,
+  .lineup-slot .ability-grid div,
+  .candidate > .player-card .ability-grid div {
+    grid-template-columns: minmax(4.4rem, 0.85fr) minmax(130px, 1.15fr);
+    min-width: 0;
+  }
+
+  .ability-grid dd {
+    grid-template-columns: 1.65rem minmax(82px, 1fr);
+    min-width: 0;
+  }
+
+  .rank-bar {
+    display: block;
+    min-width: 82px;
+    width: 100%;
+  }
+
+  .special-ability-detail summary {
+    white-space: normal;
+  }
+
+  .player-special-row {
+    grid-column: 1 / -1;
+  }
+
+  .lineup-slots {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-areas:
+      ". fw ."
+      "mf1 . mf2"
+      ". df ."
+      ". gk .";
+    align-items: stretch;
+  }
+
+  .lineup-slot,
+  .lineup-slot:first-child,
+  .lineup-slot:last-child {
+    grid-column: auto;
+    min-width: 0;
+  }
+
+  .lineup-slot:nth-child(1) { grid-area: gk; }
+  .lineup-slot:nth-child(2) { grid-area: df; }
+  .lineup-slot:nth-child(3) { grid-area: mf1; }
+  .lineup-slot:nth-child(4) { grid-area: mf2; }
+  .lineup-slot:nth-child(5) { grid-area: fw; }
+
+  .lineup-slot > button,
+  .bench-player > button {
+    width: 100%;
+    margin: 0.35rem 0 0;
+  }
+}
