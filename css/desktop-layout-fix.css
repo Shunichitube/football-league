@@ -69,7 +69,7 @@
   main.screen-draft .player-card,
   main.screen-draft .candidate > .player-card {
     display: grid !important;
-    grid-template-columns: minmax(0, 0.45fr) minmax(0, 0.55fr) !important;
+    grid-template-columns: minmax(0, calc(45% - 10px)) minmax(0, calc(55% + 10px)) !important;
     align-items: start !important;
     gap: 0.42rem !important;
     width: 100% !important;
@@ -136,7 +136,7 @@
 
   main.screen-draft .ability-grid div {
     display: grid !important;
-    grid-template-columns: 3.2rem calc(1.15rem + var(--pc-draft-bar)) !important;
+    grid-template-columns: 2.75rem minmax(0, 1fr) !important;
     align-items: center !important;
     justify-content: start !important;
     gap: 0.2rem !important;
@@ -155,7 +155,7 @@
 
   main.screen-draft .ability-grid dd {
     display: grid !important;
-    grid-template-columns: 1.05rem var(--pc-draft-bar) !important;
+    grid-template-columns: 1.05rem minmax(0, 1fr) !important;
     align-items: center !important;
     gap: 0.14rem !important;
     min-width: 0 !important;
@@ -166,9 +166,9 @@
 
   main.screen-draft .rank-bar {
     display: block !important;
-    width: var(--pc-draft-bar) !important;
-    min-width: var(--pc-draft-bar) !important;
-    max-width: var(--pc-draft-bar) !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
     height: 5px !important;
     overflow: hidden !important;
   }
