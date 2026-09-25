@@ -36,6 +36,7 @@ function publicRoom(state) {
   return {
     roomId: state.roomId,
     phase: state.phase,
+    currentWork: state.currentWork || null,
     hostPlayerId: state.hostPlayerId,
     players: state.players,
     clubs: state.clubs,
@@ -58,9 +59,11 @@ function createPlayer(teamName, role = 'guest', colorIndex = 0) {
     color: PLAYER_COLORS[colorIndex % PLAYER_COLORS.length],
     clubId: null,
     ready: false,
+    phaseComplete: false,
     submitted: {
       lineup: null,
-      tactic: null
+      tactic: null,
+      completed: false
     },
     joinedAt: now()
   };
@@ -72,11 +75,22 @@ function createInitialState(roomId, hostName) {
     version: 1,
     roomId,
     phase: 'lobby',
+    currentWork: 'lobby-ready',
     hostPlayerId: host.id,
     players: [host],
     clubs: CLUBS.map(club => ({ ...club, controller: 'CPU', playerId: null })),
     createdAt: now(),
     updatedAt: now()
+  };
+}
+
+function resetPlayerForSetup(player) {
+  player.ready = false;
+  player.phaseComplete = false;
+  player.submitted = {
+    lineup: null,
+    tactic: null,
+    completed: false
   };
 }
 
@@ -89,13 +103,29 @@ function assignClubsByJoinOrder(room) {
     club.controller = 'HUMAN';
     club.playerId = player.id;
     player.clubId = club.id;
-    player.ready = false;
+    resetPlayerForSetup(player);
   });
   for (let index = room.players.length; index < room.clubs.length; index += 1) {
     room.clubs[index].name = `COM${index - room.players.length + 1}`;
   }
   room.phase = 'team-setup';
+  room.currentWork = 'lineup-and-tactic';
   return room;
+}
+
+function completeSetupWork(room, player, body) {
+  player.submitted = {
+    lineup: Array.isArray(body.lineup) ? body.lineup.slice(0, 5) : player.submitted.lineup,
+    tactic: typeof body.tactic === 'string' ? body.tactic : player.submitted.tactic,
+    completed: true,
+    completedAt: now()
+  };
+  player.phaseComplete = true;
+  player.ready = true;
+  if (room.players.length && room.players.every(candidate => candidate.phaseComplete)) {
+    room.phase = 'season-ready';
+    room.currentWork = 'season-simulation-ready';
+  }
 }
 
 export class RoomObject {
@@ -146,20 +176,18 @@ export class RoomObject {
     }
 
     if (action === 'submit' && request.method === 'POST') {
+      if (room.phase !== 'team-setup') return error('現在は編成・戦術を送信できるフェーズではありません。');
       const body = await readJson(request);
       const player = room.players.find(row => row.id === body.playerId);
       if (!player) return error('プレイヤーが見つかりません。', 404);
       if (!player.clubId) return error('ゲーム開始後に編成を送信してください。');
-      player.submitted = {
-        lineup: Array.isArray(body.lineup) ? body.lineup.slice(0, 5) : player.submitted.lineup,
-        tactic: typeof body.tactic === 'string' ? body.tactic : player.submitted.tactic
-      };
-      player.ready = Boolean(body.ready);
+      completeSetupWork(room, player, body);
       await this.save(room);
       return json({ ok: true, room: publicRoom(room) });
     }
 
     if (action === 'ready' && request.method === 'POST') {
+      if (room.phase !== 'lobby') return error('このフェーズでは準備完了操作はできません。');
       const body = await readJson(request);
       const player = room.players.find(row => row.id === body.playerId);
       if (!player) return error('プレイヤーが見つかりません。', 404);
@@ -171,11 +199,16 @@ export class RoomObject {
     if (action === 'run-season' && request.method === 'POST') {
       const body = await readJson(request);
       if (body.playerId !== room.hostPlayerId) return error('ホストのみ実行できます。', 403);
-      if (room.phase !== 'lobby') return error('このルームはすでに開始済みです。');
-      if (!room.players.length) return error('参加者がいません。');
-      if (!room.players.every(player => player.ready)) return error('全員の準備完了が必要です。');
-      await this.save(assignClubsByJoinOrder(room));
-      return json({ ok: true, room: publicRoom(room), message: 'クラブチーム名を割り当てました。' });
+      if (room.phase === 'lobby') {
+        if (!room.players.length) return error('参加者がいません。');
+        if (!room.players.every(player => player.ready)) return error('全員の準備完了が必要です。');
+        await this.save(assignClubsByJoinOrder(room));
+        return json({ ok: true, room: publicRoom(room), message: 'クラブチーム名を割り当てました。' });
+      }
+      if (room.phase === 'season-ready') {
+        return error('シーズン一括シミュレーションはM5で実装します。', 501);
+      }
+      return error('まだ全員の作業が完了していません。');
     }
 
     return error('未対応のルーム操作です。', 404);
