@@ -3,9 +3,6 @@
     --pc-card-small: 0.66rem;
     --pc-card-name: 0.9rem;
     --pc-card-rank: 0.78rem;
-    --pc-card-bar: 76px;
-    --pc-draft-bar: 104px;
-    --pc-auction-bar: 64px;
   }
 
   main.screen-draft {
@@ -217,30 +214,6 @@
     padding: 0.7rem !important;
   }
 
-  main.screen-auction .player-card {
-    display: grid !important;
-    grid-template-columns: minmax(0, 0.44fr) minmax(0, 0.56fr) !important;
-    gap: 0.45rem !important;
-    width: 100% !important;
-    max-width: none !important;
-    min-height: 0 !important;
-    height: auto !important;
-    padding: 0.55rem !important;
-  }
-
-  main.screen-auction .ability-grid div {
-    grid-template-columns: 3.6rem calc(1.25rem + var(--pc-auction-bar)) !important;
-  }
-
-  main.screen-auction .ability-grid dd {
-    grid-template-columns: 1.15rem var(--pc-auction-bar) !important;
-  }
-
-  main.screen-auction .rank-bar {
-    width: var(--pc-auction-bar) !important;
-    min-width: var(--pc-auction-bar) !important;
-    max-width: var(--pc-auction-bar) !important;
-  }
 
   /* Squad: left formation court, right bench. */
   main.screen-squad .lineup-editor {
@@ -342,28 +315,6 @@
   main.screen-squad .lineup-slot:nth-child(2) { left: 36%; top: 42%; }
   main.screen-squad .lineup-slot:nth-child(1) { left: 36%; bottom: 2.5%; }
 
-  main.screen-squad .lineup-slot .player-card,
-  main.screen-squad .bench-player .player-card {
-    display: grid !important;
-    grid-template-columns: minmax(0, 0.44fr) minmax(0, 0.56fr) !important;
-    gap: 0.34rem !important;
-    width: 100% !important;
-    max-width: none !important;
-    min-width: 0 !important;
-    min-height: 126px;
-    padding: 0.38rem !important;
-    overflow: hidden;
-  }
-
-  main.screen-squad .lineup-slot .ability-grid div,
-  main.screen-squad .bench-player .ability-grid div {
-    grid-template-columns: 3rem calc(1.05rem + var(--pc-card-bar)) !important;
-  }
-
-  main.screen-squad .lineup-slot .ability-grid dd,
-  main.screen-squad .bench-player .ability-grid dd {
-    grid-template-columns: 0.98rem var(--pc-card-bar) !important;
-  }
 
   main.screen-squad .lineup-slot > button,
   main.screen-squad .bench-player > button {
@@ -385,129 +336,6 @@
     gap: 0.6rem !important;
   }
 
-  main.screen-auction .player-profile,
-  main.screen-auction .player-abilities,
-  main.screen-auction .player-title,
-  main.screen-auction .player-name-box,
-  main.screen-auction .player-special-row,
-  main.screen-squad .player-profile,
-  main.screen-squad .player-abilities,
-  main.screen-squad .player-title,
-  main.screen-squad .player-name-box,
-  main.screen-squad .player-special-row {
-    min-width: 0 !important;
-  }
-
-  main.screen-auction .player-title,
-  main.screen-squad .player-title {
-    align-items: flex-start !important;
-    justify-content: flex-start !important;
-    flex-direction: column !important;
-    gap: 0.08rem !important;
-  }
-
-  main.screen-auction .overall-rank,
-  main.screen-squad .overall-rank {
-    order: 0;
-    font-size: var(--pc-card-rank) !important;
-    line-height: 1.05;
-    white-space: nowrap;
-  }
-
-  main.screen-auction .player-name,
-  main.screen-squad .player-name {
-    max-width: 100% !important;
-    font-size: var(--pc-card-name) !important;
-    line-height: 1.1;
-  }
-
-  main.screen-auction .position-badge,
-  main.screen-squad .position-badge {
-    min-width: 1.8rem !important;
-    margin: 0.22rem 0 0.08rem !important;
-    padding: 0.12rem 0.36rem !important;
-    font-size: 0.62rem !important;
-    line-height: 1.1;
-  }
-
-  main.screen-auction .player-profile p,
-  main.screen-auction .player-meta,
-  main.screen-auction .growth-expectation,
-  main.screen-squad .player-profile p,
-  main.screen-squad .player-meta,
-  main.screen-squad .growth-expectation {
-    margin: 0.16rem 0 !important;
-    font-size: var(--pc-card-small) !important;
-    line-height: 1.18 !important;
-  }
-
-  main.screen-auction .ability-grid,
-  main.screen-squad .ability-grid {
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 0.16rem !important;
-    width: 100% !important;
-    margin: 0 !important;
-  }
-
-  main.screen-auction .ability-grid div,
-  main.screen-squad .ability-grid div {
-    display: grid !important;
-    align-items: center !important;
-    justify-content: start !important;
-    gap: 0.18rem !important;
-    padding: 0.16rem 0.22rem !important;
-    min-width: 0 !important;
-    overflow: hidden;
-  }
-
-  main.screen-auction .ability-grid dt,
-  main.screen-squad .ability-grid dt {
-    font-size: 0.56rem !important;
-    line-height: 1.05;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  main.screen-auction .ability-grid dd,
-  main.screen-squad .ability-grid dd {
-    display: grid !important;
-    align-items: center !important;
-    gap: 0.12rem !important;
-    min-width: 0 !important;
-    margin: 0 !important;
-    font-size: 0.66rem !important;
-    line-height: 1.05;
-  }
-
-  main.screen-auction .rank-bar,
-  main.screen-squad .rank-bar {
-    display: block !important;
-    height: 5px !important;
-    overflow: hidden !important;
-  }
-
-  main.screen-auction .player-special-row,
-  main.screen-squad .player-special-row {
-    grid-column: 1 / -1 !important;
-    padding-top: 0.3rem !important;
-    margin-top: 0.08rem;
-  }
-
-  main.screen-auction .player-special-row .special-ability-detail summary,
-  main.screen-auction .special-ability,
-  main.screen-auction .special-ability.none,
-  main.screen-squad .player-special-row .special-ability-detail summary,
-  main.screen-squad .special-ability,
-  main.screen-squad .special-ability.none {
-    font-size: 0.62rem !important;
-    line-height: 1.15;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin: 0 !important;
-  }
 
   /* Shared desktop player-card composition: keep the draft card structure everywhere. */
   main:not(.title) .player-card,
