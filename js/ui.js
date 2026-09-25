@@ -164,7 +164,18 @@ export function renderSeasonMatchList(matches, clubId) {
 
 export function renderMatchDetail(match) {
   const rows = [...match.result.playerResults];
-  const sortedRows = [...rows].sort((a, b) => b.rating - a.rating);
+  const positionOrder = { GK: 0, DF: 1, MF: 2, FW: 3 };
+  const compareMatchRows = (a, b) =>
+    b.rating - a.rating ||
+    (positionOrder[a.player.primaryPosition] ?? 99) - (positionOrder[b.player.primaryPosition] ?? 99) ||
+    b.goals - a.goals ||
+    b.assists - a.assists ||
+    b.shots - a.shots ||
+    b.attackContributions - a.attackContributions ||
+    b.defensiveStops - a.defensiveStops ||
+    b.saves - a.saves ||
+    String(a.player.name).localeCompare(String(b.player.name), 'ja');
+  const sortedRows = [...rows].sort(compareMatchRows);
   const mvp = sortedRows[0];
   const scorers = sortedRows.filter(row => row.goals > 0).map(row => `${escapeHtml(row.player.name)}${row.goals > 1 ? ` ×${row.goals}` : ''}`).join('、') || 'なし';
   const assists = sortedRows.filter(row => row.assists > 0).map(row => `${escapeHtml(row.player.name)}${row.assists > 1 ? ` ×${row.assists}` : ''}`).join('、') || 'なし';
@@ -172,8 +183,8 @@ export function renderMatchDetail(match) {
   const awayId = match.fixture.awayId ?? match.fixture.away.id;
   const hasTeamIds = rows.some(row => row.teamId != null);
   const midpoint = Math.ceil(rows.length / 2);
-  const homeRows = hasTeamIds ? rows.filter(row => row.teamId === homeId) : rows.slice(0, midpoint);
-  const awayRows = hasTeamIds ? rows.filter(row => row.teamId === awayId) : rows.slice(midpoint);
+  const homeRows = (hasTeamIds ? rows.filter(row => row.teamId === homeId) : rows.slice(0, midpoint)).sort(compareMatchRows);
+  const awayRows = (hasTeamIds ? rows.filter(row => row.teamId === awayId) : rows.slice(midpoint)).sort(compareMatchRows);
   const resultCard = row => `<article class="candidate match-player-result">${renderPlayerCard(row.player)}<p><b>調子 ${match.result.forms[row.player.id] || '−'}</b>・評価 ${row.rating.toFixed(1)}</p><p>得点 ${row.goals}・アシスト ${row.assists}・シュート ${row.shots}</p><p>攻撃貢献 ${row.attackContributions}・守備成功 ${row.defensiveStops}・セーブ ${row.saves}</p></article>`;
   return `<main class="match-detail"><p class="eyebrow">第${match.round}節 試合詳細</p>
     <div class="scoreboard"><span><i class="club-color-dot" style="--club:${escapeHtml(match.fixture.home.color)}"></i>${escapeHtml(match.fixture.home.name)}</span><b>${match.result.score.home} - ${match.result.score.away}</b><span><i class="club-color-dot" style="--club:${escapeHtml(match.fixture.away.color)}"></i>${escapeHtml(match.fixture.away.name)}</span></div>
