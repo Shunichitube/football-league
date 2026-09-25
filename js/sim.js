@@ -142,7 +142,10 @@ function longFeedAttemptRate(diff) {
   return .03;
 }
 function formatTime(phase) { const seconds = phase * CONFIG.phaseSeconds; return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`; }
-function logEvent(phase, kind, player, extra = '', side = null) { return { time: formatTime(phase), kind, player: player?.name || 'Unknown', extra, side }; }
+function logEvent(phase, kind, player, extra = '', side = null, display = null) { return { time: formatTime(phase), kind, player: player?.name || 'Unknown', extra, side, ...(display ? { display } : {}) }; }
+function displayRoles(type, roles, context = {}) {
+  return { type, passer: roles.passer?.name || roles.origin?.name, receiver: roles.receiver?.name || roles.runner?.name, dribbler: roles.dribbler?.name, ...context };
+}
 function matchPlayerPool(club) {
   const starterIds = new Set(club.lineup || []);
   return club.roster.filter(player => starterIds.has(player.id) || player.primaryPosition !== 'GK');
@@ -522,12 +525,12 @@ export function simulateMatch(home, away, rng) {
         const contributor = roles.contributor || attackers[0];
         stat.get(contributor.id).attackContributions++; ratings[contributor.id] += .05;
         const nextType = secondStageKind(activeAttack.firstType, rng);
-        events.push(logEvent(phase, 'STAGE 1 SUCCESS', contributor, `${type} → ${nextType} / ${roleDescription(type, 1, roles)}`, sideKey(attack, home)));
+        events.push(logEvent(phase, 'STAGE 1 SUCCESS', contributor, `${type} → ${nextType} / ${roleDescription(type, 1, roles)}`, sideKey(attack, home), displayRoles(type, roles, { stage: 1, keeper: isPowerPlay ? attackState.keeper.name : null })));
         activeAttack = { ...activeAttack, type: nextType, stage: 2, roles, powerPlay: isPowerPlay };
       } else {
         const stopper = roles.defender || pickRole(defenders, p => fieldValue(p, 'defense', defend.tactic), rng);
         stat.get(stopper.id).defensiveStops++; ratings[stopper.id] += .15;
-        events.push(logEvent(phase, 'DEFENSIVE STOP', stopper, `${type} 第1阻止 / ${roleDescription(type, 1, roles)}`, sideKey(defend, home)));
+        events.push(logEvent(phase, 'DEFENSIVE STOP', stopper, `${type} 第1阻止 / ${roleDescription(type, 1, roles)}`, sideKey(defend, home), displayRoles(type, roles)));
         if (isPowerPlay) { powerPlayRisk.set(attack.id, 1); events.push(logEvent(phase, 'POWER PLAY RISK', attackState.keeper, '第1攻撃失敗 / 戻り遅れ', sideKey(attack, home))); }
         if (powerPlayRisk.get(defend.id)) { powerPlayRisk.set(defend.id, 0); events.push(logEvent(phase, 'POWER PLAY RISK CLEARED', defendState.keeper, '第1守備で解除', sideKey(defend, home))); }
         activeAttack = maybeStartShortCounter({ phase, diff, stopper, attack, defend, home, score, homeState, awayState, homeFielders, awayFielders, rng, events });
@@ -546,8 +549,8 @@ export function simulateMatch(home, away, rng) {
     if (diff <= 0) {
       const stopper = secondRoles.defender || pickRole(defenders, p => fieldValue(p, 'defense', defend.tactic), rng);
       stat.get(stopper.id).defensiveStops++; ratings[stopper.id] += .18;
-      events.push(logEvent(phase, 'DEFENSIVE STOP', stopper, `${type} 第2阻止 / ${roleDescription(type, 2, secondRoles)}`, sideKey(defend, home)));
-      if (activeAttack.longFeed) events.push(logEvent(phase, 'LONG FEED FAIL', stopper, roleDescription(type, 2, secondRoles), sideKey(defend, home)));
+      events.push(logEvent(phase, 'DEFENSIVE STOP', stopper, `${type} 第2阻止 / ${roleDescription(type, 2, secondRoles)}`, sideKey(defend, home), displayRoles(type, secondRoles, { corner: !!activeAttack.corner, longFeed: !!activeAttack.longFeed })));
+      if (activeAttack.longFeed) events.push(logEvent(phase, 'LONG FEED FAIL', stopper, roleDescription(type, 2, secondRoles), sideKey(defend, home), displayRoles(type, secondRoles)));
       else if (type === 'COUNTER' || type === 'SHORT_COUNTER') defenseDebuff.set(attack.id, -4);
       if (activeAttack.powerPlay || isPowerPlay) { powerPlayRisk.set(attack.id, 1); events.push(logEvent(phase, 'POWER PLAY RISK', attackState.keeper, '第2攻撃失敗 / 戻り遅れ', sideKey(attack, home))); }
       if (powerPlayRisk.get(defend.id)) { powerPlayRisk.set(defend.id, 0); events.push(logEvent(phase, 'POWER PLAY RISK CLEARED', defendState.keeper, '第2守備で解除', sideKey(defend, home))); }
@@ -563,6 +566,7 @@ export function simulateMatch(home, away, rng) {
     const shooter = pickShooterFromRoles(type, secondRoles, attackers, attack.tactic, rng);
     stat.get(shooter.id).shots++; ratings[shooter.id] += .05;
     const attackSide = sideKey(attack, home), defendSide = sideKey(defend, home);
+    const shotDisplay = displayRoles(type, secondRoles, { stage: 2, shooter: shooter.name, corner: !!activeAttack.corner, longFeed: !!activeAttack.longFeed, keeper: isPowerPlay ? attackState.keeper.name : null });
     const counterShotBonus = type === 'COUNTER' ? 5 : type === 'SHORT_COUNTER' ? 8 : 0;
     const abilityShotBonus = shotBonusForAbility(shooter, type, chance, phase, score, attackSide, defendSide, secondRoles);
     const shooterScore = fieldValue(shooter, 'shoot', attack.tactic) + CONFIG.chanceBonus[chance.toLowerCase()] + counterShotBonus + abilityShotBonus + luck(rng, CONFIG.shotLuck);
@@ -577,20 +581,20 @@ export function simulateMatch(home, away, rng) {
       score[attackSide]++; stat.get(shooter.id).goals++; ratings[shooter.id] += 1.2; stat.get(gk.id).conceded++; ratings[gk.id] -= .15;
       let assist = null; const rate = type === 'PASS' ? .8 : isCounterType(type) ? .6 : .35;
       if (contributor !== shooter && rng.next() < rate) { assist = contributor; stat.get(assist.id).assists++; ratings[assist.id] += .7; }
-      events.push(logEvent(phase, 'GOAL', shooter, `${type} / ${chance} / ${roleDescription(type, 2, secondRoles)}${assist ? ` / Assist ${assist.name}` : ''}`, attackSide));
+      events.push(logEvent(phase, 'GOAL', shooter, `${type} / ${chance} / ${roleDescription(type, 2, secondRoles)}${assist ? ` / Assist ${assist.name}` : ''}`, attackSide, { ...shotDisplay, assist: assist?.name || null }));
       nextRestart = { club: defend, kind: 'normal' };
       activeAttack = null;
     } else {
       const margin = goalieScore - shooterScore;
       if (margin >= 12) {
         stat.get(gk.id).saves++; ratings[gk.id] += .12;
-        events.push(logEvent(phase, 'GK CATCH', gk, `${type} / ${chance} / ${shooter.name} shot`, defendSide));
+        events.push(logEvent(phase, 'GK CATCH', gk, `${type} / ${chance} / ${shooter.name} shot`, defendSide, shotDisplay));
         activeAttack = maybeStartLongFeed({ phase, keeper: gk, attack: defend, defend: attack, home, homeState, awayState, homeFielders, awayFielders, rng, events });
         if (!activeAttack) nextRestart = { club: defend, kind: 'normal' };
       } else if (margin >= 4) {
         const saved = rng.next() < .55;
         if (saved) { stat.get(gk.id).saves++; ratings[gk.id] += .10; }
-        events.push(logEvent(phase, saved ? 'SAVE' : 'MISS', saved ? gk : shooter, `${type} / ${chance} / ${shooter.name} shot`, saved ? defendSide : attackSide));
+        events.push(logEvent(phase, saved ? 'SAVE' : 'MISS', saved ? gk : shooter, `${type} / ${chance} / ${shooter.name} shot`, saved ? defendSide : attackSide, shotDisplay));
         nextRestart = { club: defend, kind: 'normal' };
         activeAttack = null;
         if (saved && rng.next() < .20) {
@@ -600,7 +604,7 @@ export function simulateMatch(home, away, rng) {
       } else {
         stat.get(gk.id).saves++; ratings[gk.id] += .08;
         const recovered = rng.next() < reboundRecoveryRate(chance, gk);
-        events.push(logEvent(phase, 'REBOUND', recovered ? shooter : gk, `${type} / ${chance} / ${recovered ? 'attack recovers' : 'cleared'}`, recovered ? attackSide : defendSide));
+        events.push(logEvent(phase, 'REBOUND', recovered ? shooter : gk, `${type} / ${chance} / ${recovered ? 'attack recovers' : 'cleared'}`, recovered ? attackSide : defendSide, shotDisplay));
         if (recovered) {
           const reboundType = pickWeightedType({ PASS: 50, DRIBBLE: 50 }, rng);
           activeAttack = { attack, defend, firstType: 'REBOUND', type: reboundType, stage: 2, roles: null, rebound: true };

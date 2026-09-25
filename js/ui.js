@@ -1,3 +1,4 @@
+import { formatMatchEvents } from './match-log.js?v=0.17.26';
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.17.2';
 import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.17.2';
 import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.17.2';
@@ -207,7 +208,7 @@ export function renderMatchDetail(match) {
     <section class="match-summary"><p><b>得点者：</b>${scorers}</p><p><b>アシスト：</b>${assists}</p><p><b>試合MVP：</b>${escapeHtml(mvp.player.name)}（評価 ${mvp.rating.toFixed(1)}）</p></section>
     <section class="match-team-results"><h2><i class="club-color-dot" style="--club:${escapeHtml(match.fixture.home.color)}"></i>${escapeHtml(match.fixture.home.name)}（ホーム）</h2><div class="candidate-grid">${homeRows.map(resultCard).join('')}</div></section>
     <section class="match-team-results"><h2><i class="club-color-dot" style="--club:${escapeHtml(match.fixture.away.color)}"></i>${escapeHtml(match.fixture.away.name)}（アウェー）</h2><div class="candidate-grid">${awayRows.map(resultCard).join('')}</div></section>
-    <h2>試合イベント</h2><div class="log static">${match.result.events.map(event => `<p>${event.time} <b>${escapeHtml(event.kind)}</b> ${escapeHtml(displayedEventName(event.player))}${event.extra ? `・${escapeHtml(event.extra)}` : ''}</p>`).join('')}</div>
+    <h2>試合イベント</h2><div class="log static">${formatMatchEvents(match.result.events, match.fixture, displayedEventName).map(event => `<p${event.goal ? ' class="goal"' : ''}>${event.goal ? `<strong>${escapeHtml(event.text)}</strong> <span class="event-time">${escapeHtml(event.time)}</span>` : `<time>${escapeHtml(event.time)}</time>${escapeHtml(event.text)}`}</p>`).join('')}</div>
     <button type="button" data-nav="seasonResults" class="subtle">シーズン結果へ戻る</button>
   </main>`;
 }

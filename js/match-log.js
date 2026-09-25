@@ -1,0 +1,88 @@
+// Presentation only: preserve the stored event kinds, order and simulation results.
+export function formatMatchEvents(events, clubs, nameOf = name => name) {
+  const rows = [], score = { home: 0, away: 0 };
+  let lastLeader = null;
+  const name = value => nameOf(value || '選手');
+  const add = (event, text, goal = false) => rows.push({ time: event.time, text, goal });
+  const attackText = (d, stage) => {
+    if (d.longFeed) return `${name(d.passer)}から${name(d.receiver)}へロングフィードが通る`;
+    if (d.corner) return `${name(d.passer)}のコーナーキックが${name(d.receiver)}につながる`;
+    if (d.type === 'PASS' && d.receiver) return `${name(d.passer)}から${name(d.receiver)}へパスが${stage === 1 ? '通る' : 'つながる'}`;
+    if (d.type === 'DRIBBLE') return `${name(d.dribbler)}がドリブルで${stage === 1 ? '持ち上がる' : '守備を突破'}`;
+    if (d.passer && d.receiver) return `${name(d.passer)}から${name(d.receiver)}へ。カウンターで前線につなぐ`;
+    return '';
+  };
+  events.forEach((event, index) => {
+    const { kind, extra = '', side } = event, p = name(event.player);
+    const parts = extra.split(' / '), type = parts[0].split(' ')[0];
+    // Older saved matches retain their original compact role descriptions.
+    const role = kind === 'GOAL' ? parts[2] : parts[1];
+    const [from, to] = (role || '').split('→');
+    const legacy = { type, passer: to ? from : null, receiver: to?.split('+')[0], dribbler: type === 'DRIBBLE' ? from?.split('+')[0] : null };
+    const d = event.display || legacy;
+    const next = events[index + 1], previous = events[index - 1];
+    const toCorner = next?.kind === 'CORNER' && next.time === event.time;
+    if (d.stage === 2 && d.shooter) {
+      if (d.corner) add(event, `${name(d.passer)}のコーナーキック`);
+      const attack = attackText(d, 2);
+      if (attack) add(event, attack);
+      if (d.keeper) add(event, `${name(d.keeper)}も加わり、攻撃を組み立てる`);
+      add(event, `${name(d.shooter)}が${d.corner ? 'コーナーキックから' : ''}シュート`);
+    }
+    switch (kind) {
+      case 'STAGE 1 SUCCESS':
+        add(event, attackText(d, 1) || `${p}が攻撃をつなぐ`);
+        if (d.keeper) add(event, `${name(d.keeper)}も加わり、攻撃を組み立てる`);
+        break;
+      case 'DEFENSIVE STOP':
+        if (next?.kind === 'LONG FEED FAIL' && next.time === event.time) break;
+        if (d.corner) add(event, `${name(d.passer)}のコーナーキック`);
+        add(event, d.type === 'PASS' && d.receiver
+          ? `${p}が${name(d.passer)}から${name(d.receiver)}へのパスをカット`
+          : d.type === 'DRIBBLE' ? `${p}が${name(d.dribbler)}のドリブルを止める`
+          : d.type?.includes('COUNTER') ? `${p}がカウンターを止める`
+          : `${p}が攻撃を止める`);
+        break;
+      case 'SHORT COUNTER': add(event, `${p}がボールを奪い、そのままカウンター`); break;
+      case 'LONG FEED': add(event, `${p}が前線へロングフィード`); break;
+      case 'LONG FEED FAIL': add(event, `${name(d.passer || extra.split('→')[0])}のロングフィードを${p}が止める`); break;
+      case 'POWER PLAY': add(event, `GK${p}が攻撃参加。パワープレー`); break;
+      case 'POWER PLAY RISK': add(event, 'パワープレーを止められる。GKの戻りが遅れている'); break;
+      case 'POWER PLAY RISK TRIGGERED': add(event, `GK${p}が戻り切れず、守備が不安定になる`); break;
+      case 'POWER PLAY RISK CLEARED': add(event, `${p}がゴールへ戻り、守備体勢が整う`); break;
+      case 'GOAL': {
+        const other = side === 'home' ? 'away' : 'home';
+        const before = score[side] - score[other];
+        if (side === 'home' || side === 'away') score[side]++;
+        const after = score[side] - score[other], club = clubs[side]?.name || '';
+        let situation = '';
+        if (after === 0) situation = `${club}が同点に追いついた`;
+        else if (before <= 0 && after > 0 && score.home + score.away > 1)
+          situation = `${club}が${lastLeader === other ? '逆転' : 'リード'}`;
+        if (after !== 0 && (side === 'home' || side === 'away')) lastLeader = after > 0 ? side : other;
+        const assist = event.display ? d.assist : extra.match(/ \/ Assist (.+)$/)?.[1];
+        add(event, `${score.home}－${score.away}　${p}がゴール${situation ? '　' + situation : ''}${assist ? '　アシスト：' + name(assist) : ''}`, true);
+        break;
+      }
+      case 'GK CATCH':
+      case 'SAVE': {
+        const shooter = name(d.shooter || parts[2]?.replace(/ shot$/, ''));
+        add(event, kind === 'GK CATCH' ? `${p}が${shooter}のシュートをキャッチ`
+          : toCorner ? `${p}が${shooter}のシュートを弾き出し、コーナーキック`
+          : `${p}が${shooter}のシュートをセーブ`);
+        break;
+      }
+      case 'MISS': add(event, `${p}のシュートは枠を外れる`); break;
+      case 'REBOUND':
+        add(event, toCorner ? 'こぼれ球がゴールラインを割り、コーナーキック'
+          : extra.includes('attack recovers') ? `こぼれ球を${p}が拾う` : `${p}がこぼれ球を処理`);
+        break;
+      case 'CORNER':
+        if (!previous || previous.time !== event.time || !['SAVE', 'REBOUND'].includes(previous.kind)) add(event, 'コーナーキック');
+        break;
+      default: add(event, `${p}がプレーに関わる`);
+    }
+  });
+  return rows;
+}
+

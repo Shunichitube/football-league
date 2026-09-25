@@ -25,3 +25,5 @@
 .honor-mvp{background:#facc15;color:#422006;border:1px solid #fde68a}
 .honor-best5{background:linear-gradient(180deg,#f8fafc,#cbd5e1);color:#1e293b;border:1px solid #e2e8f0}
 .award-club{display:flex;align-items:center;gap:.3rem;margin:.35rem 0 0;font-size:.72rem;font-weight:700}
+
+.log p.goal{color:#facc15;font-weight:700}.log p.goal strong{font-weight:700}.log .event-time{margin-left:.5rem;font-variant-numeric:tabular-nums}
