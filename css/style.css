@@ -19,3 +19,9 @@
 .player-meta{margin:.42rem 0;font-size:.9rem;color:#dbe4f0}.player-meta b{color:#fff}.growth-expectation{margin:.7rem 0 .45rem;font-size:.92rem;color:#dbe4f0;line-height:1.35}.growth-expectation b{color:#fff}.special-ability-detail{margin:.6rem 0 0;color:#facc15}.special-ability-detail summary{cursor:pointer;font-weight:800;list-style:none}.special-ability-detail summary::-webkit-details-marker{display:none}.special-ability-detail summary span{margin-left:.35rem;color:var(--muted);font-size:.68rem;font-weight:700}.special-ability-detail p{margin:.45rem 0 0;padding:.55rem .65rem;border:1px solid var(--line);border-radius:8px;background:#0f172a;color:#d1d5db;font-size:.75rem;line-height:1.5}.special-ability.none{color:var(--muted)}.release-button{margin:.45rem 0 0;font-size:.72rem;padding:.5rem .65rem}
 
 .player-special-row{grid-column:1/-1;border-top:1px solid var(--line);padding-top:.55rem;min-width:0}.player-special-row .special-ability-detail{margin:0}.player-special-row .special-ability-detail summary{display:flex;align-items:center;gap:.4rem;white-space:nowrap}.player-special-row .special-ability-detail summary span{margin-left:0}.player-special-row .special-ability-detail p{width:100%;box-sizing:border-box}.player-special-row .special-ability.none{margin:0}
+
+.player-honors{display:flex;flex-wrap:wrap;gap:.28rem;margin:.28rem 0 0}
+.honor-badge{display:inline-flex;align-items:center;justify-content:center;padding:.15rem .45rem;border-radius:999px;font-size:.65rem;font-weight:900;line-height:1;letter-spacing:.04em}
+.honor-mvp{background:#facc15;color:#422006;border:1px solid #fde68a}
+.honor-best5{background:linear-gradient(180deg,#f8fafc,#cbd5e1);color:#1e293b;border:1px solid #e2e8f0}
+.award-club{display:flex;align-items:center;gap:.3rem;margin:.35rem 0 0;font-size:.72rem;font-weight:700}
