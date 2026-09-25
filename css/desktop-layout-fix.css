@@ -1,39 +1,44 @@
 @media (min-width: 761px) {
   :root {
-    --desktop-card-small: 0.6rem;
-    --desktop-rank-bar-width: 52px;
+    --pc-card-small: 0.62rem;
+    --pc-card-name: 0.82rem;
+    --pc-card-rank: 0.7rem;
+    --pc-card-bar: 64px;
+    --pc-draft-bar: 76px;
   }
 
   main {
-    width: min(1840px, 98vw) !important;
-    margin: 0.8rem auto !important;
+    width: min(1840px, 98vw);
+    margin: 0.9rem auto;
   }
 
   .overlay-panel {
-    max-width: min(1840px, 98vw) !important;
-    inset: 2vh max(1vw, 0.5rem) !important;
-    padding: 0.75rem !important;
+    max-width: min(1840px, 98vw);
+    inset: 2vh max(1vw, 0.5rem);
+    padding: 0.8rem;
   }
 
-  .match-card,
-  .hero,
-  .potm {
-    padding: 0.95rem !important;
-    margin: 0.65rem 0 !important;
+  .screen-heading {
+    margin-bottom: 0.45rem;
   }
 
   .candidate-grid {
-    gap: 0.5rem !important;
+    gap: 0.55rem !important;
     align-items: start !important;
   }
 
   .candidate {
     min-width: 0;
-    padding: 0.45rem !important;
+    padding: 0.46rem !important;
   }
 
-  .candidate-grid:not(.bench-grid) {
-    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  /* Draft candidate screen: use the 1920px width aggressively. */
+  .screen-heading + .hint + p + .candidate-grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+  }
+
+  .screen-heading + .hint + p + .candidate-grid .candidate {
+    min-width: 0;
   }
 
   .season-awards .candidate-grid {
@@ -46,7 +51,18 @@
   }
 
   .bench-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0.45rem !important;
+  }
+
+  /* Auction is intentionally not stretched across the desktop width. */
+  main > article.candidate {
+    width: min(430px, 100%);
+    margin: 0.8rem auto 1rem;
+  }
+
+  main > article.candidate > .player-card {
+    min-height: 0 !important;
   }
 
   .player-card,
@@ -59,21 +75,18 @@
     display: grid !important;
     grid-template-columns: minmax(0, 0.47fr) minmax(0, 0.53fr) !important;
     align-items: start !important;
-    gap: 0.36rem !important;
+    gap: 0.38rem !important;
     width: 100% !important;
     max-width: none !important;
     min-width: 0 !important;
     height: auto !important;
-    min-height: 138px;
-    padding: 0.42rem !important;
+    min-height: 144px;
+    padding: 0.44rem !important;
     overflow: hidden;
   }
 
-  .candidate > .player-card,
-  .roster-panel .player-card,
-  .season-awards .player-card,
-  .bench-player .player-card {
-    min-height: 148px;
+  .candidate-grid .player-card {
+    min-height: 154px;
   }
 
   .player-profile,
@@ -93,15 +106,15 @@
 
   .overall-rank {
     order: -1;
-    font-size: 0.68rem !important;
+    font-size: var(--pc-card-rank) !important;
     line-height: 1.05;
     white-space: nowrap;
   }
 
   .player-name {
     max-width: 100% !important;
-    font-size: 0.78rem !important;
-    line-height: 1.12;
+    font-size: var(--pc-card-name) !important;
+    line-height: 1.1;
   }
 
   .position-badge {
@@ -116,16 +129,19 @@
   .player-meta,
   .growth-expectation {
     margin: 0.16rem 0 !important;
-    font-size: var(--desktop-card-small) !important;
+    font-size: var(--pc-card-small) !important;
     line-height: 1.18 !important;
   }
 
   .rename-button,
   .release-button,
-  .detail-button {
-    padding: 0.28rem 0.4rem !important;
+  .detail-button,
+  .candidate button,
+  .lineup-slot > button,
+  .bench-player > button {
+    padding: 0.34rem 0.48rem !important;
     margin: 0.24rem 0 0 !important;
-    font-size: 0.58rem !important;
+    font-size: 0.62rem !important;
     line-height: 1.1;
   }
 
@@ -143,13 +159,17 @@
   .lineup-slot .ability-grid div,
   .candidate > .player-card .ability-grid div {
     display: grid !important;
-    grid-template-columns: 3.25rem calc(1.15rem + var(--desktop-rank-bar-width)) !important;
+    grid-template-columns: 3.25rem calc(1.15rem + var(--pc-card-bar)) !important;
     align-items: center !important;
     justify-content: start !important;
     gap: 0.18rem !important;
     padding: 0.16rem 0.22rem !important;
     min-width: 0 !important;
     overflow: hidden;
+  }
+
+  .screen-heading + .hint + p + .candidate-grid .ability-grid div {
+    grid-template-columns: 3.25rem calc(1.15rem + var(--pc-draft-bar)) !important;
   }
 
   .ability-grid dt {
@@ -162,7 +182,7 @@
 
   .ability-grid dd {
     display: grid !important;
-    grid-template-columns: 1.05rem var(--desktop-rank-bar-width) !important;
+    grid-template-columns: 1.05rem var(--pc-card-bar) !important;
     align-items: center !important;
     gap: 0.12rem !important;
     min-width: 0 !important;
@@ -171,13 +191,23 @@
     line-height: 1.05;
   }
 
+  .screen-heading + .hint + p + .candidate-grid .ability-grid dd {
+    grid-template-columns: 1.05rem var(--pc-draft-bar) !important;
+  }
+
   .rank-bar {
     display: block !important;
-    width: var(--desktop-rank-bar-width) !important;
-    min-width: var(--desktop-rank-bar-width) !important;
-    max-width: var(--desktop-rank-bar-width) !important;
+    width: var(--pc-card-bar) !important;
+    min-width: var(--pc-card-bar) !important;
+    max-width: var(--pc-card-bar) !important;
     height: 5px !important;
     overflow: hidden !important;
+  }
+
+  .screen-heading + .hint + p + .candidate-grid .rank-bar {
+    width: var(--pc-draft-bar) !important;
+    min-width: var(--pc-draft-bar) !important;
+    max-width: var(--pc-draft-bar) !important;
   }
 
   .player-special-row {
@@ -203,27 +233,28 @@
     padding: 0.35rem !important;
   }
 
+  /* Squad: left court, right bench, with the court using positional placement. */
   .lineup-editor {
     display: grid;
-    grid-template-columns: minmax(620px, 0.95fr) minmax(760px, 1.05fr);
+    grid-template-columns: minmax(820px, 1.18fr) minmax(620px, 0.82fr);
     grid-template-areas:
       "status status"
       "starterTitle benchTitle"
       "slots bench";
-    gap: 0.45rem 0.75rem;
-    margin: 0.55rem 0;
+    gap: 0.45rem 0.9rem;
+    margin: 0.6rem 0;
     align-items: start;
   }
 
   .lineup-status {
     grid-area: status;
-    padding: 0.5rem 0.65rem !important;
+    padding: 0.5rem 0.7rem !important;
     font-size: 0.78rem;
   }
 
   .lineup-editor > h3 {
     grid-area: starterTitle;
-    margin: 0.08rem 0 !important;
+    margin: 0.1rem 0 !important;
   }
 
   .bench-heading {
@@ -232,54 +263,72 @@
     align-items: center !important;
   }
 
-  .bench-heading h3 {
-    margin: 0 !important;
-  }
-
+  .bench-heading h3,
   .bench-heading label {
     margin: 0 !important;
   }
 
   .lineup-slots {
     grid-area: slots;
-    display: grid !important;
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-    grid-template-rows: repeat(5, minmax(78px, auto));
-    grid-template-areas:
-      ". . fw . ."
-      ". mf1 . mf2 ."
-      ". . df . ."
-      ". . gk . ."
-      ". . . . .";
-    gap: 0.28rem !important;
-    align-items: start;
-    padding: 0.55rem;
+    display: block !important;
+    position: relative;
+    min-height: 640px;
+    padding: 0.75rem;
     border: 2px solid #86efac;
+    border-radius: 20px;
+    background:
+      radial-gradient(circle at 50% 50%, #ffffff14 0 0.16rem, transparent 0.18rem),
+      linear-gradient(90deg, transparent 49.7%, #ffffff18 50%, transparent 50.3%),
+      linear-gradient(#14532d, #166534);
+    overflow: hidden;
+  }
+
+  .lineup-slots::before {
+    content: "";
+    position: absolute;
+    inset: 0.6rem;
+    border: 1px solid #ffffff22;
     border-radius: 16px;
-    background: radial-gradient(circle at 50% 0%, #166534 0 13%, transparent 14%), linear-gradient(#14532d, #166534);
-    min-height: 430px;
+    pointer-events: none;
+  }
+
+  .lineup-slots::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 0.6rem;
+    width: 34%;
+    height: 18%;
+    transform: translateX(-50%);
+    border: 2px solid #ffffff2e;
+    border-bottom: 0;
+    border-radius: 18px 18px 0 0;
+    pointer-events: none;
   }
 
   .bench-grid {
     grid-area: bench;
     margin-top: 0 !important;
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   }
 
   .lineup-slot,
   .lineup-slot:first-child,
   .lineup-slot:last-child {
+    position: absolute;
     grid-column: auto !important;
     min-width: 0;
+    width: 30%;
     padding: 0.32rem !important;
-    border-radius: 10px !important;
+    border-radius: 12px !important;
+    background: color-mix(in srgb, var(--card) 86%, transparent);
+    z-index: 1;
   }
 
-  .lineup-slot:nth-child(1) { grid-area: gk; }
-  .lineup-slot:nth-child(2) { grid-area: df; }
-  .lineup-slot:nth-child(3) { grid-area: mf1; }
-  .lineup-slot:nth-child(4) { grid-area: mf2; }
-  .lineup-slot:nth-child(5) { grid-area: fw; }
+  .lineup-slot:nth-child(5) { left: 35%; top: 2.5%; }
+  .lineup-slot:nth-child(3) { left: 3%; top: 31%; }
+  .lineup-slot:nth-child(4) { right: 3%; top: 31%; }
+  .lineup-slot:nth-child(2) { left: 35%; top: 45%; }
+  .lineup-slot:nth-child(1) { left: 35%; bottom: 2.5%; }
 
   .slot-heading {
     margin-bottom: 0.24rem !important;
@@ -294,34 +343,30 @@
   }
 
   .lineup-slot .player-card {
-    min-height: 120px;
-  }
-
-  .lineup-slot > button,
-  .bench-player > button {
-    width: 100%;
-    margin: 0.2rem 0 0 !important;
-    padding: 0.32rem 0.42rem !important;
-    font-size: 0.62rem !important;
-    line-height: 1.1;
+    min-height: 126px;
   }
 }
 
-@media (min-width: 1180px) {
-  .candidate-grid:not(.bench-grid) {
-    grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+@media (min-width: 1600px) {
+  .lineup-editor {
+    grid-template-columns: minmax(980px, 1.22fr) minmax(700px, 0.78fr);
   }
 
-  .season-awards .candidate-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-  }
-
-  .roster-panel .candidate-grid,
-  .overlay-panel .candidate-grid:not(.bench-grid) {
-    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  .lineup-slots {
+    min-height: 660px;
   }
 
   .bench-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (min-width: 1180px) and (max-width: 1599px) {
+  .screen-heading + .hint + p + .candidate-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  }
+
+  .lineup-editor {
+    grid-template-columns: minmax(720px, 1fr) minmax(480px, 0.8fr);
   }
 }
