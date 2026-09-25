@@ -1,5 +1,6 @@
 import { createMultiplayerLeagueFromRoom } from './multiplayer-league.js?v=0.18.0';
 import { finalizeSeason, simulateRemainingSeason, standings } from './league.js?v=0.17.27';
+import { createDraftPool } from './market.js?v=0.17.2';
 import { createLineupPlacement, validateLineup } from './rules.js?v=0.17.2';
 import { renderLineupEditor } from './ui.js?v=0.17.29';
 
@@ -140,11 +141,17 @@ function clubName(clubs, clubId) {
 }
 
 function stableSeasonSeed(room) {
-  return `${roomIdOf(room)}:season:1`;
+  const source = room?.room || room;
+  return `${roomIdOf(source)}:season:${source?.leagueState?.season || 1}`;
+}
+
+function cloneLeague(value) {
+  return typeof structuredClone === 'function' ? structuredClone(value) : JSON.parse(JSON.stringify(value));
 }
 
 function createPreviewLeague(room) {
-  return createMultiplayerLeagueFromRoom(room, stableSeasonSeed(room));
+  const source = room?.room || room;
+  return source?.leagueState?.clubs?.length ? cloneLeague(source.leagueState) : createMultiplayerLeagueFromRoom(source, stableSeasonSeed(source));
 }
 
 function clubForPlayer(room, player) {
@@ -284,7 +291,8 @@ function renderSetupEditor(room, localPlayer) {
 
 function buildSeasonResult(room) {
   const seed = stableSeasonSeed(room);
-  const league = createMultiplayerLeagueFromRoom(room, seed);
+  const source = room?.room || room;
+  const league = source?.leagueState?.clubs?.length ? cloneLeague(source.leagueState) : createMultiplayerLeagueFromRoom(source, seed);
   applySubmittedSetups(league, room);
   const simulation = simulateRemainingSeason(league);
   finalizeSeason(league);
@@ -473,6 +481,28 @@ async function submitSetup(roomId) {
   }
 }
 
+async function initializeFirstDraft(room, playerId) {
+  const league = createMultiplayerLeagueFromRoom(room, stableSeasonSeed(room));
+  league.clubs.forEach(club => { club.reserveAuctionSlot = false; });
+  const draftState = {
+    round: 1,
+    mode: 'SIMULTANEOUS',
+    pool: createDraftPool(league.seed, 1),
+    pendingClubIds: league.clubs.filter(club => club.funds >= 1 && club.roster.length < 12).map(club => club.id),
+    order: [],
+    orderIndex: 0,
+    declinedClubIds: [],
+    resolveStep: 0,
+    lastResult: null,
+    completed: false
+  };
+  const data = await requestJson(`/api/rooms/${encodeURIComponent(roomIdOf(room))}/initialize-draft`, {
+    method: 'POST',
+    body: JSON.stringify({ playerId, leagueState: league, draftState })
+  });
+  return data?.room || data;
+}
+
 async function startGame(roomId) {
   const session = readSession(roomId);
   if (!session?.playerId) {
@@ -484,7 +514,11 @@ async function startGame(roomId) {
       method: 'POST',
       body: JSON.stringify({ playerId: session.playerId })
     });
-    renderRoomScreen(data?.room || data, session.playerId);
+    let nextRoom = data?.room || data;
+    if (nextRoom?.phase === 'team-setup' && !nextRoom?.leagueState) {
+      nextRoom = await initializeFirstDraft(nextRoom, session.playerId);
+    }
+    renderRoomScreen(nextRoom, session.playerId);
   } catch (err) {
     alert(err.message);
   }
