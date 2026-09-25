@@ -163,14 +163,23 @@ export function renderSeasonMatchList(matches, clubId) {
 }
 
 export function renderMatchDetail(match) {
-  const rows = [...match.result.playerResults].sort((a, b) => b.rating - a.rating);
-  const mvp = rows[0];
-  const scorers = rows.filter(row => row.goals > 0).map(row => `${escapeHtml(row.player.name)}${row.goals > 1 ? ` ×${row.goals}` : ''}`).join('、') || 'なし';
-  const assists = rows.filter(row => row.assists > 0).map(row => `${escapeHtml(row.player.name)}${row.assists > 1 ? ` ×${row.assists}` : ''}`).join('、') || 'なし';
+  const rows = [...match.result.playerResults];
+  const sortedRows = [...rows].sort((a, b) => b.rating - a.rating);
+  const mvp = sortedRows[0];
+  const scorers = sortedRows.filter(row => row.goals > 0).map(row => `${escapeHtml(row.player.name)}${row.goals > 1 ? ` ×${row.goals}` : ''}`).join('、') || 'なし';
+  const assists = sortedRows.filter(row => row.assists > 0).map(row => `${escapeHtml(row.player.name)}${row.assists > 1 ? ` ×${row.assists}` : ''}`).join('、') || 'なし';
+  const homeId = match.fixture.homeId ?? match.fixture.home.id;
+  const awayId = match.fixture.awayId ?? match.fixture.away.id;
+  const hasTeamIds = rows.some(row => row.teamId != null);
+  const midpoint = Math.ceil(rows.length / 2);
+  const homeRows = hasTeamIds ? rows.filter(row => row.teamId === homeId) : rows.slice(0, midpoint);
+  const awayRows = hasTeamIds ? rows.filter(row => row.teamId === awayId) : rows.slice(midpoint);
+  const resultCard = row => `<article class="candidate match-player-result">${renderPlayerCard(row.player)}<p><b>調子 ${match.result.forms[row.player.id] || '−'}</b>・評価 ${row.rating.toFixed(1)}</p><p>得点 ${row.goals}・アシスト ${row.assists}・シュート ${row.shots}</p><p>攻撃貢献 ${row.attackContributions}・守備成功 ${row.defensiveStops}・セーブ ${row.saves}</p></article>`;
   return `<main class="match-detail"><p class="eyebrow">第${match.round}節 試合詳細</p>
     <div class="scoreboard"><span><i class="club-color-dot" style="--club:${escapeHtml(match.fixture.home.color)}"></i>${escapeHtml(match.fixture.home.name)}</span><b>${match.result.score.home} - ${match.result.score.away}</b><span><i class="club-color-dot" style="--club:${escapeHtml(match.fixture.away.color)}"></i>${escapeHtml(match.fixture.away.name)}</span></div>
     <section class="match-summary"><p><b>得点者：</b>${scorers}</p><p><b>アシスト：</b>${assists}</p><p><b>試合MVP：</b>${escapeHtml(mvp.player.name)}（評価 ${mvp.rating.toFixed(1)}）</p></section>
-    <h2>各選手の成績</h2><section class="candidate-grid">${rows.map(row => `<article class="candidate match-player-result">${renderPlayerCard(row.player)}<p><b>調子 ${match.result.forms[row.player.id] || '−'}</b>・評価 ${row.rating.toFixed(1)}</p><p>得点 ${row.goals}・アシスト ${row.assists}・シュート ${row.shots}</p><p>攻撃貢献 ${row.attackContributions}・守備成功 ${row.defensiveStops}・セーブ ${row.saves}</p></article>`).join('')}</section>
+    <section class="match-team-results"><h2><i class="club-color-dot" style="--club:${escapeHtml(match.fixture.home.color)}"></i>${escapeHtml(match.fixture.home.name)}（ホーム）</h2><div class="candidate-grid">${homeRows.map(resultCard).join('')}</div></section>
+    <section class="match-team-results"><h2><i class="club-color-dot" style="--club:${escapeHtml(match.fixture.away.color)}"></i>${escapeHtml(match.fixture.away.name)}（アウェー）</h2><div class="candidate-grid">${awayRows.map(resultCard).join('')}</div></section>
     <h2>試合イベント</h2><div class="log static">${match.result.events.map(event => `<p>${event.time} <b>${escapeHtml(event.kind)}</b> ${escapeHtml(displayedEventName(event.player))}${event.extra ? `・${escapeHtml(event.extra)}` : ''}</p>`).join('')}</div>
     <button type="button" data-nav="seasonResults" class="subtle">シーズン結果へ戻る</button>
   </main>`;
