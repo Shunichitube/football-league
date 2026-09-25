@@ -41,6 +41,8 @@ function publicRoom(state) {
     players: state.players,
     clubs: state.clubs,
     seasonResult: state.seasonResult || null,
+    leagueState: state.leagueState || null,
+    offseasonState: state.offseasonState || null,
     createdAt: state.createdAt,
     updatedAt: state.updatedAt
   };
@@ -66,6 +68,7 @@ function createPlayer(teamName, role = 'guest', colorIndex = 0) {
       tactic: null,
       completed: false
     },
+    phaseInput: null,
     joinedAt: now()
   };
 }
@@ -81,6 +84,8 @@ function createInitialState(roomId, hostName) {
     players: [host],
     clubs: CLUBS.map(club => ({ ...club, controller: 'CPU', playerId: null })),
     seasonResult: null,
+    leagueState: null,
+    offseasonState: null,
     createdAt: now(),
     updatedAt: now()
   };
@@ -100,6 +105,7 @@ function resetPhaseCompletion(room) {
   room.players.forEach(player => {
     player.ready = false;
     player.phaseComplete = false;
+    player.phaseInput = null;
   });
 }
 
@@ -143,12 +149,15 @@ function completeSetupWork(room, player, body) {
 }
 
 function completeSeason(room, seasonResult) {
+  const { leagueState = null, ...publicResult } = seasonResult || {};
   room.phase = 'season-result';
   room.currentWork = 'season-result-review';
   room.seasonResult = {
-    ...seasonResult,
+    ...publicResult,
     storedAt: now()
   };
+  room.leagueState = leagueState;
+  room.offseasonState = null;
   resetPhaseCompletion(room);
   return room;
 }
@@ -156,12 +165,37 @@ function completeSeason(room, seasonResult) {
 function confirmCurrentPhase(room, player) {
   if (room.phase === 'season-result') {
     if (markPhaseComplete(room, player)) {
-      room.phase = 'offseason-ready';
-      room.currentWork = 'offseason-sync-ready';
+      room.phase = 'offseason-events';
+      room.currentWork = 'contract-retention-special-training';
+      resetPhaseCompletion(room);
     }
     return room;
   }
   return null;
+}
+
+function submitOffseasonEvents(room, player, input) {
+  if (room.phase !== 'offseason-events') return null;
+  player.phaseInput = input && typeof input === 'object' ? input : {};
+  if (markPhaseComplete(room, player)) {
+    room.phase = 'offseason-events-ready';
+    room.currentWork = 'offseason-events-resolve';
+  }
+  return room;
+}
+
+function advanceOffseasonEvents(room, body) {
+  if (room.phase !== 'offseason-events-ready') return null;
+  if (!body?.leagueState?.clubs?.length) return null;
+  room.leagueState = body.leagueState;
+  room.offseasonState = {
+    specialTrainingByClub: body.specialTrainingByClub || {},
+    resolvedAt: now()
+  };
+  room.phase = 'development';
+  room.currentWork = 'development-selection';
+  resetPhaseCompletion(room);
+  return room;
 }
 
 export class RoomObject {
@@ -264,6 +298,25 @@ export class RoomObject {
       if (!updated) return error('現在のフェーズでは確認完了できません。');
       await this.save(updated);
       return json({ ok: true, room: publicRoom(updated), message: 'フェーズ確認を保存しました。' });
+    }
+
+    if (action === 'submit-offseason-events' && request.method === 'POST') {
+      const body = await readJson(request);
+      const player = room.players.find(row => row.id === body.playerId);
+      if (!player) return error('プレイヤーが見つかりません。', 404);
+      const updated = submitOffseasonEvents(room, player, body.input);
+      if (!updated) return error('現在はオフシーズンイベント入力フェーズではありません。');
+      await this.save(updated);
+      return json({ ok: true, room: publicRoom(updated), message: 'オフシーズンイベント入力を保存しました。' });
+    }
+
+    if (action === 'advance-offseason-events' && request.method === 'POST') {
+      const body = await readJson(request);
+      if (body.playerId !== room.hostPlayerId) return error('ホストのみ実行できます。', 403);
+      const updated = advanceOffseasonEvents(room, body);
+      if (!updated) return error('オフシーズンイベントを確定できません。');
+      await this.save(updated);
+      return json({ ok: true, room: publicRoom(updated), message: '育成フェーズへ進みました。' });
     }
 
     return error('未対応のルーム操作です。', 404);
