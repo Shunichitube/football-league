@@ -1,6 +1,8 @@
 import { processLeagueOffseason, prepareCpuMarketSpace, selectBestLineup } from './cpu.js?v=0.17.27';
 import { trainingSkills } from './development.js?v=0.17.3';
 import { STAT_LABELS } from './data.js?v=0.17.2';
+import { startNextSeason } from './league.js?v=0.17.27';
+import { createDraftPool } from './market.js?v=0.17.2';
 import { ACTION_TYPES, applyClubAction } from './rules.js?v=0.17.2';
 import { renderPlayerCard } from './ui.js?v=0.17.29';
 
@@ -265,6 +267,39 @@ function applyHumanReleases(league, room) {
   league.releasePhaseOpen = false;
   return league;
 }
+function draftEligibleIds(league, declinedClubIds = []) {
+  const declined = new Set(declinedClubIds);
+  return league.clubs.filter(club => club.funds >= 1 && club.roster.length < 12 && !declined.has(club.id)).map(club => club.id);
+}
+function draftMode(league, round) {
+  return league.season === 1 || round === 1 ? 'SIMULTANEOUS' : 'ORDERED';
+}
+function orderedDraftIds(league, round, declinedClubIds = []) {
+  const eligible = new Set(draftEligibleIds(league, declinedClubIds));
+  const ranks = league.previousStandings || [];
+  const descending = round === 2 || round === 4;
+  return [...ranks].sort((a,b) => descending ? b.rank - a.rank : a.rank - b.rank).map(row => row.clubId).filter(id => eligible.has(id));
+}
+function createInitialDraftState(league) {
+  league.clubs.forEach(club => { club.reserveAuctionSlot = club.controllerType === 'CPU' && 12 - club.roster.length >= 2; });
+  const round = 1;
+  const mode = draftMode(league, round);
+  const declinedClubIds = [];
+  const pendingClubIds = mode === 'SIMULTANEOUS' ? draftEligibleIds(league, declinedClubIds) : orderedDraftIds(league, round, declinedClubIds).slice(0,1);
+  return {
+    round,
+    mode,
+    pool: createDraftPool(league.seed, league.season),
+    pendingClubIds,
+    order: mode === 'ORDERED' ? orderedDraftIds(league, round, declinedClubIds) : [],
+    orderIndex: 0,
+    declinedClubIds,
+    resolveStep: 0,
+    lastResult: null,
+    completed: false
+  };
+}
+
 async function resolveRelease(id) {
   const s = session(id);
   if (!s?.playerId) return alert('参加情報が見つかりません。');
@@ -272,7 +307,10 @@ async function resolveRelease(id) {
     const data = await requestJson('/api/rooms/' + encodeURIComponent(id));
     const room = data?.room || data;
     const league = applyHumanReleases(clone(room.leagueState), room);
-    await requestJson('/api/rooms/' + encodeURIComponent(id) + '/advance-release', { method:'POST', body:JSON.stringify({ playerId:s.playerId, leagueState:league }) });
+    const advanced = startNextSeason(league);
+    if (!advanced) throw new Error('最終シーズン終了後はドラフトへ進みません。');
+    const draftState = createInitialDraftState(league);
+    await requestJson('/api/rooms/' + encodeURIComponent(id) + '/advance-release', { method:'POST', body:JSON.stringify({ playerId:s.playerId, leagueState:league, draftState }) });
     document.querySelector('[data-mp-refresh="' + CSS.escape(id) + '"]')?.click();
     setTimeout(renderPanel, 50);
   } catch (error) { alert(error.message); }
