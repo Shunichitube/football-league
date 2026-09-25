@@ -55,9 +55,9 @@ function applyRename(player, name) {
   document.querySelectorAll('[data-player-name]').forEach(node => {
     if (node.dataset.playerName === player.id) { node.textContent = name; node.title = name; }
   });
-  document.dispatchEvent(new CustomEvent('football-league:player-renamed', { detail: { playerId: player.id, oldName, name } }));
+  if (typeof CustomEvent !== 'undefined') document.dispatchEvent(new CustomEvent('football-league:player-renamed', { detail: { playerId: player.id, oldName, name } }));
 }
-if (!globalThis.__footballLeagueRenameHook) {
+if (typeof document !== 'undefined' && !globalThis.__footballLeagueRenameHook) {
   globalThis.__footballLeagueRenameHook = true;
   document.addEventListener('click', event => {
     const renameId = event.target.closest('[data-rename-player]')?.dataset.renamePlayer;
