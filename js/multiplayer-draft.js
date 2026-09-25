@@ -227,12 +227,18 @@ async function resolveDraft(id) {
     if (state.mode === 'ORDERED') nextOrderedPick(league, state);
     else state.pendingClubIds = result.pendingClubIds;
     advanceRoundIfNeeded(league, state);
-    await requestJson('/api/rooms/' + encodeURIComponent(id) + '/advance-draft', {
+    const advanced = await requestJson('/api/rooms/' + encodeURIComponent(id) + '/advance-draft', {
       method:'POST',
       body:JSON.stringify({ playerId:s.playerId, leagueState:league, draftState:state })
     });
+    const nextRoom = advanced?.room || advanced;
     document.querySelector('[data-mp-refresh="'+CSS.escape(id)+'"]')?.click();
     setTimeout(renderPanel,50);
+    if (nextRoom?.phase === 'draft-ready') {
+      const pending = new Set(nextRoom.draftState?.pendingClubIds || []);
+      const hasPendingHuman = nextRoom.leagueState?.clubs?.some(club => club.controllerType === 'HUMAN' && pending.has(club.id));
+      if (!hasPendingHuman) setTimeout(() => resolveDraft(id), 80);
+    }
   } catch (error) { alert(error.message); }
 }
 
