@@ -96,6 +96,9 @@ export default {
       if (action === 'advance-development' && method === 'POST') return forwardRoomAction(request, env, roomId, 'advance-development', 'POST');
       if (action === 'submit-release' && method === 'POST') return forwardRoomAction(request, env, roomId, 'submit-release', 'POST');
       if (action === 'advance-release' && method === 'POST') return forwardRoomAction(request, env, roomId, 'advance-release', 'POST');
+      if (action === 'submit-draft' && method === 'POST') return forwardRoomAction(request, env, roomId, 'submit-draft', 'POST');
+      if (action === 'prepare-draft-resolution' && method === 'POST') return forwardRoomAction(request, env, roomId, 'prepare-draft-resolution', 'POST');
+      if (action === 'advance-draft' && method === 'POST') return forwardRoomAction(request, env, roomId, 'advance-draft', 'POST');
     }
 
     return notFound();
