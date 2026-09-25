@@ -119,11 +119,16 @@ export function renderLineupEditor(club, selectedPlayerId = null, message = '', 
   const positionOrder = { GK: 0, DF: 1, MF: 2, FW: 3 };
   const rankOrder = { SS: 0, S: 1, A: 2, B: 3, C: 4, D: 5, E: 6, F: 7, G: 8 };
   const bench = club.roster.map((player, index) => ({ player, index })).filter(row => !starterIds.has(row.player.id)).sort((a, b) => {
-    const pa=a.player,pb=b.player,pos=(positionOrder[pa.primaryPosition]??99)-(positionOrder[pb.primaryPosition]??99);
-    if (benchSort === 'overall') return rankOrder[displayPlayer(pa).overallRank] - rankOrder[displayPlayer(pb).overallRank] || pos || a.index - b.index;
-    if (benchSort === 'age') return pa.age - pb.age || pos || a.index - b.index;
-    if (benchSort === 'contract') return pa.contractYears - pb.contractYears || pos || a.index - b.index;
-    return pos || a.index - b.index;
+    const pa=a.player,pb=b.player;
+    const pos=(positionOrder[pa.primaryPosition]??99)-(positionOrder[pb.primaryPosition]??99);
+    const rank=rankOrder[displayPlayer(pa).overallRank]-rankOrder[displayPlayer(pb).overallRank];
+    const age=pa.age-pb.age;
+    const contract=pa.contractYears-pb.contractYears;
+    const joined=a.index-b.index;
+    if (benchSort === 'overall') return rank || pos || age || contract || joined;
+    if (benchSort === 'age') return age || pos || rank || contract || joined;
+    if (benchSort === 'contract') return contract || pos || rank || age || joined;
+    return pos || rank || age || contract || joined;
   }).map(row => row.player);
   const selected = club.roster.find(player => player.id === selectedPlayerId);
   const warnings = validation.ok ? validation.warnings : [];
