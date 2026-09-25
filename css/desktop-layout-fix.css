@@ -8,9 +8,14 @@
     --pc-auction-bar: 64px;
   }
 
-  main.screen-draft,
+  main.screen-draft {
+    width: calc(100vw - 24px);
+    max-width: none;
+    margin: 0.75rem 12px;
+  }
+
   main.screen-squad {
-    width: min(1912px, calc(100vw - 16px));
+    width: min(1840px, 98vw);
     margin: 0.75rem auto;
   }
 
