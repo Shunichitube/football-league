@@ -24,7 +24,7 @@ function session(id) {
   } catch { return null; }
 }
 async function requestJson(url, options = {}) {
-  const response = await fetch(url, { headers:{ 'Content-Type':'application/json', ...(options.headers || {}) }, ...options });
+  const response = await fetch(url, { headers:{ 'Content-Type':'application/json', ...(session?.()?.playerToken ? { 'x-player-token': session().playerToken } : {}), ...(options.headers||{}) }, ...options });
   const text = await response.text();
   let data = null;
   try { data = text ? JSON.parse(text) : null; }
