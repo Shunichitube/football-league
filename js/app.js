@@ -201,7 +201,6 @@ function stage19Render() {
   stage19BaseRender();
   if (s.league) {
     const header = app.querySelector('header');
-    header?.querySelectorAll('[data-stage7],.slot-actions').forEach(node => node.remove());
     header?.insertAdjacentHTML('beforeend', '<span><button data-stage19="savePanel" class="subtle">セーブ / ロード</button></span>');
   }
 }
