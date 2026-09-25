@@ -508,6 +508,149 @@
     text-overflow: ellipsis;
     margin: 0 !important;
   }
+
+  /* Shared desktop player-card composition: keep the draft card structure everywhere. */
+  main:not(.title) .player-card,
+  .overlay-panel .player-card,
+  .roster-panel .player-card,
+  .season-awards .player-card {
+    display: grid !important;
+    grid-template-columns: minmax(0, calc(45% - 10px)) minmax(0, calc(55% + 10px)) !important;
+    align-items: start !important;
+    gap: 0.42rem !important;
+    min-width: 0 !important;
+    overflow: hidden;
+  }
+
+  main:not(.title) .player-profile,
+  main:not(.title) .player-abilities,
+  main:not(.title) .player-title,
+  main:not(.title) .player-name-box,
+  main:not(.title) .player-special-row,
+  .overlay-panel .player-profile,
+  .overlay-panel .player-abilities,
+  .overlay-panel .player-title,
+  .overlay-panel .player-name-box,
+  .overlay-panel .player-special-row {
+    min-width: 0 !important;
+  }
+
+  main:not(.title) .player-title,
+  .overlay-panel .player-title {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    gap: 0.08rem !important;
+  }
+
+  main:not(.title) .player-name,
+  .overlay-panel .player-name {
+    max-width: 100% !important;
+    font-size: var(--pc-card-name) !important;
+    line-height: 1.1;
+  }
+
+  main:not(.title) .overall-rank,
+  .overlay-panel .overall-rank {
+    order: 0;
+    font-size: var(--pc-card-rank) !important;
+    line-height: 1.08;
+    white-space: nowrap;
+  }
+
+  main:not(.title) .position-badge,
+  .overlay-panel .position-badge {
+    min-width: 1.95rem !important;
+    margin: 0.24rem 0 0.1rem !important;
+    padding: 0.12rem 0.38rem !important;
+    font-size: 0.68rem !important;
+    line-height: 1.1;
+  }
+
+  main:not(.title) .player-profile p,
+  main:not(.title) .player-meta,
+  main:not(.title) .growth-expectation,
+  .overlay-panel .player-profile p,
+  .overlay-panel .player-meta,
+  .overlay-panel .growth-expectation {
+    margin: 0.17rem 0 !important;
+    font-size: var(--pc-card-small) !important;
+    line-height: 1.2 !important;
+  }
+
+  main:not(.title) .ability-grid,
+  .overlay-panel .ability-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 0.18rem !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  main:not(.title) .ability-grid div,
+  .overlay-panel .ability-grid div {
+    display: grid !important;
+    grid-template-columns: 2.75rem minmax(0, 1fr) !important;
+    align-items: center !important;
+    justify-content: start !important;
+    gap: 0.2rem !important;
+    padding: 0.16rem 0.22rem !important;
+    min-width: 0 !important;
+    overflow: hidden;
+  }
+
+  main:not(.title) .ability-grid dt,
+  .overlay-panel .ability-grid dt {
+    font-size: 0.58rem !important;
+    line-height: 1.05;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  main:not(.title) .ability-grid dd,
+  .overlay-panel .ability-grid dd {
+    display: grid !important;
+    grid-template-columns: 1.05rem minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 0.14rem !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    font-size: 0.7rem !important;
+    line-height: 1.05;
+  }
+
+  main:not(.title) .rank-bar,
+  .overlay-panel .rank-bar {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: 5px !important;
+    overflow: hidden !important;
+  }
+
+  main:not(.title) .player-special-row,
+  .overlay-panel .player-special-row {
+    grid-column: 1 / -1 !important;
+    padding-top: 0.28rem !important;
+    margin-top: 0.06rem;
+  }
+
+  main:not(.title) .player-special-row .special-ability-detail summary,
+  main:not(.title) .special-ability,
+  main:not(.title) .special-ability.none,
+  .overlay-panel .player-special-row .special-ability-detail summary,
+  .overlay-panel .special-ability,
+  .overlay-panel .special-ability.none {
+    font-size: 0.64rem !important;
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0 !important;
+  }
 }
 
 @media (min-width: 1600px) {
