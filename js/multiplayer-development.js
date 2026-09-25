@@ -200,8 +200,11 @@ async function resolveDevelopment(id) {
   const s = session(id);
   if (!s?.playerId) return alert('参加情報が見つかりません。');
   try {
-    const data = await requestJson('/api/rooms/' + encodeURIComponent(id));
-    const room = data?.room || data;
+    const prepared = await requestJson('/api/rooms/' + encodeURIComponent(id) + '/prepare-development-resolution', {
+      method:'POST',
+      body:JSON.stringify({ playerId:s.playerId })
+    });
+    const room = { roomId:id, leagueState:prepared.leagueState, players:prepared.players, offseasonState:prepared.offseasonState };
     const league = clone(room.leagueState);
     const summaries = processLeagueOffseason(league, humanTrainingMap(room, league), specialTrainingMap(room, league));
     const response = await requestJson('/api/rooms/' + encodeURIComponent(id) + '/advance-development', {
@@ -304,8 +307,11 @@ async function resolveRelease(id) {
   const s = session(id);
   if (!s?.playerId) return alert('参加情報が見つかりません。');
   try {
-    const data = await requestJson('/api/rooms/' + encodeURIComponent(id));
-    const room = data?.room || data;
+    const prepared = await requestJson('/api/rooms/' + encodeURIComponent(id) + '/prepare-release-resolution', {
+      method:'POST',
+      body:JSON.stringify({ playerId:s.playerId })
+    });
+    const room = { roomId:id, leagueState:prepared.leagueState, players:prepared.players };
     const league = applyHumanReleases(clone(room.leagueState), room);
     const advanced = startNextSeason(league);
     if (!advanced) throw new Error('最終シーズン終了後はドラフトへ進みません。');
