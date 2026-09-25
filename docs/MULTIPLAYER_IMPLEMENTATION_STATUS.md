@@ -88,7 +88,7 @@ Stage M8-AUDIT: 1周フロー静的監査・修正完了
 - 結果保存後、フェーズは `season-result` へ進む
 - `season-result` フェーズでは共有された順位表を表示する
 - `season-result` フェーズで各クラブが結果確認完了を送信できる
-- 全クラブが結果確認完了したら `offseason-ready` フェーズへ進む
+- 全クラブが結果確認完了したら、Season 1〜9は `offseason-events`、Season 10は `game-complete` へ進む
 
 ## 追加済みAPI案
 
@@ -125,10 +125,8 @@ season-result
   シングルプレイ準拠の結果表示へ寄せる
   マルチ側では共有結果と確認状態だけを管理する
   各クラブが結果確認完了を押す
-  全員確認完了したら offseason-ready へ進む
-
-offseason-ready
-  次のオフシーズン同期レイヤー接続待ち
+  全員確認完了したら Season 1〜9 は offseason-events へ進む
+  Season 10 は game-complete で終了
 ```
 
 ## ドラフト・競売の組み込み方針
