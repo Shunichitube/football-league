@@ -17,7 +17,7 @@ stable/single-player-v1
 ## 現在位置
 
 ```txt
-Stage M4: 自動割り当て後の編成・戦術入力
+Stage M5: シーズン一括シミュレーション結果共有
 ```
 
 ## 完了済み
@@ -49,7 +49,7 @@ Stage M4: 自動割り当て後の編成・戦術入力
 - ゲーム開始時に、参加者が入力したクラブチーム名を担当クラブ名として反映する
 - 未参加のCPUクラブ名は `COM1` / `COM2` / `COM3` ... とする
 - CPUクラブ名は参加クラブの後ろに押し出し式で `COM1` から詰める
-- `POST /api/rooms/:roomId/run-season` は現時点ではクラブチーム名の割り当てと `team-setup` フェーズ遷移まで実装
+- `POST /api/rooms/:roomId/run-season` はクラブチーム名の割り当てと `team-setup` フェーズ遷移を担当
 - `team-setup` フェーズで自分のクラブチーム名を表示
 - 自動割り当て後の全クラブチーム一覧を表示
 - `team-setup` フェーズで各クラブの作業完了/未完了を表示
@@ -59,6 +59,10 @@ Stage M4: 自動割り当て後の編成・戦術入力
 - `season-ready` フェーズでは全員完了済みとして表示する
 - `js/multiplayer-league.js` 追加
 - ルーム内の6クラブ構成から既存の `createClub` / `createSchedule` を使ってマルチ用リーグ状態を作る土台を追加
+- ホストが `season-ready` フェーズでシーズン一括シミュレーションを実行できる
+- シーズン結果は `POST /api/rooms/:roomId/complete-season` でRoomに保存する
+- 結果保存後、フェーズは `season-result` へ進む
+- `season-result` フェーズでは共有された順位表を表示する
 
 ## 追加済みAPI案
 
@@ -70,6 +74,7 @@ POST /api/rooms/:roomId/join
 POST /api/rooms/:roomId/submit
 POST /api/rooms/:roomId/ready
 POST /api/rooms/:roomId/run-season
+POST /api/rooms/:roomId/complete-season
 ```
 
 ## フェーズ進行方針
@@ -87,18 +92,21 @@ team-setup
 
 season-ready
   全員完了済み
-  次はホストがシーズン一括シミュレーションを実行する予定
+  ホストがシーズン一括シミュレーションを実行する
+
+season-result
+  シーズン結果を共有表示する
 ```
 
 ## 次にやること
 
-### M4-2: 編成・戦術入力の最小接続
+### M5-2: 実際の編成・戦術入力の反映
 
-- `team-setup` フェーズから実際の編成・戦術入力へ進む
-- 既存シングルプレイの編成UIを壊さず、マルチ用に最小接続する
+- 現時点では `team-setup` の完了ボタンは仮実装
+- 実際の編成・戦術入力画面へ接続する
 - 自分のクラブチームだけ編集できるようにする
-- 入力完了後に `POST /api/rooms/:roomId/submit` へ送る
-- 全員送信済みになったらホストがシーズン一括実行できる流れを作る
+- 入力した lineup / tactic を `POST /api/rooms/:roomId/submit` に送る
+- シーズン一括シミュレーション時に、送信済みの編成・戦術を反映する
 
 ## 初期MVPの範囲
 
