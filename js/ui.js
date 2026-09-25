@@ -85,6 +85,10 @@ export function renderPlayerCard(player, options = {}) {
     ? `<details class="special-ability-detail"><summary>★ ${escapeHtml(display.specialAbility)} <span>詳細</span></summary><p>${escapeHtml(description)}</p></details>`
     : '<p class="special-ability none">―</p>';
   const release = options.allowRelease ? `<button type="button" data-stage10="release" data-release-player="${escapeHtml(player.id)}" class="subtle release-button">この選手を放出</button>` : '';
+  const honors = player.honors || {};
+  const honorBadges = honors.mvp || honors.best5
+    ? `<div class="player-honors">${honors.mvp ? '<span class="honor-badge honor-mvp">MVP</span>' : ''}${honors.best5 ? '<span class="honor-badge honor-best5">BEST 5</span>' : ''}</div>`
+    : '';
   return `<article class="player-card">
     <div class="player-profile">
       <div class="player-title"><span class="player-name-box" style="min-width:0">${nameMarkup(display)}${renameButton(player, options)}</span><strong class="overall-rank">総合 ${display.overallRank}</strong></div>
@@ -92,6 +96,7 @@ export function renderPlayerCard(player, options = {}) {
       <p class="player-meta">年齢 <b>${display.age}歳</b></p>
       <p class="player-meta">契約 <b>${display.contractYears}年</b></p>
       <p class="growth-expectation">成長期待：<b>${growthHint(player)}</b></p>
+      ${honorBadges}
       ${release}
     </div>
     <div class="player-abilities">
