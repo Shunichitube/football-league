@@ -79,8 +79,9 @@ function clearSetupDraft(roomId, playerId) {
 }
 
 const requestJson = async (url, options = {}) => {
+  const auth = readSession();
   const response = await fetch(url, {
-    headers: { 'Content-Type': 'application/json', ...(readSession?.()?.playerToken ? { 'x-player-token': readSession().playerToken } : {}), ...(options.headers || {}) },
+    headers: { 'Content-Type': 'application/json', ...(auth?.playerToken ? { 'x-player-token': auth.playerToken } : {}), ...(options.headers || {}) },
     ...options
   });
   const text = await response.text();
