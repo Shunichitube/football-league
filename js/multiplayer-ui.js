@@ -36,8 +36,8 @@ function readSession(roomId = null) {
   }
 }
 
-function saveSession(roomId, playerId, playerName) {
-  localStorage.setItem(SESSION_KEY, JSON.stringify({ roomId, playerId, playerName }));
+function saveSession(roomId, playerId, teamName) {
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ roomId, playerId, playerName: teamName, teamName }));
 }
 
 const requestJson = async (url, options = {}) => {
@@ -57,10 +57,10 @@ function removeModal() {
   document.querySelectorAll('.multiplayer-modal-backdrop,.multiplayer-modal').forEach(node => node.remove());
 }
 
-function normalizeName() {
-  const name = document.querySelector('[data-mp-player-name]')?.value.trim();
-  if (!name) return { error: '名前を入力してください。' };
-  if (name.length > 12) return { error: '名前は12文字以内にしてください。' };
+function normalizeTeamName() {
+  const name = document.querySelector('[data-mp-team-name]')?.value.trim();
+  if (!name) return { error: 'クラブチーム名を入力してください。' };
+  if (name.length > 12) return { error: 'クラブチーム名は12文字以内にしてください。' };
   return { name };
 }
 
@@ -69,8 +69,8 @@ function showModeModal() {
   document.body.insertAdjacentHTML('beforeend', `<div class="multiplayer-modal-backdrop" data-mp-close></div>
     <section class="multiplayer-modal" role="dialog" aria-modal="true" aria-label="マルチプレイ">
       <div class="overlay-heading"><div><p class="eyebrow">MULTIPLAYER</p><h2>マルチプレイ</h2></div><button type="button" data-mp-close class="subtle">閉じる</button></div>
-      <p class="hint">名前を入力して、ルームを作成するか参加します。</p>
-      <label>名前<input data-mp-player-name maxlength="12" placeholder="例：しゅん"></label>
+      <p class="hint">クラブチーム名を入力して、ルームを作成するか参加します。</p>
+      <label>クラブチーム名<input data-mp-team-name maxlength="12" placeholder="例：ヨコハマFC"></label>
       <div class="multiplayer-actions">
         <button type="button" data-mp-create>ルームを作成</button>
         <button type="button" data-mp-join-open class="subtle">ルームに参加</button>
@@ -82,7 +82,7 @@ function showModeModal() {
       <p class="lineup-error" data-mp-error hidden></p>
     </section>`);
   const session = readSession();
-  if (session?.playerName) document.querySelector('[data-mp-player-name]').value = session.playerName;
+  if (session?.teamName || session?.playerName) document.querySelector('[data-mp-team-name]').value = session.teamName || session.playerName;
 }
 
 function roomIdOf(data) {
@@ -93,12 +93,13 @@ function phaseLabel(phase) {
   return ({ lobby: '待機中', 'team-setup': 'チーム準備' }[phase] || phase || 'ROOM');
 }
 
-function playerNameById(players, playerId) {
-  return players.find(player => player.id === playerId)?.name || null;
+function teamNameById(players, playerId) {
+  const player = players.find(candidate => candidate.id === playerId);
+  return player?.teamName || player?.name || null;
 }
 
 function clubName(clubs, clubId) {
-  return clubs.find(club => club.id === clubId)?.name || clubId || 'クラブ未割り当て';
+  return clubs.find(club => club.id === clubId)?.name || clubId || '開始前';
 }
 
 function renderAssignedClub(room, localPlayer) {
@@ -109,13 +110,13 @@ function renderAssignedClub(room, localPlayer) {
   const yourClub = assignedClub ? assignedClub.name : '未割り当て';
   return `<section class="hero mp-assigned-club">
     <p class="eyebrow">YOUR CLUB</p>
-    <p>あなたの担当クラブ</p>
+    <p>あなたのクラブチーム</p>
     <b>${escapeHtml(yourClub)}</b>
-    <p class="hint">参加順で自動割り当て済みです。残りのクラブはCPUが担当します。</p>
+    <p class="hint">入力したクラブチーム名で参加します。枠は参加順で割り当てられます。</p>
   </section>
   <section class="match-card">
-    <h2>クラブ割り当て</h2>
-    <div class="mp-club-grid">${clubs.map(club => `<div class="mp-club-card ${club.controller === 'HUMAN' ? 'human' : ''}"><b>${escapeHtml(club.name)}</b><small>${club.controller === 'HUMAN' ? escapeHtml(playerNameById(players, club.playerId) || 'プレイヤー') : 'CPU'}</small></div>`).join('')}</div>
+    <h2>クラブチーム一覧</h2>
+    <div class="mp-club-grid">${clubs.map(club => `<div class="mp-club-card ${club.controller === 'HUMAN' ? 'human' : ''}"><b>${escapeHtml(club.name)}</b><small>${club.controller === 'HUMAN' ? escapeHtml(teamNameById(players, club.playerId) || '参加者') : 'CPU'}</small></div>`).join('')}</div>
   </section>`;
 }
 
@@ -126,6 +127,7 @@ function renderRoomScreen(room, playerId = null) {
   const id = escapeHtml(rawId);
   const phase = room?.phase || room?.room?.phase || 'ROOM';
   const players = room?.players || room?.room?.players || [];
+  const clubs = room?.clubs || room?.room?.clubs || [];
   const localPlayer = players.find(player => player.id === localPlayerId);
   const isHost = localPlayerId && localPlayerId === (room?.hostPlayerId || room?.room?.hostPlayerId);
   const allReady = players.length > 0 && players.every(player => player.ready);
@@ -142,8 +144,8 @@ function renderRoomScreen(room, playerId = null) {
     <section class="match-card">
       <h2>現在の状態</h2>
       <p>フェーズ：<b>${escapeHtml(phaseLabel(phase))}</b></p>
-      <p>参加者：<b>${players.length}</b>人</p>
-      ${players.length ? `<div class="mp-player-list">${players.map(player => `<div class="mp-player-row" style="--accent:${escapeHtml(player.color || '#4ade80')}"><span><b>${escapeHtml(player.name || player.playerName || 'プレイヤー')}</b>${player.id === (room?.hostPlayerId || room?.room?.hostPlayerId) ? '<span class="mp-host-badge">HOST</span>' : ''}<br><small>${escapeHtml(clubName(room?.clubs || room?.room?.clubs || [], player.clubId))}</small></span><span class="${player.ready ? 'mp-ready' : 'mp-not-ready'}">${player.ready ? '準備完了' : '未準備'}</span></div>`).join('')}</div>` : '<p class="hint">まだ参加者はいません。</p>'}
+      <p>参加クラブ：<b>${players.length}</b>チーム</p>
+      ${players.length ? `<div class="mp-player-list">${players.map(player => `<div class="mp-player-row" style="--accent:${escapeHtml(player.color || '#4ade80')}"><span><b>${escapeHtml(player.teamName || player.name || 'クラブ')}</b>${player.id === (room?.hostPlayerId || room?.room?.hostPlayerId) ? '<span class="mp-host-badge">HOST</span>' : ''}<br><small>${escapeHtml(isLobby ? '開始前' : clubName(clubs, player.clubId))}</small></span><span class="${player.ready ? 'mp-ready' : 'mp-not-ready'}">${player.ready ? '準備完了' : '未準備'}</span></div>`).join('')}</div>` : '<p class="hint">まだ参加クラブはありません。</p>'}
     </section>
     <div class="season-result-actions">
       ${localPlayer && isLobby ? `<button type="button" data-mp-ready="${id}" data-mp-ready-value="${localPlayer.ready ? 'false' : 'true'}">${localPlayer.ready ? '準備完了解除' : '準備完了'}</button>` : ''}
@@ -152,21 +154,21 @@ function renderRoomScreen(room, playerId = null) {
       <button type="button" data-mp-refresh="${id}" class="subtle">更新</button>
       <button type="button" data-mp-back-title class="subtle">タイトルへ戻る</button>
     </div>
-    ${isHost && isLobby && !allReady ? '<p class="hint">ゲーム開始は、参加者全員が準備完了になると押せます。</p>' : ''}
-    ${phase === 'team-setup' ? '<p class="hint">次は、この割り当てを使って各自の編成・戦術画面へ進む処理を接続します。</p>' : ''}
+    ${isHost && isLobby && !allReady ? '<p class="hint">ゲーム開始は、参加クラブ全員が準備完了になると押せます。</p>' : ''}
+    ${phase === 'team-setup' ? '<p class="hint">次は、このクラブチームで各自の編成・戦術画面へ進む処理を接続します。</p>' : ''}
   </main>`;
 }
 
 async function createRoom() {
   const error = document.querySelector('[data-mp-error]');
-  const result = normalizeName();
+  const result = normalizeTeamName();
   if (result.error) {
     if (error) { error.textContent = result.error; error.hidden = false; }
     return;
   }
   try {
     if (error) error.hidden = true;
-    const data = await requestJson('/api/rooms', { method: 'POST', body: JSON.stringify({ hostName: result.name }) });
+    const data = await requestJson('/api/rooms', { method: 'POST', body: JSON.stringify({ hostName: result.name, teamName: result.name }) });
     const room = data?.room || data;
     const roomId = roomIdOf(room);
     if (roomId && data?.playerId) saveSession(roomId, data.playerId, result.name);
@@ -179,7 +181,7 @@ async function createRoom() {
 
 async function joinRoom() {
   const error = document.querySelector('[data-mp-error]');
-  const result = normalizeName();
+  const result = normalizeTeamName();
   const roomId = document.querySelector('[data-mp-room-id]')?.value.trim();
   if (result.error) {
     if (error) { error.textContent = result.error; error.hidden = false; }
@@ -193,7 +195,7 @@ async function joinRoom() {
     if (error) error.hidden = true;
     const data = await requestJson(`/api/rooms/${encodeURIComponent(roomId)}/join`, {
       method: 'POST',
-      body: JSON.stringify({ playerName: result.name })
+      body: JSON.stringify({ playerName: result.name, teamName: result.name })
     });
     const room = data?.room || data;
     const resolvedRoomId = roomIdOf(room) || roomId;
