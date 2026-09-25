@@ -91,6 +91,9 @@ function assignClubsByJoinOrder(room) {
     player.clubId = club.id;
     player.ready = false;
   });
+  for (let index = room.players.length; index < room.clubs.length; index += 1) {
+    room.clubs[index].name = `COM${index - room.players.length + 1}`;
+  }
   room.phase = 'team-setup';
   return room;
 }
