@@ -298,7 +298,16 @@
 }
 
 @media (min-width: 1180px) {
-  .candidate-grid:not(.bench-grid):not(.season-awards .candidate-grid):not(.roster-panel .candidate-grid) {
+  .candidate-grid:not(.bench-grid) {
     grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+  }
+
+  .season-awards .candidate-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  }
+
+  .roster-panel .candidate-grid,
+  .overlay-panel .candidate-grid:not(.bench-grid) {
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
   }
 }
