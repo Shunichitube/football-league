@@ -40,6 +40,7 @@ function publicRoom(state) {
     hostPlayerId: state.hostPlayerId,
     players: state.players,
     clubs: state.clubs,
+    seasonResult: state.seasonResult || null,
     createdAt: state.createdAt,
     updatedAt: state.updatedAt
   };
@@ -79,6 +80,7 @@ function createInitialState(roomId, hostName) {
     hostPlayerId: host.id,
     players: [host],
     clubs: CLUBS.map(club => ({ ...club, controller: 'CPU', playerId: null })),
+    seasonResult: null,
     createdAt: now(),
     updatedAt: now()
   };
@@ -110,6 +112,7 @@ function assignClubsByJoinOrder(room) {
   }
   room.phase = 'team-setup';
   room.currentWork = 'lineup-and-tactic';
+  room.seasonResult = null;
   return room;
 }
 
@@ -126,6 +129,16 @@ function completeSetupWork(room, player, body) {
     room.phase = 'season-ready';
     room.currentWork = 'season-simulation-ready';
   }
+}
+
+function completeSeason(room, seasonResult) {
+  room.phase = 'season-result';
+  room.currentWork = 'season-result-review';
+  room.seasonResult = {
+    ...seasonResult,
+    storedAt: now()
+  };
+  return room;
 }
 
 export class RoomObject {
@@ -206,9 +219,18 @@ export class RoomObject {
         return json({ ok: true, room: publicRoom(room), message: 'クラブチーム名を割り当てました。' });
       }
       if (room.phase === 'season-ready') {
-        return error('シーズン一括シミュレーションはM5で実装します。', 501);
+        return error('シーズン一括シミュレーション結果の送信が必要です。', 400);
       }
       return error('まだ全員の作業が完了していません。');
+    }
+
+    if (action === 'complete-season' && request.method === 'POST') {
+      const body = await readJson(request);
+      if (body.playerId !== room.hostPlayerId) return error('ホストのみ実行できます。', 403);
+      if (room.phase !== 'season-ready') return error('シーズン実行できるフェーズではありません。');
+      if (!body.seasonResult?.table?.length) return error('シーズン結果が不足しています。');
+      await this.save(completeSeason(room, body.seasonResult));
+      return json({ ok: true, room: publicRoom(room), message: 'シーズン結果を保存しました。' });
     }
 
     return error('未対応のルーム操作です。', 404);
