@@ -608,7 +608,8 @@ export function simulateMatch(home, away, rng) {
   const played = new Map([...homeState.playerState.values(), ...awayState.playerState.values()].filter(state => state.playedPhases > 0).map(state => [state.player.id, state.playedPhases]));
   const keeperIds = [homeState.keeper?.id, awayState.keeper?.id].filter(Boolean);
   for (const id of keeperIds) played.set(id, CONFIG.phaseCount);
-  const playerResults = all.filter(player => played.has(player.id)).map(player => ({ player, rating: Math.max(4, Math.min(10, Math.round(ratings[player.id] * 10) / 10)), playedPhases: played.get(player.id), ...stat.get(player.id) }));
+  const homeIds = new Set(matchPlayerPool(home).map(player => player.id));
+  const playerResults = all.filter(player => played.has(player.id)).map(player => ({ player, teamId: homeIds.has(player.id) ? home.id : away.id, rating: Math.max(4, Math.min(10, Math.round(ratings[player.id] * 10) / 10)), playedPhases: played.get(player.id), ...stat.get(player.id) }));
   all.forEach(player => { player.stats = originalStats.get(player.id); });
   return { score, events, playerResults, phases: CONFIG.phaseCount, forms };
 }
