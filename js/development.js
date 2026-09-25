@@ -15,11 +15,12 @@ const ageBase = age => age <= 19 ? 2.4 : age <= 21 ? 2 : age <= 23 ? 1.6 : age <
 const highModifier = value => value <= 75 ? 1 : value <= 80 ? .8 : value <= 85 ? .65 : value <= 90 ? .45 : .25;
 const appearanceModifier = player => player.season.appearances >= 7 ? 1 : player.season.appearances >= 3 ? .85 : .7;
 const skills = player => player.primaryPosition === 'GK' ? [...FIELD_STAT_KEYS, 'gk'] : FIELD_PLAYER_STAT_KEYS;
-const growthFor = (player, key) => typeof player.hiddenGrowth === 'number' ? player.hiddenGrowth : player.hiddenGrowth?.[key] ?? 1;
+const frozenGrowthSkill = (player, key) => player.primaryPosition === 'GK' && ['shoot', 'dribble'].includes(key);
+const growthFor = (player, key) => frozenGrowthSkill(player, key) ? 0 : typeof player.hiddenGrowth === 'number' ? player.hiddenGrowth : player.hiddenGrowth?.[key] ?? 1;
 const rankUpValue = (value, steps) => RANK_MIN[RANKS[Math.min(RANKS.length - 1, RANKS.indexOf(rankOf(value)) + steps)]];
 
 const weightedDistinctSkills = (player, rng) => {
-  const remaining = [...skills(player)].filter(key => player.stats[key] < 99);
+  const remaining = [...skills(player)].filter(key => player.stats[key] < 99 && growthFor(player, key) > 0);
   const selected = [];
   while (remaining.length && selected.length < 2) {
     const key = weightedPick(remaining, item => growthFor(player, item), rng);
@@ -82,7 +83,7 @@ function applySpecialTraining(player, rng) {
   const roll = rng.next();
   const result = roll < .10 ? { label: '才能が開花した！', steps: 3 } : roll < .50 ? { label: '才能の片鱗を見せた！', steps: 2 } : roll < .90 ? { label: '成長を遂げた！', steps: 1 } : { label: '何も変わらなかった…', steps: 0 };
   const before = Object.fromEntries(skills(player).map(key => [key, rankOf(player.stats[key])]));
-  for (const key of skills(player)) if (result.steps) player.stats[key] = Math.max(player.stats[key], rankUpValue(player.stats[key], result.steps));
+  for (const key of skills(player)) if (result.steps && !frozenGrowthSkill(player, key)) player.stats[key] = Math.max(player.stats[key], rankUpValue(player.stats[key], result.steps));
   return { ...result, before, after: Object.fromEntries(skills(player).map(key => [key, rankOf(player.stats[key])])) };
 }
 export function processOffseason(club, training, rng, specialTraining = new Set()) {
@@ -96,19 +97,21 @@ export function processOffseason(club, training, rng, specialTraining = new Set(
     const grew = [];
     for (const key of skills(player)) {
       const value = player.stats[key]; let delta = 0;
-      if (player.age < 30) delta = Math.min(3, Math.round(ageBase(player.age) * growthFor(player, key) * appearanceModifier(player) * (focus === key ? 1.4 : 1) * highModifier(value) * (.75 + rng.next() * .5)));
-      if (player.age === 29 && key === 'speed' && rng.next() < .3) delta = -1;
-      if (player.age === 30) {
-        if (key === 'speed') delta = -rng.int(1, 2);
-        else if (key !== 'gk' && rng.next() < .2) delta = -1;
-      }
-      if (player.age >= 31 && player.age <= 32) {
-        if (key === 'speed') delta = -rng.int(1, 2);
-        else if (key === 'gk' ? rng.next() < .2 : rng.next() < .35) delta = -1;
-      }
-      if (player.age >= 33 && player.age <= 34) {
-        if (key === 'speed') delta = -rng.int(2, 3);
-        else if (key === 'gk' ? rng.next() < .4 : rng.next() < .5) delta = -1;
+      if (!frozenGrowthSkill(player, key)) {
+        if (player.age < 30) delta = Math.min(3, Math.round(ageBase(player.age) * growthFor(player, key) * appearanceModifier(player) * (focus === key ? 1.4 : 1) * highModifier(value) * (.75 + rng.next() * .5)));
+        if (player.age === 29 && key === 'speed' && rng.next() < .3) delta = -1;
+        if (player.age === 30) {
+          if (key === 'speed') delta = -rng.int(1, 2);
+          else if (key !== 'gk' && rng.next() < .2) delta = -1;
+        }
+        if (player.age >= 31 && player.age <= 32) {
+          if (key === 'speed') delta = -rng.int(1, 2);
+          else if (key === 'gk' ? rng.next() < .2 : rng.next() < .35) delta = -1;
+        }
+        if (player.age >= 33 && player.age <= 34) {
+          if (key === 'speed') delta = -rng.int(2, 3);
+          else if (key === 'gk' ? rng.next() < .4 : rng.next() < .5) delta = -1;
+        }
       }
       player.stats[key] = Math.max(50, Math.min(99, value + delta));
       if (player.stats[key] > value) grew.push(key);
