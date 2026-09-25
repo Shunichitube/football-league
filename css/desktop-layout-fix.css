@@ -32,11 +32,6 @@
     padding: 0.9rem;
   }
 
-  main.screen-draft .screen-heading,
-  main.screen-squad .screen-heading {
-    margin-bottom: 0.4rem;
-  }
-
   main.screen-draft .candidate-grid {
     display: grid !important;
     grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
@@ -295,7 +290,7 @@
   main.screen-draft .overall-rank,
   main.screen-auction .overall-rank,
   main.screen-squad .overall-rank {
-    order: -1;
+    order: 0;
     font-size: var(--pc-card-rank) !important;
     line-height: 1.05;
     white-space: nowrap;
