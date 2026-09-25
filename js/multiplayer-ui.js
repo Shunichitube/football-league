@@ -127,7 +127,7 @@ function roomIdOf(data) {
 }
 
 function phaseLabel(phase) {
-  return ({ lobby: '待機中', 'team-setup': 'チーム準備', 'season-ready': 'シーズン開始待ち', 'season-result': 'シーズン結果', 'offseason-events': '契約・要求・特別特訓', 'offseason-events-ready': 'イベント確定待ち', development: '育成' }[phase] || phase || 'ROOM');
+  return ({ lobby: '待機中', 'team-setup': 'チーム準備', 'season-ready': 'シーズン開始待ち', 'season-result': 'シーズン結果', 'offseason-events': '契約・要求・特別特訓', 'offseason-events-ready': 'イベント確定待ち', development: '育成', 'development-ready': '育成確定待ち', 'growth-result': '成長結果', release: '選手整理', 'release-ready': '選手整理確定待ち', draft: 'ドラフト' }[phase] || phase || 'ROOM');
 }
 
 function teamNameById(players, playerId) {
@@ -227,7 +227,7 @@ function renderAssignedClub(room, localPlayer) {
   const phase = room?.phase || room?.room?.phase;
   const clubs = room?.clubs || room?.room?.clubs || [];
   const players = room?.players || room?.room?.players || [];
-  if (!['team-setup', 'season-ready', 'season-result'].includes(phase)) return '';
+  if (!['team-setup', 'season-ready', 'season-result', 'offseason-events', 'offseason-events-ready', 'development', 'development-ready', 'growth-result', 'release', 'release-ready', 'draft'].includes(phase)) return '';
   const assignedClub = clubs.find(club => club.playerId === localPlayer?.id) || clubs.find(club => club.id === localPlayer?.clubId);
   const yourClub = assignedClub ? assignedClub.name : '未割り当て';
   return `<section class="hero mp-assigned-club">
