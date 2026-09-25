@@ -1,9 +1,9 @@
-import { applySeasonFinances, awards, createLeague, finalizeSeason, simulateRemainingSeason, standings, startNextSeason } from './league.js?v=0.17.26';
+import { applySeasonFinances, awards, createLeague, finalizeSeason, simulateRemainingSeason, standings, startNextSeason } from './league.js?v=0.17.27';
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.17.2';
 import { createRandom } from './random.js';
 import { createAuctionPool, createDraftPool, resolveAuctionActions, resolveDraftActions } from './market.js?v=0.17.2';
-import { escapeHtml as e, renderLineupEditor, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=0.17.26';
-import { decideCpuAuctionAction, decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=0.17.2';
+import { escapeHtml as e, renderLineupEditor, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=0.17.27';
+import { decideCpuAuctionAction, decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=0.17.27';
 import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=0.17.2';
 const app=document.querySelector('#app');let s={view:'title',league:null,draft:null,auction:null,match:null,round:0,note:'',rosterOpen:false,detailPlayerId:null,selectedLineupPlayerId:null,lineupMessage:'',lineupError:false,seasonSimulation:null,benchSort:'position',draftSort:'position',developmentSort:'position',releaseSort:'position'};
 const me=()=>s.league.clubs.find(c=>c.controllerType==='HUMAN')||s.league.clubs.find(c=>c.id===s.league.humanClubId);const player=p=>renderPlayerCard(p);const positionLabel=position=>POSITION_LABELS[position]||position;
@@ -123,16 +123,7 @@ function stage6Render() { stage6BaseRender(); if (s.view==='home' && s.league?.c
 render=stage6Render;
 app.addEventListener('click',ev=>{const x=ev.target.closest('[data-stage6]')?.dataset.stage6;if(x==='history'){s.view='history';render()}});
 
-import { exportSave, importSave, loadSlot, saveSlot, slotInfo } from './storage.js?v=0.17.2';
-const stage7BaseRender = render;
-function stage7Render() { stage7BaseRender(); if (s.league) app.querySelector('header')?.insertAdjacentHTML('beforeend','<span><button data-stage7="save">保存</button><button data-stage7="export" class="subtle">書き出し</button><button data-stage7="import" class="subtle">読込</button></span>'); }
-render=stage7Render;
-app.addEventListener('click',ev=>{const x=ev.target.closest('[data-stage7]')?.dataset.stage7;if(!x)return;try{if(x==='save'){saveSlot(1,s);alert('スロット1に保存しました。')}if(x==='export'){const blob=new Blob([exportSave(s)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='football-league-save.json';a.click();URL.revokeObjectURL(a.href);}if(x==='import'){const text=prompt('ExportしたJSONを貼り付けてください。');if(text){s=importSave(text);render();}}}catch(err){alert(`セーブエラー: ${err.message}`)}});
-
-const stage7SlotsRender = render;
-function stage7Slots() { stage7SlotsRender(); if (s.league) app.querySelector('header')?.insertAdjacentHTML('beforeend','<span class="slot-actions"><button data-slot="s1">保存1</button><button data-slot="s2">保存2</button><button data-slot="s3">保存3</button><button data-slot="l1" class="subtle">読込1</button><button data-slot="l2" class="subtle">読込2</button><button data-slot="l3" class="subtle">読込3</button></span>'); }
-render=stage7Slots;
-app.addEventListener('click',ev=>{const x=ev.target.closest('[data-slot]')?.dataset.slot;if(!x)return;try{const n=Number(x[1]);if(x[0]==='s'){saveSlot(n,s);alert(`スロット${n}に保存しました。`)}else{const saved=loadSlot(n);if(!saved)throw new Error('このスロットは空です。');s=saved;render();}}catch(err){alert(`セーブエラー: ${err.message}`)}});
+import { exportSave, importSave, loadSlot, saveSlot, slotInfo } from './storage.js?v=0.17.27';
 
 // Stage 14 lets the human controller submit the same SET_LINEUP action used by CPU controllers.
 app.addEventListener('click', event => {
@@ -190,11 +181,12 @@ document.addEventListener('keydown', event => { if(event.key==='Escape'&&s.roste
 // Stage 19 consolidates save controls and limits saves to JSON-safe phases.
 const stage19BaseRender = render;
 const unsafeSaveViews = new Set(['draft', 'auction', 'development', 'focus']);
-const saveAllowed = () => Boolean(s.league) && !unsafeSaveViews.has(s.view);
+const saveSourceView = () => s.view === 'savePanel' ? s.saveReturnView : s.view;
+const saveAllowed = () => Boolean(s.league) && !unsafeSaveViews.has(saveSourceView());
 function slotRows(loadOnly = false) {
   return [1,2,3].map(slot => {
     const info = slotInfo(slot);
-    return `<section class="candidate save-slot"><h3>スロット${slot}</h3>${info ? `<p>${e(info.clubName)}・シーズン${info.season}${info.completed?' 終了':''}</p><p class="hint">${e(new Date(info.savedAt).toLocaleString('ja-JP'))}</p>` : '<p class="hint">データなし</p>'}${!loadOnly ? `<button data-stage19="save" data-save-slot="${slot}" ${saveAllowed() ? '' : 'disabled'}>保存</button>` : ''}<button data-stage19="load" data-load-slot="${slot}" class="subtle" ${info ? '' : 'disabled'}>ロード</button></section>`;
+    return `<section class="candidate save-slot"><h3>スロット${slot}</h3>${info ? info.incompatible ? '<p class="lineup-error">旧セーブデータ（読込不可）</p>' : `<p>${e(info.clubName)}・シーズン${info.season}${info.completed?' 終了':''}</p><p class="hint">${info.savedAt ? e(new Date(info.savedAt).toLocaleString('ja-JP')) : ''}</p>` : '<p class="hint">データなし</p>'}${!loadOnly ? `<button data-stage19="save" data-save-slot="${slot}" ${saveAllowed() ? '' : 'disabled'}>保存</button>` : ''}<button data-stage19="load" data-load-slot="${slot}" class="subtle" ${info && !info.incompatible ? '' : 'disabled'}>ロード</button></section>`;
   }).join('');
 }
 function stage19Render() {
