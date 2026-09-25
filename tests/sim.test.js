@@ -141,7 +141,9 @@ test('GKのシュート・ドリブルは育成選択肢に残るが通常成長
   gk.hiddenGrowth = { shoot: 99, dribble: 99, speed: 1.30, defense: 1.30, pass: 1.30, gk: 1.30 };
   assert.ok(trainingSkills(gk).includes('shoot'));
   assert.ok(trainingSkills(gk).includes('dribble'));
-  const results = processOffseason(club, new Map([[gk.id, 'shoot']]), { next: () => 0, int: (min, max) => max }, new Set([gk.id]));
+  let calls = 0;
+  const rng = { next: () => calls++ === 0 ? 0 : .5, int: (min, max) => max };
+  const results = processOffseason(club, new Map([[gk.id, 'shoot']]), rng, new Set([gk.id]));
   assert.equal(gk.stats.shoot, 50);
   assert.equal(gk.stats.dribble, 50);
   assert.ok(results[0].awakeningKeys.every(key => !['shoot', 'dribble'].includes(key)));
