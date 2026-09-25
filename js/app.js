@@ -1,4 +1,4 @@
-import { applySeasonFinances, awards, createLeague, finalizeSeason, simulateRemainingSeason, standings, startNextSeason } from './league.js?v=0.17.4';
+import { applySeasonFinances, awards, createLeague, finalizeSeason, simulateRemainingSeason, standings, startNextSeason } from './league.js?v=0.17.5';
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.17.2';
 import { createRandom } from './random.js';
 import { createAuctionPool, createDraftPool, resolveAuctionActions, resolveDraftActions } from './market.js?v=0.17.2';

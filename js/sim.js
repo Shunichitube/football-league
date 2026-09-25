@@ -124,6 +124,10 @@ function reboundRecoveryRate(chance, gk) {
   const base = ['BIG', 'CLEAR'].includes(chance) ? .20 : chance === 'NORMAL' ? .12 : .08;
   return Math.max(.02, Math.min(.35, base - (statValue(gk, 'gk') - 70) * .003));
 }
+function startCorner(attack, defend, phase, gk, home, events) {
+  events.push(logEvent(phase, 'CORNER', gk, '第2パス攻撃 / +2', sideKey(attack, home)));
+  return { attack, defend, firstType: 'CORNER', type: 'PASS', stage: 2, roles: null, corner: true };
+}
 function sweeperBonus(goalkeeper) { return goalkeeper?.specialAbility === 'スイーパーGK' ? statValue(goalkeeper, 'defense') * .05 : 0; }
 function powerPlayActive(club, keeper, home, score, phase) {
   if (keeper?.specialAbility !== 'パワープレー' || !latePhase(phase)) return false;
@@ -535,7 +539,7 @@ export function simulateMatch(home, away, rng) {
 
     const secondRoles = activeAttack.shortCounter ? activeAttack.roles : buildSecondStageRoles(type, activeAttack, attackers, defenders, attack.tactic, defend.tactic, rng);
     const scores = secondStageScores(type, secondRoles, attack.tactic, defend.tactic, defendState.keeper);
-    const offense = scores.offense + tacticAttackBonus(type, attack.tactic) + ppBonus + luck(rng, CONFIG.attackLuck);
+    const offense = scores.offense + tacticAttackBonus(type, attack.tactic) + (activeAttack.corner ? 2 : 0) + ppBonus + luck(rng, CONFIG.attackLuck);
     const defense = scores.defense + tacticDefenseBonus(defend.tactic) + luck(rng, CONFIG.attackLuck);
     const diff = offense - defense;
 
@@ -589,6 +593,10 @@ export function simulateMatch(home, away, rng) {
         events.push(logEvent(phase, saved ? 'SAVE' : 'MISS', saved ? gk : shooter, `${type} / ${chance} / ${shooter.name} shot`, saved ? defendSide : attackSide));
         nextRestart = { club: defend, kind: 'normal' };
         activeAttack = null;
+        if (saved && rng.next() < .20) {
+          activeAttack = startCorner(attack, defend, phase, gk, home, events);
+          nextRestart = { club: null, kind: 'normal' };
+        }
       } else {
         stat.get(gk.id).saves++; ratings[gk.id] += .08;
         const recovered = rng.next() < reboundRecoveryRate(chance, gk);
@@ -596,6 +604,9 @@ export function simulateMatch(home, away, rng) {
         if (recovered) {
           const reboundType = pickWeightedType({ PASS: 50, DRIBBLE: 50 }, rng);
           activeAttack = { attack, defend, firstType: 'REBOUND', type: reboundType, stage: 2, roles: null, rebound: true };
+          nextRestart = { club: null, kind: 'normal' };
+        } else if (rng.next() < .15) {
+          activeAttack = startCorner(attack, defend, phase, gk, home, events);
           nextRestart = { club: null, kind: 'normal' };
         } else {
           nextRestart = { club: defend, kind: 'normal' };
