@@ -330,7 +330,7 @@
     grid-area: slots;
     display: grid !important;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-template-rows: repeat(4, auto);
+    grid-template-rows: repeat(3, auto);
     gap: 0.55rem;
     align-items: start;
     justify-items: center;
@@ -396,12 +396,12 @@
     z-index: 1;
   }
 
-  /* GK, DF, MF, MF, FW -> visual court: FW / MF-MF / DF / GK */
+  /* GK, DF, MF, MF, FW -> visual court: FW / MF-DF-MF / GK */
   main.screen-squad .lineup-slot:nth-child(5) { grid-column: 2 !important; grid-row: 1; }
   main.screen-squad .lineup-slot:nth-child(3) { grid-column: 1 !important; grid-row: 2; }
+  main.screen-squad .lineup-slot:nth-child(2) { grid-column: 2 !important; grid-row: 2; }
   main.screen-squad .lineup-slot:nth-child(4) { grid-column: 3 !important; grid-row: 2; }
-  main.screen-squad .lineup-slot:nth-child(2) { grid-column: 2 !important; grid-row: 3; }
-  main.screen-squad .lineup-slot:nth-child(1) { grid-column: 2 !important; grid-row: 4; }
+  main.screen-squad .lineup-slot:nth-child(1) { grid-column: 2 !important; grid-row: 3; }
 
 
   main.screen-squad .lineup-slot > button,
