@@ -1,103 +1,268 @@
 @media (min-width: 761px) {
+  :root {
+    --desktop-card-font: 0.72rem;
+    --desktop-card-small: 0.6rem;
+    --desktop-rank-bar-width: 52px;
+  }
+
   main {
-    width: min(1180px, 94vw);
+    width: min(1440px, 96vw);
+    margin: 1.2rem auto;
   }
 
   .overlay-panel {
-    max-width: 1180px;
+    max-width: min(1440px, 96vw);
+    inset: 3vh max(2vw, 0.75rem);
+    padding: 0.85rem;
   }
 
   .candidate-grid {
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    align-items: stretch;
+    gap: 0.5rem !important;
+    align-items: start !important;
   }
 
   .candidate {
     min-width: 0;
-    display: flex;
-    flex-direction: column;
+    padding: 0.45rem !important;
   }
 
+  .candidate-grid:not(.bench-grid) {
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  }
+
+  .season-awards .candidate-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  }
+
+  .roster-panel .candidate-grid,
+  .overlay-panel .candidate-grid:not(.bench-grid) {
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  }
+
+  .bench-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  .player-card,
   .candidate > .player-card,
   .lineup-slot .player-card,
   .potm .player-card,
   .season-awards .player-card,
   .roster-panel .player-card,
   .bench-player .player-card {
-    display: grid;
-    grid-template-columns: minmax(0, 0.92fr) minmax(160px, 1.08fr);
-    align-items: start;
-    gap: 0.65rem;
-    width: 100%;
-    max-width: none;
-    height: 100%;
+    display: grid !important;
+    grid-template-columns: minmax(0, 0.47fr) minmax(0, 0.53fr) !important;
+    align-items: start !important;
+    gap: 0.36rem !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 138px;
+    padding: 0.42rem !important;
+    overflow: hidden;
+  }
+
+  .candidate > .player-card,
+  .roster-panel .player-card,
+  .season-awards .player-card,
+  .bench-player .player-card {
+    min-height: 148px;
   }
 
   .player-profile,
   .player-abilities,
   .player-title,
+  .player-name-box,
   .player-special-row {
-    min-width: 0;
+    min-width: 0 !important;
   }
 
   .player-title {
-    align-items: flex-start;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    flex-direction: column !important;
+    gap: 0.08rem !important;
   }
 
-  .player-name-box,
+  .overall-rank {
+    order: -1;
+    font-size: 0.68rem !important;
+    line-height: 1.05;
+    white-space: nowrap;
+  }
+
   .player-name {
-    min-width: 0;
     max-width: 100% !important;
+    font-size: 0.78rem !important;
+    line-height: 1.12;
+  }
+
+  .position-badge {
+    min-width: 1.8rem !important;
+    margin: 0.22rem 0 0.08rem !important;
+    padding: 0.12rem 0.36rem !important;
+    font-size: 0.62rem !important;
+    line-height: 1.1;
+  }
+
+  .player-profile p,
+  .player-meta,
+  .growth-expectation {
+    margin: 0.16rem 0 !important;
+    font-size: var(--desktop-card-small) !important;
+    line-height: 1.18 !important;
+  }
+
+  .rename-button,
+  .release-button,
+  .detail-button {
+    padding: 0.28rem 0.4rem !important;
+    margin: 0.24rem 0 0 !important;
+    font-size: 0.58rem !important;
+    line-height: 1.1;
   }
 
   .ability-grid,
   .lineup-slot .ability-grid,
   .candidate > .player-card .ability-grid {
-    grid-template-columns: 1fr;
-    width: 100%;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 0.16rem !important;
+    width: 100% !important;
+    margin: 0 !important;
   }
 
   .ability-grid div,
   .lineup-slot .ability-grid div,
   .candidate > .player-card .ability-grid div {
-    grid-template-columns: minmax(4.4rem, 0.85fr) minmax(130px, 1.15fr);
-    min-width: 0;
+    display: grid !important;
+    grid-template-columns: 3.25rem calc(1.15rem + var(--desktop-rank-bar-width)) !important;
+    align-items: center !important;
+    justify-content: start !important;
+    gap: 0.18rem !important;
+    padding: 0.16rem 0.22rem !important;
+    min-width: 0 !important;
+    overflow: hidden;
+  }
+
+  .ability-grid dt {
+    font-size: 0.56rem !important;
+    line-height: 1.05;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .ability-grid dd {
-    grid-template-columns: 1.65rem minmax(82px, 1fr);
-    min-width: 0;
+    display: grid !important;
+    grid-template-columns: 1.05rem var(--desktop-rank-bar-width) !important;
+    align-items: center !important;
+    gap: 0.12rem !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    font-size: 0.66rem !important;
+    line-height: 1.05;
   }
 
   .rank-bar {
-    display: block;
-    min-width: 82px;
-    width: 100%;
-  }
-
-  .special-ability-detail summary {
-    white-space: normal;
+    display: block !important;
+    width: var(--desktop-rank-bar-width) !important;
+    min-width: var(--desktop-rank-bar-width) !important;
+    max-width: var(--desktop-rank-bar-width) !important;
+    height: 5px !important;
+    overflow: hidden !important;
   }
 
   .player-special-row {
-    grid-column: 1 / -1;
+    grid-column: 1 / -1 !important;
+    padding-top: 0.32rem !important;
+    margin-top: 0.1rem;
+  }
+
+  .player-special-row .special-ability-detail summary,
+  .special-ability,
+  .special-ability.none {
+    font-size: 0.62rem !important;
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0 !important;
+  }
+
+  .player-special-row .special-ability-detail p {
+    font-size: 0.6rem !important;
+    line-height: 1.25 !important;
+    padding: 0.35rem !important;
+  }
+
+  .lineup-editor {
+    display: grid;
+    grid-template-columns: minmax(360px, 0.9fr) minmax(520px, 1.1fr);
+    grid-template-areas:
+      "status status"
+      "starterTitle benchTitle"
+      "slots bench";
+    gap: 0.55rem 0.85rem;
+    margin: 0.7rem 0;
+    align-items: start;
+  }
+
+  .lineup-status {
+    grid-area: status;
+    padding: 0.55rem 0.7rem !important;
+    font-size: 0.78rem;
+  }
+
+  .lineup-editor > h3 {
+    grid-area: starterTitle;
+    margin: 0.15rem 0 !important;
+  }
+
+  .bench-heading {
+    grid-area: benchTitle;
+    margin: 0 !important;
+    align-items: center !important;
+  }
+
+  .bench-heading h3 {
+    margin: 0 !important;
+  }
+
+  .bench-heading label {
+    margin: 0 !important;
   }
 
   .lineup-slots {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-area: slots;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     grid-template-areas:
       ". fw ."
       "mf1 . mf2"
       ". df ."
       ". gk .";
-    align-items: stretch;
+    gap: 0.38rem !important;
+    align-items: start;
+    padding: 0.55rem;
+    border: 2px solid #86efac;
+    border-radius: 16px;
+    background: linear-gradient(#14532d, #166534);
+  }
+
+  .bench-grid {
+    grid-area: bench;
+    margin-top: 0 !important;
   }
 
   .lineup-slot,
   .lineup-slot:first-child,
   .lineup-slot:last-child {
-    grid-column: auto;
+    grid-column: auto !important;
     min-width: 0;
+    padding: 0.36rem !important;
+    border-radius: 10px !important;
   }
 
   .lineup-slot:nth-child(1) { grid-area: gk; }
@@ -106,9 +271,34 @@
   .lineup-slot:nth-child(4) { grid-area: mf2; }
   .lineup-slot:nth-child(5) { grid-area: fw; }
 
+  .slot-heading {
+    margin-bottom: 0.28rem !important;
+  }
+
+  .slot-heading > b {
+    font-size: 0.74rem !important;
+  }
+
+  .slot-heading span {
+    font-size: 0.58rem !important;
+  }
+
+  .lineup-slot .player-card {
+    min-height: 124px;
+  }
+
   .lineup-slot > button,
   .bench-player > button {
     width: 100%;
-    margin: 0.35rem 0 0;
+    margin: 0.22rem 0 0 !important;
+    padding: 0.35rem 0.45rem !important;
+    font-size: 0.62rem !important;
+    line-height: 1.1;
+  }
+}
+
+@media (min-width: 1180px) {
+  .candidate-grid:not(.bench-grid):not(.season-awards .candidate-grid):not(.roster-panel .candidate-grid) {
+    grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
   }
 }
