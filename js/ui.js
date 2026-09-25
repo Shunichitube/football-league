@@ -4,6 +4,9 @@ import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.17.2';
 
 export const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
 
+const RENAME_LIMIT = 10;
+const playerRefs = new Map();
+const renamedNameMap = new Map();
 const publicAbilities = player => {
   const display = displayPlayer(player);
   const keys = player.primaryPosition === 'GK' ? ['speed', 'pass', 'dribble', 'shoot', 'defense', 'gk'] : ['speed', 'pass', 'dribble', 'shoot', 'defense', 'stamina'];
@@ -18,8 +21,64 @@ const growthHint = player => {
   const key = keys.filter(name => typeof player.hiddenGrowth[name] === 'number').sort((a, b) => player.hiddenGrowth[b] - player.hiddenGrowth[a])[0];
   return key ? (key === 'gk' ? 'GK能力' : STAT_LABELS[key]) : '―';
 };
+const renameAllowed = options => Boolean(options.allowRename || options.allowRelease);
+const renameButton = (player, options) => renameAllowed(options) ? `<button type="button" data-rename-player="${escapeHtml(player.id)}" class="subtle rename-button" style="display:block;margin:.35rem 0 0;padding:.42rem .58rem;font-size:.7rem">名前変更</button>` : '';
+const nameMarkup = display => `<b class="player-name" data-player-name="${escapeHtml(display.id)}" title="${escapeHtml(display.name)}" style="display:block;max-width:8.5em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(display.name)}</b>`;
+const displayedEventName = name => renamedNameMap.get(name) || name;
+
+function normalizePlayerName(value) {
+  const raw = String(value ?? '');
+  if (/\r|\n/.test(raw)) return { error: '改行は使えません。' };
+  const name = raw.replace(/\s+/g, ' ').trim();
+  if (!name) return { error: '名前を入力してください。' };
+  if (name.length > RENAME_LIMIT) return { error: `${RENAME_LIMIT}文字以内で入力してください。` };
+  return { name };
+}
+function removeRenameModal() { document.querySelectorAll('.rename-modal-backdrop,.rename-modal-panel').forEach(node => node.remove()); }
+function showRenameModal(player) {
+  removeRenameModal();
+  document.body.insertAdjacentHTML('beforeend', `<div class="rename-modal-backdrop overlay-backdrop" data-rename-cancel></div><section class="rename-modal-panel overlay-panel detail-panel" role="dialog" aria-modal="true" aria-label="名前変更">
+    <div class="overlay-heading"><div><p class="eyebrow">選手名変更</p><h2>${escapeHtml(player.name)}</h2></div><button type="button" data-rename-cancel class="subtle">閉じる</button></div>
+    <label>新しい名前<input data-rename-input maxlength="${RENAME_LIMIT}" value="${escapeHtml(player.name)}" placeholder="10文字以内"></label>
+    <p class="hint">1〜${RENAME_LIMIT}文字。空白だけ・改行は使えません。カードに入りきらない場合は「…」で省略表示します。</p>
+    <p class="lineup-error" data-rename-error style="display:none"></p>
+    <div class="season-result-actions"><button type="button" data-rename-submit="${escapeHtml(player.id)}">変更する</button><button type="button" data-rename-cancel class="subtle">キャンセル</button></div>
+  </section>`);
+  const input = document.querySelector('[data-rename-input]');
+  input?.focus();
+  input?.select();
+}
+function applyRename(player, name) {
+  const oldName = player.name;
+  player.name = name;
+  if (oldName !== name) renamedNameMap.set(oldName, name);
+  document.querySelectorAll('[data-player-name]').forEach(node => {
+    if (node.dataset.playerName === player.id) { node.textContent = name; node.title = name; }
+  });
+  document.dispatchEvent(new CustomEvent('football-league:player-renamed', { detail: { playerId: player.id, oldName, name } }));
+}
+if (!globalThis.__footballLeagueRenameHook) {
+  globalThis.__footballLeagueRenameHook = true;
+  document.addEventListener('click', event => {
+    const renameId = event.target.closest('[data-rename-player]')?.dataset.renamePlayer;
+    const submitId = event.target.closest('[data-rename-submit]')?.dataset.renameSubmit;
+    if (renameId) { const player = playerRefs.get(renameId); if (player) showRenameModal(player); return; }
+    if (event.target.closest('[data-rename-cancel]')) { removeRenameModal(); return; }
+    if (!submitId) return;
+    const player = playerRefs.get(submitId), input = document.querySelector('[data-rename-input]'), error = document.querySelector('[data-rename-error]');
+    const result = normalizePlayerName(input?.value);
+    if (result.error) { if (error) { error.textContent = result.error; error.style.display = 'block'; } return; }
+    if (player) applyRename(player, result.name);
+    removeRenameModal();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && document.querySelector('.rename-modal-panel')) removeRenameModal();
+    if (event.key === 'Enter' && event.target.matches('[data-rename-input]')) document.querySelector('[data-rename-submit]')?.click();
+  });
+}
 
 export function renderPlayerCard(player, options = {}) {
+  playerRefs.set(player.id, player);
   const display = displayPlayer(player);
   const description = display.specialAbility ? SPECIAL_ABILITY_DESCRIPTIONS[display.specialAbility] : '';
   const specialAbility = display.specialAbility
@@ -28,7 +87,7 @@ export function renderPlayerCard(player, options = {}) {
   const release = options.allowRelease ? `<button type="button" data-stage10="release" data-release-player="${escapeHtml(player.id)}" class="subtle release-button">この選手を放出</button>` : '';
   return `<article class="player-card">
     <div class="player-profile">
-      <div class="player-title"><b>${escapeHtml(display.name)}</b><strong class="overall-rank">総合 ${display.overallRank}</strong></div>
+      <div class="player-title"><span class="player-name-box" style="min-width:0">${nameMarkup(display)}${renameButton(player, options)}</span><strong class="overall-rank">総合 ${display.overallRank}</strong></div>
       <span class="position-badge">${positionLabel(display.primaryPosition)}</span>
       <p class="player-meta">年齢 <b>${display.age}歳</b></p>
       <p class="player-meta">契約 <b>${display.contractYears}年</b></p>
@@ -50,7 +109,7 @@ export function renderRosterPanel(club, options = {}) {
   return `<section class="overlay-panel roster-panel" role="dialog" aria-modal="true" aria-label="所属選手">
     <div class="overlay-heading"><div><p class="eyebrow">${escapeHtml(club.name)}</p><h2>所属選手</h2></div><button type="button" data-stage10="close" class="subtle">閉じる</button></div>
     <div class="position-counts">${positionCounts(club.roster).map(row => `<span>${row.label} <b>${row.count}</b></span>`).join('')}</div>
-    <div class="candidate-grid">${club.roster.map(player => renderPlayerCard(player, { allowRelease: Boolean(options.allowRelease) })).join('')}</div>
+    <div class="candidate-grid">${club.roster.map(player => renderPlayerCard(player, { allowRelease: Boolean(options.allowRelease), allowRename: Boolean(options.allowRename || options.allowRelease) })).join('')}</div>
   </section>`;
 }
 
@@ -74,13 +133,13 @@ export function renderLineupEditor(club, selectedPlayerId = null, message = '', 
       const player = club.roster.find(candidate => candidate.id === club.lineup?.[index]);
       return `<section class="lineup-slot ${player && player.primaryPosition !== slot ? 'out-of-position' : ''}" data-slot-position="${slot}">
         <div class="slot-heading"><b>${slotLabel(slot, index)}</b>${player ? `<span>本職 ${positionLabel(player.primaryPosition)}</span>` : '<span>未配置</span>'}</div>
-        ${player ? renderPlayerCard(player) : '<p class="hint">選手が配置されていません。</p>'}
+        ${player ? renderPlayerCard(player, { allowRename: true }) : '<p class="hint">選手が配置されていません。</p>'}
         ${player ? `<button type="button" data-lineup-player="${escapeHtml(player.id)}" class="${selectedPlayerId === player.id ? '' : 'subtle'}">${selectedPlayerId === player.id ? '選択中' : 'この選手を選択'}</button>` : ''}
         <button type="button" data-lineup-slot="${index}" ${selected ? '' : 'disabled'}>この枠に配置</button>
       </section>`;
     }).join('')}</div>
     <div class="bench-heading"><h3>控え</h3><label>並び順<select data-bench-sort><option value="position" ${benchSort === 'position' ? 'selected' : ''}>ポジション順</option><option value="overall" ${benchSort === 'overall' ? 'selected' : ''}>総合ランク順</option></select></label></div>
-    <div class="candidate-grid bench-grid">${bench.length ? bench.map(player => `<article class="candidate bench-player ${selectedPlayerId === player.id ? 'selected-player' : ''}">${renderPlayerCard(player)}<button type="button" data-lineup-player="${escapeHtml(player.id)}" class="${selectedPlayerId === player.id ? '' : 'subtle'}">${selectedPlayerId === player.id ? '選択中' : 'この選手を選択'}</button></article>`).join('') : '<p class="hint">控え選手はいません。</p>'}</div>
+    <div class="candidate-grid bench-grid">${bench.length ? bench.map(player => `<article class="candidate bench-player ${selectedPlayerId === player.id ? 'selected-player' : ''}">${renderPlayerCard(player, { allowRename: true })}<button type="button" data-lineup-player="${escapeHtml(player.id)}" class="${selectedPlayerId === player.id ? '' : 'subtle'}">${selectedPlayerId === player.id ? '選択中' : 'この選手を選択'}</button></article>`).join('') : '<p class="hint">控え選手はいません。</p>'}</div>
   </section>`;
 }
 
@@ -112,7 +171,7 @@ export function renderMatchDetail(match) {
     <div class="scoreboard"><span><i class="club-color-dot" style="--club:${escapeHtml(match.fixture.home.color)}"></i>${escapeHtml(match.fixture.home.name)}</span><b>${match.result.score.home} - ${match.result.score.away}</b><span><i class="club-color-dot" style="--club:${escapeHtml(match.fixture.away.color)}"></i>${escapeHtml(match.fixture.away.name)}</span></div>
     <section class="match-summary"><p><b>得点者：</b>${scorers}</p><p><b>アシスト：</b>${assists}</p><p><b>試合MVP：</b>${escapeHtml(mvp.player.name)}（評価 ${mvp.rating.toFixed(1)}）</p></section>
     <h2>各選手の成績</h2><section class="candidate-grid">${rows.map(row => `<article class="candidate match-player-result">${renderPlayerCard(row.player)}<p><b>調子 ${match.result.forms[row.player.id] || '−'}</b>・評価 ${row.rating.toFixed(1)}</p><p>得点 ${row.goals}・アシスト ${row.assists}・シュート ${row.shots}</p><p>攻撃貢献 ${row.attackContributions}・守備成功 ${row.defensiveStops}・セーブ ${row.saves}</p></article>`).join('')}</section>
-    <h2>試合イベント</h2><div class="log static">${match.result.events.map(event => `<p>${event.time} <b>${escapeHtml(event.kind)}</b> ${escapeHtml(event.player)}${event.extra ? `・${escapeHtml(event.extra)}` : ''}</p>`).join('')}</div>
+    <h2>試合イベント</h2><div class="log static">${match.result.events.map(event => `<p>${event.time} <b>${escapeHtml(event.kind)}</b> ${escapeHtml(displayedEventName(event.player))}${event.extra ? `・${escapeHtml(event.extra)}` : ''}</p>`).join('')}</div>
     <button type="button" data-nav="seasonResults" class="subtle">シーズン結果へ戻る</button>
   </main>`;
 }
