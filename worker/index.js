@@ -85,6 +85,7 @@ export default {
       if (parts.length === 3 && method === 'GET') return forwardRoomAction(request, env, roomId, 'state', 'GET');
       if (action === 'join' && method === 'POST') return forwardRoomAction(request, env, roomId, 'join', 'POST');
       if (action === 'select-club' && method === 'POST') return forwardRoomAction(request, env, roomId, 'select-club', 'POST');
+      if (action === 'initialize-draft' && method === 'POST') return forwardRoomAction(request, env, roomId, 'initialize-draft', 'POST');
       if (action === 'submit' && method === 'POST') return forwardRoomAction(request, env, roomId, 'submit', 'POST');
       if (action === 'ready' && method === 'POST') return forwardRoomAction(request, env, roomId, 'ready', 'POST');
       if (action === 'run-season' && method === 'POST') return forwardRoomAction(request, env, roomId, 'run-season', 'POST');
