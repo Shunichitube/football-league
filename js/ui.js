@@ -1,4 +1,4 @@
-import { formatMatchEvents } from './match-log.js?v=0.17.26';
+import { formatMatchEvents } from './match-log.js?v=0.17.27';
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.17.2';
 import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.17.2';
 import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.17.2';
