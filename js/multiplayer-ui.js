@@ -18,6 +18,7 @@ function injectMultiplayerStyles() {
     .multiplayer-join-box{background:#0f172a;border:1px solid var(--line);border-radius:12px;padding:.85rem;margin-top:.8rem}.multiplayer-join-box button{width:100%;margin:.3rem 0 0}
     .multiplayer-room h1{font-size:clamp(2.4rem,9vw,5rem);line-height:.9;letter-spacing:-.06em;margin:.2rem 0 1rem}.room-id{font-size:clamp(2rem,9vw,4.2rem);letter-spacing:.12em;color:var(--accent);word-break:break-all}.multiplayer-room .hero{text-align:center}
     .mp-player-list{display:grid;gap:.55rem;margin:1rem 0}.mp-player-row{display:flex;align-items:center;justify-content:space-between;gap:.8rem;background:#0f172a;border:1px solid var(--line);border-radius:10px;padding:.65rem .8rem}.mp-player-row b{font-size:1rem}.mp-ready{color:#86efac;font-weight:900}.mp-not-ready{color:#fca5a5;font-weight:900}.mp-host-badge{display:inline-flex;margin-left:.4rem;padding:.1rem .4rem;border:1px solid #facc15;border-radius:999px;color:#facc15;font-size:.65rem;font-weight:900}
+    .mp-assigned-club{display:grid;gap:.35rem;text-align:center}.mp-assigned-club b{font-size:clamp(1.7rem,7vw,3rem);color:var(--accent)}.mp-club-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.6rem;margin-top:1rem}.mp-club-card{background:#0f172a;border:1px solid var(--line);border-radius:10px;padding:.7rem}.mp-club-card.human{border-color:var(--accent)}.mp-club-card small{display:block;margin-top:.25rem}
     @media(max-width:560px){.multiplayer-actions{grid-template-columns:1fr}.multiplayer-modal{padding:.9rem}.multiplayer-room .season-result-actions button{width:100%;margin:.3rem 0}.mp-player-row{align-items:flex-start;flex-direction:column}}
   </style>`);
 }
@@ -88,16 +89,47 @@ function roomIdOf(data) {
   return data?.roomId || data?.room?.id || data?.room?.roomId || data?.id;
 }
 
+function phaseLabel(phase) {
+  return ({ lobby: '待機中', 'team-setup': 'チーム準備' }[phase] || phase || 'ROOM');
+}
+
+function playerNameById(players, playerId) {
+  return players.find(player => player.id === playerId)?.name || null;
+}
+
+function clubName(clubs, clubId) {
+  return clubs.find(club => club.id === clubId)?.name || clubId || 'クラブ未割り当て';
+}
+
+function renderAssignedClub(room, localPlayer) {
+  const clubs = room?.clubs || room?.room?.clubs || [];
+  const players = room?.players || room?.room?.players || [];
+  if ((room?.phase || room?.room?.phase) !== 'team-setup') return '';
+  const assignedClub = clubs.find(club => club.playerId === localPlayer?.id) || clubs.find(club => club.id === localPlayer?.clubId);
+  const yourClub = assignedClub ? assignedClub.name : '未割り当て';
+  return `<section class="hero mp-assigned-club">
+    <p class="eyebrow">YOUR CLUB</p>
+    <p>あなたの担当クラブ</p>
+    <b>${escapeHtml(yourClub)}</b>
+    <p class="hint">参加順で自動割り当て済みです。残りのクラブはCPUが担当します。</p>
+  </section>
+  <section class="match-card">
+    <h2>クラブ割り当て</h2>
+    <div class="mp-club-grid">${clubs.map(club => `<div class="mp-club-card ${club.controller === 'HUMAN' ? 'human' : ''}"><b>${escapeHtml(club.name)}</b><small>${club.controller === 'HUMAN' ? escapeHtml(playerNameById(players, club.playerId) || 'プレイヤー') : 'CPU'}</small></div>`).join('')}</div>
+  </section>`;
+}
+
 function renderRoomScreen(room, playerId = null) {
   const rawId = roomIdOf(room) || room?.roomId || '未取得';
   const session = readSession(rawId);
   const localPlayerId = playerId || session?.playerId || null;
   const id = escapeHtml(rawId);
-  const phase = escapeHtml(room?.phase || room?.room?.phase || 'ROOM');
+  const phase = room?.phase || room?.room?.phase || 'ROOM';
   const players = room?.players || room?.room?.players || [];
   const localPlayer = players.find(player => player.id === localPlayerId);
   const isHost = localPlayerId && localPlayerId === (room?.hostPlayerId || room?.room?.hostPlayerId);
   const allReady = players.length > 0 && players.every(player => player.ready);
+  const isLobby = phase === 'lobby';
   app.innerHTML = `<main class="multiplayer-room">
     <p class="eyebrow">MULTIPLAYER ROOM</p>
     <h1>ルーム</h1>
@@ -106,19 +138,22 @@ function renderRoomScreen(room, playerId = null) {
       <h2 class="room-id">${id}</h2>
       <p class="hint">このIDを参加者に共有してください。</p>
     </section>
+    ${renderAssignedClub(room, localPlayer)}
     <section class="match-card">
       <h2>現在の状態</h2>
-      <p>フェーズ：<b>${phase}</b></p>
+      <p>フェーズ：<b>${escapeHtml(phaseLabel(phase))}</b></p>
       <p>参加者：<b>${players.length}</b>人</p>
-      ${players.length ? `<div class="mp-player-list">${players.map(player => `<div class="mp-player-row"><span><b>${escapeHtml(player.name || player.playerName || 'プレイヤー')}</b>${player.id === (room?.hostPlayerId || room?.room?.hostPlayerId) ? '<span class="mp-host-badge">HOST</span>' : ''}<br><small>${escapeHtml(player.clubId || 'クラブ未選択')}</small></span><span class="${player.ready ? 'mp-ready' : 'mp-not-ready'}">${player.ready ? '準備完了' : '未準備'}</span></div>`).join('')}</div>` : '<p class="hint">まだ参加者はいません。</p>'}
+      ${players.length ? `<div class="mp-player-list">${players.map(player => `<div class="mp-player-row" style="--accent:${escapeHtml(player.color || '#4ade80')}"><span><b>${escapeHtml(player.name || player.playerName || 'プレイヤー')}</b>${player.id === (room?.hostPlayerId || room?.room?.hostPlayerId) ? '<span class="mp-host-badge">HOST</span>' : ''}<br><small>${escapeHtml(clubName(room?.clubs || room?.room?.clubs || [], player.clubId))}</small></span><span class="${player.ready ? 'mp-ready' : 'mp-not-ready'}">${player.ready ? '準備完了' : '未準備'}</span></div>`).join('')}</div>` : '<p class="hint">まだ参加者はいません。</p>'}
     </section>
     <div class="season-result-actions">
-      ${localPlayer ? `<button type="button" data-mp-ready="${id}" data-mp-ready-value="${localPlayer.ready ? 'false' : 'true'}">${localPlayer.ready ? '準備完了解除' : '準備完了'}</button>` : '<button type="button" disabled>準備完了</button>'}
-      ${isHost ? `<button type="button" data-mp-start="${id}" ${allReady ? '' : 'disabled'}>ゲーム開始</button>` : ''}
+      ${localPlayer && isLobby ? `<button type="button" data-mp-ready="${id}" data-mp-ready-value="${localPlayer.ready ? 'false' : 'true'}">${localPlayer.ready ? '準備完了解除' : '準備完了'}</button>` : ''}
+      ${isHost && isLobby ? `<button type="button" data-mp-start="${id}" ${allReady ? '' : 'disabled'}>ゲーム開始</button>` : ''}
+      ${phase === 'team-setup' ? '<button type="button" disabled>編成画面へ（未実装）</button>' : ''}
       <button type="button" data-mp-refresh="${id}" class="subtle">更新</button>
       <button type="button" data-mp-back-title class="subtle">タイトルへ戻る</button>
     </div>
-    ${isHost && !allReady ? '<p class="hint">ゲーム開始は、参加者全員が準備完了になると押せます。</p>' : ''}
+    ${isHost && isLobby && !allReady ? '<p class="hint">ゲーム開始は、参加者全員が準備完了になると押せます。</p>' : ''}
+    ${phase === 'team-setup' ? '<p class="hint">次は、この割り当てを使って各自の編成・戦術画面へ進む処理を接続します。</p>' : ''}
   </main>`;
 }
 
