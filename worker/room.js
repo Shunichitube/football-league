@@ -18,7 +18,7 @@ const json = (body, status = 200) => new Response(JSON.stringify(body), {
     'cache-control': 'no-store',
     'access-control-allow-origin': '*',
     'access-control-allow-methods': 'GET,POST,OPTIONS',
-    'access-control-allow-headers': 'content-type'
+    'access-control-allow-headers': 'content-type,x-player-token'
   }
 });
 
@@ -30,6 +30,17 @@ async function readJson(request) {
   } catch {
     return {};
   }
+}
+
+function authenticatedPlayer(room, request, body) {
+  const token = request.headers.get('x-player-token');
+  if (!token || !body?.playerId) return null;
+  return room.players.find(player => player.id === body.playerId && player.accessToken === token) || null;
+}
+
+function authenticatedHost(room, request, body) {
+  const player = authenticatedPlayer(room, request, body);
+  return player?.id === room.hostPlayerId ? player : null;
 }
 
 function publicPlayer(player) {
@@ -74,6 +85,7 @@ function createPlayer(teamName, role = 'guest', colorIndex = 0) {
   const name = normalizeTeamName(teamName, role === 'host' ? 'ホストクラブ' : 'クラブ');
   return {
     id: crypto.randomUUID(),
+    accessToken: crypto.randomUUID(),
     name,
     teamName: name,
     role,
@@ -450,7 +462,7 @@ export class RoomObject {
       if (existing) return json({ ok: true, room: publicRoom(existing) });
       const body = await readJson(request);
       const room = await this.save(createInitialState(body.roomId, body.hostName || body.teamName || body.clubName));
-      return json({ ok: true, room: publicRoom(room), playerId: room.hostPlayerId });
+      return json({ ok: true, room: publicRoom(room), playerId: room.hostPlayerId, playerToken: room.players[0].accessToken });
     }
 
     const room = await this.load();
@@ -467,12 +479,12 @@ export class RoomObject {
       const player = createPlayer(body.playerName || body.teamName || body.clubName || body.name, 'guest', room.players.length);
       room.players.push(player);
       await this.save(room);
-      return json({ ok: true, room: publicRoom(room), playerId: player.id });
+      return json({ ok: true, room: publicRoom(room), playerId: player.id, playerToken: player.accessToken });
     }
 
     if (action === 'initialize-draft' && request.method === 'POST') {
       const body = await readJson(request);
-      if (body.playerId !== room.hostPlayerId) return error('ホストのみ実行できます。', 403);
+      if (!authenticatedHost(room, request, body)) return error('ホスト認証に失敗しました。', 403);
       const updated = initializeDraft(room, body);
       if (!updated) return error('初年度ドラフトを開始できません。');
       await this.save(updated);
@@ -482,8 +494,8 @@ export class RoomObject {
     if (action === 'submit' && request.method === 'POST') {
       if (room.phase !== 'team-setup') return error('現在は編成・戦術を送信できるフェーズではありません。');
       const body = await readJson(request);
-      const player = room.players.find(row => row.id === body.playerId);
-      if (!player) return error('プレイヤーが見つかりません。', 404);
+      const player = authenticatedPlayer(room, request, body);
+      if (!player) return error('参加認証に失敗しました。', 403);
       if (!player.clubId) return error('ゲーム開始後に編成を送信してください。');
       completeSetupWork(room, player, body);
       await this.save(room);
@@ -493,8 +505,8 @@ export class RoomObject {
     if (action === 'ready' && request.method === 'POST') {
       if (room.phase !== 'lobby') return error('このフェーズでは準備完了操作はできません。');
       const body = await readJson(request);
-      const player = room.players.find(row => row.id === body.playerId);
-      if (!player) return error('プレイヤーが見つかりません。', 404);
+      const player = authenticatedPlayer(room, request, body);
+      if (!player) return error('参加認証に失敗しました。', 403);
       player.ready = Boolean(body.ready);
       await this.save(room);
       return json({ ok: true, room: publicRoom(room) });
@@ -502,7 +514,7 @@ export class RoomObject {
 
     if (action === 'run-season' && request.method === 'POST') {
       const body = await readJson(request);
-      if (body.playerId !== room.hostPlayerId) return error('ホストのみ実行できます。', 403);
+      if (!authenticatedHost(room, request, body)) return error('ホスト認証に失敗しました。', 403);
       if (room.phase === 'lobby') {
         if (!room.players.length) return error('参加者がいません。');
         if (!room.players.every(player => player.ready)) return error('全員の準備完了が必要です。');
@@ -517,6 +529,7 @@ export class RoomObject {
 
     if (action === 'prepare-season-resolution' && request.method === 'POST') {
       const body = await readJson(request);
+      if (!authenticatedHost(room, request, body)) return error('ホスト認証に失敗しました。', 403);
       const snapshot = privatePhaseSnapshot(room, body.playerId, 'season-ready');
       if (!snapshot) return error('シーズン確定情報を取得できません。', 403);
       return json({ ok: true, ...snapshot });
@@ -524,7 +537,7 @@ export class RoomObject {
 
     if (action === 'complete-season' && request.method === 'POST') {
       const body = await readJson(request);
-      if (body.playerId !== room.hostPlayerId) return error('ホストのみ実行できます。', 403);
+      if (!authenticatedHost(room, request, body)) return error('ホスト認証に失敗しました。', 403);
       if (room.phase !== 'season-ready') return error('シーズン実行できるフェーズではありません。');
       if (!body.seasonResult?.table?.length) return error('シーズン結果が不足しています。');
       await this.save(completeSeason(room, body.seasonResult));
@@ -533,8 +546,8 @@ export class RoomObject {
 
     if (action === 'confirm-phase' && request.method === 'POST') {
       const body = await readJson(request);
-      const player = room.players.find(row => row.id === body.playerId);
-      if (!player) return error('プレイヤーが見つかりません。', 404);
+      const player = authenticatedPlayer(room, request, body);
+      if (!player) return error('参加認証に失敗しました。', 403);
       const updated = confirmCurrentPhase(room, player);
       if (!updated) return error('現在のフェーズでは確認完了できません。');
       await this.save(updated);
@@ -543,8 +556,8 @@ export class RoomObject {
 
     if (action === 'submit-offseason-events' && request.method === 'POST') {
       const body = await readJson(request);
-      const player = room.players.find(row => row.id === body.playerId);
-      if (!player) return error('プレイヤーが見つかりません。', 404);
+      const player = authenticatedPlayer(room, request, body);
+      if (!player) return error('参加認証に失敗しました。', 403);
       const updated = submitOffseasonEvents(room, player, body.input);
       if (!updated) return error('現在はオフシーズンイベント入力フェーズではありません。');
       await this.save(updated);
@@ -553,6 +566,7 @@ export class RoomObject {
 
     if (action === 'prepare-offseason-resolution' && request.method === 'POST') {
       const body = await readJson(request);
+      if (!authenticatedHost(room, request, body)) return error('ホスト認証に失敗しました。', 403);
       const snapshot = privatePhaseSnapshot(room, body.playerId, 'offseason-events-ready');
       if (!snapshot) return error('オフシーズン確定情報を取得できません。', 403);
       return json({ ok: true, ...snapshot, offseasonState: room.offseasonState || null });
@@ -560,7 +574,7 @@ export class RoomObject {
 
     if (action === 'advance-offseason-events' && request.method === 'POST') {
       const body = await readJson(request);
-      if (body.playerId !== room.hostPlayerId) return error('ホストのみ実行できます。', 403);
+      if (!authenticatedHost(room, request, body)) return error('ホスト認証に失敗しました。', 403);
       const updated = advanceOffseasonEvents(room, body);
       if (!updated) return error('オフシーズンイベントを確定できません。');
       await this.save(updated);
@@ -569,8 +583,8 @@ export class RoomObject {
 
     if (action === 'submit-development' && request.method === 'POST') {
       const body = await readJson(request);
-      const player = room.players.find(row => row.id === body.playerId);
-      if (!player) return error('プレイヤーが見つかりません。', 404);
+      const player = authenticatedPlayer(room, request, body);
+      if (!player) return error('参加認証に失敗しました。', 403);
       const updated = submitDevelopment(room, player, body.input);
       if (!updated) return error('育成対象2名と重点能力を確認してください。');
       await this.save(updated);
@@ -579,6 +593,7 @@ export class RoomObject {
 
     if (action === 'prepare-development-resolution' && request.method === 'POST') {
       const body = await readJson(request);
+      if (!authenticatedHost(room, request, body)) return error('ホスト認証に失敗しました。', 403);
       const snapshot = privatePhaseSnapshot(room, body.playerId, 'development-ready');
       if (!snapshot) return error('育成確定情報を取得できません。', 403);
       return json({ ok: true, ...snapshot, offseasonState: room.offseasonState || null });
@@ -586,7 +601,7 @@ export class RoomObject {
 
     if (action === 'advance-development' && request.method === 'POST') {
       const body = await readJson(request);
-      if (body.playerId !== room.hostPlayerId) return error('ホストのみ実行できます。', 403);
+      if (!authenticatedHost(room, request, body)) return error('ホスト認証に失敗しました。', 403);
       const updated = advanceDevelopment(room, body);
       if (!updated) return error('育成結果を確定できません。');
       await this.save(updated);
@@ -595,8 +610,8 @@ export class RoomObject {
 
     if (action === 'submit-release' && request.method === 'POST') {
       const body = await readJson(request);
-      const player = room.players.find(row => row.id === body.playerId);
-      if (!player) return error('プレイヤーが見つかりません。', 404);
+      const player = authenticatedPlayer(room, request, body);
+      if (!player) return error('参加認証に失敗しました。', 403);
       const updated = submitRelease(room, player, body.input);
       if (!updated) return error('放出入力を保存できません。');
       await this.save(updated);
@@ -605,6 +620,7 @@ export class RoomObject {
 
     if (action === 'prepare-release-resolution' && request.method === 'POST') {
       const body = await readJson(request);
+      if (!authenticatedHost(room, request, body)) return error('ホスト認証に失敗しました。', 403);
       const snapshot = privatePhaseSnapshot(room, body.playerId, 'release-ready');
       if (!snapshot) return error('選手整理確定情報を取得できません。', 403);
       return json({ ok: true, ...snapshot });
@@ -612,7 +628,7 @@ export class RoomObject {
 
     if (action === 'advance-release' && request.method === 'POST') {
       const body = await readJson(request);
-      if (body.playerId !== room.hostPlayerId) return error('ホストのみ実行できます。', 403);
+      if (!authenticatedHost(room, request, body)) return error('ホスト認証に失敗しました。', 403);
       const updated = advanceRelease(room, body);
       if (!updated) return error('選手整理を確定できません。');
       await this.save(updated);
@@ -621,8 +637,8 @@ export class RoomObject {
 
     if (action === 'submit-draft' && request.method === 'POST') {
       const body = await readJson(request);
-      const player = room.players.find(row => row.id === body.playerId);
-      if (!player) return error('プレイヤーが見つかりません。', 404);
+      const player = authenticatedPlayer(room, request, body);
+      if (!player) return error('参加認証に失敗しました。', 403);
       const updated = submitDraft(room, player, body);
       if (!updated) return error('現在はこのクラブの指名ターンではありません。');
       await this.save(updated);
@@ -631,6 +647,7 @@ export class RoomObject {
 
     if (action === 'prepare-draft-resolution' && request.method === 'POST') {
       const body = await readJson(request);
+      if (!authenticatedHost(room, request, body)) return error('ホスト認証に失敗しました。', 403);
       const resolution = draftResolutionInputs(room, body.playerId);
       if (!resolution) return error('ドラフト確定情報を取得できません。', 403);
       return json({ ok: true, ...resolution });
@@ -638,7 +655,7 @@ export class RoomObject {
 
     if (action === 'advance-draft' && request.method === 'POST') {
       const body = await readJson(request);
-      if (body.playerId !== room.hostPlayerId) return error('ホストのみ実行できます。', 403);
+      if (!authenticatedHost(room, request, body)) return error('ホスト認証に失敗しました。', 403);
       const updated = advanceDraft(room, body);
       if (!updated) return error('ドラフト結果を確定できません。');
       await this.save(updated);
@@ -647,8 +664,8 @@ export class RoomObject {
 
     if (action === 'submit-auction' && request.method === 'POST') {
       const body = await readJson(request);
-      const player = room.players.find(row => row.id === body.playerId);
-      if (!player) return error('プレイヤーが見つかりません。', 404);
+      const player = authenticatedPlayer(room, request, body);
+      if (!player) return error('参加認証に失敗しました。', 403);
       const updated = submitAuction(room, player, body);
       if (!updated) return error('入札内容を確認してください。');
       await this.save(updated);
@@ -657,6 +674,7 @@ export class RoomObject {
 
     if (action === 'prepare-auction-resolution' && request.method === 'POST') {
       const body = await readJson(request);
+      if (!authenticatedHost(room, request, body)) return error('ホスト認証に失敗しました。', 403);
       const resolution = auctionResolutionInputs(room, body.playerId);
       if (!resolution) return error('開札情報を取得できません。', 403);
       return json({ ok: true, ...resolution });
@@ -664,7 +682,7 @@ export class RoomObject {
 
     if (action === 'advance-auction' && request.method === 'POST') {
       const body = await readJson(request);
-      if (body.playerId !== room.hostPlayerId) return error('ホストのみ実行できます。', 403);
+      if (!authenticatedHost(room, request, body)) return error('ホスト認証に失敗しました。', 403);
       const updated = advanceAuction(room, body);
       if (!updated) return error('競売結果を確定できません。');
       await this.save(updated);
