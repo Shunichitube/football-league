@@ -16,7 +16,7 @@ function key(id,playerId){return DRAFT_KEY+':'+id+':'+playerId;}
 function readDraft(id,playerId){try{return JSON.parse(localStorage.getItem(key(id,playerId))||'null')||{contract:{},retention:{},special:{}};}catch{return {contract:{},retention:{},special:{}};}}
 function saveDraft(id,playerId,draft){localStorage.setItem(key(id,playerId),JSON.stringify(draft));}
 function clearDraft(id,playerId){localStorage.removeItem(key(id,playerId));}
-async function requestJson(url,options={}){const response=await fetch(url,{headers:{ 'Content-Type':'application/json', ...(session?.()?.playerToken ? { 'x-player-token': session().playerToken } : {}), ...(options.headers||{}) },...options});const text=await response.text();let data=null;try{data=text?JSON.parse(text):null;}catch{throw new Error('APIからJSON以外の応答が返りました。');}if(!response.ok)throw new Error(data?.error||data?.message||('通信エラー '+response.status));return data;}
+async function requestJson(url,options={}){const auth=session();const response=await fetch(url,{headers:{'Content-Type':'application/json',...(auth?.playerToken?{'x-player-token':auth.playerToken}:{}),...(options.headers||{})},...options});const text=await response.text();let data=null;try{data=text?JSON.parse(text):null;}catch{throw new Error('APIからJSON以外の応答が返りました。');}if(!response.ok)throw new Error(data?.error||data?.message||('通信エラー '+response.status));return data;}
 const clone=value=>typeof structuredClone==='function'?structuredClone(value):JSON.parse(JSON.stringify(value));
 
 function prepareLeague(room){
