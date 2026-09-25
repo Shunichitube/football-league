@@ -108,7 +108,7 @@ function stage5Render() {
   if (s.view === 'squad') {
     const c = me();
     const labels={BALANCED:'バランス',POSSESSION:'ポゼッション',DRIBBLE:'ドリブル',COUNTER:'カウンター'};
-    const descriptions={BALANCED:'PASS 40%・DRIBBLE 30%・COUNTER 30%／すべての攻撃タイプを +3%',POSSESSION:'パス攻撃が出やすく、パス攻撃を +8%',DRIBBLE:'ドリブル攻撃が出やすく、ドリブル攻撃を +8%',COUNTER:'カウンター攻撃が出やすく、カウンター攻撃を +8%'};
+    const descriptions={BALANCED:'通常再開はPASS 50%・DRIBBLE 50%。攻撃全般 +2。守備成功後はCOUNTER 10%。',POSSESSION:'通常再開はPASS 80%・DRIBBLE 20%。PASS攻撃 +4。守備成功後はCOUNTER 10%。',DRIBBLE:'通常再開はPASS 20%・DRIBBLE 80%。DRIBBLE攻撃 +4。守備成功後はCOUNTER 10%。',COUNTER:'通常再開はPASS 50%・DRIBBLE 50%。COUNTER攻撃・守備・速攻発動判定 +4。守備成功後はCOUNTER 30%。'};
     app.querySelector('main')?.insertAdjacentHTML('afterbegin', `<section class="match-card"><p class="eyebrow">戦術</p><div class="tactic-row">${Object.keys(labels).map(t => `<button data-tactic="${t}" class="${c.tactic===t ? '' : 'subtle'}">${labels[t]}</button>`).join('')}</div><p class="hint">現在：${labels[c.tactic]} — ${descriptions[c.tactic]}</p></section>`);
   }
 }
