@@ -6,7 +6,7 @@ const DRAFT_DISTRIBUTION = [['G', 35], ['F', 35], ['E', 20], ['D', 8], ['C', 2]]
 // 新規に生成する競売選手だけに適用する分布。放出選手は能力を保持したまま戻る。
 const AUCTION_DISTRIBUTION = [['F', 15], ['E', 30], ['D', 30], ['C', 20], ['B', 4], ['A', 1]];
 const RANGE = { G: [50,55], F: [56,60], E: [61,65], D: [66,70], C: [71,75], B: [76,80], A: [81,85], S: [86,90] };
-const POSITIONS = ['GK', 'DF', 'MF', 'MF', 'FW'];
+const POSITION_DISTRIBUTION = [['GK', 10], ['DF', 25], ['MF', 40], ['FW', 25]];
 const BASE_VALUE = { G: 3, F: 6, E: 9, D: 14, C: 19, B: 26, A: 35, S: 48, SS: 62 };
 const REQUIRED_POSITIONS = { GK: 1, DF: 1, MF: 2, FW: 1 };
 const POSITION_PROFILES = {
@@ -62,6 +62,7 @@ const GROWTH_COMMENTS = {
 };
 
 function tier(distribution, rng) { return weightedPick(distribution, ([, weight]) => weight, rng)[0]; }
+function marketPosition(rng) { return weightedPick(POSITION_DISTRIBUTION, ([, weight]) => weight, rng)[0]; }
 const clampAbility = value => Math.max(50, Math.min(99, Math.round(value)));
 
 function createVariedStats(player, tierName, rng) {
@@ -109,7 +110,7 @@ export function createScoutComment(player, rng) {
   else if (average >= 1.12 && rng.next() < .18) rare = '非常に高い成長性を感じる';
   return [currentHint, ageHint, growthHint, abilityHint, rare].filter(Boolean).join('。') + '。';
 }
-export function createDraftPool(seed, season = 1) { const rng = createRandom(`${seed}:season:${season}:draft-pool`); return Array.from({ length: 24 }, (_, i) => playerForTier(season * 10000 + 1000 + i, POSITIONS[i % POSITIONS.length], tier(DRAFT_DISTRIBUTION, rng), rng.int(18,22), rng)); }
+export function createDraftPool(seed, season = 1) { const rng = createRandom(`${seed}:season:${season}:draft-pool`); return Array.from({ length: 24 }, (_, i) => playerForTier(season * 10000 + 1000 + i, marketPosition(rng), tier(DRAFT_DISTRIBUTION, rng), rng.int(18,22), rng)); }
 export function createAuctionPool(seed, season = 1, releasedPlayers = []) {
   const rng = createRandom(`${seed}:season:${season}:auction-pool`);
   const returning = [...releasedPlayers].map(player => ({ player, roll: rng.next() }))
@@ -117,7 +118,7 @@ export function createAuctionPool(seed, season = 1, releasedPlayers = []) {
     .slice(0, 9)
     .map(row => ({ ...row.player, marketSource: 'released' }));
   const generatedCount = 18 - returning.length;
-  const generated = Array.from({ length: generatedCount }, (_, i) => ({ ...playerForTier(season * 10000 + 2000 + i, POSITIONS[i % POSITIONS.length], tier(AUCTION_DISTRIBUTION, rng), rng.int(22,31), rng), marketSource: 'generated' }));
+  const generated = Array.from({ length: generatedCount }, (_, i) => ({ ...playerForTier(season * 10000 + 2000 + i, marketPosition(rng), tier(AUCTION_DISTRIBUTION, rng), rng.int(22,31), rng), marketSource: 'generated' }));
   return [...returning, ...generated];
 }
 export function publicValue(player) { return BASE_VALUE[displayPlayer(player).overallRank]; }
