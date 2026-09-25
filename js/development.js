@@ -99,17 +99,17 @@ export function processOffseason(club, training, rng, specialTraining = new Set(
       const value = player.stats[key]; let delta = 0;
       if (!frozenGrowthSkill(player, key)) {
         if (player.age < 30) delta = Math.min(3, Math.round(ageBase(player.age) * growthFor(player, key) * appearanceModifier(player) * (focus === key ? 1.4 : 1) * highModifier(value) * (.75 + rng.next() * .5)));
-        if (player.age === 29 && key === 'speed' && rng.next() < .3) delta = -1;
+        if (player.age === 29 && ['speed', 'stamina'].includes(key) && rng.next() < .3) delta = -1;
         if (player.age === 30) {
-          if (key === 'speed') delta = -rng.int(1, 2);
+          if (['speed', 'stamina'].includes(key)) delta = -rng.int(1, 2);
           else if (key !== 'gk' && rng.next() < .2) delta = -1;
         }
         if (player.age >= 31 && player.age <= 32) {
-          if (key === 'speed') delta = -rng.int(1, 2);
+          if (['speed', 'stamina'].includes(key)) delta = -rng.int(1, 2);
           else if (key === 'gk' ? rng.next() < .2 : rng.next() < .35) delta = -1;
         }
         if (player.age >= 33 && player.age <= 34) {
-          if (key === 'speed') delta = -rng.int(2, 3);
+          if (['speed', 'stamina'].includes(key)) delta = -rng.int(2, 3);
           else if (key === 'gk' ? rng.next() < .4 : rng.next() < .5) delta = -1;
         }
       }
