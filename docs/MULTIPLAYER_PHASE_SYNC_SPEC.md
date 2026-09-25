@@ -341,3 +341,34 @@ POST /api/rooms/:roomId/complete-season
 `release` では各人間クラブが放出対象を選ぶ。最低5人、GK最低1人の既存制約を維持する。CPUは既存 `prepareCpuMarketSpace` を使用する。
 
 全員の入力完了後、ホストが結果を一度だけ確定して共有 `leagueState` を更新し、`draft` へ進む。
+
+
+---
+
+## 11. 入力秘匿と参加認証
+
+公開Room状態には、各プレイヤーの作業内容そのものを含めない。
+
+```txt
+公開:
+- playerId
+- クラブ名
+- ready / phaseComplete
+- submitted.completed
+
+非公開:
+- lineup / tactic
+- 契約・要求・特別特訓の判断
+- 育成対象・重点能力
+- 放出対象
+- ドラフト指名
+- 競売入札額
+```
+
+全員入力後の確定処理では、ホスト認証済みの専用prepare APIから必要な入力だけ取得する。
+
+ルーム参加時に各プレイヤーへ非公開 `playerToken` を発行し、更新系APIは `playerId` と `x-player-token` の組み合わせを検証する。IDだけでは他参加者やホストの操作を代行できない。
+
+## 12. 最終シーズン
+
+Season 10のシーズン結果を全参加者が確認したら `game-complete` へ進み、契約・育成・ドラフト等の次オフシーズン処理は開始しない。
