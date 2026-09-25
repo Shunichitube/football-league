@@ -219,7 +219,14 @@ function playerStatus(player, phase) {
   if (phase === 'lobby') return player.ready ? ['準備完了', 'mp-ready'] : ['未準備', 'mp-not-ready'];
   if (phase === 'team-setup') return player.phaseComplete ? ['作業完了', 'mp-ready'] : ['作業中', 'mp-not-ready'];
   if (phase === 'season-ready') return ['完了', 'mp-ready'];
-  if (phase === 'season-result') return ['結果確認', 'mp-ready'];
+  if (phase === 'season-result') return player.phaseComplete ? ['確認完了', 'mp-ready'] : ['未確認', 'mp-not-ready'];
+  if (phase === 'offseason-events') return player.phaseComplete ? ['作業完了', 'mp-ready'] : ['作業中', 'mp-not-ready'];
+  if (phase === 'offseason-events-ready') return ['完了', 'mp-ready'];
+  if (phase === 'development') return player.phaseComplete ? ['育成入力完了', 'mp-ready'] : ['育成入力中', 'mp-not-ready'];
+  if (phase === 'development-ready') return ['完了', 'mp-ready'];
+  if (phase === 'growth-result') return player.phaseComplete ? ['確認完了', 'mp-ready'] : ['未確認', 'mp-not-ready'];
+  if (phase === 'release') return player.phaseComplete ? ['選手整理完了', 'mp-ready'] : ['選手整理中', 'mp-not-ready'];
+  if (phase === 'release-ready') return ['完了', 'mp-ready'];
   return [player.ready ? '完了' : '未完了', player.ready ? 'mp-ready' : 'mp-not-ready'];
 }
 
