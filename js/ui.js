@@ -14,7 +14,7 @@ const slotLabel = (slot, index) => `${positionLabel(slot)}${slot === 'MF' ? ` ${
 const fitPositions = position => ({ GK: 'GK', DF: 'DF / MF', MF: 'DF / MF / FW', FW: 'MF / FW' }[position] || positionLabel(position));
 const growthHint = player => {
   if (!player.hiddenGrowth || typeof player.hiddenGrowth !== 'object') return '―';
-  const keys = player.primaryPosition === 'GK' ? ['speed', 'pass', 'dribble', 'shoot', 'defense', 'gk'] : ['speed', 'pass', 'dribble', 'shoot', 'defense', 'stamina'];
+  const keys = player.primaryPosition === 'GK' ? ['gk', 'defense', 'speed', 'pass'] : ['speed', 'pass', 'dribble', 'shoot', 'defense', 'stamina'];
   const key = keys.filter(name => typeof player.hiddenGrowth[name] === 'number').sort((a, b) => player.hiddenGrowth[b] - player.hiddenGrowth[a])[0];
   return key ? (key === 'gk' ? 'GK能力' : STAT_LABELS[key]) : '―';
 };
