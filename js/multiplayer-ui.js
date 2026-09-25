@@ -8,13 +8,29 @@ const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
   "'": '&#039;'
 }[char]));
 
+function injectMultiplayerStyles() {
+  if (document.querySelector('[data-mp-style]')) return;
+  document.head.insertAdjacentHTML('beforeend', `<style data-mp-style>
+    .multiplayer-modal-backdrop{position:fixed;inset:0;background:#020617cc;backdrop-filter:blur(3px);z-index:80}
+    .multiplayer-modal{position:fixed;z-index:81;left:50%;top:50%;transform:translate(-50%,-50%);width:min(460px,92vw);max-height:88vh;overflow:auto;background:#111827;border:1px solid #64748b;border-radius:18px;padding:1.2rem;box-shadow:0 24px 80px #000c}
+    .multiplayer-actions{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;margin:1rem 0}.multiplayer-actions button{width:100%;margin:0}
+    .multiplayer-join-box{background:#0f172a;border:1px solid var(--line);border-radius:12px;padding:.85rem;margin-top:.8rem}.multiplayer-join-box button{width:100%;margin:.3rem 0 0}
+    .multiplayer-room h1{font-size:clamp(2.4rem,9vw,5rem);line-height:.9;letter-spacing:-.06em;margin:.2rem 0 1rem}.room-id{font-size:clamp(2rem,9vw,4.2rem);letter-spacing:.12em;color:var(--accent);word-break:break-all}.multiplayer-room .hero{text-align:center}
+    @media(max-width:560px){.multiplayer-actions{grid-template-columns:1fr}.multiplayer-modal{padding:.9rem}.multiplayer-room .season-result-actions button{width:100%;margin:.3rem 0}}
+  </style>`);
+}
+
+injectMultiplayerStyles();
+
 const requestJson = async (url, options = {}) => {
   const response = await fetch(url, {
     headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
     ...options
   });
   const text = await response.text();
-  const data = text ? JSON.parse(text) : null;
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; }
+  catch { throw new Error('APIからJSON以外の応答が返りました。Cloudflare Workerが未接続の可能性があります。'); }
   if (!response.ok) throw new Error(data?.error || data?.message || `通信エラー ${response.status}`);
   return data;
 };
@@ -46,7 +62,8 @@ function roomIdOf(data) {
 }
 
 function renderRoomScreen(room) {
-  const id = escapeHtml(roomIdOf(room) || room?.roomId || '未取得');
+  const rawId = roomIdOf(room) || room?.roomId || '未取得';
+  const id = escapeHtml(rawId);
   const phase = escapeHtml(room?.phase || room?.room?.phase || 'ROOM');
   const players = room?.players || room?.room?.players || [];
   app.innerHTML = `<main class="multiplayer-room">
@@ -61,7 +78,7 @@ function renderRoomScreen(room) {
       <h2>現在の状態</h2>
       <p>フェーズ：<b>${phase}</b></p>
       <p>参加者：<b>${players.length}</b>人</p>
-      ${players.length ? `<div class="position-counts">${players.map(player => `<span>${escapeHtml(player.name || player.playerName || 'プレイヤー')}<b>${escapeHtml(player.clubId || '未選択')}</b></span>`).join('')}</div>` : '<p class="hint">まだ参加者はいません。</p>'}
+      ${players.length ? `<div class="position-counts">${players.map(player => `<span>${escapeHtml(player.name || player.playerName || 'プレイヤー')} <b>${escapeHtml(player.clubId || '未選択')}</b></span>`).join('')}</div>` : '<p class="hint">まだ参加者はいません。</p>'}
     </section>
     <div class="season-result-actions">
       <button type="button" data-mp-refresh="${id}" class="subtle">更新</button>
