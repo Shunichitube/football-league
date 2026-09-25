@@ -6,7 +6,7 @@ const ROOM_ID_LENGTH = 6;
 const corsHeaders = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET,POST,OPTIONS',
-  'access-control-allow-headers': 'content-type'
+  'access-control-allow-headers': 'content-type,x-player-token'
 };
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
@@ -39,10 +39,13 @@ function roomStub(env, roomId) {
   return env.ROOMS.get(id);
 }
 
-function roomRequest(path, method, body = null) {
+function roomRequest(path, method, body = null, playerToken = null) {
   return new Request(`https://room.internal/${path}`, {
     method,
-    headers: { 'content-type': 'application/json' },
+    headers: {
+      'content-type': 'application/json',
+      ...(playerToken ? { 'x-player-token': playerToken } : {})
+    },
     body: body ? JSON.stringify(body) : null
   });
 }
@@ -57,7 +60,8 @@ async function createRoom(request, env) {
 async function forwardRoomAction(request, env, roomId, action, method) {
   const stub = roomStub(env, roomId);
   const body = method === 'GET' ? null : await readJson(request);
-  return stub.fetch(roomRequest(action, method, body));
+  const playerToken = request.headers.get('x-player-token');
+  return stub.fetch(roomRequest(action, method, body, playerToken));
 }
 
 export default {
