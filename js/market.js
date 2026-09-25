@@ -9,6 +9,7 @@ const RANGE = { G: [50,55], F: [56,60], E: [61,65], D: [66,70], C: [71,75], B: [
 const POSITION_DISTRIBUTION = [['GK', 10], ['DF', 25], ['MF', 40], ['FW', 25]];
 const BASE_VALUE = { G: 3, F: 6, E: 9, D: 14, C: 19, B: 26, A: 35, S: 48, SS: 62 };
 const REQUIRED_POSITIONS = { GK: 1, DF: 1, MF: 2, FW: 1 };
+const GK_SCOUT_KEYS = ['speed', 'defense', 'pass', 'gk'];
 const POSITION_PROFILES = {
   GK: [
     { shoot: -14, speed: -5, defense: -6, dribble: -12, pass: -9, gk: 12 },
@@ -32,21 +33,21 @@ const POSITION_PROFILES = {
   ]
 };
 const ADJUSTMENT_ORDER = {
-  GK: ['gk', 'defense', 'speed', 'pass', 'dribble'],
+  GK: ['gk', 'defense', 'speed', 'pass'],
   DF: ['defense', 'pass', 'speed', 'dribble', 'shoot'],
   MF: ['speed', 'dribble', 'pass', 'shoot', 'defense'],
   FW: ['shoot', 'dribble', 'pass', 'speed', 'defense']
 };
 
 export const SPECIAL_ABILITIES = {
-  GK: ['ショットストッパー', 'ビッグセーバー', 'ロングレンジキラー', '反応型', '安定感', '守護神'],
+  GK: ['セービング', '安定感', '守護神', 'スイーパーGK', 'パワープレー', 'ロングフィード'],
   DF: ['ボールハンター', 'カバーリング', 'パスカット', 'カウンター起点', 'ビルドアップ', '最終防衛線', '回復力'],
   MF: ['スピードスター', 'ドリブラー', 'チャンスメイカー', 'カットイン', 'ハードワーカー', '万能型', '回復力'],
   FW: ['フィニッシャー', 'ミドルシューター', 'ポストプレーヤー', '個人技', '勝負強さ', 'エース', '回復力']
 };
 
 export const SPECIAL_ABILITY_DESCRIPTIONS = {
-  ショットストッパー: '通常シュートへの対応に強い。', ビッグセーバー: '決定機でのセーブに強い。', ロングレンジキラー: '難しいシュートへの対応に強い。', 反応型: '鋭いシュートへの反応に優れる。', 安定感: 'GK判定のブレが小さくなる。', 守護神: '接戦の終盤でGK能力を発揮しやすい。',
+  セービング: 'シュート対応全般に強い。', 安定感: 'GK判定のブレが小さくなる。', 守護神: '接戦の終盤でGK能力を発揮しやすい。', スイーパーGK: '相手が深く攻め込んだ場面で、GKの守備力が最終対応を助ける。', パワープレー: '終盤ビハインド時、GKが前線に加わり攻撃力を高める。攻撃失敗時はカウンターを受けやすくなる。', ロングフィード: 'GKキャッチ後、前線の状況が良ければロングボールで速攻を狙う。',
   ボールハンター: '第1守備や奪取場面で力を発揮する。', カバーリング: '突破や速攻へのカバー対応で力を発揮する。', パスカット: 'パス攻撃への守備で力を発揮する。', カウンター起点: '守備成功後のカウンターにつながりやすい。', ビルドアップ: 'パス攻撃全般で力を発揮する。', 最終防衛線: 'ゴール前の大ピンチで力を発揮する。',
   スピードスター: '速攻や突破場面で走力を発揮しやすい。', ドリブラー: 'ドリブル攻撃全般で力を発揮する。', チャンスメイカー: 'パス攻撃全般でチャンスを作りやすい。', カットイン: 'ドリブルからのシュート場面で力を発揮する。', ハードワーカー: '攻守に走力を発揮しやすい。', 万能型: 'バランス戦術で攻守に力を発揮する。',
   フィニッシャー: '決定機でのシュートに強い。', ミドルシューター: '難しいシュート場面で力を発揮する。', ポストプレーヤー: 'パス攻撃で前線の起点になりやすい。', 個人技: 'ドリブル攻撃全般で力を発揮する。', 勝負強さ: '接戦の終盤でシュート能力を発揮しやすい。', エース: 'シュート役に選ばれやすい。', 回復力: 'ベンチでの回復が早い。'
@@ -93,7 +94,7 @@ function playerForTier(id, position, tierName, age, rng) {
 function abilityFor(position, rng) { return rng.pick(SPECIAL_ABILITIES[position]); }
 
 export function createScoutComment(player, rng) {
-  const keys = player.primaryPosition === 'GK' ? [...FIELD_STAT_KEYS, 'gk'] : FIELD_STAT_KEYS;
+  const keys = player.primaryPosition === 'GK' ? GK_SCOUT_KEYS : FIELD_STAT_KEYS;
   const currentKey = [...keys].sort((a, b) => player.stats[b] - player.stats[a])[0];
   const growthKey = [...keys].sort((a, b) => player.hiddenGrowth[b] - player.hiddenGrowth[a])[0];
   const ageHint = player.age <= 20 ? '若く、今後を見ながら育てたい' : player.age <= 24 ? '伸び盛りの年代にいる' : player.age >= 29 ? '経験を生かせる年齢だ' : '完成度と成長余地の両方を見極めたい';
