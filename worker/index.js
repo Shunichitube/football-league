@@ -90,6 +90,8 @@ export default {
       if (action === 'run-season' && method === 'POST') return forwardRoomAction(request, env, roomId, 'run-season', 'POST');
       if (action === 'complete-season' && method === 'POST') return forwardRoomAction(request, env, roomId, 'complete-season', 'POST');
       if (action === 'confirm-phase' && method === 'POST') return forwardRoomAction(request, env, roomId, 'confirm-phase', 'POST');
+      if (action === 'submit-offseason-events' && method === 'POST') return forwardRoomAction(request, env, roomId, 'submit-offseason-events', 'POST');
+      if (action === 'advance-offseason-events' && method === 'POST') return forwardRoomAction(request, env, roomId, 'advance-offseason-events', 'POST');
     }
 
     return notFound();
