@@ -3,6 +3,9 @@ const SCREEN_CLASSES = [
   'screen-draft',
   'screen-auction',
   'screen-squad',
+  'screen-development',
+  'screen-growth',
+  'screen-release',
   'screen-season-results',
   'screen-stats',
   'screen-table',
@@ -25,6 +28,9 @@ function classifyMain(main) {
   const hasDirectAuctionCandidate = Boolean(main.querySelector(':scope > article.candidate'));
 
   if (hasLineup || heading === '編成') main.classList.add('screen-squad');
+  else if (eyebrow === '育成') main.classList.add('screen-development');
+  else if (eyebrow.includes('成長結果')) main.classList.add('screen-growth');
+  else if (heading.includes('放出フェイズ') || eyebrow.includes('選手整理')) main.classList.add('screen-release');
   else if (eyebrow.includes('ドラフト') || (hasCandidateGrid && heading.includes('指名'))) main.classList.add('screen-draft');
   else if (eyebrow.includes('競売') || hasDirectAuctionCandidate) main.classList.add('screen-auction');
   else if (eyebrow.includes('結果')) main.classList.add('screen-season-results');
