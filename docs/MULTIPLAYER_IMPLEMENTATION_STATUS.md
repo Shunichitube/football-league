@@ -17,7 +17,7 @@ stable/single-player-v1
 ## 現在位置
 
 ```txt
-Stage M1: 設計と土台
+Stage M2: ルームAPI土台
 ```
 
 ## 完了済み
@@ -28,16 +28,40 @@ Stage M1: 設計と土台
 - マルチプレイ初期方針を非同期ターン制に決定
 - Cloudflare Pages / Workers / Durable Objects 構成を採用予定
 - 初期マルチではイベントログ共有を行わない方針に決定
+- `wrangler.toml` 追加
+- `worker/index.js` 追加
+- `worker/room.js` 追加
+- ルーム作成APIの土台を追加
+- ルーム状態取得APIの土台を追加
+- ルーム参加APIの土台を追加
+- クラブ選択APIの土台を追加
+- 編成・戦術送信APIの土台を追加
+- 準備完了APIの土台を追加
+- シーズン実行APIはM5予定として501応答に留めた
+
+## 追加済みAPI案
+
+```txt
+GET  /api/health
+POST /api/rooms
+GET  /api/rooms/:roomId
+POST /api/rooms/:roomId/join
+POST /api/rooms/:roomId/select-club
+POST /api/rooms/:roomId/submit
+POST /api/rooms/:roomId/ready
+POST /api/rooms/:roomId/run-season
+```
 
 ## 次にやること
 
-### M2: ルームAPI土台
+### M3: フロント側の最小マルチ画面
 
-- Cloudflare Workers用のディレクトリ構成を追加
-- Durable Objectのルームクラスを追加
-- ルーム作成APIを追加
-- ルーム状態取得APIを追加
-- ローカル開発用の最小設定を追加
+- タイトル画面にマルチプレイ導線を追加するか検討
+- ルーム作成画面を追加
+- ルーム参加画面を追加
+- ルーム状態表示を追加
+- クラブ選択UIを追加
+- 現行シングルプレイ導線を壊さない
 
 ## 初期MVPの範囲
 
@@ -65,3 +89,5 @@ Stage M1: 設計と土台
 マルチプレイ化では、既存の `app.js` をいきなり大改修しない。
 
 まずはサーバー側のルーム状態とAPIを別軸で作り、既存シングルプレイの計算ロジックを壊さず利用できる形を探る。
+
+今回追加したWorkerはまだ実行確認前。Cloudflare上での `wrangler dev` / デプロイ確認は別途必要。
