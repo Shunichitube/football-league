@@ -1,14 +1,19 @@
 import { createMultiplayerLeagueFromRoom } from './multiplayer-league.js?v=0.18.0';
 import { finalizeSeason, simulateRemainingSeason, standings } from './league.js?v=0.17.2';
+import { createLineupPlacement, validateLineup } from './rules.js?v=0.17.2';
+import { renderLineupEditor } from './ui.js?v=0.17.2';
 
 const app = document.querySelector('#app');
 const SESSION_KEY = 'football-league:multiplayer-session';
+const SETUP_DRAFT_KEY = 'football-league:multiplayer-setup-draft';
 const TACTICS = [
   ['BALANCED', 'バランス'],
   ['POSSESSION', 'ポゼッション'],
   ['DRIBBLE', 'ドリブル'],
   ['COUNTER', 'カウンター']
 ];
+const SLOT_NAMES = ['GK', 'DF', 'MF 1', 'MF 2', 'FW'];
+let currentRoom = null;
 
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
   '&': '&amp;',
@@ -30,7 +35,7 @@ function injectMultiplayerStyles() {
     .mp-assigned-club{display:grid;gap:.35rem;text-align:center}.mp-assigned-club b{font-size:clamp(1.7rem,7vw,3rem);color:var(--accent)}.mp-club-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.6rem;margin-top:1rem}.mp-club-card{background:#0f172a;border:1px solid var(--line);border-radius:10px;padding:.7rem}.mp-club-card.human{border-color:var(--accent)}.mp-club-card small{display:block;margin-top:.25rem}
     .mp-work-summary{background:#0f172a;border:1px solid var(--line);border-radius:12px;padding:.85rem;margin:1rem 0}.mp-work-summary b{color:#fff}.mp-incomplete{margin:.35rem 0 0;padding-left:1.2rem}.mp-incomplete li{margin:.15rem 0;color:#fca5a5;font-weight:800}
     .mp-result-table{width:100%;border-collapse:collapse}.mp-result-table th,.mp-result-table td{padding:.55rem;border-bottom:1px solid var(--line);text-align:left}.mp-result-table tr.you{background:#17255466}
-    .mp-setup-editor{display:grid;gap:1rem}.mp-lineup-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.55rem}.mp-lineup-option{display:flex;align-items:center;gap:.55rem;background:#0f172a;border:1px solid var(--line);border-radius:10px;padding:.7rem}.mp-lineup-option input{width:auto}.mp-lineup-option span{display:grid}.mp-lineup-option small{color:var(--muted)}.mp-tactic-select{max-width:360px}
+    .mp-setup-editor{display:grid;gap:1rem}.mp-setup-editor .lineup-editor{margin-top:.5rem}.mp-tactic-panel{background:#0f172a;border:1px solid var(--line);border-radius:12px;padding:.85rem}.mp-tactic-panel label{max-width:360px}
     @media(max-width:560px){.multiplayer-actions{grid-template-columns:1fr}.multiplayer-modal{padding:.9rem}.multiplayer-room .season-result-actions button{width:100%;margin:.3rem 0}.mp-player-row{align-items:flex-start;flex-direction:column}.mp-result-table{font-size:.8rem}}
   </style>`);
 }
@@ -50,6 +55,26 @@ function readSession(roomId = null) {
 
 function saveSession(roomId, playerId, teamName) {
   localStorage.setItem(SESSION_KEY, JSON.stringify({ roomId, playerId, playerName: teamName, teamName }));
+}
+
+function draftKey(roomId, playerId) {
+  return `${SETUP_DRAFT_KEY}:${roomId}:${playerId}`;
+}
+
+function readSetupDraft(roomId, playerId) {
+  try {
+    return JSON.parse(localStorage.getItem(draftKey(roomId, playerId)) || 'null') || {};
+  } catch {
+    return {};
+  }
+}
+
+function saveSetupDraft(roomId, playerId, draft) {
+  localStorage.setItem(draftKey(roomId, playerId), JSON.stringify(draft));
+}
+
+function clearSetupDraft(roomId, playerId) {
+  localStorage.removeItem(draftKey(roomId, playerId));
 }
 
 const requestJson = async (url, options = {}) => {
@@ -131,14 +156,61 @@ function validTactic(value) {
   return TACTICS.some(([key]) => key === value) ? value : 'BALANCED';
 }
 
+function validLineupForClub(club, lineup) {
+  const ids = new Set(club.roster.map(player => player.id));
+  const next = Array.isArray(lineup) ? lineup.filter(id => ids.has(id)) : [];
+  return next.length === 5 && new Set(next).size === 5 ? next : [...club.lineup];
+}
+
+function getSetupDraft(room, player, club) {
+  const roomId = roomIdOf(room);
+  const stored = readSetupDraft(roomId, player.id);
+  const submitted = Array.isArray(player.submitted?.lineup) && player.submitted.lineup.length ? player.submitted.lineup : null;
+  const lineup = validLineupForClub(club, stored.lineup || submitted || club.lineup);
+  const selectedExists = club.roster.some(candidate => candidate.id === stored.selectedPlayerId);
+  return {
+    lineup,
+    tactic: validTactic(stored.tactic || player.submitted?.tactic || club.tactic),
+    selectedPlayerId: selectedExists ? stored.selectedPlayerId : null,
+    benchSort: ['position', 'overall'].includes(stored.benchSort) ? stored.benchSort : 'position',
+    message: stored.message || '',
+    messageIsError: Boolean(stored.messageIsError)
+  };
+}
+
+function applyDraftToClub(club, draft) {
+  club.lineup = [...draft.lineup];
+  club.tactic = draft.tactic;
+  return club;
+}
+
+function setupContext() {
+  if (!currentRoom) return null;
+  const roomId = roomIdOf(currentRoom);
+  const session = readSession(roomId);
+  if (!session?.playerId) return null;
+  const players = currentRoom?.players || currentRoom?.room?.players || [];
+  const player = players.find(candidate => candidate.id === session.playerId);
+  if (!player || player.phaseComplete) return null;
+  const club = clubForPlayer(currentRoom, player);
+  if (!club) return null;
+  const draft = getSetupDraft(currentRoom, player, club);
+  applyDraftToClub(club, draft);
+  return { room: currentRoom, roomId, session, player, club, draft };
+}
+
+function saveAndRenderSetup(context, draft) {
+  saveSetupDraft(context.roomId, context.player.id, draft);
+  renderRoomScreen(context.room, context.player.id);
+}
+
 function applySubmittedSetups(league, room) {
   const players = room?.players || room?.room?.players || [];
   for (const player of players) {
     const club = league.clubs.find(candidate => candidate.multiplayerPlayerId === player.id);
     if (!club) continue;
-    const ids = new Set(club.roster.map(row => row.id));
-    const lineup = Array.isArray(player.submitted?.lineup) ? player.submitted.lineup.filter(id => ids.has(id)) : [];
-    if (lineup.length === 5 && new Set(lineup).size === 5) club.lineup = lineup;
+    const lineup = validLineupForClub(club, player.submitted?.lineup);
+    club.lineup = lineup;
     club.tactic = validTactic(player.submitted?.tactic || club.tactic);
   }
 }
@@ -185,22 +257,19 @@ function renderSetupEditor(room, localPlayer) {
   if (phase !== 'team-setup' || !localPlayer || localPlayer.phaseComplete) return '';
   const club = clubForPlayer(room, localPlayer);
   if (!club) return `<section class="match-card"><h2>編成・戦術</h2><p class="lineup-error">担当クラブを取得できませんでした。更新してください。</p></section>`;
-  const submittedLineup = Array.isArray(localPlayer.submitted?.lineup) && localPlayer.submitted.lineup.length ? localPlayer.submitted.lineup : club.lineup;
-  const selected = new Set(submittedLineup);
-  const tactic = validTactic(localPlayer.submitted?.tactic || club.tactic);
+  const draft = getSetupDraft(room, localPlayer, club);
+  applyDraftToClub(club, draft);
   return `<section class="match-card mp-setup-editor">
     <div>
       <h2>編成・戦術</h2>
-      <p class="hint">先発5人と戦術を選んで、作業完了してください。今はマルチ用の最小入力です。</p>
+      <p class="hint">シングルプレイと同じ編成画面です。選手を選び、配置したい枠を押してください。</p>
     </div>
-    <label class="mp-tactic-select">戦術
-      <select data-mp-tactic>${TACTICS.map(([key, label]) => `<option value="${key}" ${key === tactic ? 'selected' : ''}>${label}</option>`).join('')}</select>
-    </label>
-    <div>
-      <h3>先発選手</h3>
-      <p class="hint">5人選択してください。</p>
-      <div class="mp-lineup-options">${club.roster.map(player => `<label class="mp-lineup-option"><input type="checkbox" data-mp-lineup value="${escapeHtml(player.id)}" ${selected.has(player.id) ? 'checked' : ''}><span><b>${escapeHtml(player.name)}</b><small>${escapeHtml(player.primaryPosition)}</small></span></label>`).join('')}</div>
-    </div>
+    <section class="mp-tactic-panel">
+      <label>戦術
+        <select data-mp-tactic>${TACTICS.map(([key, label]) => `<option value="${key}" ${key === draft.tactic ? 'selected' : ''}>${label}</option>`).join('')}</select>
+      </label>
+    </section>
+    ${renderLineupEditor(club, draft.selectedPlayerId, draft.message, draft.messageIsError, draft.benchSort)}
   </section>`;
 }
 
@@ -247,6 +316,7 @@ function renderSeasonResult(room, localPlayer) {
 }
 
 function renderRoomScreen(room, playerId = null) {
+  currentRoom = room?.room || room;
   const rawId = roomIdOf(room) || room?.roomId || '未取得';
   const session = readSession(rawId);
   const localPlayerId = playerId || session?.playerId || null;
@@ -371,17 +441,22 @@ async function submitSetup(roomId) {
     alert('この端末の参加情報が見つかりません。入り直してください。');
     return;
   }
-  const lineup = [...document.querySelectorAll('[data-mp-lineup]:checked')].map(node => node.value);
-  if (lineup.length !== 5 || new Set(lineup).size !== 5) {
-    alert('先発選手を5人選択してください。');
+  const context = setupContext();
+  if (!context) {
+    alert('編成情報を取得できませんでした。更新してください。');
     return;
   }
-  const tactic = validTactic(document.querySelector('[data-mp-tactic]')?.value || 'BALANCED');
+  const validation = validateLineup(context.club, context.draft.lineup);
+  if (!validation.ok) {
+    saveAndRenderSetup(context, { ...context.draft, message: validation.error, messageIsError: true });
+    return;
+  }
   try {
     const data = await requestJson(`/api/rooms/${encodeURIComponent(roomId)}/submit`, {
       method: 'POST',
-      body: JSON.stringify({ playerId: session.playerId, lineup, tactic, ready: true })
+      body: JSON.stringify({ playerId: session.playerId, lineup: context.draft.lineup, tactic: context.draft.tactic, ready: true })
     });
+    clearSetupDraft(roomId, session.playerId);
     renderRoomScreen(data?.room || data, session.playerId);
   } catch (err) {
     alert(err.message);
@@ -425,6 +500,46 @@ async function simulateSeason(roomId) {
   }
 }
 
+function handleLineupPlayer(playerId) {
+  const context = setupContext();
+  if (!context) return;
+  saveAndRenderSetup(context, { ...context.draft, selectedPlayerId: playerId, message: '', messageIsError: false });
+}
+
+function handleLineupSlot(slotValue) {
+  const context = setupContext();
+  if (!context || !context.draft.selectedPlayerId) return;
+  const slotIndex = Number(slotValue);
+  const selected = context.club.roster.find(player => player.id === context.draft.selectedPlayerId);
+  const nextLineup = createLineupPlacement(context.draft.lineup, context.draft.selectedPlayerId, slotIndex);
+  if (!nextLineup) return;
+  const validation = validateLineup(context.club, nextLineup);
+  if (!validation.ok) {
+    saveAndRenderSetup(context, { ...context.draft, message: validation.error, messageIsError: true });
+    return;
+  }
+  const warningText = validation.warnings.length ? ' 適性外配置があります。' : '';
+  saveAndRenderSetup(context, {
+    ...context.draft,
+    lineup: nextLineup,
+    selectedPlayerId: null,
+    message: `${selected?.name || '選手'}を${SLOT_NAMES[slotIndex] || '枠'}へ配置しました。${warningText}`,
+    messageIsError: false
+  });
+}
+
+function handleBenchSort(value) {
+  const context = setupContext();
+  if (!context) return;
+  saveAndRenderSetup(context, { ...context.draft, benchSort: value === 'overall' ? 'overall' : 'position' });
+}
+
+function handleTactic(value) {
+  const context = setupContext();
+  if (!context) return;
+  saveAndRenderSetup(context, { ...context.draft, tactic: validTactic(value) });
+}
+
 function attachTitleButton() {
   const title = document.querySelector('main.title');
   if (!title || title.querySelector('[data-mp-open]')) return;
@@ -441,6 +556,34 @@ function attachTitleButton() {
 const observer = new MutationObserver(attachTitleButton);
 observer.observe(app, { childList: true, subtree: true });
 attachTitleButton();
+
+document.addEventListener('click', event => {
+  const playerId = event.target.closest('.multiplayer-room [data-lineup-player]')?.dataset.lineupPlayer;
+  const slotValue = event.target.closest('.multiplayer-room [data-lineup-slot]')?.dataset.lineupSlot;
+  if (playerId) {
+    event.preventDefault();
+    event.stopPropagation();
+    handleLineupPlayer(playerId);
+    return;
+  }
+  if (slotValue !== undefined) {
+    event.preventDefault();
+    event.stopPropagation();
+    handleLineupSlot(slotValue);
+  }
+}, true);
+
+document.addEventListener('change', event => {
+  if (event.target.closest('.multiplayer-room [data-bench-sort]')) {
+    event.preventDefault();
+    event.stopPropagation();
+    handleBenchSort(event.target.value);
+    return;
+  }
+  if (event.target.closest('.multiplayer-room [data-mp-tactic]')) {
+    handleTactic(event.target.value);
+  }
+}, true);
 
 document.addEventListener('click', event => {
   if (event.target.closest('[data-mp-open]')) showModeModal();
