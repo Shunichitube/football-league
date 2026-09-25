@@ -54,8 +54,8 @@ function readSession(roomId = null) {
   }
 }
 
-function saveSession(roomId, playerId, teamName) {
-  localStorage.setItem(SESSION_KEY, JSON.stringify({ roomId, playerId, playerName: teamName, teamName }));
+function saveSession(roomId, playerId, teamName, playerToken) {
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ roomId, playerId, playerToken, playerName: teamName, teamName }));
 }
 
 function draftKey(roomId, playerId) {
@@ -80,7 +80,7 @@ function clearSetupDraft(roomId, playerId) {
 
 const requestJson = async (url, options = {}) => {
   const response = await fetch(url, {
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    headers: { 'Content-Type': 'application/json', ...(readSession?.()?.playerToken ? { 'x-player-token': readSession().playerToken } : {}), ...(options.headers || {}) },
     ...options
   });
   const text = await response.text();
@@ -395,7 +395,7 @@ async function createRoom() {
     const data = await requestJson('/api/rooms', { method: 'POST', body: JSON.stringify({ hostName: result.name, teamName: result.name }) });
     const room = data?.room || data;
     const roomId = roomIdOf(room);
-    if (roomId && data?.playerId) saveSession(roomId, data.playerId, result.name);
+    if (roomId && data?.playerId) saveSession(roomId, data.playerId, result.name, data.playerToken);
     removeModal();
     renderRoomScreen(room, data?.playerId);
   } catch (err) {
@@ -423,7 +423,7 @@ async function joinRoom() {
     });
     const room = data?.room || data;
     const resolvedRoomId = roomIdOf(room) || roomId;
-    if (resolvedRoomId && data?.playerId) saveSession(resolvedRoomId, data.playerId, result.name);
+    if (resolvedRoomId && data?.playerId) saveSession(resolvedRoomId, data.playerId, result.name, data.playerToken);
     removeModal();
     renderRoomScreen(room, data?.playerId);
   } catch (err) {
