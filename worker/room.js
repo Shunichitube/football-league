@@ -143,6 +143,16 @@ function assignClubsByJoinOrder(room) {
   return room;
 }
 
+function initializeDraft(room, body) {
+  if (room.phase !== 'team-setup' || room.leagueState) return null;
+  if (!body?.leagueState?.clubs?.length || !body?.draftState) return null;
+  room.leagueState = body.leagueState;
+  room.draftState = body.draftState;
+  room.auctionState = null;
+  room.auctionInputs = {};
+  return setDraftWaiting(room);
+}
+
 function completeSetupWork(room, player, body) {
   player.submitted = {
     lineup: Array.isArray(body.lineup) ? body.lineup.slice(0, 5) : player.submitted.lineup,
@@ -421,6 +431,15 @@ export class RoomObject {
       room.players.push(player);
       await this.save(room);
       return json({ ok: true, room: publicRoom(room), playerId: player.id });
+    }
+
+    if (action === 'initialize-draft' && request.method === 'POST') {
+      const body = await readJson(request);
+      if (body.playerId !== room.hostPlayerId) return error('ホストのみ実行できます。', 403);
+      const updated = initializeDraft(room, body);
+      if (!updated) return error('初年度ドラフトを開始できません。');
+      await this.save(updated);
+      return json({ ok: true, room: publicRoom(updated), message: '初年度ドラフトを開始しました。' });
     }
 
     if (action === 'submit' && request.method === 'POST') {
