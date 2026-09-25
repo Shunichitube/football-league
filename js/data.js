@@ -10,6 +10,12 @@ const RANK_RANGE = { G: [50,55], F: [56,60], E: [61,65], D: [66,70], C: [71,75],
 const GK_HIDDEN_KEYS = [...FIELD_STAT_KEYS, 'gk'];
 const GK_GROWTH_KEYS = ['gk', 'defense', 'speed', 'pass'];
 const GK_GROWTH_FOCUS_DISTRIBUTION = [['gk', 7], ['defense', 1], ['speed', 1], ['pass', 1]];
+const LEGACY_GK_SPECIAL_ABILITIES = {
+  ショットストッパー: 'セービング',
+  ビッグセーバー: 'セービング',
+  ロングレンジキラー: 'セービング',
+  反応型: 'セービング'
+};
 
 // The seeded RNG draws first and last names independently. These broad pools
 // keep duplicate full names uncommon without deriving names from player IDs.
@@ -94,6 +100,7 @@ export function playerById(club, id) { return club.roster.find(p => p.id === id)
 export function ensurePlayerCompatibility(player, rng) {
   if (!player?.stats) return player;
   player.primaryPosition = LEGACY_POSITIONS[player.primaryPosition] || player.primaryPosition;
+  if (player.primaryPosition === 'GK' && LEGACY_GK_SPECIAL_ABILITIES[player.specialAbility]) player.specialAbility = LEGACY_GK_SPECIAL_ABILITIES[player.specialAbility];
   if (player.primaryPosition !== 'GK' && typeof player.stats.stamina !== 'number') player.stats.stamina = staminaValue(rng);
   if (player.primaryPosition === 'GK' && 'stamina' in player.stats) delete player.stats.stamina;
   if (!player.hiddenGrowth || typeof player.hiddenGrowth === 'number') {
