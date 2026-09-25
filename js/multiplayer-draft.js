@@ -1,6 +1,6 @@
 import { decideCpuDraftAction } from './cpu.js?v=0.17.27';
 import { displayPlayer } from './data.js?v=0.17.2';
-import { resolveDraftActions } from './market.js?v=0.17.2';
+import { createAuctionPool, resolveDraftActions } from './market.js?v=0.17.2';
 import { createRandom } from './random.js';
 import { ACTION_TYPES } from './rules.js?v=0.17.2';
 import { renderPlayerCard } from './ui.js?v=0.17.29';
