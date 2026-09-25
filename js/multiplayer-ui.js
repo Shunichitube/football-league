@@ -128,7 +128,7 @@ function roomIdOf(data) {
 }
 
 function phaseLabel(phase) {
-  return ({ lobby: '待機中', 'team-setup': 'チーム準備', 'season-ready': 'シーズン開始待ち', 'season-result': 'シーズン結果', 'offseason-events': '契約・要求・特別特訓', 'offseason-events-ready': 'イベント確定待ち', development: '育成', 'development-ready': '育成確定待ち', 'growth-result': '成長結果', release: '選手整理', 'release-ready': '選手整理確定待ち', draft: 'ドラフト', 'draft-ready': 'ドラフト確定待ち', auction: '競売', 'auction-ready': '開札待ち' }[phase] || phase || 'ROOM');
+  return ({ lobby: '待機中', 'team-setup': 'チーム準備', 'season-ready': 'シーズン開始待ち', 'season-result': 'シーズン結果', 'game-complete': '10シーズン完了', 'offseason-events': '契約・要求・特別特訓', 'offseason-events-ready': 'イベント確定待ち', development: '育成', 'development-ready': '育成確定待ち', 'growth-result': '成長結果', release: '選手整理', 'release-ready': '選手整理確定待ち', draft: 'ドラフト', 'draft-ready': 'ドラフト確定待ち', auction: '競売', 'auction-ready': '開札待ち' }[phase] || phase || 'ROOM');
 }
 
 function teamNameById(players, playerId) {
@@ -238,6 +238,7 @@ function playerStatus(player, phase) {
   if (phase === 'draft-ready') return ['入力完了', 'mp-ready'];
   if (phase === 'auction') return player.phaseComplete ? ['入札済み', 'mp-ready'] : ['未入力', 'mp-not-ready'];
   if (phase === 'auction-ready') return ['入札済み', 'mp-ready'];
+  if (phase === 'game-complete') return ['完了', 'mp-ready'];
   return [player.ready ? '完了' : '未完了', player.ready ? 'mp-ready' : 'mp-not-ready'];
 }
 
@@ -245,7 +246,7 @@ function renderAssignedClub(room, localPlayer) {
   const phase = room?.phase || room?.room?.phase;
   const clubs = room?.clubs || room?.room?.clubs || [];
   const players = room?.players || room?.room?.players || [];
-  if (!['team-setup', 'season-ready', 'season-result', 'offseason-events', 'offseason-events-ready', 'development', 'development-ready', 'growth-result', 'release', 'release-ready', 'draft', 'draft-ready', 'auction', 'auction-ready'].includes(phase)) return '';
+  if (!['team-setup', 'season-ready', 'season-result', 'game-complete', 'offseason-events', 'offseason-events-ready', 'development', 'development-ready', 'growth-result', 'release', 'release-ready', 'draft', 'draft-ready', 'auction', 'auction-ready'].includes(phase)) return '';
   const assignedClub = clubs.find(club => club.playerId === localPlayer?.id) || clubs.find(club => club.id === localPlayer?.clubId);
   const yourClub = assignedClub ? assignedClub.name : '未割り当て';
   return `<section class="hero mp-assigned-club">
@@ -325,12 +326,13 @@ function buildSeasonResult(room) {
 function renderSeasonResult(room, localPlayer) {
   const result = room?.seasonResult || room?.room?.seasonResult;
   const phase = room?.phase || room?.room?.phase;
-  if (phase !== 'season-result' || !result) return '';
-  const localClubId = localPlayer?.clubId;
+  if (!['season-result', 'game-complete'].includes(phase) || !result) return '';
+  const localClubId = clubForPlayer(room, localPlayer)?.id;
   const rows = result.table || [];
   return `<section class="match-card">
     <h2>シーズン結果</h2>
     <p class="hint">処理試合数：${escapeHtml(result.matchesProcessed ?? '-')}試合</p>
+    ${phase === 'game-complete' ? '<p><b>10シーズン完了</b></p><p class="hint">このルームの全シーズンが終了しました。</p>' : ''}
     <div class="table-wrap"><table class="mp-result-table"><thead><tr><th>順位</th><th>クラブ</th><th>勝点</th><th>勝</th><th>分</th><th>敗</th><th>得</th><th>失</th><th>差</th></tr></thead><tbody>${rows.map(row => `<tr class="${row.clubId === localClubId ? 'you' : ''}"><td>${row.rank}</td><td>${escapeHtml(row.clubName)}</td><td>${row.points}</td><td>${row.wins}</td><td>${row.draws}</td><td>${row.losses}</td><td>${row.goalsFor}</td><td>${row.goalsAgainst}</td><td>${row.goalDifference}</td></tr>`).join('')}</tbody></table></div>
   </section>`;
 }
@@ -432,7 +434,12 @@ async function joinRoom() {
 async function refreshRoom(roomId) {
   try {
     const data = await requestJson(`/api/rooms/${encodeURIComponent(roomId)}`);
-    renderRoomScreen(data?.room || data);
+    let room = data?.room || data;
+    const session = readSession(roomId);
+    if (room?.phase === 'team-setup' && !room?.leagueState && session?.playerId === room?.hostPlayerId) {
+      room = await initializeFirstDraft(room, session.playerId);
+    }
+    renderRoomScreen(room);
   } catch (err) {
     alert(err.message);
   }
@@ -533,8 +540,11 @@ async function simulateSeason(roomId) {
     return;
   }
   try {
-    const latest = await requestJson(`/api/rooms/${encodeURIComponent(roomId)}`);
-    const room = latest?.room || latest;
+    const prepared = await requestJson(`/api/rooms/${encodeURIComponent(roomId)}/prepare-season-resolution`, {
+      method: 'POST',
+      body: JSON.stringify({ playerId: session.playerId })
+    });
+    const room = { roomId, leagueState: prepared.leagueState, players: prepared.players };
     const seasonResult = buildSeasonResult(room);
     const data = await requestJson(`/api/rooms/${encodeURIComponent(roomId)}/complete-season`, {
       method: 'POST',
