@@ -78,6 +78,11 @@ export function formatMatchEvents(events, clubs, nameOf = name => name) {
       default: add(event, `${p}がプレーに関わる`);
     }
   });
+  rows.push({
+    time: events.at(-1)?.time || '40:00',
+    text: `試合終了　${clubs.home?.name || 'HOME'}　${score.home}－${score.away}　${clubs.away?.name || 'AWAY'}`,
+    goal: false
+  });
   return rows;
 }
 
