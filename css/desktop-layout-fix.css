@@ -1,19 +1,25 @@
 @media (min-width: 761px) {
   :root {
-    --desktop-card-font: 0.72rem;
     --desktop-card-small: 0.6rem;
     --desktop-rank-bar-width: 52px;
   }
 
   main {
-    width: min(1440px, 96vw);
-    margin: 1.2rem auto;
+    width: min(1840px, 98vw) !important;
+    margin: 0.8rem auto !important;
   }
 
   .overlay-panel {
-    max-width: min(1440px, 96vw);
-    inset: 3vh max(2vw, 0.75rem);
-    padding: 0.85rem;
+    max-width: min(1840px, 98vw) !important;
+    inset: 2vh max(1vw, 0.5rem) !important;
+    padding: 0.75rem !important;
+  }
+
+  .match-card,
+  .hero,
+  .potm {
+    padding: 0.95rem !important;
+    margin: 0.65rem 0 !important;
   }
 
   .candidate-grid {
@@ -40,7 +46,7 @@
   }
 
   .bench-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
   }
 
   .player-card,
@@ -199,25 +205,25 @@
 
   .lineup-editor {
     display: grid;
-    grid-template-columns: minmax(360px, 0.9fr) minmax(520px, 1.1fr);
+    grid-template-columns: minmax(620px, 0.95fr) minmax(760px, 1.05fr);
     grid-template-areas:
       "status status"
       "starterTitle benchTitle"
       "slots bench";
-    gap: 0.55rem 0.85rem;
-    margin: 0.7rem 0;
+    gap: 0.45rem 0.75rem;
+    margin: 0.55rem 0;
     align-items: start;
   }
 
   .lineup-status {
     grid-area: status;
-    padding: 0.55rem 0.7rem !important;
+    padding: 0.5rem 0.65rem !important;
     font-size: 0.78rem;
   }
 
   .lineup-editor > h3 {
     grid-area: starterTitle;
-    margin: 0.15rem 0 !important;
+    margin: 0.08rem 0 !important;
   }
 
   .bench-heading {
@@ -237,23 +243,27 @@
   .lineup-slots {
     grid-area: slots;
     display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    grid-template-rows: repeat(5, minmax(78px, auto));
     grid-template-areas:
-      ". fw ."
-      "mf1 . mf2"
-      ". df ."
-      ". gk .";
-    gap: 0.38rem !important;
+      ". . fw . ."
+      ". mf1 . mf2 ."
+      ". . df . ."
+      ". . gk . ."
+      ". . . . .";
+    gap: 0.28rem !important;
     align-items: start;
     padding: 0.55rem;
     border: 2px solid #86efac;
     border-radius: 16px;
-    background: linear-gradient(#14532d, #166534);
+    background: radial-gradient(circle at 50% 0%, #166534 0 13%, transparent 14%), linear-gradient(#14532d, #166534);
+    min-height: 430px;
   }
 
   .bench-grid {
     grid-area: bench;
     margin-top: 0 !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   }
 
   .lineup-slot,
@@ -261,7 +271,7 @@
   .lineup-slot:last-child {
     grid-column: auto !important;
     min-width: 0;
-    padding: 0.36rem !important;
+    padding: 0.32rem !important;
     border-radius: 10px !important;
   }
 
@@ -272,7 +282,7 @@
   .lineup-slot:nth-child(5) { grid-area: fw; }
 
   .slot-heading {
-    margin-bottom: 0.28rem !important;
+    margin-bottom: 0.24rem !important;
   }
 
   .slot-heading > b {
@@ -284,14 +294,14 @@
   }
 
   .lineup-slot .player-card {
-    min-height: 124px;
+    min-height: 120px;
   }
 
   .lineup-slot > button,
   .bench-player > button {
     width: 100%;
-    margin: 0.22rem 0 0 !important;
-    padding: 0.35rem 0.45rem !important;
+    margin: 0.2rem 0 0 !important;
+    padding: 0.32rem 0.42rem !important;
     font-size: 0.62rem !important;
     line-height: 1.1;
   }
@@ -309,5 +319,9 @@
   .roster-panel .candidate-grid,
   .overlay-panel .candidate-grid:not(.bench-grid) {
     grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  }
+
+  .bench-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   }
 }
