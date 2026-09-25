@@ -16,7 +16,6 @@ function injectMultiplayerStyles() {
     .multiplayer-actions{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;margin:1rem 0}.multiplayer-actions button{width:100%;margin:0}
     .multiplayer-join-box{background:#0f172a;border:1px solid var(--line);border-radius:12px;padding:.85rem;margin-top:.8rem}.multiplayer-join-box button{width:100%;margin:.3rem 0 0}
     .multiplayer-room h1{font-size:clamp(2.4rem,9vw,5rem);line-height:.9;letter-spacing:-.06em;margin:.2rem 0 1rem}.room-id{font-size:clamp(2rem,9vw,4.2rem);letter-spacing:.12em;color:var(--accent);word-break:break-all}.multiplayer-room .hero{text-align:center}
-    .multiplayer-help{display:grid;gap:.65rem;margin:1rem 0}.multiplayer-help p{margin:0;padding:.7rem .8rem;background:#0f172a;border:1px solid var(--line);border-radius:10px;line-height:1.55}.multiplayer-help b{color:#fff}
     @media(max-width:560px){.multiplayer-actions{grid-template-columns:1fr}.multiplayer-modal{padding:.9rem}.multiplayer-room .season-result-actions button{width:100%;margin:.3rem 0}}
   </style>`);
 }
@@ -73,22 +72,13 @@ function renderRoomScreen(room) {
     <section class="hero">
       <p>ルームID</p>
       <h2 class="room-id">${id}</h2>
-      <p class="hint">このIDを参加者に共有してください。参加者は「ルームに参加」からこのIDを入力します。</p>
+      <p class="hint">このIDを参加者に共有してください。</p>
     </section>
     <section class="match-card">
       <h2>現在の状態</h2>
       <p>フェーズ：<b>${phase}</b></p>
-      <p class="hint">フェーズは、このルームが今どの段階かを表します。現在は主に待機中・クラブ選択前の確認用です。</p>
       <p>参加者：<b>${players.length}</b>人</p>
-      <p class="hint">参加者数は、このルームに入っているプレイヤー人数です。最大6人を想定しています。</p>
-      ${players.length ? `<div class="position-counts">${players.map(player => `<span>${escapeHtml(player.name || player.playerName || 'プレイヤー')} <b>${escapeHtml(player.clubId || '未選択')}</b></span>`).join('')}</div><p class="hint">参加者一覧では、各プレイヤー名と選択中クラブを確認できます。未選択なら、まだクラブを選んでいません。</p>` : '<p class="hint">まだ参加者はいません。</p>'}
-    </section>
-    <section class="match-card">
-      <h2>ボタン説明</h2>
-      <div class="multiplayer-help">
-        <p><b>更新：</b>ルームの最新状態を読み込み直します。ほかの人が参加した時や、クラブ選択が反映されない時に押します。</p>
-        <p><b>タイトルへ戻る：</b>ルーム画面を閉じてタイトル画面へ戻ります。ルーム自体は削除しません。</p>
-      </div>
+      ${players.length ? `<div class="position-counts">${players.map(player => `<span>${escapeHtml(player.name || player.playerName || 'プレイヤー')} <b>${escapeHtml(player.clubId || '未選択')}</b></span>`).join('')}</div>` : '<p class="hint">まだ参加者はいません。</p>'}
     </section>
     <div class="season-result-actions">
       <button type="button" data-mp-refresh="${id}" class="subtle">更新</button>
