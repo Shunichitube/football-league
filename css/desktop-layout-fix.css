@@ -3,121 +3,315 @@
     --pc-card-small: 0.62rem;
     --pc-card-name: 0.82rem;
     --pc-card-rank: 0.7rem;
-    --pc-card-bar: 64px;
-    --pc-draft-bar: 76px;
+    --pc-card-bar: 66px;
+    --pc-draft-bar: 82px;
+    --pc-auction-bar: 64px;
   }
 
-  main {
+  main.screen-draft,
+  main.screen-squad {
     width: min(1840px, 98vw);
-    margin: 0.9rem auto;
+    margin: 0.85rem auto;
+  }
+
+  main.screen-auction {
+    width: min(760px, 94vw);
+    margin: 1rem auto;
+  }
+
+  main.screen-season-results,
+  main.screen-stats,
+  main.screen-table,
+  main.screen-home {
+    width: min(1280px, 94vw);
   }
 
   .overlay-panel {
-    max-width: min(1840px, 98vw);
-    inset: 2vh max(1vw, 0.5rem);
-    padding: 0.8rem;
+    max-width: min(1440px, 96vw);
+    inset: 3vh max(2vw, 0.75rem);
+    padding: 0.9rem;
   }
 
-  .screen-heading {
-    margin-bottom: 0.45rem;
+  main.screen-draft .screen-heading,
+  main.screen-squad .screen-heading {
+    margin-bottom: 0.4rem;
   }
 
-  .candidate-grid {
+  main.screen-draft .candidate-grid {
+    display: grid !important;
+    grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
     gap: 0.55rem !important;
     align-items: start !important;
+    margin: 0.65rem 0 !important;
   }
 
-  .candidate {
+  main.screen-draft .candidate {
     min-width: 0;
-    padding: 0.46rem !important;
+    padding: 0.44rem !important;
   }
 
-  /* Draft candidate screen: use the 1920px width aggressively. */
-  .screen-heading + .hint + p + .candidate-grid {
-    grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+  main.screen-draft .player-card,
+  main.screen-draft .candidate > .player-card {
+    display: grid !important;
+    grid-template-columns: minmax(0, 0.42fr) minmax(0, 0.58fr) !important;
+    align-items: start !important;
+    gap: 0.4rem !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    min-height: 154px;
+    height: auto !important;
+    padding: 0.44rem !important;
+    overflow: hidden;
   }
 
-  .screen-heading + .hint + p + .candidate-grid .candidate {
+  main.screen-draft .ability-grid div {
+    grid-template-columns: 3.2rem calc(1.15rem + var(--pc-draft-bar)) !important;
+  }
+
+  main.screen-draft .ability-grid dd {
+    grid-template-columns: 1.05rem var(--pc-draft-bar) !important;
+  }
+
+  main.screen-draft .rank-bar {
+    width: var(--pc-draft-bar) !important;
+    min-width: var(--pc-draft-bar) !important;
+    max-width: var(--pc-draft-bar) !important;
+  }
+
+  main.screen-draft .scout-comment {
+    font-size: 0.66rem;
+    line-height: 1.35;
+    margin: 0.35rem 0;
+  }
+
+  main.screen-draft .candidate button {
+    width: 100%;
+    padding: 0.38rem 0.45rem !important;
+    margin: 0.28rem 0 0 !important;
+    font-size: 0.62rem !important;
+  }
+
+  main.screen-auction > article.candidate {
+    width: min(420px, 100%);
+    margin: 0.8rem auto 1rem;
+    padding: 0.7rem !important;
+  }
+
+  main.screen-auction .player-card {
+    display: grid !important;
+    grid-template-columns: minmax(0, 0.44fr) minmax(0, 0.56fr) !important;
+    gap: 0.45rem !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 0.55rem !important;
+  }
+
+  main.screen-auction .ability-grid div {
+    grid-template-columns: 3.6rem calc(1.25rem + var(--pc-auction-bar)) !important;
+  }
+
+  main.screen-auction .ability-grid dd {
+    grid-template-columns: 1.15rem var(--pc-auction-bar) !important;
+  }
+
+  main.screen-auction .rank-bar {
+    width: var(--pc-auction-bar) !important;
+    min-width: var(--pc-auction-bar) !important;
+    max-width: var(--pc-auction-bar) !important;
+  }
+
+  main.screen-squad .lineup-editor {
+    display: grid;
+    grid-template-columns: minmax(900px, 1.18fr) minmax(640px, 0.82fr);
+    grid-template-areas:
+      "status status"
+      "starterTitle benchTitle"
+      "slots bench";
+    gap: 0.45rem 0.9rem;
+    margin: 0.55rem 0;
+    align-items: start;
+  }
+
+  main.screen-squad .lineup-status {
+    grid-area: status;
+    padding: 0.5rem 0.7rem !important;
+    font-size: 0.78rem;
+  }
+
+  main.screen-squad .lineup-editor > h3 {
+    grid-area: starterTitle;
+    margin: 0.1rem 0 !important;
+  }
+
+  main.screen-squad .bench-heading {
+    grid-area: benchTitle;
+    margin: 0 !important;
+    align-items: center !important;
+  }
+
+  main.screen-squad .bench-heading h3,
+  main.screen-squad .bench-heading label {
+    margin: 0 !important;
+  }
+
+  main.screen-squad .lineup-slots {
+    grid-area: slots;
+    display: block !important;
+    position: relative;
+    min-height: 620px;
+    padding: 0.7rem;
+    border: 2px solid #86efac;
+    border-radius: 20px;
+    background:
+      radial-gradient(circle at 50% 50%, #ffffff14 0 0.16rem, transparent 0.18rem),
+      linear-gradient(90deg, transparent 49.7%, #ffffff1a 50%, transparent 50.3%),
+      linear-gradient(#14532d, #166534);
+    overflow: hidden;
+  }
+
+  main.screen-squad .lineup-slots::before {
+    content: "";
+    position: absolute;
+    inset: 0.6rem;
+    border: 1px solid #ffffff24;
+    border-radius: 16px;
+    pointer-events: none;
+  }
+
+  main.screen-squad .lineup-slots::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 0.6rem;
+    width: 34%;
+    height: 18%;
+    transform: translateX(-50%);
+    border: 2px solid #ffffff33;
+    border-bottom: 0;
+    border-radius: 18px 18px 0 0;
+    pointer-events: none;
+  }
+
+  main.screen-squad .bench-grid {
+    grid-area: bench;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0.45rem !important;
+    margin-top: 0 !important;
+  }
+
+  main.screen-squad .lineup-slot,
+  main.screen-squad .lineup-slot:first-child,
+  main.screen-squad .lineup-slot:last-child {
+    position: absolute;
+    grid-column: auto !important;
     min-width: 0;
+    width: 28%;
+    padding: 0.32rem !important;
+    border-radius: 12px !important;
+    background: color-mix(in srgb, var(--card) 86%, transparent);
+    z-index: 1;
   }
 
+  main.screen-squad .lineup-slot:nth-child(5) { left: 36%; top: 2.5%; }
+  main.screen-squad .lineup-slot:nth-child(3) { left: 5%; top: 27%; }
+  main.screen-squad .lineup-slot:nth-child(4) { right: 5%; top: 27%; }
+  main.screen-squad .lineup-slot:nth-child(2) { left: 36%; top: 42%; }
+  main.screen-squad .lineup-slot:nth-child(1) { left: 36%; bottom: 2.5%; }
+
+  main.screen-squad .lineup-slot .player-card,
+  main.screen-squad .bench-player .player-card {
+    display: grid !important;
+    grid-template-columns: minmax(0, 0.44fr) minmax(0, 0.56fr) !important;
+    gap: 0.34rem !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    min-height: 126px;
+    padding: 0.38rem !important;
+    overflow: hidden;
+  }
+
+  main.screen-squad .lineup-slot .ability-grid div,
+  main.screen-squad .bench-player .ability-grid div {
+    grid-template-columns: 3.0rem calc(1.05rem + var(--pc-card-bar)) !important;
+  }
+
+  main.screen-squad .lineup-slot .ability-grid dd,
+  main.screen-squad .bench-player .ability-grid dd {
+    grid-template-columns: 0.98rem var(--pc-card-bar) !important;
+  }
+
+  main.screen-squad .lineup-slot > button,
+  main.screen-squad .bench-player > button {
+    width: 100%;
+    padding: 0.32rem 0.44rem !important;
+    margin: 0.22rem 0 0 !important;
+    font-size: 0.6rem !important;
+  }
+
+  main.screen-season-results .season-awards .candidate-grid,
   .season-awards .candidate-grid {
     grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 0.65rem !important;
   }
 
   .roster-panel .candidate-grid,
   .overlay-panel .candidate-grid:not(.bench-grid) {
     grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    gap: 0.6rem !important;
   }
 
-  .bench-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: 0.45rem !important;
-  }
-
-  /* Auction is intentionally not stretched across the desktop width. */
-  main > article.candidate {
-    width: min(430px, 100%);
-    margin: 0.8rem auto 1rem;
-  }
-
-  main > article.candidate > .player-card {
-    min-height: 0 !important;
-  }
-
-  .player-card,
-  .candidate > .player-card,
-  .lineup-slot .player-card,
-  .potm .player-card,
-  .season-awards .player-card,
-  .roster-panel .player-card,
-  .bench-player .player-card {
-    display: grid !important;
-    grid-template-columns: minmax(0, 0.47fr) minmax(0, 0.53fr) !important;
-    align-items: start !important;
-    gap: 0.38rem !important;
-    width: 100% !important;
-    max-width: none !important;
-    min-width: 0 !important;
-    height: auto !important;
-    min-height: 144px;
-    padding: 0.44rem !important;
-    overflow: hidden;
-  }
-
-  .candidate-grid .player-card {
-    min-height: 154px;
-  }
-
-  .player-profile,
-  .player-abilities,
-  .player-title,
-  .player-name-box,
-  .player-special-row {
+  main.screen-draft .player-profile,
+  main.screen-draft .player-abilities,
+  main.screen-draft .player-title,
+  main.screen-draft .player-name-box,
+  main.screen-draft .player-special-row,
+  main.screen-auction .player-profile,
+  main.screen-auction .player-abilities,
+  main.screen-auction .player-title,
+  main.screen-auction .player-name-box,
+  main.screen-auction .player-special-row,
+  main.screen-squad .player-profile,
+  main.screen-squad .player-abilities,
+  main.screen-squad .player-title,
+  main.screen-squad .player-name-box,
+  main.screen-squad .player-special-row {
     min-width: 0 !important;
   }
 
-  .player-title {
+  main.screen-draft .player-title,
+  main.screen-auction .player-title,
+  main.screen-squad .player-title {
     align-items: flex-start !important;
     justify-content: flex-start !important;
     flex-direction: column !important;
     gap: 0.08rem !important;
   }
 
-  .overall-rank {
+  main.screen-draft .overall-rank,
+  main.screen-auction .overall-rank,
+  main.screen-squad .overall-rank {
     order: -1;
     font-size: var(--pc-card-rank) !important;
     line-height: 1.05;
     white-space: nowrap;
   }
 
-  .player-name {
+  main.screen-draft .player-name,
+  main.screen-auction .player-name,
+  main.screen-squad .player-name {
     max-width: 100% !important;
     font-size: var(--pc-card-name) !important;
     line-height: 1.1;
   }
 
-  .position-badge {
+  main.screen-draft .position-badge,
+  main.screen-auction .position-badge,
+  main.screen-squad .position-badge {
     min-width: 1.8rem !important;
     margin: 0.22rem 0 0.08rem !important;
     padding: 0.12rem 0.36rem !important;
@@ -125,29 +319,23 @@
     line-height: 1.1;
   }
 
-  .player-profile p,
-  .player-meta,
-  .growth-expectation {
+  main.screen-draft .player-profile p,
+  main.screen-draft .player-meta,
+  main.screen-draft .growth-expectation,
+  main.screen-auction .player-profile p,
+  main.screen-auction .player-meta,
+  main.screen-auction .growth-expectation,
+  main.screen-squad .player-profile p,
+  main.screen-squad .player-meta,
+  main.screen-squad .growth-expectation {
     margin: 0.16rem 0 !important;
     font-size: var(--pc-card-small) !important;
     line-height: 1.18 !important;
   }
 
-  .rename-button,
-  .release-button,
-  .detail-button,
-  .candidate button,
-  .lineup-slot > button,
-  .bench-player > button {
-    padding: 0.34rem 0.48rem !important;
-    margin: 0.24rem 0 0 !important;
-    font-size: 0.62rem !important;
-    line-height: 1.1;
-  }
-
-  .ability-grid,
-  .lineup-slot .ability-grid,
-  .candidate > .player-card .ability-grid {
+  main.screen-draft .ability-grid,
+  main.screen-auction .ability-grid,
+  main.screen-squad .ability-grid {
     display: grid !important;
     grid-template-columns: 1fr !important;
     gap: 0.16rem !important;
@@ -155,11 +343,10 @@
     margin: 0 !important;
   }
 
-  .ability-grid div,
-  .lineup-slot .ability-grid div,
-  .candidate > .player-card .ability-grid div {
+  main.screen-draft .ability-grid div,
+  main.screen-auction .ability-grid div,
+  main.screen-squad .ability-grid div {
     display: grid !important;
-    grid-template-columns: 3.25rem calc(1.15rem + var(--pc-card-bar)) !important;
     align-items: center !important;
     justify-content: start !important;
     gap: 0.18rem !important;
@@ -168,11 +355,9 @@
     overflow: hidden;
   }
 
-  .screen-heading + .hint + p + .candidate-grid .ability-grid div {
-    grid-template-columns: 3.25rem calc(1.15rem + var(--pc-draft-bar)) !important;
-  }
-
-  .ability-grid dt {
+  main.screen-draft .ability-grid dt,
+  main.screen-auction .ability-grid dt,
+  main.screen-squad .ability-grid dt {
     font-size: 0.56rem !important;
     line-height: 1.05;
     overflow: hidden;
@@ -180,9 +365,10 @@
     white-space: nowrap;
   }
 
-  .ability-grid dd {
+  main.screen-draft .ability-grid dd,
+  main.screen-auction .ability-grid dd,
+  main.screen-squad .ability-grid dd {
     display: grid !important;
-    grid-template-columns: 1.05rem var(--pc-card-bar) !important;
     align-items: center !important;
     gap: 0.12rem !important;
     min-width: 0 !important;
@@ -191,34 +377,31 @@
     line-height: 1.05;
   }
 
-  .screen-heading + .hint + p + .candidate-grid .ability-grid dd {
-    grid-template-columns: 1.05rem var(--pc-draft-bar) !important;
-  }
-
-  .rank-bar {
+  main.screen-draft .rank-bar,
+  main.screen-auction .rank-bar,
+  main.screen-squad .rank-bar {
     display: block !important;
-    width: var(--pc-card-bar) !important;
-    min-width: var(--pc-card-bar) !important;
-    max-width: var(--pc-card-bar) !important;
     height: 5px !important;
     overflow: hidden !important;
   }
 
-  .screen-heading + .hint + p + .candidate-grid .rank-bar {
-    width: var(--pc-draft-bar) !important;
-    min-width: var(--pc-draft-bar) !important;
-    max-width: var(--pc-draft-bar) !important;
-  }
-
-  .player-special-row {
+  main.screen-draft .player-special-row,
+  main.screen-auction .player-special-row,
+  main.screen-squad .player-special-row {
     grid-column: 1 / -1 !important;
-    padding-top: 0.32rem !important;
-    margin-top: 0.1rem;
+    padding-top: 0.3rem !important;
+    margin-top: 0.08rem;
   }
 
-  .player-special-row .special-ability-detail summary,
-  .special-ability,
-  .special-ability.none {
+  main.screen-draft .player-special-row .special-ability-detail summary,
+  main.screen-draft .special-ability,
+  main.screen-draft .special-ability.none,
+  main.screen-auction .player-special-row .special-ability-detail summary,
+  main.screen-auction .special-ability,
+  main.screen-auction .special-ability.none,
+  main.screen-squad .player-special-row .special-ability-detail summary,
+  main.screen-squad .special-ability,
+  main.screen-squad .special-ability.none {
     font-size: 0.62rem !important;
     line-height: 1.15;
     white-space: nowrap;
@@ -226,147 +409,24 @@
     text-overflow: ellipsis;
     margin: 0 !important;
   }
-
-  .player-special-row .special-ability-detail p {
-    font-size: 0.6rem !important;
-    line-height: 1.25 !important;
-    padding: 0.35rem !important;
-  }
-
-  /* Squad: left court, right bench, with the court using positional placement. */
-  .lineup-editor {
-    display: grid;
-    grid-template-columns: minmax(820px, 1.18fr) minmax(620px, 0.82fr);
-    grid-template-areas:
-      "status status"
-      "starterTitle benchTitle"
-      "slots bench";
-    gap: 0.45rem 0.9rem;
-    margin: 0.6rem 0;
-    align-items: start;
-  }
-
-  .lineup-status {
-    grid-area: status;
-    padding: 0.5rem 0.7rem !important;
-    font-size: 0.78rem;
-  }
-
-  .lineup-editor > h3 {
-    grid-area: starterTitle;
-    margin: 0.1rem 0 !important;
-  }
-
-  .bench-heading {
-    grid-area: benchTitle;
-    margin: 0 !important;
-    align-items: center !important;
-  }
-
-  .bench-heading h3,
-  .bench-heading label {
-    margin: 0 !important;
-  }
-
-  .lineup-slots {
-    grid-area: slots;
-    display: block !important;
-    position: relative;
-    min-height: 640px;
-    padding: 0.75rem;
-    border: 2px solid #86efac;
-    border-radius: 20px;
-    background:
-      radial-gradient(circle at 50% 50%, #ffffff14 0 0.16rem, transparent 0.18rem),
-      linear-gradient(90deg, transparent 49.7%, #ffffff18 50%, transparent 50.3%),
-      linear-gradient(#14532d, #166534);
-    overflow: hidden;
-  }
-
-  .lineup-slots::before {
-    content: "";
-    position: absolute;
-    inset: 0.6rem;
-    border: 1px solid #ffffff22;
-    border-radius: 16px;
-    pointer-events: none;
-  }
-
-  .lineup-slots::after {
-    content: "";
-    position: absolute;
-    left: 50%;
-    bottom: 0.6rem;
-    width: 34%;
-    height: 18%;
-    transform: translateX(-50%);
-    border: 2px solid #ffffff2e;
-    border-bottom: 0;
-    border-radius: 18px 18px 0 0;
-    pointer-events: none;
-  }
-
-  .bench-grid {
-    grid-area: bench;
-    margin-top: 0 !important;
-  }
-
-  .lineup-slot,
-  .lineup-slot:first-child,
-  .lineup-slot:last-child {
-    position: absolute;
-    grid-column: auto !important;
-    min-width: 0;
-    width: 30%;
-    padding: 0.32rem !important;
-    border-radius: 12px !important;
-    background: color-mix(in srgb, var(--card) 86%, transparent);
-    z-index: 1;
-  }
-
-  .lineup-slot:nth-child(5) { left: 35%; top: 2.5%; }
-  .lineup-slot:nth-child(3) { left: 3%; top: 31%; }
-  .lineup-slot:nth-child(4) { right: 3%; top: 31%; }
-  .lineup-slot:nth-child(2) { left: 35%; top: 45%; }
-  .lineup-slot:nth-child(1) { left: 35%; bottom: 2.5%; }
-
-  .slot-heading {
-    margin-bottom: 0.24rem !important;
-  }
-
-  .slot-heading > b {
-    font-size: 0.74rem !important;
-  }
-
-  .slot-heading span {
-    font-size: 0.58rem !important;
-  }
-
-  .lineup-slot .player-card {
-    min-height: 126px;
-  }
 }
 
 @media (min-width: 1600px) {
-  .lineup-editor {
-    grid-template-columns: minmax(980px, 1.22fr) minmax(700px, 0.78fr);
+  main.screen-squad .lineup-editor {
+    grid-template-columns: minmax(1050px, 1.22fr) minmax(700px, 0.78fr);
   }
 
-  .lineup-slots {
-    min-height: 660px;
-  }
-
-  .bench-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  main.screen-squad .lineup-slots {
+    min-height: 650px;
   }
 }
 
 @media (min-width: 1180px) and (max-width: 1599px) {
-  .screen-heading + .hint + p + .candidate-grid {
+  main.screen-draft .candidate-grid {
     grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
   }
 
-  .lineup-editor {
+  main.screen-squad .lineup-editor {
     grid-template-columns: minmax(720px, 1fr) minmax(480px, 0.8fr);
   }
 }
