@@ -92,6 +92,10 @@ export default {
       if (action === 'confirm-phase' && method === 'POST') return forwardRoomAction(request, env, roomId, 'confirm-phase', 'POST');
       if (action === 'submit-offseason-events' && method === 'POST') return forwardRoomAction(request, env, roomId, 'submit-offseason-events', 'POST');
       if (action === 'advance-offseason-events' && method === 'POST') return forwardRoomAction(request, env, roomId, 'advance-offseason-events', 'POST');
+      if (action === 'submit-development' && method === 'POST') return forwardRoomAction(request, env, roomId, 'submit-development', 'POST');
+      if (action === 'advance-development' && method === 'POST') return forwardRoomAction(request, env, roomId, 'advance-development', 'POST');
+      if (action === 'submit-release' && method === 'POST') return forwardRoomAction(request, env, roomId, 'submit-release', 'POST');
+      if (action === 'advance-release' && method === 'POST') return forwardRoomAction(request, env, roomId, 'advance-release', 'POST');
     }
 
     return notFound();
