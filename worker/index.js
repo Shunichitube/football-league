@@ -89,13 +89,17 @@ export default {
       if (action === 'submit' && method === 'POST') return forwardRoomAction(request, env, roomId, 'submit', 'POST');
       if (action === 'ready' && method === 'POST') return forwardRoomAction(request, env, roomId, 'ready', 'POST');
       if (action === 'run-season' && method === 'POST') return forwardRoomAction(request, env, roomId, 'run-season', 'POST');
+      if (action === 'prepare-season-resolution' && method === 'POST') return forwardRoomAction(request, env, roomId, 'prepare-season-resolution', 'POST');
       if (action === 'complete-season' && method === 'POST') return forwardRoomAction(request, env, roomId, 'complete-season', 'POST');
       if (action === 'confirm-phase' && method === 'POST') return forwardRoomAction(request, env, roomId, 'confirm-phase', 'POST');
       if (action === 'submit-offseason-events' && method === 'POST') return forwardRoomAction(request, env, roomId, 'submit-offseason-events', 'POST');
+      if (action === 'prepare-offseason-resolution' && method === 'POST') return forwardRoomAction(request, env, roomId, 'prepare-offseason-resolution', 'POST');
       if (action === 'advance-offseason-events' && method === 'POST') return forwardRoomAction(request, env, roomId, 'advance-offseason-events', 'POST');
       if (action === 'submit-development' && method === 'POST') return forwardRoomAction(request, env, roomId, 'submit-development', 'POST');
+      if (action === 'prepare-development-resolution' && method === 'POST') return forwardRoomAction(request, env, roomId, 'prepare-development-resolution', 'POST');
       if (action === 'advance-development' && method === 'POST') return forwardRoomAction(request, env, roomId, 'advance-development', 'POST');
       if (action === 'submit-release' && method === 'POST') return forwardRoomAction(request, env, roomId, 'submit-release', 'POST');
+      if (action === 'prepare-release-resolution' && method === 'POST') return forwardRoomAction(request, env, roomId, 'prepare-release-resolution', 'POST');
       if (action === 'advance-release' && method === 'POST') return forwardRoomAction(request, env, roomId, 'advance-release', 'POST');
       if (action === 'submit-draft' && method === 'POST') return forwardRoomAction(request, env, roomId, 'submit-draft', 'POST');
       if (action === 'prepare-draft-resolution' && method === 'POST') return forwardRoomAction(request, env, roomId, 'prepare-draft-resolution', 'POST');
