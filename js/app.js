@@ -179,7 +179,7 @@ render = stage10Render;
 document.addEventListener('click', event => {
   const action = event.target.closest('[data-stage10]')?.dataset.stage10;
   if (action==='roster') { s.rosterOpen=true; s.detailPlayerId=null; render(); }
-  if (action==='release') { const playerId=event.target.closest('[data-release-player]')?.dataset.releasePlayer; if(playerId){const result=applyClubAction(me(),{type:ACTION_TYPES.RELEASE_PLAYER,clubId:me().id,playerId},s.league);if(!result.ok){s.releaseMessage=result.error;render();return}selectBestLineup(me());s.releaseMessage='';s.rosterOpen=true;s.detailPlayerId=null;render();} }
+  if (action==='release') { const playerId=event.target.closest('[data-release-player]')?.dataset.releasePlayer; if(playerId){const result=applyClubAction(me(),{type:ACTION_TYPES.RELEASE_PLAYER,clubId:me().id,playerId},s.league);if(!result.ok){s.releaseMessage=result.error;render();return}selectBestLineup(me());s.releaseMessage='';s.rosterOpen=s.view !== 'release';s.detailPlayerId=null;render();} }
   if (action==='close') { s.rosterOpen=false; s.detailPlayerId=null; document.querySelectorAll('.overlay-backdrop,.overlay-panel').forEach(node=>node.remove()); }
 });
 document.addEventListener('keydown', event => { if(event.key==='Escape'&&s.rosterOpen){s.rosterOpen=false;s.detailPlayerId=null;render();} });
