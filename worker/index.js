@@ -89,6 +89,7 @@ export default {
       if (action === 'ready' && method === 'POST') return forwardRoomAction(request, env, roomId, 'ready', 'POST');
       if (action === 'run-season' && method === 'POST') return forwardRoomAction(request, env, roomId, 'run-season', 'POST');
       if (action === 'complete-season' && method === 'POST') return forwardRoomAction(request, env, roomId, 'complete-season', 'POST');
+      if (action === 'confirm-phase' && method === 'POST') return forwardRoomAction(request, env, roomId, 'confirm-phase', 'POST');
     }
 
     return notFound();
