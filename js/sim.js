@@ -174,7 +174,8 @@ function decrementRest(matchState) {
 }
 function slotEffectiveOverall(player, role, fatigue = 1) { return calculateOverall(player) * positionSuitability(player, role) * fatigue; }
 function availableBench(matchState, used = new Set()) {
-  return [...matchState.playerState.values()].filter(state => state.currentSlot === null && state.restRemaining <= 0 && !used.has(state.player.id));
+  const keeperId = matchState.keeper?.id;
+  return [...matchState.playerState.values()].filter(state => state.player.id !== keeperId && state.currentSlot === null && state.restRemaining <= 0 && !used.has(state.player.id));
 }
 function returnRecoveredStarters(matchState) {
   for (const slot of matchState.slots) {
@@ -205,8 +206,9 @@ function substituteFatigued(matchState) {
     used.add(need.candidate.player.id);
   }
 }
-function advanceSubstitutions(matchState) {
+function advanceSubstitutions(matchState, allowChanges = true) {
   decrementRest(matchState);
+  if (!allowChanges) return;
   returnRecoveredStarters(matchState);
   substituteFatigued(matchState);
 }
@@ -452,7 +454,7 @@ function maybeStartLongFeed({ phase, keeper, attack, defend, home, homeState, aw
   const diff = scores.offense + tacticAttackBonus('SHORT_COUNTER', attack.tactic) - (scores.defense + tacticDefenseBonus(defend.tactic));
   const rate = longFeedAttemptRate(diff);
   if (rng.next() >= rate) return null;
-  events.push(logEvent(phase, 'LONG FEED', keeper, `attempt ${Math.round(rate * 100)}% / outlook ${Math.round(diff)}`, sideKey(attack, home)));
+  events.push(logEvent(phase, 'LONG FEED', keeper, `attempt ${Math.round(rate * 100)}% / outlook ${Math.round(diff)}`, sideKey(attack, home), displayRoles('SHORT_COUNTER', roles, { longFeed: true })));
   return { attack, defend, firstType: 'SHORT_COUNTER', type: 'SHORT_COUNTER', stage: 2, roles, shortCounter: true, longFeed: true };
 }
 function roleDescription(type, stage, roles) {
@@ -495,7 +497,8 @@ export function simulateMatch(home, away, rng) {
   let nextRestart = { club: null, kind: 'normal' };
 
   for (let phase = 1; phase <= CONFIG.phaseCount; phase++) {
-    advanceSubstitutions(homeState); advanceSubstitutions(awayState);
+    const allowSubstitutions = !activeAttack;
+    advanceSubstitutions(homeState, allowSubstitutions); advanceSubstitutions(awayState, allowSubstitutions);
     const homeFielders = activeFielders(homeState), awayFielders = activeFielders(awayState);
 
     if (!activeAttack) {
@@ -566,7 +569,7 @@ export function simulateMatch(home, away, rng) {
     const shooter = pickShooterFromRoles(type, secondRoles, attackers, attack.tactic, rng);
     stat.get(shooter.id).shots++; ratings[shooter.id] += .05;
     const attackSide = sideKey(attack, home), defendSide = sideKey(defend, home);
-    const shotDisplay = displayRoles(type, secondRoles, { stage: 2, shooter: shooter.name, corner: !!activeAttack.corner, longFeed: !!activeAttack.longFeed, keeper: isPowerPlay ? attackState.keeper.name : null });
+    const shotDisplay = displayRoles(type, secondRoles, { stage: 2, chance, shooter: shooter.name, corner: !!activeAttack.corner, longFeed: !!activeAttack.longFeed, keeper: isPowerPlay ? attackState.keeper.name : null });
     const counterShotBonus = type === 'COUNTER' ? 5 : type === 'SHORT_COUNTER' ? 8 : 0;
     const abilityShotBonus = shotBonusForAbility(shooter, type, chance, phase, score, attackSide, defendSide, secondRoles);
     const shooterScore = fieldValue(shooter, 'shoot', attack.tactic) + CONFIG.chanceBonus[chance.toLowerCase()] + counterShotBonus + abilityShotBonus + luck(rng, CONFIG.shotLuck);
@@ -604,7 +607,7 @@ export function simulateMatch(home, away, rng) {
       } else {
         stat.get(gk.id).saves++; ratings[gk.id] += .08;
         const recovered = rng.next() < reboundRecoveryRate(chance, gk);
-        events.push(logEvent(phase, 'REBOUND', recovered ? shooter : gk, `${type} / ${chance} / ${recovered ? 'attack recovers' : 'cleared'}`, recovered ? attackSide : defendSide, shotDisplay));
+        events.push(logEvent(phase, 'REBOUND', recovered ? shooter : gk, `${type} / ${chance} / ${recovered ? 'attack recovers' : 'cleared'}`, recovered ? attackSide : defendSide, { ...shotDisplay, rebound: recovered ? 'attack' : 'cleared' }));
         if (recovered) {
           const reboundType = pickWeightedType({ PASS: 50, DRIBBLE: 50 }, rng);
           activeAttack = { attack, defend, firstType: 'REBOUND', type: reboundType, stage: 2, roles: null, rebound: true };
