@@ -3,6 +3,12 @@ import { finalizeSeason, simulateRemainingSeason, standings } from './league.js?
 
 const app = document.querySelector('#app');
 const SESSION_KEY = 'football-league:multiplayer-session';
+const TACTICS = [
+  ['BALANCED', 'バランス'],
+  ['POSSESSION', 'ポゼッション'],
+  ['DRIBBLE', 'ドリブル'],
+  ['COUNTER', 'カウンター']
+];
 
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
   '&': '&amp;',
@@ -21,7 +27,10 @@ function injectMultiplayerStyles() {
     .multiplayer-join-box{background:#0f172a;border:1px solid var(--line);border-radius:12px;padding:.85rem;margin-top:.8rem}.multiplayer-join-box button{width:100%;margin:.3rem 0 0}
     .multiplayer-room h1{font-size:clamp(2.4rem,9vw,5rem);line-height:.9;letter-spacing:-.06em;margin:.2rem 0 1rem}.room-id{font-size:clamp(2rem,9vw,4.2rem);letter-spacing:.12em;color:var(--accent);word-break:break-all}.multiplayer-room .hero{text-align:center}
     .mp-player-list{display:grid;gap:.55rem;margin:1rem 0}.mp-player-row{display:flex;align-items:center;justify-content:space-between;gap:.8rem;background:#0f172a;border:1px solid var(--line);border-radius:10px;padding:.65rem .8rem}.mp-player-row b{font-size:1rem}.mp-ready{color:#86efac;font-weight:900}.mp-not-ready{color:#fca5a5;font-weight:900}.mp-host-badge{display:inline-flex;margin-left:.4rem;padding:.1rem .4rem;border:1px solid #facc15;border-radius:999px;color:#facc15;font-size:.65rem;font-weight:900}
-    .mp-assigned-club{display:grid;gap:.35rem;text-align:center}.mp-assigned-club b{font-size:clamp(1.7rem,7vw,3rem);color:var(--accent)}.mp-club-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.6rem;margin-top:1rem}.mp-club-card{background:#0f172a;border:1px solid var(--line);border-radius:10px;padding:.7rem}.mp-club-card.human{border-color:var(--accent)}.mp-club-card small{display:block;margin-top:.25rem}.mp-work-summary{background:#0f172a;border:1px solid var(--line);border-radius:12px;padding:.85rem;margin:1rem 0}.mp-work-summary b{color:#fff}.mp-incomplete{margin:.35rem 0 0;padding-left:1.2rem}.mp-incomplete li{margin:.15rem 0;color:#fca5a5;font-weight:800}.mp-result-table{width:100%;border-collapse:collapse}.mp-result-table th,.mp-result-table td{padding:.55rem;border-bottom:1px solid var(--line);text-align:left}.mp-result-table tr.you{background:#17255466}
+    .mp-assigned-club{display:grid;gap:.35rem;text-align:center}.mp-assigned-club b{font-size:clamp(1.7rem,7vw,3rem);color:var(--accent)}.mp-club-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.6rem;margin-top:1rem}.mp-club-card{background:#0f172a;border:1px solid var(--line);border-radius:10px;padding:.7rem}.mp-club-card.human{border-color:var(--accent)}.mp-club-card small{display:block;margin-top:.25rem}
+    .mp-work-summary{background:#0f172a;border:1px solid var(--line);border-radius:12px;padding:.85rem;margin:1rem 0}.mp-work-summary b{color:#fff}.mp-incomplete{margin:.35rem 0 0;padding-left:1.2rem}.mp-incomplete li{margin:.15rem 0;color:#fca5a5;font-weight:800}
+    .mp-result-table{width:100%;border-collapse:collapse}.mp-result-table th,.mp-result-table td{padding:.55rem;border-bottom:1px solid var(--line);text-align:left}.mp-result-table tr.you{background:#17255466}
+    .mp-setup-editor{display:grid;gap:1rem}.mp-lineup-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.55rem}.mp-lineup-option{display:flex;align-items:center;gap:.55rem;background:#0f172a;border:1px solid var(--line);border-radius:10px;padding:.7rem}.mp-lineup-option input{width:auto}.mp-lineup-option span{display:grid}.mp-lineup-option small{color:var(--muted)}.mp-tactic-select{max-width:360px}
     @media(max-width:560px){.multiplayer-actions{grid-template-columns:1fr}.multiplayer-modal{padding:.9rem}.multiplayer-room .season-result-actions button{width:100%;margin:.3rem 0}.mp-player-row{align-items:flex-start;flex-direction:column}.mp-result-table{font-size:.8rem}}
   </style>`);
 }
@@ -105,6 +114,35 @@ function clubName(clubs, clubId) {
   return clubs.find(club => club.id === clubId)?.name || clubId || '開始前';
 }
 
+function stableSeasonSeed(room) {
+  return `${roomIdOf(room)}:season:1`;
+}
+
+function createPreviewLeague(room) {
+  return createMultiplayerLeagueFromRoom(room, stableSeasonSeed(room));
+}
+
+function clubForPlayer(room, player) {
+  if (!player) return null;
+  return createPreviewLeague(room).clubs.find(club => club.multiplayerPlayerId === player.id) || null;
+}
+
+function validTactic(value) {
+  return TACTICS.some(([key]) => key === value) ? value : 'BALANCED';
+}
+
+function applySubmittedSetups(league, room) {
+  const players = room?.players || room?.room?.players || [];
+  for (const player of players) {
+    const club = league.clubs.find(candidate => candidate.multiplayerPlayerId === player.id);
+    if (!club) continue;
+    const ids = new Set(club.roster.map(row => row.id));
+    const lineup = Array.isArray(player.submitted?.lineup) ? player.submitted.lineup.filter(id => ids.has(id)) : [];
+    if (lineup.length === 5 && new Set(lineup).size === 5) club.lineup = lineup;
+    club.tactic = validTactic(player.submitted?.tactic || club.tactic);
+  }
+}
+
 function playerStatus(player, phase) {
   if (phase === 'lobby') return player.ready ? ['準備完了', 'mp-ready'] : ['未準備', 'mp-not-ready'];
   if (phase === 'team-setup') return player.phaseComplete ? ['作業完了', 'mp-ready'] : ['作業中', 'mp-not-ready'];
@@ -142,9 +180,34 @@ function renderWorkSummary(players, phase) {
   return `<section class="mp-work-summary"><b>作業状況：${done}/${players.length} 完了</b>${incomplete.length ? `<p class="hint">まだ完了していないクラブ：</p><ul class="mp-incomplete">${incomplete.map(player => `<li>${escapeHtml(player.teamName || player.name || 'クラブ')}</li>`).join('')}</ul>` : '<p class="hint">全員完了しました。次フェーズへ進みます。</p>'}</section>`;
 }
 
+function renderSetupEditor(room, localPlayer) {
+  const phase = room?.phase || room?.room?.phase;
+  if (phase !== 'team-setup' || !localPlayer || localPlayer.phaseComplete) return '';
+  const club = clubForPlayer(room, localPlayer);
+  if (!club) return `<section class="match-card"><h2>編成・戦術</h2><p class="lineup-error">担当クラブを取得できませんでした。更新してください。</p></section>`;
+  const submittedLineup = Array.isArray(localPlayer.submitted?.lineup) && localPlayer.submitted.lineup.length ? localPlayer.submitted.lineup : club.lineup;
+  const selected = new Set(submittedLineup);
+  const tactic = validTactic(localPlayer.submitted?.tactic || club.tactic);
+  return `<section class="match-card mp-setup-editor">
+    <div>
+      <h2>編成・戦術</h2>
+      <p class="hint">先発5人と戦術を選んで、作業完了してください。今はマルチ用の最小入力です。</p>
+    </div>
+    <label class="mp-tactic-select">戦術
+      <select data-mp-tactic>${TACTICS.map(([key, label]) => `<option value="${key}" ${key === tactic ? 'selected' : ''}>${label}</option>`).join('')}</select>
+    </label>
+    <div>
+      <h3>先発選手</h3>
+      <p class="hint">5人選択してください。</p>
+      <div class="mp-lineup-options">${club.roster.map(player => `<label class="mp-lineup-option"><input type="checkbox" data-mp-lineup value="${escapeHtml(player.id)}" ${selected.has(player.id) ? 'checked' : ''}><span><b>${escapeHtml(player.name)}</b><small>${escapeHtml(player.primaryPosition)}</small></span></label>`).join('')}</div>
+    </div>
+  </section>`;
+}
+
 function buildSeasonResult(room) {
-  const seed = `${roomIdOf(room)}:${Date.now()}`;
+  const seed = stableSeasonSeed(room);
   const league = createMultiplayerLeagueFromRoom(room, seed);
+  applySubmittedSetups(league, room);
   const simulation = simulateRemainingSeason(league);
   finalizeSeason(league);
   const table = standings(league).map(row => ({
@@ -205,6 +268,7 @@ function renderRoomScreen(room, playerId = null) {
       <p class="hint">このIDを参加者に共有してください。</p>
     </section>
     ${renderAssignedClub(room, localPlayer)}
+    ${renderSetupEditor(room, localPlayer)}
     ${renderSeasonResult(room, localPlayer)}
     <section class="match-card">
       <h2>現在の状態</h2>
@@ -216,14 +280,14 @@ function renderRoomScreen(room, playerId = null) {
     <div class="season-result-actions">
       ${localPlayer && isLobby ? `<button type="button" data-mp-ready="${id}" data-mp-ready-value="${localPlayer.ready ? 'false' : 'true'}">${localPlayer.ready ? '準備完了解除' : '準備完了'}</button>` : ''}
       ${isHost && isLobby ? `<button type="button" data-mp-start="${id}" ${allReady ? '' : 'disabled'}>ゲーム開始</button>` : ''}
-      ${localPlayer && isTeamSetup ? `<button type="button" data-mp-submit-setup="${id}" ${localPlayer.phaseComplete ? 'disabled' : ''}>${localPlayer.phaseComplete ? '作業完了済み' : '編成・戦術を完了（仮）'}</button>` : ''}
+      ${localPlayer && isTeamSetup ? `<button type="button" data-mp-submit-setup="${id}" ${localPlayer.phaseComplete ? 'disabled' : ''}>${localPlayer.phaseComplete ? '作業完了済み' : '編成・戦術を送信'}</button>` : ''}
       ${phase === 'season-ready' && isHost ? `<button type="button" data-mp-simulate-season="${id}">シーズンをシミュレート</button>` : ''}
       <button type="button" data-mp-refresh="${id}" class="subtle">更新</button>
       <button type="button" data-mp-back-title class="subtle">タイトルへ戻る</button>
     </div>
     ${isHost && isLobby && !allReady ? '<p class="hint">ゲーム開始は、参加クラブ全員が準備完了になると押せます。</p>' : ''}
-    ${isTeamSetup ? '<p class="hint">今は仮の完了ボタンです。次に実際の編成・戦術入力へ接続します。</p>' : ''}
-    ${phase === 'season-ready' && isHost ? '<p class="hint">現段階では、各クラブは既定の編成・戦術でシーズンを一括シミュレートします。</p>' : ''}
+    ${isTeamSetup ? '<p class="hint">選んだ編成・戦術はシーズン一括シミュレーションに反映されます。</p>' : ''}
+    ${phase === 'season-ready' && isHost ? '<p class="hint">各クラブが送信した編成・戦術でシーズンを一括シミュレートします。</p>' : ''}
   </main>`;
 }
 
@@ -307,10 +371,16 @@ async function submitSetup(roomId) {
     alert('この端末の参加情報が見つかりません。入り直してください。');
     return;
   }
+  const lineup = [...document.querySelectorAll('[data-mp-lineup]:checked')].map(node => node.value);
+  if (lineup.length !== 5 || new Set(lineup).size !== 5) {
+    alert('先発選手を5人選択してください。');
+    return;
+  }
+  const tactic = validTactic(document.querySelector('[data-mp-tactic]')?.value || 'BALANCED');
   try {
     const data = await requestJson(`/api/rooms/${encodeURIComponent(roomId)}/submit`, {
       method: 'POST',
-      body: JSON.stringify({ playerId: session.playerId, lineup: [], tactic: 'BALANCED', ready: true })
+      body: JSON.stringify({ playerId: session.playerId, lineup, tactic, ready: true })
     });
     renderRoomScreen(data?.room || data, session.playerId);
   } catch (err) {
