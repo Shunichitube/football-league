@@ -60,9 +60,34 @@ function createPlayer(name, role = 'guest', colorIndex = 0) {
   };
 }
 
-function createInitialState(roomId, hostName) {
+function findClub(room, clubId) {
+  return room.clubs.find(club => club.id === clubId);
+}
+
+function validateClubId(clubId) {
+  return CLUBS.some(club => club.id === clubId);
+}
+
+function assignClub(room, player, clubId) {
+  if (!clubId) return 'クラブを選択してください。';
+  if (!validateClubId(clubId)) return 'クラブが見つかりません。';
+  const club = findClub(room, clubId);
+  if (!club) return 'クラブが見つかりません。';
+  if (club.playerId && club.playerId !== player.id) return 'このクラブは選択済みです。';
+  for (const candidate of room.clubs) if (candidate.playerId === player.id) {
+    candidate.playerId = null;
+    candidate.controller = 'CPU';
+  }
+  club.playerId = player.id;
+  club.controller = 'HUMAN';
+  player.clubId = club.id;
+  player.ready = false;
+  return null;
+}
+
+function createInitialState(roomId, hostName, hostClubId) {
   const host = createPlayer(hostName || 'ホスト', 'host', 0);
-  return {
+  const room = {
     version: 1,
     roomId,
     phase: 'lobby',
@@ -72,22 +97,13 @@ function createInitialState(roomId, hostName) {
     createdAt: now(),
     updatedAt: now()
   };
+  const assignError = assignClub(room, host, hostClubId);
+  return { room, assignError };
 }
 
-function assignClubsByJoinOrder(room) {
-  for (const club of room.clubs) {
-    club.controller = 'CPU';
-    club.playerId = null;
-  }
-  room.players.forEach((player, index) => {
-    const club = room.clubs[index];
-    if (!club) return;
-    club.controller = 'HUMAN';
-    club.playerId = player.id;
-    player.clubId = club.id;
-    player.ready = false;
-  });
+function startTeamSetup(room) {
   room.phase = 'team-setup';
+  for (const player of room.players) player.ready = false;
   return room;
 }
 
@@ -117,7 +133,9 @@ export class RoomObject {
       const existing = await this.load();
       if (existing) return json({ ok: true, room: publicRoom(existing) });
       const body = await readJson(request);
-      const room = await this.save(createInitialState(body.roomId, body.hostName));
+      const { room, assignError } = createInitialState(body.roomId, body.hostName, body.clubId || body.hostClubId);
+      if (assignError) return error(assignError);
+      await this.save(room);
       return json({ ok: true, room: publicRoom(room), playerId: room.hostPlayerId });
     }
 
@@ -133,6 +151,8 @@ export class RoomObject {
       if (room.players.length >= MAX_PLAYERS) return error('参加人数が上限です。');
       const body = await readJson(request);
       const player = createPlayer(body.playerName || body.name || 'プレイヤー', 'guest', room.players.length);
+      const assignError = assignClub(room, player, body.clubId);
+      if (assignError) return error(assignError);
       room.players.push(player);
       await this.save(room);
       return json({ ok: true, room: publicRoom(room), playerId: player.id });
@@ -142,17 +162,8 @@ export class RoomObject {
       const body = await readJson(request);
       const player = room.players.find(row => row.id === body.playerId);
       if (!player) return error('プレイヤーが見つかりません。', 404);
-      const club = room.clubs.find(row => row.id === body.clubId);
-      if (!club) return error('クラブが見つかりません。', 404);
-      if (club.playerId && club.playerId !== player.id) return error('このクラブは選択済みです。');
-      for (const candidate of room.clubs) if (candidate.playerId === player.id) {
-        candidate.playerId = null;
-        candidate.controller = 'CPU';
-      }
-      club.playerId = player.id;
-      club.controller = 'HUMAN';
-      player.clubId = club.id;
-      player.ready = false;
+      const assignError = assignClub(room, player, body.clubId);
+      if (assignError) return error(assignError);
       await this.save(room);
       return json({ ok: true, room: publicRoom(room) });
     }
@@ -175,6 +186,7 @@ export class RoomObject {
       const body = await readJson(request);
       const player = room.players.find(row => row.id === body.playerId);
       if (!player) return error('プレイヤーが見つかりません。', 404);
+      if (!player.clubId) return error('先にクラブを選択してください。');
       player.ready = Boolean(body.ready);
       await this.save(room);
       return json({ ok: true, room: publicRoom(room) });
@@ -185,9 +197,10 @@ export class RoomObject {
       if (body.playerId !== room.hostPlayerId) return error('ホストのみ実行できます。', 403);
       if (room.phase !== 'lobby') return error('このルームはすでに開始済みです。');
       if (!room.players.length) return error('参加者がいません。');
+      if (!room.players.every(player => player.clubId)) return error('全員のクラブ選択が必要です。');
       if (!room.players.every(player => player.ready)) return error('全員の準備完了が必要です。');
-      await this.save(assignClubsByJoinOrder(room));
-      return json({ ok: true, room: publicRoom(room), message: 'クラブを自動割り当てしました。' });
+      await this.save(startTeamSetup(room));
+      return json({ ok: true, room: publicRoom(room), message: 'チーム準備へ進みました。' });
     }
 
     return error('未対応のルーム操作です。', 404);
