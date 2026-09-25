@@ -118,7 +118,13 @@ export function renderLineupEditor(club, selectedPlayerId = null, message = '', 
   const starterIds = new Set(club.lineup || []);
   const positionOrder = { GK: 0, DF: 1, MF: 2, FW: 3 };
   const rankOrder = { SS: 0, S: 1, A: 2, B: 3, C: 4, D: 5, E: 6, F: 7, G: 8 };
-  const bench = club.roster.map((player, index) => ({ player, index })).filter(row => !starterIds.has(row.player.id)).sort((a, b) => benchSort === 'overall' ? rankOrder[displayPlayer(a.player).overallRank] - rankOrder[displayPlayer(b.player).overallRank] || a.index - b.index : positionOrder[a.player.primaryPosition] - positionOrder[b.player.primaryPosition] || a.index - b.index).map(row => row.player);
+  const bench = club.roster.map((player, index) => ({ player, index })).filter(row => !starterIds.has(row.player.id)).sort((a, b) => {
+    const pa=a.player,pb=b.player,pos=(positionOrder[pa.primaryPosition]??99)-(positionOrder[pb.primaryPosition]??99);
+    if (benchSort === 'overall') return rankOrder[displayPlayer(pa).overallRank] - rankOrder[displayPlayer(pb).overallRank] || pos || a.index - b.index;
+    if (benchSort === 'age') return pa.age - pb.age || pos || a.index - b.index;
+    if (benchSort === 'contract') return pa.contractYears - pb.contractYears || pos || a.index - b.index;
+    return pos || a.index - b.index;
+  }).map(row => row.player);
   const selected = club.roster.find(player => player.id === selectedPlayerId);
   const warnings = validation.ok ? validation.warnings : [];
   const status = message || validation.error || (warnings.length ? '適性外配置があります。警告内容を確認してください。' : 'スタメン5人を設定済みです。');
@@ -138,7 +144,7 @@ export function renderLineupEditor(club, selectedPlayerId = null, message = '', 
         <button type="button" data-lineup-slot="${index}" ${selected ? '' : 'disabled'}>この枠に配置</button>
       </section>`;
     }).join('')}</div>
-    <div class="bench-heading"><h3>控え</h3><label>並び順<select data-bench-sort><option value="position" ${benchSort === 'position' ? 'selected' : ''}>ポジション順</option><option value="overall" ${benchSort === 'overall' ? 'selected' : ''}>総合ランク順</option></select></label></div>
+    <div class="bench-heading"><h3>控え</h3><label>並び順<select data-bench-sort><option value="position" ${benchSort === 'position' ? 'selected' : ''}>ポジション順</option><option value="overall" ${benchSort === 'overall' ? 'selected' : ''}>総合ランク順</option><option value="age" ${benchSort === 'age' ? 'selected' : ''}>年齢順</option><option value="contract" ${benchSort === 'contract' ? 'selected' : ''}>契約年数順</option></select></label></div>
     <div class="candidate-grid bench-grid">${bench.length ? bench.map(player => `<article class="candidate bench-player ${selectedPlayerId === player.id ? 'selected-player' : ''}">${renderPlayerCard(player, { allowRename: true })}<button type="button" data-lineup-player="${escapeHtml(player.id)}" class="${selectedPlayerId === player.id ? '' : 'subtle'}">${selectedPlayerId === player.id ? '選択中' : 'この選手を選択'}</button></article>`).join('') : '<p class="hint">控え選手はいません。</p>'}</div>
   </section>`;
 }
