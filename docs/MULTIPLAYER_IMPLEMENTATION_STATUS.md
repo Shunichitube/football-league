@@ -17,7 +17,7 @@ stable/single-player-v1
 ## 現在位置
 
 ```txt
-Stage M5-4: シングルプレイ準拠UIへの同期レイヤー設計
+Stage M5-4: シングルプレイ準拠UIへの同期レイヤー接続
 ```
 
 ## 重要方針
@@ -54,6 +54,7 @@ Stage M5-4: シングルプレイ準拠UIへの同期レイヤー設計
 - 編成・戦術送信APIの土台を追加
 - 準備完了APIの土台を追加
 - `js/multiplayer-ui.js` 追加
+- `js/multiplayer-phase-sync.js` 追加
 - タイトル画面に「マルチプレイ」ボタンを追加
 - ルーム作成/参加時の入力名は、プレイヤー名ではなくクラブチーム名として扱う方針に変更
 - 参加者カラーはサーバー側で自動割り振り
@@ -84,6 +85,8 @@ Stage M5-4: シングルプレイ準拠UIへの同期レイヤー設計
 - シーズン結果は `POST /api/rooms/:roomId/complete-season` でRoomに保存する
 - 結果保存後、フェーズは `season-result` へ進む
 - `season-result` フェーズでは共有された順位表を表示する
+- `season-result` フェーズで各クラブが結果確認完了を送信できる
+- 全クラブが結果確認完了したら `offseason-ready` フェーズへ進む
 
 ## 追加済みAPI案
 
@@ -96,6 +99,7 @@ POST /api/rooms/:roomId/submit
 POST /api/rooms/:roomId/ready
 POST /api/rooms/:roomId/run-season
 POST /api/rooms/:roomId/complete-season
+POST /api/rooms/:roomId/confirm-phase
 ```
 
 ## フェーズ進行方針
@@ -118,6 +122,11 @@ season-ready
 season-result
   シングルプレイ準拠の結果表示へ寄せる
   マルチ側では共有結果と確認状態だけを管理する
+  各クラブが結果確認完了を押す
+  全員確認完了したら offseason-ready へ進む
+
+offseason-ready
+  次のオフシーズン同期レイヤー接続待ち
 ```
 
 ## ドラフト・競売の組み込み方針
@@ -171,15 +180,6 @@ auction
 ```
 
 ## 次にやること
-
-### M5-4: シングルプレイ準拠の画面に同期レイヤーを重ねる
-
-- マルチ専用の新規UIを増やさない
-- 既存のシングルプレイ画面・コンポーネントを使う
-- 各フェーズに「作業完了」ボタンを付ける
-- 誰が完了していないかを表示する
-- 全員が次フェーズへ進む意思表示をするまで進まない仕組みにする
-- 結果画面もシングルプレイの結果表示へ寄せる
 
 ### M6: オフシーズン同期レイヤー
 
