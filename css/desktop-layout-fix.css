@@ -254,7 +254,7 @@
   /* Squad: left formation court, right bench. */
   main.screen-squad .lineup-editor {
     display: grid;
-    grid-template-columns: minmax(560px, 0.82fr) minmax(820px, 1.18fr);
+    grid-template-columns: minmax(0, 42fr) minmax(0, 58fr);
     grid-template-areas:
       "status status"
       "starterTitle tactic"
@@ -267,8 +267,9 @@
 
   main.screen-squad .tactic-panel {
     grid-area: tactic;
+    align-self: start;
     margin: 0 !important;
-    padding: 0.55rem 0.7rem !important;
+    padding: 0.45rem 0.6rem !important;
   }
 
   main.screen-squad .tactic-panel .eyebrow,
@@ -304,9 +305,13 @@
 
   main.screen-squad .lineup-slots {
     grid-area: slots;
-    display: block !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(3, auto);
+    gap: 0.55rem;
+    align-items: start;
     position: relative;
-    min-height: 650px;
+    min-height: 0;
     padding: 0.7rem;
     border: 2px solid #86efac;
     border-radius: 20px;
@@ -314,7 +319,7 @@
       radial-gradient(circle at 50% 50%, #ffffff14 0 0.16rem, transparent 0.18rem),
       linear-gradient(90deg, transparent 49.7%, #ffffff1a 50%, transparent 50.3%),
       linear-gradient(#14532d, #166534);
-    overflow: hidden;
+    overflow: visible;
   }
 
   main.screen-squad .lineup-slots::before {
@@ -344,28 +349,35 @@
     grid-area: bench;
     display: grid !important;
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: 0.45rem !important;
+    gap: 0.55rem !important;
+    align-items: start;
     margin-top: 0 !important;
+  }
+
+  main.screen-squad .bench-player {
+    min-width: 0;
+    width: 100%;
   }
 
   main.screen-squad .lineup-slot,
   main.screen-squad .lineup-slot:first-child,
   main.screen-squad .lineup-slot:last-child {
-    position: absolute;
+    position: relative;
     grid-column: auto !important;
     min-width: 0;
-    width: 34%;
+    width: auto;
     padding: 0.32rem !important;
     border-radius: 12px !important;
     background: color-mix(in srgb, var(--card) 86%, transparent);
     z-index: 1;
   }
 
-  main.screen-squad .lineup-slot:nth-child(5) { left: 33%; top: 1.5%; }
-  main.screen-squad .lineup-slot:nth-child(3) { left: 2%; top: 25%; }
-  main.screen-squad .lineup-slot:nth-child(4) { right: 2%; top: 25%; }
-  main.screen-squad .lineup-slot:nth-child(2) { left: 33%; top: 43%; }
-  main.screen-squad .lineup-slot:nth-child(1) { left: 33%; bottom: 1.5%; }
+  /* GK, DF, MF, MF, FW -> visual court: FW / MF-DF-MF / GK */
+  main.screen-squad .lineup-slot:nth-child(5) { grid-column: 2; grid-row: 1; }
+  main.screen-squad .lineup-slot:nth-child(3) { grid-column: 1; grid-row: 2; }
+  main.screen-squad .lineup-slot:nth-child(2) { grid-column: 2; grid-row: 2; }
+  main.screen-squad .lineup-slot:nth-child(4) { grid-column: 3; grid-row: 2; }
+  main.screen-squad .lineup-slot:nth-child(1) { grid-column: 2; grid-row: 3; }
 
 
   main.screen-squad .lineup-slot > button,
@@ -696,12 +708,8 @@
 }
 
 @media (min-width: 1600px) {
-  main.screen-squad .lineup-editor {
-    grid-template-columns: minmax(620px, 0.82fr) minmax(900px, 1.18fr);
-  }
-
   main.screen-squad .lineup-slots {
-    min-height: 650px;
+    gap: 0.65rem;
   }
 }
 
@@ -711,6 +719,6 @@
   }
 
   main.screen-squad .lineup-editor {
-    grid-template-columns: minmax(500px, 0.82fr) minmax(650px, 1.18fr);
+    grid-template-columns: minmax(0, 42fr) minmax(0, 58fr);
   }
 }
