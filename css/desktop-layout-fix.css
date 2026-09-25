@@ -257,18 +257,30 @@
     grid-template-columns: minmax(0, 42fr) minmax(0, 58fr);
     grid-template-areas:
       "status status"
-      "starterTitle tactic"
-      "slots benchTitle"
+      "starterTitle benchTitle"
       "slots bench";
     gap: 0.45rem 0.9rem;
     margin: 0.55rem 0;
     align-items: start;
   }
 
+  main.screen-squad .squad-heading-row {
+    display: grid;
+    grid-template-columns: minmax(0, 42fr) minmax(0, 58fr);
+    gap: 0.9rem;
+    align-items: start;
+    margin-bottom: 0.45rem;
+  }
+
+  main.screen-squad .squad-heading-copy h2 {
+    margin: 0 0 0.25rem;
+  }
+
+  main.screen-squad .squad-heading-copy .hint {
+    margin: 0;
+  }
+
   main.screen-squad .tactic-panel {
-    grid-area: tactic;
-    align-self: stretch;
-    justify-self: stretch;
     width: 100%;
     max-width: none;
     margin: 0 !important;
@@ -281,15 +293,14 @@
   }
 
   main.screen-squad .tactic-panel .tactic-row {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.4rem;
-    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
     margin: 0.25rem 0 !important;
   }
 
   main.screen-squad .tactic-panel .tactic-row button {
-    width: 100%;
+    width: auto;
     margin: 0 !important;
   }
 
@@ -322,6 +333,7 @@
     grid-template-rows: repeat(4, auto);
     gap: 0.55rem;
     align-items: start;
+    justify-items: center;
     position: relative;
     min-height: 0;
     padding: 0.7rem;
@@ -375,9 +387,9 @@
   main.screen-squad .lineup-slot:first-child,
   main.screen-squad .lineup-slot:last-child {
     position: relative;
-    grid-column: auto !important;
+    grid-column: auto;
     min-width: 0;
-    width: auto;
+    width: 100%;
     padding: 0.32rem !important;
     border-radius: 12px !important;
     background: color-mix(in srgb, var(--card) 86%, transparent);
@@ -385,11 +397,11 @@
   }
 
   /* GK, DF, MF, MF, FW -> visual court: FW / MF-MF / DF / GK */
-  main.screen-squad .lineup-slot:nth-child(5) { grid-column: 2; grid-row: 1; }
-  main.screen-squad .lineup-slot:nth-child(3) { grid-column: 1; grid-row: 2; }
-  main.screen-squad .lineup-slot:nth-child(4) { grid-column: 3; grid-row: 2; }
-  main.screen-squad .lineup-slot:nth-child(2) { grid-column: 2; grid-row: 3; }
-  main.screen-squad .lineup-slot:nth-child(1) { grid-column: 2; grid-row: 4; }
+  main.screen-squad .lineup-slot:nth-child(5) { grid-column: 2 !important; grid-row: 1; }
+  main.screen-squad .lineup-slot:nth-child(3) { grid-column: 1 !important; grid-row: 2; }
+  main.screen-squad .lineup-slot:nth-child(4) { grid-column: 3 !important; grid-row: 2; }
+  main.screen-squad .lineup-slot:nth-child(2) { grid-column: 2 !important; grid-row: 3; }
+  main.screen-squad .lineup-slot:nth-child(1) { grid-column: 2 !important; grid-row: 4; }
 
 
   main.screen-squad .lineup-slot > button,
