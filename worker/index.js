@@ -51,7 +51,7 @@ async function createRoom(request, env) {
   const body = await readJson(request);
   const roomId = randomRoomId();
   const stub = roomStub(env, roomId);
-  return stub.fetch(roomRequest('init', 'POST', { roomId, hostName: body.hostName || body.playerName || 'ホスト' }));
+  return stub.fetch(roomRequest('init', 'POST', { roomId, hostName: body.hostName || body.teamName || body.playerName || 'ホスト' }));
 }
 
 async function forwardRoomAction(request, env, roomId, action, method) {
@@ -88,6 +88,7 @@ export default {
       if (action === 'submit' && method === 'POST') return forwardRoomAction(request, env, roomId, 'submit', 'POST');
       if (action === 'ready' && method === 'POST') return forwardRoomAction(request, env, roomId, 'ready', 'POST');
       if (action === 'run-season' && method === 'POST') return forwardRoomAction(request, env, roomId, 'run-season', 'POST');
+      if (action === 'complete-season' && method === 'POST') return forwardRoomAction(request, env, roomId, 'complete-season', 'POST');
     }
 
     return notFound();
