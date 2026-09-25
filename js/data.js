@@ -7,6 +7,9 @@ export const POSITION_LABELS = { GK: 'GK', DF: 'DF', MF: 'MF', FW: 'FW' };
 const LEGACY_POSITIONS = { FIXO: 'DF', ALA: 'MF', PIVO: 'FW' };
 const STAMINA_DISTRIBUTION = [['G', 12], ['F', 18], ['E', 22], ['D', 20], ['C', 14], ['B', 8], ['A', 4], ['S', 1], ['SS', 1]];
 const RANK_RANGE = { G: [50,55], F: [56,60], E: [61,65], D: [66,70], C: [71,75], B: [76,80], A: [81,85], S: [86,90], SS: [91,99] };
+const GK_HIDDEN_KEYS = [...FIELD_STAT_KEYS, 'gk'];
+const GK_GROWTH_KEYS = ['gk', 'defense', 'speed', 'pass'];
+const GK_GROWTH_FOCUS_DISTRIBUTION = [['gk', 7], ['defense', 1], ['speed', 1], ['pass', 1]];
 
 // The seeded RNG draws first and last names independently. These broad pools
 // keep duplicate full names uncommon without deriving names from player IDs.
@@ -18,14 +21,30 @@ const OVERALL_WEIGHTS = {
   DF: { defense: .35, pass: .25, speed: .20, dribble: .10, shoot: .10 },
   MF: { speed: .25, dribble: .25, pass: .20, shoot: .20, defense: .10 },
   FW: { shoot: .35, dribble: .25, pass: .15, speed: .15, defense: .10 },
-  GK: { gk: .70, defense: .10, speed: .10, pass: .05, dribble: .05 }
+  GK: { gk: .70, defense: .10, speed: .10, pass: .10 }
 };
+
+function weightedGrowthFocus(rng) {
+  const total = GK_GROWTH_FOCUS_DISTRIBUTION.reduce((sum, [, weight]) => sum + weight, 0);
+  let roll = rng.next() * total;
+  for (const [key, weight] of GK_GROWTH_FOCUS_DISTRIBUTION) {
+    roll -= weight;
+    if (roll <= 0) return key;
+  }
+  return 'gk';
+}
 
 function growthProfile(position, rng, initial) {
   const min = initial ? 55 : 70;
   const max = initial ? 75 : 130;
-  const keys = position === 'GK' ? [...FIELD_STAT_KEYS, 'gk'] : FIELD_PLAYER_STAT_KEYS;
-  return Object.fromEntries(keys.map(key => [key, rng.int(min, max) / 100]));
+  if (position !== 'GK') return Object.fromEntries(FIELD_PLAYER_STAT_KEYS.map(key => [key, rng.int(min, max) / 100]));
+  const profile = Object.fromEntries(GK_HIDDEN_KEYS.map(key => [key, rng.int(min, max) / 100]));
+  profile.shoot = Math.min(profile.shoot, initial ? .65 : .90);
+  profile.dribble = Math.min(profile.dribble, initial ? .65 : .90);
+  const focus = weightedGrowthFocus(rng);
+  const peak = Math.max(...GK_GROWTH_KEYS.map(key => profile[key]));
+  profile[focus] = Math.min(max / 100, Math.max(profile[focus], peak + .03));
+  return profile;
 }
 
 function weightedTier(distribution, rng) {
@@ -79,7 +98,7 @@ export function ensurePlayerCompatibility(player, rng) {
   if (player.primaryPosition === 'GK' && 'stamina' in player.stats) delete player.stats.stamina;
   if (!player.hiddenGrowth || typeof player.hiddenGrowth === 'number') {
     const base = typeof player.hiddenGrowth === 'number' ? player.hiddenGrowth : 1;
-    player.hiddenGrowth = Object.fromEntries((player.primaryPosition === 'GK' ? [...FIELD_STAT_KEYS, 'gk'] : FIELD_PLAYER_STAT_KEYS).map(key => [key, base]));
+    player.hiddenGrowth = Object.fromEntries((player.primaryPosition === 'GK' ? GK_HIDDEN_KEYS : FIELD_PLAYER_STAT_KEYS).map(key => [key, base]));
   } else if (player.primaryPosition !== 'GK' && typeof player.hiddenGrowth.stamina !== 'number') {
     player.hiddenGrowth.stamina = rng.int(70, 130) / 100;
   }
