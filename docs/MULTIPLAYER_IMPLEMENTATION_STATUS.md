@@ -358,3 +358,15 @@ Cloudflare Worker / Durable Objectへ実際にデプロイした状態で、2端
 5. 各フェーズの全員完了判定が1回だけ次へ進むこと
 6. Season 1 → Season 2のリーグ状態が維持されること
 7. Season 10で確実に終了すること
+
+
+## 2026-09-26 通常チャット再開時のデプロイ前監査
+
+Work利用上限後に `dev/multiplayer-v2` を再監査した。
+
+- `wrangler.toml` / Worker / Durable Object / static assets build の構成を確認。
+- `scripts/build-assets.mjs` は `index.html` / `css` / `js` を `dist/` へ生成する構成で問題なし。
+- マルチ専用JSが古い共有モジュールのキャッシュキー（`ui.js v0.17.29`、`market.js v0.17.2`、`cpu.js v0.17.27`、`development.js v0.17.3`）を参照していたため、現行ブランチの共有版へ統一。
+- マルチ専用スクリプトのキャッシュキーを `v0.18.14` に更新。
+
+次の必須確認は引き続きCloudflare実通信テスト。
