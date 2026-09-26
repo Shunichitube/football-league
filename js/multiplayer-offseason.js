@@ -1,9 +1,9 @@
 import { applySeasonFinances } from './league.js?v=0.17.27';
-import { createContractEvents, createSpecialTrainingOffers, renewalFee } from './development.js?v=0.17.3';
-import { manageCpuContracts, selectBestLineup } from './cpu.js?v=0.17.27';
+import { createContractEvents, createSpecialTrainingOffers, renewalFee } from './development.js?v=0.17.30';
+import { manageCpuContracts, selectBestLineup } from './cpu.js?v=0.17.30';
 import { createRandom } from './random.js';
 import { ACTION_TYPES, applyClubAction } from './rules.js?v=0.17.2';
-import { renderPlayerCard } from './ui.js?v=0.17.29';
+import { renderPlayerCard } from './ui.js?v=0.17.34';
 
 const SESSION_KEY='football-league:multiplayer-session';
 const DRAFT_KEY='football-league:multiplayer-offseason-events';
