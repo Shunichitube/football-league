@@ -6,7 +6,7 @@ const COLORS = ['#4ade80','#60a5fa','#facc15','#fb7185','#a78bfa','#f97316'];
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
 function assert(condition, message, status = 400) { if (!condition) throw Object.assign(new Error(message), { status }); }
 function teamName(value) { const name = String(value ?? '').trim(); assert(name.length > 0 && name.length <= 12, 'クラブ名を1〜12文字で入力してください。'); return name; }
-function newPlayer(name, color, index) { return { id: crypto.randomUUID(), accessToken: crypto.randomUUID(), teamName: teamName(name), color: /^#[0-9a-f]{6}$/i.test(color || '') ? color : COLORS[index], clubId: null }; }
+function newPlayer(name, index) { return { id: crypto.randomUUID(), accessToken: crypto.randomUUID(), teamName: teamName(name), color: COLORS[index], clubId: null }; }
 function authenticate(room, request, playerId) {
   const token = request.headers.get('x-player-token');
   const player = room.players.find(row => row.id === playerId && row.accessToken === token);
@@ -66,7 +66,7 @@ export class RoomObject {
           const host = room.players[0];
           return json({ room: publicRoom(room, host), playerId: host.id, playerToken: host.accessToken });
         }
-        const host = newPlayer(body.teamName, body.color, 0);
+        const host = newPlayer(body.teamName, 0);
         room = { roomId: body.roomId, creationKey: body.requestId, hostPlayerId: host.id, players: [host], phase: 'lobby', revision: 1, phaseRevision: 1, inputs: {}, receipts: {}, joins: {}, game: null };
         await this.save(room);
         return json({ room: publicRoom(room, host), playerId: host.id, playerToken: host.accessToken });
@@ -80,7 +80,7 @@ export class RoomObject {
         }
         assert(room.phase === 'lobby', 'このルームは開始済みです。', 409);
         assert(room.players.length < 6, '参加人数は6人までです。');
-        const player = newPlayer(body.teamName, body.color, room.players.length);
+        const player = newPlayer(body.teamName, room.players.length);
         room.players.push(player);
         room.joins[body.requestId] = player.id;
         room.revision++;
