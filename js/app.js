@@ -5,7 +5,7 @@ import { createAuctionPool, createDraftPool, resolveAuctionActions, resolveDraft
 import { configureRename, escapeHtml as e, renderLineupEditor, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=0.19.0';
 import { decideCpuAuctionAction, decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=0.17.30';
 import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=0.17.2';
-import { RoomAdapter } from './room-adapter.js';
+import { RoomAdapter } from './room-adapter.js?v=0.19.1';
 import { classifyScreens } from './screen-classifier.js';
 const clickHandlers=[];
 const onGameClick=(scope,handler)=>clickHandlers.push({scope,handler});
@@ -277,7 +277,11 @@ document.addEventListener('keydown', event => {
 // One event boundary. Both modes use the renderers and local editing handlers above.
 // Only committed game operations are replaced by Room actions.
 function roomSync() {
-  return `<aside class="room-sync" aria-label="同期状況"><span data-room-status role="status" aria-live="polite">${e(roomAdapter?.statusText()||'')}</span><button data-room="retry" class="subtle" ${roomAdapter?.status.error||roomAdapter?.client.pending?'':'hidden'}>再接続・送信確認</button></aside>`;
+  const result=roomAdapter?.draftResultText()||'';
+  return `<aside class="room-sync" aria-label="同期状況"><div class="room-sync-summary"><span data-room-status role="status" aria-live="polite">${e(roomAdapter?.statusText()||'')}</span><button data-room="retry" class="subtle" ${roomAdapter?.status.error||roomAdapter?.client.pending?'':'hidden'}>再接続・送信確認</button></div><div class="room-participants" data-room-participants aria-label="各クラブの完了状況">${roomParticipantMarkup()}</div><span class="room-draft-result" data-room-draft-result role="status" aria-live="polite" ${result?'':'hidden'}>${e(result)}</span></aside>`;
+}
+function roomParticipantMarkup() {
+  return (roomAdapter?.participantStatuses()||[]).map(row=>`<span class="room-participant is-${row.state}">${e(row.name)}${row.self?'（自分）':''}：${e(row.label)}</span>`).join('');
 }
 function roomEntry() {
   return `<main class="setup"><h2>マルチプレイ</h2><label>クラブ名<input id="room-name" maxlength="12" placeholder="東京ファイブ"></label><label>チームカラー<input id="room-color" type="color" value="#4ade80"></label><button data-room="create">ルームを作成</button><label>ルームID<input id="room-code" maxlength="12" autocomplete="off" placeholder="12桁のルームID"></label><button data-room="join">ルームに参加</button>${roomAdapter.client.session?'<button data-room="resume" class="subtle">参加中のルームに戻る</button>':''}${roomSync()}<button data-room="leave" class="subtle">戻る</button></main>`;
@@ -289,6 +293,10 @@ function roomLobby() {
 function updateRoomStatus() {
   if (!roomAdapter) return;
   document.querySelectorAll('[data-room-status]').forEach(node=>{node.textContent=roomAdapter.statusText();});
+  const participants=roomParticipantMarkup();
+  document.querySelectorAll('[data-room-participants]').forEach(node=>{if(node.innerHTML!==participants)node.innerHTML=participants;});
+  const result=roomAdapter.draftResultText();
+  document.querySelectorAll('[data-room-draft-result]').forEach(node=>{node.hidden=!result;if(node.textContent!==result)node.textContent=result;});
   document.querySelectorAll('[data-room="retry"]').forEach(node=>{node.hidden=!(roomAdapter.status.error||roomAdapter.client.pending);node.disabled=roomAdapter.status.busy;});
   document.querySelectorAll('[data-room="create"],[data-room="join"],[data-room="resume"],[data-room="start"],[data-room="leave"]').forEach(node=>{node.disabled=roomAdapter.status.busy;});
   if(s.mode!=='room'||!roomAdapter.room?.game)return;

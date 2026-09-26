@@ -91,6 +91,39 @@ export class RoomAdapter {
     if (!this.active || !this.room?.game) return fallback(league);
     return this.room.game.standings.map(({ clubId, rank }) => { const club = league.clubs.find(row => row.id === clubId), record = league.records[clubId]; return { club, rank, ...record, goalDifference: record.goalsFor - record.goalsAgainst }; });
   }
+  draftResultText() {
+    const room = this.room, clubId = this.player?.clubId;
+    if (!room || !['draft', 'draft-complete'].includes(room.phase) || clubId == null) return '';
+    const draft = room.game.draft;
+    const result = [...draft.history].reverse().find(row => row.clubId === clubId || row.contenderIds?.includes(clubId));
+    if (!result) return '';
+    const prefix = `直近の指名（第${result.round}巡）：`;
+    if (result.clubId === clubId) return `${prefix}${result.contested ? '当選' : '獲得（競合なし）'} — ${result.player.name}`;
+    const winner = room.game.league.clubs.find(club => club.id === result.clubId);
+    const retry = room.phase === 'draft' && draft.round === result.round && draft.pendingClubIds.includes(clubId) && !this.player.completed;
+    return `${prefix}落選 — ${result.player.name}は${winner?.name || '他クラブ'}が獲得。${retry ? '再指名してください。' : ''}`;
+  }
+  participantStatuses() {
+    const room = this.room;
+    if (!room) return [];
+    return room.players.map(player => {
+      let label = player.completed ? '完了' : '未完了';
+      let state = player.completed ? 'done' : 'pending';
+      if (room.phase === 'lobby') { label = '参加済み'; state = 'neutral'; }
+      else if (room.phase === 'season-ready') { label = '完了'; state = 'done'; }
+      else if (room.phase === 'game-complete') { label = '終了'; state = 'done'; }
+      else if (room.phase === 'draft' && !room.game.draft.pendingClubIds.includes(player.clubId)) {
+        const draft = room.game.draft;
+        const club = room.game.league.clubs.find(club => club.id === player.clubId);
+        state = 'neutral';
+        if (draft.declined.includes(player.clubId)) label = '辞退';
+        else if (draft.history.some(row => row.round === draft.round && row.clubId === player.clubId)) { label = '指名済み'; state = 'done'; }
+        else if (!club || club.funds < 5 || club.roster.length >= 12) label = '対象外';
+        else label = '順番待ち';
+      }
+      return { name: player.teamName, label, state, self: player.id === this.player?.id };
+    });
+  }
   statusText() {
     if (this.status.error) return this.status.error;
     if (this.status.busy) return '送信中…';
