@@ -56,8 +56,8 @@ function renderAuctionPanel(room, localPlayer) {
   const canInput = room.phase === 'auction' && localPlayer && !localPlayer.phaseComplete;
   const hostReady = room.phase === 'auction-ready' && localPlayer?.id === room.hostPlayerId;
   const maxBid = club ? Math.max(0, club.funds) : 0;
-  return '<section class="match-card" data-mp-auction-panel>' +
-    '<p class="eyebrow">競売 '+(state.index+1)+'/'+state.pool.length+'</p><h2>秘密入札</h2>' +
+  return '<main class="mp-phase-main" data-mp-auction-panel>' +
+    '<p class="eyebrow">競売 '+(state.index+1)+'/'+state.pool.length+'</p><div class="screen-heading"><h2>秘密入札</h2></div>' +
     '<p class="hint">入札額は開札まで他クラブには公開されません。</p>' +
     resultSummary(room) +
     (club ? '<p>資金 <b>'+club.funds+'pt</b>・登録 <b>'+club.roster.length+'/12人</b></p>' : '') +
@@ -68,7 +68,7 @@ function renderAuctionPanel(room, localPlayer) {
       : '<label>入札額<input data-mp-auction-bid type="number" min="0" max="'+maxBid+'" value="0"></label><button type="button" data-mp-auction-submit="'+esc(room.roomId)+'">入札する</button><button type="button" data-mp-auction-pass="'+esc(room.roomId)+'" class="subtle">見送る</button>') : '') +
     (hostReady ? '<button type="button" data-mp-auction-resolve="'+esc(room.roomId)+'">開札する</button>' : '') +
     (room.phase === 'auction-ready' && !hostReady ? '<p class="hint">全員の入力が揃いました。ホストの開札を待っています。</p>' : '') +
-    '</section>';
+    '</main>';
 }
 async function renderPanel() {
   const id = roomId();
@@ -85,7 +85,7 @@ async function renderPanel() {
   if (!html) return;
   const holder = document.createElement('div');
   holder.innerHTML = html;
-  document.querySelector('.multiplayer-room .season-result-actions')?.insertAdjacentElement('beforebegin', holder.firstElementChild);
+  document.querySelector('[data-mp-phase-anchor]')?.insertAdjacentElement('beforebegin', holder.firstElementChild);
 }
 async function submitBid(id, bid) {
   const s = readSession(id);
