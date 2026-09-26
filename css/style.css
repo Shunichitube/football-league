@@ -82,3 +82,17 @@
 .growth-bar-gain{position:absolute;top:0;height:100%;background:#fef08a;animation:growth-gain-pulse .8s ease-in-out 4}
 @keyframes growth-gain-pulse{50%{opacity:.2}}
 @media(prefers-reduced-motion:reduce){.growth-bar-gain{animation:none}}
+
+/* Multiplayer gameplay uses the single-player screen as the primary UI.
+   Only a compact synchronization strip remains multiplayer-specific. */
+.mp-game-shell{width:100%;margin:0}
+.mp-game-shell>.mp-phase-main,.mp-game-shell>.mp-setup-editor,.mp-game-shell>.match-card{width:min(900px,92vw);margin:2.5rem auto}
+.mp-sync-bar{width:min(900px,92vw);margin:1rem auto 0;display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;padding:.55rem .75rem;background:#0b1220;border:1px solid var(--line);border-radius:10px;font-size:.78rem}
+.mp-sync-bar>span{display:inline-flex;align-items:center}
+.mp-sync-phase{color:var(--text);font-weight:800}
+.mp-sync-state{color:#86efac;font-weight:800}
+.mp-sync-room{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums}
+.mp-phase-actions,.mp-waiting-note{width:min(900px,92vw);margin-left:auto;margin-right:auto}
+.mp-phase-main{display:block}
+.mp-lobby{width:min(900px,92vw)}
+@media(max-width:560px){.mp-sync-room{width:100%;margin-left:0}.mp-game-shell>.mp-phase-main,.mp-game-shell>.mp-setup-editor,.mp-game-shell>.match-card{margin:1.3rem auto}}
