@@ -7,6 +7,8 @@ import { ACTION_TYPES } from '../js/rules.js?v=0.17.2';
 import { createRandom } from '../js/random.js';
 import { clone, requireValue, applyWork, validateSetup, validateTraining } from '../js/phase-work.js';
 
+const MULTIPLAYER_COLORS = ['#4ade80','#60a5fa','#facc15','#fb7185','#a78bfa','#ffffff'];
+
 export function enterPhase(room, phase) {
   room.phase = phase;
   room.phaseRevision++;
@@ -46,10 +48,11 @@ export function startGame(room) {
   requireValue(room.phase === 'lobby' && room.players.length > 0, '開始できません。');
   const first = room.players[0];
   const league = createLeague({ name: first.teamName, color: first.color, seed: crypto.randomUUID() });
+  league.clubs.forEach((club, index) => { club.color = MULTIPLAYER_COLORS[index]; });
   room.players.forEach((player, index) => {
     const club = league.clubs[index];
     player.clubId = club.id;
-    Object.assign(club, { name: player.teamName, color: player.color, controllerType: 'HUMAN' });
+    Object.assign(club, { name: player.teamName, color: MULTIPLAYER_COLORS[index], controllerType: 'HUMAN' });
   });
   room.game = { league, draft: null, auction: null, events: {}, special: {}, financeSummary: [], growth: [] };
   beginDraft(room);
