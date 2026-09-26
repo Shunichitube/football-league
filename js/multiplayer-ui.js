@@ -1,8 +1,8 @@
 import { createMultiplayerLeagueFromRoom } from './multiplayer-league.js?v=0.18.0';
 import { finalizeSeason, simulateRemainingSeason, standings } from './league.js?v=0.17.27';
-import { createDraftPool } from './market.js?v=0.17.2';
+import { createDraftPool } from './market.js?v=0.17.30';
 import { createLineupPlacement, validateLineup } from './rules.js?v=0.17.2';
-import { renderLineupEditor } from './ui.js?v=0.17.29';
+import { renderLineupEditor } from './ui.js?v=0.17.34';
 
 const app = document.querySelector('#app');
 const SESSION_KEY = 'football-league:multiplayer-session';
