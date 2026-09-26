@@ -1,0 +1,5 @@
+.room-sync{display:flex;align-items:center;justify-content:space-between;gap:.6rem;max-width:1200px;margin:.4rem auto;padding:0 1rem;color:var(--muted,#94a3b8);font-size:.8rem}
+.room-sync button{margin:0;padding:.35rem .6rem;font-size:.75rem}
+.room-sync [hidden]{display:none}
+.setup li{margin:.5rem 0}
+@media(max-width:560px){.room-sync{flex-wrap:wrap}}

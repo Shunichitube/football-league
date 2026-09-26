@@ -1,17 +1,23 @@
-import { applySeasonFinances, awards, createLeague, finalizeSeason, simulateRemainingSeason, standings, startNextSeason } from './league.js?v=0.17.27';
+import { applySeasonFinances, awards, createLeague, finalizeSeason, simulateRemainingSeason, standings as singleStandings, startNextSeason } from './league.js?v=0.17.27';
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.17.2';
 import { createRandom } from './random.js';
 import { createAuctionPool, createDraftPool, resolveAuctionActions, resolveDraftActions } from './market.js?v=0.17.31';
-import { escapeHtml as e, renderLineupEditor, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=0.17.34';
+import { configureRename, escapeHtml as e, renderLineupEditor, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=0.19.0';
 import { decideCpuAuctionAction, decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=0.17.30';
 import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=0.17.2';
+import { RoomAdapter } from './room-adapter.js';
+import { classifyScreens } from './screen-classifier.js';
+const clickHandlers=[];
+const onGameClick=(scope,handler)=>clickHandlers.push({scope,handler});
+let roomAdapter=null;
+const standings=league=>roomAdapter?.active?roomAdapter.standings(league,singleStandings):singleStandings(league);
 const app=document.querySelector('#app');let s={view:'title',league:null,draft:null,auction:null,match:null,round:0,note:'',rosterOpen:false,detailPlayerId:null,selectedLineupPlayerId:null,lineupMessage:'',lineupError:false,seasonSimulation:null,benchSort:'position',rosterSort:'position',draftSort:'position',draftHistoryOpen:false,auctionHistoryOpen:false,developmentSort:'position',releaseSort:'position'};
-const me=()=>s.league.clubs.find(c=>c.controllerType==='HUMAN')||s.league.clubs.find(c=>c.id===s.league.humanClubId);const player=p=>renderPlayerCard(p);const positionLabel=position=>POSITION_LABELS[position]||position;
+const me=()=>s.mode==='room'?s.league.clubs.find(c=>c.id===s.league.humanClubId):s.league.clubs.find(c=>c.controllerType==='HUMAN')||s.league.clubs.find(c=>c.id===s.league.humanClubId);const player=p=>renderPlayerCard(p);const positionLabel=position=>POSITION_LABELS[position]||position;
 const POSITION_SORT_ORDER={GK:0,DF:1,MF:2,FW:3},RANK_SORT_ORDER={SS:0,S:1,A:2,B:3,C:4,D:5,E:6,F:7,G:8};
 function sortPlayers(players,mode='position'){return [...players].map((player,index)=>({player,index})).sort((a,b)=>{const pa=a.player,pb=b.player,pos=(POSITION_SORT_ORDER[pa.primaryPosition]??99)-(POSITION_SORT_ORDER[pb.primaryPosition]??99),rank=RANK_SORT_ORDER[displayPlayer(pa).overallRank]-RANK_SORT_ORDER[displayPlayer(pb).overallRank],age=pa.age-pb.age,contract=pa.contractYears-pb.contractYears,joined=a.index-b.index;if(mode==='overall')return rank||pos||age||contract||joined;if(mode==='age')return age||pos||rank||contract||joined;if(mode==='contract')return contract||pos||rank||age||joined;return pos||rank||age||contract||joined}).map(row=>row.player)}
 function sortControl(scope,value){return `<div class="phase-sort-heading"><span></span><label>並び順<select data-player-sort="${scope}"><option value="position" ${value==='position'?'selected':''}>ポジション順</option><option value="overall" ${value==='overall'?'selected':''}>総合ランク順</option><option value="age" ${value==='age'?'selected':''}>年齢順</option><option value="contract" ${value==='contract'?'selected':''}>契約年数順</option></select></label></div>`}
-function head(){let c=me(),r=standings(s.league).find(x=>x.club.id===c.id);return `<header><a data-nav="home" class="brand">FOOTBALL <b>LEAGUE</b></a><span>シーズン ${s.league.season} / 10</span><span><i class="club-color-dot" style="--club:${e(c.color)}"></i>${e(c.name)}・${r.rank}位・${c.funds}pt</span></header>`}
-function title(){return `<main class="title"><p>5人制クラブ運営ゲーム</p><h1>FOOTBALL<br><b>LEAGUE</b></h1><button data-a="setup">新しく始める</button><button data-stage19="loadTitle" class="subtle">続きから</button><footer>v0.17.2・Offseason System v1</footer></main>`}
+function head(){let c=me(),r=standings(s.league).find(x=>x.club.id===c.id);return `<header><a data-nav="home" class="brand">FOOTBALL <b>LEAGUE</b></a><span>シーズン ${s.league.season} / 10</span><span><i class="club-color-dot" style="--club:${e(c.color)}"></i>${e(c.name)}・${r.rank}位・${c.funds}pt</span>${s.mode==='room'?`<span><button data-room="leave" class="subtle">タイトルへ</button></span>`:''}</header>${s.mode==='room'?roomSync():''}`}
+function title(){return `<main class="title"><p>5人制クラブ運営ゲーム</p><h1>FOOTBALL<br><b>LEAGUE</b></h1><button data-a="setup">新しく始める</button><button data-stage19="loadTitle" class="subtle">続きから</button><button data-room="open" class="subtle">マルチプレイ</button><footer>v0.17.2・Offseason System v1</footer></main>`}
 function setup(){return `<main class="setup"><h2>クラブを作成</h2><label>クラブ名<input id="name" placeholder="東京ファイブ"></label><label>チームカラー<input id="color" type="color" value="#4ade80"></label><label>シード（任意）<input id="seed" placeholder="同じ値なら同じ展開"></label><button data-a="start">ゲーム開始</button><button data-a="title" class="subtle">戻る</button></main>`}
 function recordDraftAcquisitions(d,result){if(!d||!result?.acquired?.length)return;d.history ||= [];for(const row of result.acquired){if(d.history.some(item=>item.player.id===row.player.id))continue;d.history.push({round:d.round,clubId:row.clubId,player:row.player,contested:!!row.contested,contenderIds:[...(row.contenderIds||[])]});}}
 function renderDraftHistory(d){const history=d?.history||[];if(!history.length)return '<section class="draft-history"><div class="draft-history-heading"><h3>ここまでの指名結果</h3><span>まだ獲得選手はいません</span></div></section>';const humanId=me().id,rows=history.map(row=>{const club=s.league.clubs.find(candidate=>candidate.id===row.clubId),shown=displayPlayer(row.player),losers=(row.contenderIds||[]).filter(id=>id!==row.clubId).map(id=>s.league.clubs.find(candidate=>candidate.id===id)).filter(Boolean),lottery=row.contested?`<div class="draft-lottery-result"><span class="draft-lottery">抽選</span><small>外れ：${losers.length?losers.map(loser=>`<i class="club-color-dot" style="--club:${e(loser.color||'#64748b')}"></i>${e(loser.name)}`).join(' / '):'なし'}</small></div>`:'—';return `<tr class="${row.clubId===humanId?'you':''}"><td><b>${row.round}巡</b></td><td><i class="club-color-dot" style="--club:${e(club?.color||'#64748b')}"></i>${e(club?.name||'不明')}</td><td><strong>${e(row.player.name)}</strong></td><td>${e(positionLabel(row.player.primaryPosition))}</td><td>${row.player.age}歳</td><td><b class="draft-rank">${e(shown.overallRank)}</b></td><td>${lottery}</td></tr>`}).join('');return `<section class="draft-history"><div class="draft-history-heading"><h3>ここまでの指名結果</h3><span>${history.length}名獲得</span></div><div class="draft-history-table-wrap"><table class="draft-history-table"><thead><tr><th>巡</th><th>獲得クラブ</th><th>選手</th><th>POS</th><th>年齢</th><th>総合</th><th>抽選結果</th></tr></thead><tbody>${rows}</tbody></table></div></section>`}
@@ -22,7 +28,7 @@ function table(){let humanId=me().id,rows=standings(s.league).map(r=>`<tr class=
 function home(){let c=me(),lineup=validateLineup(c),remaining=Math.max(0,11-s.league.currentRound);if(s.league.completed)return `${head()}<main><section class="hero"><p>全10節・リーグ全30試合終了</p><h2>シーズン${s.league.season}終了</h2><button data-nav="seasonResults">シーズン結果を見る</button><button data-nav="stats" class="subtle">個人成績を見る</button></section></main>`;return `${head()}<main><section class="hero" style="--club:${c.color}"><p>残り${remaining}節</p><h2>編成と戦術を決めてシーズンを開始</h2>${lineup.ok?'<button data-a="season">シーズンをシミュレート</button>':`<p class="lineup-error">${e(lineup.error)}</p><button data-nav="squad">編成を確認する</button>`}</section><nav><button data-nav="squad">編成</button><button data-nav="table">順位表</button><button data-nav="stats">個人成績</button></nav></main>`}
 function squad(){let c=me(),lineup=validateLineup(c);return `${head()}<main style="--club:${e(c.color)}"><div class="squad-heading-row"><div class="squad-heading-copy"><h2>編成</h2><p class="hint">所属選手を選び、配置したい枠を押してください。能力はすべてランク表示です。</p></div></div>${renderLineupEditor(c,s.selectedLineupPlayerId,s.lineupMessage,s.lineupError,s.benchSort)}<button data-a="season" ${lineup.ok?'':'disabled'}>シーズンをシミュレート</button><button data-nav="home" class="subtle">戻る</button></main>`}
 function stats(){const c=me();return `${head()}<main><p class="eyebrow">シーズン${s.league.season}</p><h2>所属選手の個人成績</h2>${renderSeasonPlayerStats(c)}<button data-nav="${s.league.completed?'seasonResults':'home'}" class="subtle">戻る</button></main>`}
-function seasonResults(){const c=me(),row=standings(s.league).find(result=>result.club.id===c.id),matches=s.league.seasonResults||[];return `${head()}<main><p class="eyebrow">シーズン${s.league.season} 結果</p><h2>最終順位 ${row.rank}位</h2><section class="season-summary-grid"><div><span>勝点</span><b>${row.points}</b></div><div><span>勝</span><b>${row.wins}</b></div><div><span>分</span><b>${row.draws}</b></div><div><span>敗</span><b>${row.losses}</b></div><div><span>得点</span><b>${row.goalsFor}</b></div><div><span>失点</span><b>${row.goalsAgainst}</b></div><div><span>得失点差</span><b>${row.goalDifference}</b></div></section><h2>全10試合</h2>${renderSeasonMatchList(matches,c.id)}<div class="season-result-actions"><button data-nav="stats">シーズン個人成績</button><button data-nav="table" class="subtle">最終順位表</button><button data-nav="home" class="subtle">ホームへ戻る</button></div></main>`}
+function seasonResults(){const c=me(),row=standings(s.league).find(result=>result.club.id===c.id),matches=s.league.seasonResults||[];return `${head()}<main><p class="eyebrow">シーズン${s.league.season} 結果</p><h2>最終順位 ${row.rank}位</h2><section class="season-summary-grid"><div><span>勝点</span><b>${row.points}</b></div><div><span>勝</span><b>${row.wins}</b></div><div><span>分</span><b>${row.draws}</b></div><div><span>敗</span><b>${row.losses}</b></div><div><span>得点</span><b>${row.goalsFor}</b></div><div><span>失点</span><b>${row.goalsAgainst}</b></div><div><span>得失点差</span><b>${row.goalDifference}</b></div></section><h2>全10試合</h2>${renderSeasonMatchList(matches,c.id)}<div class="season-result-actions"><button data-nav="stats">シーズン個人成績</button>${s.mode==='room'&&roomAdapter.room.phase==='season-result'?'<button data-stage4="offseason">結果確認完了</button>':''}<button data-nav="table" class="subtle">最終順位表</button><button data-nav="home" class="subtle">ホームへ戻る</button></div></main>`}
 function matchDetail(){return `${head()}${renderMatchDetail(s.match)}`}
 function render(){app.innerHTML=s.view==='title'?title():s.view==='setup'?setup():s.view==='draft'?draft():s.view==='auction'?auction():s.view==='table'?table():s.view==='stats'?stats():s.view==='squad'?squad():s.view==='seasonResults'?seasonResults():s.view==='matchDetail'?matchDetail():home()}
 function draftEligibleIds(){let humanId=me().id;return s.league.clubs.filter(club=>club.funds>=5&&club.roster.length<12&&(!s.draft?.humanDeclined||club.id!==humanId)).map(club=>club.id)}
@@ -36,7 +42,7 @@ function runCpuDraft(){let guard=0;while(s.view==='draft'&&guard++<100){let d=s.
 function beginDraft(){const season=s.league.season;s.draftHistoryOpen=false;s.league.releasePhaseOpen=false;s.match=null;s.seasonSimulation=null;s.league.clubs.forEach(club=>{club.reserveAuctionSlot=club.controllerType==='CPU'&&12-club.roster.length>=2});s.draft={pool:createDraftPool(s.league.seed,season),round:1,rng:createRandom(`${s.league.seed}:season:${season}:draft`),pendingClubIds:[],humanDeclined:false,history:[],completed:false};prepareDraftRound(s.draft);s.view='draft';s.note=`シーズン${season}ドラフトを開始します。`;runCpuDraft()}
 function pickDraft(p){let d=s.draft,humanId=me().id;if(!d.pendingClubIds.includes(humanId))return;const actions=d.pendingClubIds.map(id=>s.league.clubs.find(club=>club.id===id)).map(club=>club?.controllerType==='CPU'?decideCpuDraftAction(club,d.pool,d.rng):club?.id===humanId?{type:ACTION_TYPES.DRAFT_PICK,clubId:club.id,playerId:p.id}:null).filter(Boolean);const result=resolveDraftActions({clubs:s.league.clubs,candidates:d.pool,pendingClubIds:d.pendingClubIds,actions,rng:d.rng});recordDraftAcquisitions(d,result);d.pool=result.candidates;const acquired=result.acquired.find(row=>row.clubId===humanId);if(d.mode==='ORDERED')nextOrderedPick(d);else d.pendingClubIds=result.pendingClubIds;if(!acquired&&d.mode==='SIMULTANEOUS'){s.note=`${p.name}は競合抽選で外れました。外れクラブとして再指名してください。`;return}s.note=`${p.name}を${acquired?.contested?'競合抽選で':''}獲得しました。`;runCpuDraft()}
 function bid(amount){let a=s.auction,p=a.pool[a.i],human=me(),actions=s.league.clubs.map(club=>club.controllerType==='CPU'?decideCpuAuctionAction(club,p,a.rng):club.id===human.id?{type:ACTION_TYPES.AUCTION_BID,clubId:club.id,playerId:p.id,bid:club.roster.length<12?amount:0}:null).filter(Boolean),result=resolveAuctionActions({clubs:s.league.clubs,player:p,actions,rng:a.rng});a.history ||= [];a.history.push({player:p,winnerClubId:result.winner?.id||null,bid:result.bid||0});if(result.winner)s.league.releasedPlayers=(s.league.releasedPlayers||[]).filter(candidate=>candidate.id!==p.id);s.note=result.winner?`落札 — ${result.winner.name} が ${result.bid}ptで獲得しました。`:`${p.name}は見送りになりました。`;a.i++;if(a.i>=a.pool.length){a.completed=true;s.league.releasedPlayers=[];prepareCpuClubs(s.league);s.note='オークションが終了しました。結果を確認して編成画面へ進んでください。'}}
-app.addEventListener('click',ev=>{let a=ev.target.closest('[data-a]')?.dataset.a,n=ev.target.closest('[data-nav]')?.dataset.nav,p=ev.target.closest('[data-p]')?.dataset.p,m=ev.target.closest('[data-season-match]')?.dataset.seasonMatch;if(m!==undefined){s.match=s.league.seasonResults[Number(m)];s.view='matchDetail';return render()}if(n){s.view=n;if(n!=='squad'){s.selectedLineupPlayerId=null;s.lineupMessage='';s.lineupError=false}return render()}if(p){let x=s.draft.pool.find(q=>q.id===p);if(x&&me().funds>=5&&me().roster.length<12)pickDraft(x);return render()}if(a==='toggleDraftHistory'){s.draftHistoryOpen=true;return render()}if(a==='toggleAuctionHistory'){s.auctionHistoryOpen=true;return render()}if(a==='toAuction'){startAuction();return render()}if(a==='setup'||a==='title'){s.view=a;return render()}if(a==='start'){let name=document.querySelector('#name').value.trim();if(!name)return alert('クラブ名を入力してください。');let seed=document.querySelector('#seed').value.trim()||String(Date.now());s.league=createLeague({name,color:document.querySelector('#color').value,seed});s.offseasonComplete=false;beginDraft();return render()}if(a==='skipDraft'){s.draft.humanDeclined=true;if(s.draft.mode==='ORDERED')nextOrderedPick(s.draft);else s.draft.pendingClubIds=s.draft.pendingClubIds.filter(id=>id!==me().id);runCpuDraft();return render()}if(a==='bid'||a==='pass'){let n=a==='pass'?0:Number(document.querySelector('#bid').value);if(n<0||n>me().funds)return alert('入札額を確認してください。');bid(n);return render()}if(a==='squad'){s.view='squad';return render()}if(a==='season'){let lineup=validateLineup(me());if(!lineup.ok)return alert(lineup.error);s.seasonSimulation=simulateRemainingSeason(s.league);if(s.league.season===10)finalizeSeason(s.league);s.view='seasonResults';return render()}});render();
+onGameClick('app',ev=>{let a=ev.target.closest('[data-a]')?.dataset.a,n=ev.target.closest('[data-nav]')?.dataset.nav,p=ev.target.closest('[data-p]')?.dataset.p,m=ev.target.closest('[data-season-match]')?.dataset.seasonMatch;if(m!==undefined){s.match=s.league.seasonResults[Number(m)];s.view='matchDetail';return render()}if(n){s.view=n;if(n!=='squad'){s.selectedLineupPlayerId=null;s.lineupMessage='';s.lineupError=false}return render()}if(p){let x=s.draft.pool.find(q=>q.id===p);if(x&&me().funds>=5&&me().roster.length<12)pickDraft(x);return render()}if(a==='toggleDraftHistory'){s.draftHistoryOpen=true;return render()}if(a==='toggleAuctionHistory'){s.auctionHistoryOpen=true;return render()}if(a==='toAuction'){startAuction();return render()}if(a==='setup'||a==='title'){s.view=a;return render()}if(a==='start'){let name=document.querySelector('#name').value.trim();if(!name)return alert('クラブ名を入力してください。');let seed=document.querySelector('#seed').value.trim()||String(Date.now());s.league=createLeague({name,color:document.querySelector('#color').value,seed});s.offseasonComplete=false;beginDraft();return render()}if(a==='skipDraft'){s.draft.humanDeclined=true;if(s.draft.mode==='ORDERED')nextOrderedPick(s.draft);else s.draft.pendingClubIds=s.draft.pendingClubIds.filter(id=>id!==me().id);runCpuDraft();return render()}if(a==='bid'||a==='pass'){let n=a==='pass'?0:Number(document.querySelector('#bid').value);if(n<0||n>me().funds)return alert('入札額を確認してください。');bid(n);return render()}if(a==='squad'){s.view='squad';return render()}if(a==='season'){let lineup=validateLineup(me());if(!lineup.ok)return alert(lineup.error);s.seasonSimulation=simulateRemainingSeason(s.league);if(s.league.season===10)finalizeSeason(s.league);s.view='seasonResults';return render()}});
 
 // Stage 4 off-season screens are layered onto the existing season flow.
 import { createContractEvents, createSpecialTrainingOffers, renewalFee, trainingSkills } from './development.js?v=0.17.30';
@@ -70,13 +76,13 @@ function stage4Render() {
   }
   if (s.view === 'focus') {
     const picks = [...s.training.keys()]; const c = me();
-    app.innerHTML = `${head()}<main><p class="eyebrow">育成</p><h2>重点能力を選択</h2>${picks.map(id => { const p=c.roster.find(x=>x.id===id); return `<section class="candidate">${player(p)}<label>重点育成<select data-focus="${id}">${trainingSkills(p).map(k=>`<option value="${k}">${STAT_LABELS[k]}</option>`).join('')}</select></label></section>`; }).join('')}<button data-stage4="grow">育成を実行</button></main>`; return;
+    app.innerHTML = `${head()}<main><p class="eyebrow">育成</p><h2>重点能力を選択</h2>${picks.map(id => { const p=c.roster.find(x=>x.id===id); return `<section class="candidate">${player(p)}<label>重点育成<select data-focus="${id}">${trainingSkills(p).map(k=>`<option value="${k}" ${s.training.get(id)===k?'selected':''}>${STAT_LABELS[k]}</option>`).join('')}</select></label></section>`; }).join('')}<button data-stage4="grow">育成を実行</button></main>`; return;
   }
   if (s.view === 'growth') {
     const priority = x => x.specialTrainingResult ? 0 : x.focus ? 1 : x.awakeningKeys?.length ? 2 : 3;
     const resultsById = new Map(s.growth.map(x => [x.player.id, x]));
     const growthResults = sortPlayers(s.growth.map(x => x.player), s.developmentSort).map(p => resultsById.get(p.id)).sort((a,b) => priority(a)-priority(b));
-    app.innerHTML = `${head()}<main><p class="eyebrow">成長結果</p><h2>育成・特別特訓の結果</h2><p class="hint">CPU5クラブも育成・成長・衰退・加齢を完了しました。</p><section class="candidate-grid">${growthResults.map(x => `<article class="candidate growth-result ${x.specialTrainingResult ? `growth-special-${x.specialTrainingResult.steps}` : x.focus ? 'growth-focus' : x.awakeningKeys?.length ? 'growth-awakened' : ''}"><div class="growth-labels">${x.specialTrainingResult ? '<span>若手育成イベント</span>' : ''}${x.focus ? `<span>重点育成：${e(STAT_LABELS[x.focus] || x.focus)}</span>` : ''}${x.awakeningKeys?.length ? '<span>覚醒</span>' : ''}</div>${renderPlayerCard(x.player, { growthChanges: x.changes })}<p>年齢 ${x.player.age - 1} → ${x.player.age}</p>${x.awakeningKeys?.length ? `<p><b>覚醒！</b></p>` : ''}${x.specialTrainingResult?`<p><b>特別特訓：</b>${x.specialTrainingResult.label}</p>`:''}<p>${x.retired ? '35歳で引退' : x.changes.map(c=>`${STAT_LABELS[c.key]} ${c.from === c.to && c.increased ? `${c.from} ↑` : `${c.from} → ${c.to}`}`).join('<br>') || 'ランク変化なし'}</p>${x.learnedAbility ? `<p><b>特殊能力を習得！</b><br>★ ${x.learnedAbility}</p>` : ''}</article>`).join('')}</section><button data-stage4="releasePhase">放出フェイズへ進む</button></main>`; return;
+    app.innerHTML = `${head()}<main><p class="eyebrow">成長結果</p><h2>育成・特別特訓の結果</h2><p class="hint">${s.mode==='room'?'全クラブの育成・成長・衰退・加齢を完了しました。':'CPU5クラブも育成・成長・衰退・加齢を完了しました。'}</p><section class="candidate-grid">${growthResults.map(x => `<article class="candidate growth-result ${x.specialTrainingResult ? `growth-special-${x.specialTrainingResult.steps}` : x.focus ? 'growth-focus' : x.awakeningKeys?.length ? 'growth-awakened' : ''}"><div class="growth-labels">${x.specialTrainingResult ? '<span>若手育成イベント</span>' : ''}${x.focus ? `<span>重点育成：${e(STAT_LABELS[x.focus] || x.focus)}</span>` : ''}${x.awakeningKeys?.length ? '<span>覚醒</span>' : ''}</div>${renderPlayerCard(x.player, { growthChanges: x.changes })}<p>年齢 ${x.player.age - 1} → ${x.player.age}</p>${x.awakeningKeys?.length ? `<p><b>覚醒！</b></p>` : ''}${x.specialTrainingResult?`<p><b>特別特訓：</b>${x.specialTrainingResult.label}</p>`:''}<p>${x.retired ? '35歳で引退' : x.changes.map(c=>`${STAT_LABELS[c.key]} ${c.from === c.to && c.increased ? `${c.from} ↑` : `${c.from} → ${c.to}`}`).join('<br>') || 'ランク変化なし'}</p>${x.learnedAbility ? `<p><b>特殊能力を習得！</b><br>★ ${x.learnedAbility}</p>` : ''}</article>`).join('')}</section><button data-stage4="releasePhase">放出フェイズへ進む</button></main>`; return;
   }
   if (s.view === 'release') {
     const c=me();
@@ -86,7 +92,7 @@ function stage4Render() {
   if (s.view === 'home' && s.league?.completed && !s.offseasonComplete) app.querySelector('main')?.insertAdjacentHTML('beforeend', s.league.season === 10 ? '<button data-stage6="history">10シーズンの歴史</button><button data-a="title" class="subtle">ホーム画面に戻る</button>' : '<button data-stage4="offseason">オフシーズンへ進む</button>');
 }
 render = stage4Render;
-app.addEventListener('click', ev => {
+onGameClick('app', ev => {
   const action = ev.target.closest('[data-stage4]')?.dataset.stage4;
   const trainingId = ev.target.closest('[data-train]')?.dataset.train;
   const renewId = ev.target.closest('[data-renew]')?.dataset.renew;
@@ -122,17 +128,17 @@ function stage5Render() {
   }
 }
 render = stage5Render;
-app.addEventListener('click', ev => { const tactic = ev.target.closest('[data-tactic]')?.dataset.tactic; if (tactic) { applyClubAction(me(),{type:ACTION_TYPES.SET_TACTIC,clubId:me().id,tactic}); render(); } });
+onGameClick('app', ev => { const tactic = ev.target.closest('[data-tactic]')?.dataset.tactic; if (tactic) { applyClubAction(me(),{type:ACTION_TYPES.SET_TACTIC,clubId:me().id,tactic}); render(); } });
 
 const stage6BaseRender = render;
-function stage6Render() { stage6BaseRender(); if (s.view==='home' && s.league?.completed) { const a=awards(s.league); app.querySelector('main')?.insertAdjacentHTML('beforeend', `<section class="season-awards"><p class="eyebrow">シーズン${s.league.season} 表彰</p><h2>最優秀選手 / ベスト5</h2><div class="candidate-grid">${a.mvp?'<article class="award-card mvp">'+player(a.mvp.p)+'<p class="award-club"><i class="club-color-dot" style="--club:'+e(a.mvp.c.color)+'"></i>'+e(a.mvp.c.name)+'</p><span class="mvp-badge">MVP</span></article>':'<p>該当者なし</p>'}${a.best5.map(x=>'<article class="award-card">'+player(x.p)+'<p class="award-club"><i class="club-color-dot" style="--club:'+e(x.c.color)+'"></i>'+e(x.c.name)+'</p></article>').join('')}</div>${s.league.season===10?'<button data-stage6="history" class="subtle">10シーズンの歴史</button>':'<p class="hint">オフシーズン処理後に次年度市場へ進みます。</p>'}</section>`); } if(s.view==='history'){const records=[...(s.league.careerRecords||[])].sort((a,b)=>b.career.goals-a.career.goals);const leader=(key)=>[...records].sort((a,b)=>b.career[key]-a.career[key]).slice(0,5);app.innerHTML=`${head()}<main><p class="eyebrow">10シーズン完了</p><h2>10シーズンの歴史</h2>${s.league.history.map(h=>`<section class="candidate"><b><i class="club-color-dot" style="--club:${e(h.championColor||'#64748b')}"></i>シーズン${h.season}・優勝 ${e(h.champion)}</b><p>最優秀選手 ${e(h.mvp||'—')}</p><p>最終順位 ${h.table.map(row=>`${row.rank}位 ${row.club}`).join(' ／ ')}</p><p>Best5 ${h.best5.map(row=>typeof row==='string'?row:`${positionLabel(row.position)} ${row.name}`).join(' ／ ')||'—'}</p></section>`).join('')}<h2>通算記録</h2><section class="candidate-grid">${[['得点', 'goals'],['アシスト','assists'],['出場','appearances']].map(([label,key])=>`<section class="candidate"><h3>通算${label}</h3>${leader(key).map((row,index)=>`<p>${index+1}. ${e(row.name)}　${row.career[key]}</p>`).join('')||'<p>記録なし</p>'}</section>`).join('')}</section><button data-nav="home" class="subtle">シーズン結果に戻る</button><button data-a="title" class="subtle">ホーム画面に戻る</button></main>`;} }
+function stage6Render() { stage6BaseRender(); if (s.view==='home' && s.league?.completed) { const a=awards(s.league); app.querySelector('main')?.insertAdjacentHTML('beforeend', `<section class="season-awards"><p class="eyebrow">シーズン${s.league.season} 表彰</p><h2>最優秀選手 / ベスト5</h2><div class="candidate-grid">${a.mvp?'<article class="award-card mvp">'+player(a.mvp.p)+'<p class="award-club"><i class="club-color-dot" style="--club:'+e(a.mvp.c.color)+'"></i>'+e(a.mvp.c.name)+'</p><span class="mvp-badge">MVP</span></article>':'<p>該当者なし</p>'}${a.best5.map(x=>'<article class="award-card">'+player(x.p)+'<p class="award-club"><i class="club-color-dot" style="--club:'+e(x.c.color)+'"></i>'+e(x.c.name)+'</p></article>').join('')}</div>${s.league.season===10?'<button data-stage6="history" class="subtle">10シーズンの歴史</button>':'<p class="hint">オフシーズン処理後に次年度市場へ進みます。</p>'}</section>`); } if(s.view==='history'){const records=[...(s.league.careerRecords||[])].sort((a,b)=>b.career.goals-a.career.goals);const leader=(key)=>[...records].sort((a,b)=>b.career[key]-a.career[key]).slice(0,5);app.innerHTML=`${head()}<main><p class="eyebrow">10シーズン完了</p><h2>10シーズンの歴史</h2>${s.league.history.map(h=>`<section class="candidate"><b><i class="club-color-dot" style="--club:${e(h.championColor||'#64748b')}"></i>シーズン${h.season}・優勝 ${e(h.champion)}</b><p>最優秀選手 ${e(h.mvp||'—')}</p><p>最終順位 ${h.table.map(row=>`${row.rank}位 ${e(row.club)}`).join(' ／ ')}</p><p>Best5 ${h.best5.map(row=>typeof row==='string'?e(row):`${positionLabel(row.position)} ${e(row.name)}`).join(' ／ ')||'—'}</p></section>`).join('')}<h2>通算記録</h2><section class="candidate-grid">${[['得点', 'goals'],['アシスト','assists'],['出場','appearances']].map(([label,key])=>`<section class="candidate"><h3>通算${label}</h3>${leader(key).map((row,index)=>`<p>${index+1}. ${e(row.name)}　${row.career[key]}</p>`).join('')||'<p>記録なし</p>'}</section>`).join('')}</section><button data-nav="home" class="subtle">シーズン結果に戻る</button><button data-a="title" class="subtle">ホーム画面に戻る</button></main>`;} }
 render=stage6Render;
-app.addEventListener('click',ev=>{const x=ev.target.closest('[data-stage6]')?.dataset.stage6;if(x==='history'){s.view='history';render()}});
+onGameClick('app',ev=>{const x=ev.target.closest('[data-stage6]')?.dataset.stage6;if(x==='history'){s.view='history';render()}});
 
 import { exportSave, importSave, loadSlot, saveSlot, slotInfo } from './storage.js?v=0.17.27';
 
 // Stage 14 lets the human controller submit the same SET_LINEUP action used by CPU controllers.
-app.addEventListener('click', event => {
+onGameClick('app', event => {
   const playerId = event.target.closest('[data-lineup-player]')?.dataset.lineupPlayer;
   const slotValue = event.target.closest('[data-lineup-slot]')?.dataset.lineupSlot;
   if (playerId) {
@@ -192,7 +198,7 @@ function auctionHistoryRender(){
   document.body.insertAdjacentHTML('beforeend', `<div class="overlay-backdrop" data-auction-history-modal="close"></div><section class="overlay-panel detail-panel" data-auction-history-modal="panel" role="dialog" aria-modal="true" aria-label="オークション結果"><div class="overlay-heading"><div><p class="eyebrow">オークション</p><h2>落札結果</h2></div><button type="button" data-auction-history-modal="close" class="subtle">閉じる</button></div>${renderAuctionHistory(s.auction)}</section>`);
 }
 render = auctionHistoryRender;
-document.addEventListener('click', event => {
+onGameClick('document', event => {
   const action = event.target.closest('[data-stage10]')?.dataset.stage10;
   if (action==='roster') { s.rosterOpen=true; s.detailPlayerId=null; render(); }
   if (action==='release') { const playerId=event.target.closest('[data-release-player]')?.dataset.releasePlayer; if(playerId){const result=applyClubAction(me(),{type:ACTION_TYPES.RELEASE_PLAYER,clubId:me().id,playerId},s.league);if(!result.ok){s.releaseMessage=result.error;render();return}selectBestLineup(me());s.releaseMessage='';s.rosterOpen=s.view !== 'release';s.detailPlayerId=null;render();} }
@@ -204,7 +210,7 @@ document.addEventListener('keydown', event => { if(event.key==='Escape'&&s.roste
 const stage19BaseRender = render;
 const unsafeSaveViews = new Set(['draft', 'auction', 'development', 'focus']);
 const saveSourceView = () => s.view === 'savePanel' ? s.saveReturnView : s.view;
-const saveAllowed = () => Boolean(s.league) && !unsafeSaveViews.has(saveSourceView());
+const saveAllowed = () => s.mode !== 'room' && Boolean(s.league) && !unsafeSaveViews.has(saveSourceView());
 function slotRows(loadOnly = false) {
   return [1,2,3].map(slot => {
     const info = slotInfo(slot);
@@ -221,13 +227,13 @@ function stage19Render() {
     return;
   }
   stage19BaseRender();
-  if (s.league) {
+  if (s.league && s.mode !== 'room') {
     const header = app.querySelector('header');
     header?.insertAdjacentHTML('beforeend', '<span><button data-stage19="savePanel" class="subtle">セーブ / ロード</button></span>');
   }
 }
 render = stage19Render;
-document.addEventListener('click', event => {
+onGameClick('document', event => {
   const action = event.target.closest('[data-stage19]')?.dataset.stage19;
   if (!action) return;
   try {
@@ -243,6 +249,7 @@ document.addEventListener('click', event => {
 });
 document.addEventListener('change', event => {
   if (event.target.matches('[data-bench-sort]')) { s.benchSort=event.target.value; return render(); }
+  if(event.target.matches('[data-focus]') && s.mode==='room'){ s.training.set(event.target.dataset.focus,event.target.value); roomAdapter.remember(); return; }
   const scope=event.target.closest('[data-player-sort]')?.dataset.playerSort;
   if(scope==='roster')s.rosterSort=event.target.value;
   if(scope==='draft')s.draftSort=event.target.value;
@@ -251,7 +258,7 @@ document.addEventListener('change', event => {
   if(scope)render();
 });
 
-document.addEventListener('click', event => {
+onGameClick('document', event => {
   const action = event.target.closest('[data-draft-history-modal]')?.dataset.draftHistoryModal;
   if(action==='close'){ s.draftHistoryOpen=false; render(); }
 });
@@ -259,10 +266,127 @@ document.addEventListener('keydown', event => {
   if(event.key==='Escape' && s.draftHistoryOpen){ s.draftHistoryOpen=false; render(); }
 });
 
-document.addEventListener('click', event => {
+onGameClick('document', event => {
   const action = event.target.closest('[data-auction-history-modal]')?.dataset.auctionHistoryModal;
   if(action==='close'){ s.auctionHistoryOpen=false; render(); }
 });
 document.addEventListener('keydown', event => {
   if(event.key==='Escape' && s.auctionHistoryOpen){ s.auctionHistoryOpen=false; render(); }
 });
+
+// One event boundary. Both modes use the renderers and local editing handlers above.
+// Only committed game operations are replaced by Room actions.
+function roomSync() {
+  return `<aside class="room-sync" aria-label="同期状況"><span data-room-status role="status" aria-live="polite">${e(roomAdapter?.statusText()||'')}</span><button data-room="retry" class="subtle" ${roomAdapter?.status.error||roomAdapter?.client.pending?'':'hidden'}>再接続・送信確認</button></aside>`;
+}
+function roomEntry() {
+  return `<main class="setup"><h2>マルチプレイ</h2><label>クラブ名<input id="room-name" maxlength="12" placeholder="東京ファイブ"></label><label>チームカラー<input id="room-color" type="color" value="#4ade80"></label><button data-room="create">ルームを作成</button><label>ルームID<input id="room-code" maxlength="12" autocomplete="off" placeholder="12桁のルームID"></label><button data-room="join">ルームに参加</button>${roomAdapter.client.session?'<button data-room="resume" class="subtle">参加中のルームに戻る</button>':''}${roomSync()}<button data-room="leave" class="subtle">戻る</button></main>`;
+}
+function roomLobby() {
+  const room=roomAdapter.room;
+  return `<main class="setup"><h2>ロビー</h2><p>ルームID <b>${e(room.roomId)}</b></p><p class="hint">参加者にルームIDを共有してください。未参加の枠はCPUが担当します。</p><ul>${room.players.map(p=>`<li>${e(p.teamName)}${p.id===room.hostPlayerId?'（ホスト）':''}</li>`).join('')}</ul>${roomAdapter.isHost?'<button data-room="start">ゲーム開始</button>':'<p>ホストの開始を待っています。</p>'}${roomSync()}<button data-room="leave" class="subtle">タイトルへ</button></main>`;
+}
+function updateRoomStatus() {
+  if (!roomAdapter) return;
+  document.querySelectorAll('[data-room-status]').forEach(node=>{node.textContent=roomAdapter.statusText();});
+  document.querySelectorAll('[data-room="retry"]').forEach(node=>{node.hidden=!(roomAdapter.status.error||roomAdapter.client.pending);node.disabled=roomAdapter.status.busy;});
+  document.querySelectorAll('[data-room="create"],[data-room="join"],[data-room="resume"],[data-room="start"],[data-room="leave"]').forEach(node=>{node.disabled=roomAdapter.status.busy;});
+  if(s.mode!=='room'||!roomAdapter.room?.game)return;
+  const phase=roomAdapter.room.phase;
+  const groups=[
+    ['[data-p],[data-a="skipDraft"]',['draft']],
+    ['[data-a="bid"],[data-a="pass"],#bid',['auction']],
+    ['[data-lineup-player],[data-lineup-slot],[data-tactic]',['team-setup']],
+    ['[data-renew],[data-release],[data-retention-pay],[data-retention-release],[data-special-pay],[data-special-skip]',['offseason-events']],
+    ['[data-train],[data-focus],[data-stage4="confirm"],[data-stage4="grow"]',['development']],
+    ['[data-release-player],[data-rename-player]',['release']],
+    ['[data-stage4="eventsDone"]',['offseason-events']],
+    ['[data-stage4="releasePhase"]',['growth-result']],
+    ['[data-stage4="releaseDone"]',['release']],
+    ['[data-stage4="offseason"]',['season-result']],
+    ['[data-a="toAuction"]',['draft-complete']]
+  ];
+  for(const [selector,phases] of groups) document.querySelectorAll(selector).forEach(node=>{
+    node.dataset.ruleDisabled ??= String(node.disabled);
+    node.disabled=node.dataset.ruleDisabled==='true'||roomAdapter.locked||!phases.includes(phase)||(phase==='draft'&&!s.draft.pendingClubIds.includes(me().id));
+  });
+  document.querySelectorAll('[data-a="season"]').forEach(node=>{
+    node.dataset.ruleDisabled ??= String(node.disabled);
+    node.textContent=phase==='season-ready'?'シーズンをシミュレート':roomAdapter.player?.completed?'編成完了済み':'編成を確定する';
+    node.disabled=node.dataset.ruleDisabled==='true'||roomAdapter.locked||!['team-setup','season-ready'].includes(phase)||(phase==='season-ready'&&!roomAdapter.isHost);
+  });
+  if(phase==='auction-complete')document.querySelectorAll('[data-a="squad"]').forEach(node=>{node.disabled=roomAdapter.locked;});
+}
+const sharedRender=render;
+render=function renderApplication(){
+  if(s.view==='roomEntry')app.innerHTML=roomEntry();
+  else if(s.view==='roomLobby')app.innerHTML=roomLobby();
+  else sharedRender();
+  classifyScreens(s.view);
+  updateRoomStatus();
+};
+roomAdapter=new RoomAdapter(()=>s,next=>{s=next;},()=>render(),()=>updateRoomStatus());
+function reportRoomError(error){ roomAdapter.status.error=error.message; updateRoomStatus(); }
+function sendRoom(promise){Promise.resolve(promise).catch(reportRoomError);}
+function roomClick(event){
+  const target=event.target;
+  const roomAction=target.closest('[data-room]')?.dataset.room;
+  if(roomAction){
+    if(roomAction==='open'){s.view='roomEntry';render();}
+    if(roomAction==='create'||roomAction==='join')sendRoom(roomAdapter.enter(roomAction,document.querySelector('#room-name').value,document.querySelector('#room-color').value,document.querySelector('#room-code').value));
+    if(roomAction==='resume')sendRoom(roomAdapter.resume());
+    if(roomAction==='retry'){roomAdapter.active=true;sendRoom(roomAdapter.client.retry().then(()=>roomAdapter.client.startPolling()));}
+    if(roomAction==='start')sendRoom(roomAdapter.client.mutate('start'));
+    if(roomAction==='leave'){
+      if(roomAdapter.status.busy)return true;
+      roomAdapter.leave();
+      s={view:'title',league:null,note:'',benchSort:'position',rosterSort:'position',draftSort:'position',developmentSort:'position',releaseSort:'position'};
+      document.querySelectorAll('.overlay-backdrop,.overlay-panel').forEach(node=>node.remove());
+      render();
+    }
+    return true;
+  }
+  if(s.mode!=='room')return false;
+  const a=target.closest('[data-a]')?.dataset.a, step=target.closest('[data-stage4]')?.dataset.stage4;
+  if(a==='title'){roomAdapter.leave();s={view:'title',league:null,note:''};render();return true;}
+  if(target.closest('[data-stage19]'))return true;
+  const workKeys={renew:'renew',release:'contractRelease',retentionPay:'retentionPay',retentionRelease:'retentionRelease',specialPay:'specialPay',specialSkip:'specialSkip',releasePlayer:'release'};
+  for(const [key,type] of Object.entries(workKeys)){
+    const attr='data-'+key.replace(/[A-Z]/g,letter=>'-'+letter.toLowerCase());
+    const node=target.closest(`[${attr}]`);
+    if(node){roomAdapter.work(type,node.dataset[key]);return true;}
+  }
+  const pick=target.closest('[data-p]')?.dataset.p;
+  const commit=pick||['skipDraft','bid','pass','toAuction','season'].includes(a)||['offseason','eventsDone','grow','releasePhase','releaseDone'].includes(step)||(a==='squad'&&roomAdapter.room.phase==='auction-complete');
+  if(commit){
+    if(roomAdapter.locked)return true;
+    if(pick)sendRoom(roomAdapter.submit({playerId:pick}));
+    else if(a==='skipDraft')sendRoom(roomAdapter.submit({pass:true}));
+    else if(a==='bid'||a==='pass')sendRoom(roomAdapter.submit({bid:a==='pass'?0:Number(document.querySelector('#bid').value)}));
+    else if(a==='season'){
+      if(roomAdapter.room.phase==='season-ready')sendRoom(roomAdapter.client.mutate('run-season'));
+      else sendRoom(roomAdapter.submit({lineup:me().lineup,tactic:me().tactic}));
+    }
+    else if(step==='eventsDone'||step==='releaseDone')sendRoom(roomAdapter.submit({actions:roomAdapter.actions}));
+    else if(step==='grow')sendRoom(roomAdapter.submit({selections:[...s.training.keys()].map(playerId=>({playerId,focus:document.querySelector(`[data-focus="${CSS.escape(playerId)}"]`).value}))}));
+    else sendRoom(roomAdapter.submit());
+    return true;
+  }
+  if(target.closest('[data-lineup-player],[data-lineup-slot],[data-tactic]') && (roomAdapter.locked||roomAdapter.room.phase!=='team-setup'))return true;
+  if(target.closest('[data-train],[data-stage4="confirm"]') && (roomAdapter.locked||roomAdapter.room.phase!=='development'))return true;
+  if(target.closest('[data-nav]')?.dataset.nav==='squad'&&!['team-setup','season-ready'].includes(roomAdapter.room.phase))return true;
+  return false;
+}
+document.addEventListener('click',event=>{
+  try{
+    if(event.target.closest('button:disabled'))return;
+    if(roomClick(event))return;
+    for(const {scope,handler} of clickHandlers)if(scope==='document'||app.contains(event.target))handler(event);
+    if(s.mode==='room')roomAdapter.remember();
+  }catch(error){if(s.mode==='room')reportRoomError(error);else alert(error.message);}
+});
+configureRename(async(playerId,name)=>{
+  if(s.mode==='room'){await roomAdapter.rename(playerId,name);return;}
+  return false;
+});
+render();
