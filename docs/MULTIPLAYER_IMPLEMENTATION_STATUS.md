@@ -300,3 +300,61 @@ M6〜M8と初年度導線を通して静的監査を実施し、以下を修正�
 - 旧 `offseason-ready` 表示処理を削除し、現行 `offseason-events` フローへ統一。
 
 現時点でGitHub Actions/CIは設定されておらず、ブラウザ＋Cloudflare Worker/Durable Objectの実通信テストは未実施。
+
+
+## M8-AUDIT 監査結果
+
+2026-09-26 に M6〜M8 の1周フローを静的監査し、以下を修正した。
+
+- 公開Room状態から各プレイヤーの `phaseInput`、編成・戦術の実データを除外した。完了状態のみ公開する。
+- ホストだけが必要なシーズン確定、オフシーズン確定、育成確定、選手整理確定は専用のhost-only snapshot APIから内部入力を取得する。
+- ドラフト指名・競売入札は引き続き公開Room状態に含めない。
+- ルーム参加時に各プレイヤー専用tokenを発行し、以後の更新系APIは `playerId + x-player-token` を照合する。
+- Worker → Durable Objectへの内部転送でもtokenを引き継ぐ。
+- 公開リーグ状態・ドラフト候補・競売候補・成長結果から `hiddenGrowth` を除外する。
+- Season 10の結果確認完了後はオフシーズンへ進まず `game-complete` で終了する。
+- シーズン結果順位表の自クラブ強調はRoom用clubIdではなく、共有leagueStateの担当クラブIDで照合する。
+- 初年度ゲーム開始直後、hostの初回遷移でドラフト初期化に失敗しても「更新」から再初期化できるようにした。
+- 古い `offseason-ready` 表示処理を削除し、現行 `offseason-events` 系へ統一した。
+
+### 静的監査で確認済みの1周
+
+```txt
+lobby
+→ Season 1 draft
+→ auction
+→ team-setup
+→ season-ready
+→ season-result
+→ offseason-events
+→ development
+→ growth-result
+→ release
+→ startNextSeason
+→ draft
+→ auction
+→ team-setup
+```
+
+Season 10のみ:
+
+```txt
+season-result
+→ 全員確認
+→ game-complete
+```
+
+### 残る確認
+
+GitHub Actions / 自動テストはこのブランチでは現在実行されていない。
+Cloudflare Worker / Durable Objectへ実際にデプロイした状態で、2端末以上を使った実通信テストが必要。
+
+特に確認する項目:
+
+1. 新規ルーム作成・参加tokenが各端末で保持されること
+2. 他プレイヤーIDを指定しても操作を偽装できないこと
+3. ドラフト指名が開示前に相手へ見えないこと
+4. 競売入札額が開札前に相手へ見えないこと
+5. 各フェーズの全員完了判定が1回だけ次へ進むこと
+6. Season 1 → Season 2のリーグ状態が維持されること
+7. Season 10で確実に終了すること
