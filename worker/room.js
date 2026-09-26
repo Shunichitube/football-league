@@ -2,7 +2,7 @@
 import { startGame, submitInput, runSeason, renamePlayer, publicRoom } from './room-game.js';
 
 const META = 'v3-meta';
-const COLORS = ['#4ade80','#60a5fa','#facc15','#fb7185','#a78bfa','#f97316'];
+const COLORS = ['#4ade80','#60a5fa','#facc15','#fb7185','#a78bfa','#ffffff'];
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
 function assert(condition, message, status = 400) { if (!condition) throw Object.assign(new Error(message), { status }); }
 function teamName(value) { const name = String(value ?? '').trim(); assert(name.length > 0 && name.length <= 12, 'クラブ名を1〜12文字で入力してください。'); return name; }
