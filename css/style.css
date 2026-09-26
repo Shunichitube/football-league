@@ -27,3 +27,23 @@
 .award-club{display:flex;align-items:center;gap:.3rem;margin:.35rem 0 0;font-size:.72rem;font-weight:700}
 
 .log p.goal{color:#facc15;font-weight:700}.log p.goal strong{font-weight:700}.log .event-time{margin-left:.5rem;font-variant-numeric:tabular-nums}
+
+/* Club setup: keep the native color picker large enough to show the selected color.
+   The generic input padding otherwise collapses the Chromium swatch into a thin line. */
+.setup input[type="color"]{
+  height:48px;
+  padding:4px;
+  cursor:pointer;
+  overflow:hidden;
+}
+.setup input[type="color"]::-webkit-color-swatch-wrapper{
+  padding:0;
+}
+.setup input[type="color"]::-webkit-color-swatch{
+  border:0;
+  border-radius:6px;
+}
+.setup input[type="color"]::-moz-color-swatch{
+  border:0;
+  border-radius:6px;
+}
