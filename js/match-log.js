@@ -3,7 +3,7 @@ export function formatMatchEvents(events, clubs, nameOf = name => name) {
   const rows = [], score = { home: 0, away: 0 };
   let lastLeader = null;
   const name = value => nameOf(value || '選手');
-  const add = (event, text, goal = false) => rows.push({ time: event.time, text, goal });
+  const add = (event, text, goal = false) => rows.push({ time: event.time, text, goal, side: event.side || null });
   const attackText = (d, stage) => {
     if (d.longFeed) return `${name(d.passer)}から${name(d.receiver)}へロングフィードが通る`;
     if (d.corner) return `${name(d.passer)}のコーナーキックが${name(d.receiver)}につながる`;
@@ -81,7 +81,8 @@ export function formatMatchEvents(events, clubs, nameOf = name => name) {
   rows.push({
     time: events.at(-1)?.time || '40:00',
     text: `試合終了　${clubs.home?.name || 'HOME'}　${score.home}－${score.away}　${clubs.away?.name || 'AWAY'}`,
-    goal: false
+    goal: false,
+    side: null
   });
   return rows;
 }
