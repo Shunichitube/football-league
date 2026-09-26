@@ -122,7 +122,7 @@ function resultSummary(room) {
   return '<section class="mp-work-summary"><b>前回の指名結果</b>' +
     (acquired.length ? '<ul class="mp-incomplete">' + acquired.map(row => '<li>' + esc(row.clubName) + '：' + esc(row.playerName) + (row.contested ? '（競合抽選）' : '') + '</li>').join('') + '</ul>' : '') +
     ((result.declinedClubNames || []).length ? '<p class="hint">辞退：'+result.declinedClubNames.map(esc).join('、')+'</p>' : '') +
-    '</section>';
+    '</main>';
 }
 function renderDraftPanel(room, localPlayer) {
   const phase = room?.phase;
@@ -143,9 +143,9 @@ function renderDraftPanel(room, localPlayer) {
     (canPick ? '<button type="button" data-mp-draft-pick="'+esc(player.id)+'">この選手を指名</button>' : '') +
     '</article>').join('');
   const hostReady = phase === 'draft-ready' && localPlayer?.id === room.hostPlayerId;
-  return '<section class="match-card" data-mp-draft-panel>' +
+  return '<main class="mp-phase-main" data-mp-draft-panel>' +
     '<p class="eyebrow">シーズン'+esc(league.season)+' ドラフト・第'+esc(state.round)+'/4巡</p>' +
-    '<h2>'+modeLabel+'</h2><p class="hint">'+hint+'</p>' +
+    '<div class="screen-heading"><div><h2>'+modeLabel+'</h2><p class="hint">'+hint+'</p></div></div>' +
     (club ? '<p>資金 <b>'+club.funds+'pt</b>・登録 <b>'+club.roster.length+'/12人</b></p>' : '') +
     resultSummary(room) + statusSummary(room, localPlayer) +
     '<div class="phase-sort-heading"><span></span><label>並び順<select data-mp-draft-sort>' +
@@ -172,7 +172,7 @@ async function renderPanel() {
   if (!html) return;
   const holder = document.createElement('div');
   holder.innerHTML = html;
-  document.querySelector('.multiplayer-room .season-result-actions')?.insertAdjacentElement('beforebegin', holder.firstElementChild);
+  document.querySelector('[data-mp-phase-anchor]')?.insertAdjacentElement('beforebegin', holder.firstElementChild);
 }
 async function submitPick(id, draftPlayerId = null, pass = false) {
   const s = readSession(id);
