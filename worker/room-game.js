@@ -1,8 +1,8 @@
 // Room owns the phase and private inputs. All game rules come from main's modules.
-import { createLeague, standings, simulateRemainingSeason, finalizeSeason, applySeasonFinances, startNextSeason } from '../js/league.js?v=0.17.27';
+import { createLeague, standings, simulateRemainingSeason, finalizeSeason, applySeasonFinances, recordDraftAcquisition, startNextSeason } from '../js/league.js?v=0.17.28';
 import { createDraftPool, createAuctionPool, resolveDraftActions, resolveAuctionActions } from '../js/market.js?v=0.17.31';
 import { decideCpuDraftAction, decideCpuAuctionAction, prepareCpuClubs, manageCpuContracts, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from '../js/cpu.js?v=0.17.30';
-import { createContractEvents, createSpecialTrainingOffers } from '../js/development.js?v=0.17.30';
+import { createContractEvents, createSpecialTrainingOffers } from '../js/development.js?v=0.17.31';
 import { ACTION_TYPES } from '../js/rules.js?v=0.17.2';
 import { createRandom } from '../js/random.js';
 import { clone, requireValue, applyWork, validateSetup, validateTraining } from '../js/phase-work.js';
@@ -69,6 +69,7 @@ function resolveDraft(room) {
   d.rngState = rng.snapshot();
   d.pool = result.candidates;
   d.history.push(...result.acquired.map(row => ({ ...row, round: d.round })));
+  for (const row of result.acquired) recordDraftAcquisition(league, row.clubId, row.player);
   if (d.mode === 'ORDERED') nextOrdered(game);
   else d.pendingClubIds = result.pendingClubIds;
   enterPhase(room, 'draft');
