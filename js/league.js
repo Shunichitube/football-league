@@ -254,7 +254,7 @@ function recordSeasonHistory(league) {
     championColor: table[0].club.color,
     mvp: trophy.mvp?.p.name || null,
     mvpClubId: trophy.mvp?.c.id || null,
-    best5: trophy.best5.map(x => ({ name: x.p.name, position: x.p.primaryPosition, clubId: x.c.id, color: x.c.color })),
+    best5: trophy.best5.map(x => ({ id: x.p.id, name: x.p.name, position: x.p.primaryPosition, clubId: x.c.id, color: x.c.color })),
     topScorers
   });
 }
@@ -278,9 +278,9 @@ export function clubAchievements(league, clubId) {
     const record = records.find(candidate => candidate.id === row.playerId);
     const current = league.clubs.flatMap(club => club.roster).find(player => player.id === row.playerId);
     const peakOverall = Math.max(row.initialOverall, record?.peakOverallByClub?.[clubId] || 0, current?.peakOverallByClub?.[clubId] || 0, current ? calculateOverall(current) : 0);
-    return { ...row, peakOverall, peakRank: rankOf(peakOverall), gain: peakOverall - row.initialOverall, appearances: record?.clubCareer?.[clubId]?.appearances || 0 };
+    return { ...row, name: record?.name || current?.name || row.name, peakOverall, peakRank: rankOf(peakOverall), gain: peakOverall - row.initialOverall, appearances: record?.clubCareer?.[clubId]?.appearances || 0 };
   }).sort((a, b) => b.gain - a.gain || b.peakOverall - a.peakOverall || b.appearances - a.appearances);
-  const best5Names = new Set(history.flatMap(entry => (entry.best5 || []).filter(row => row.clubId === clubId).map(row => row.name)));
+  const best5Names = new Set(history.flatMap(entry => (entry.best5 || []).filter(row => row.clubId === clubId).map(row => row.id || row.name)));
   return {
     championships: clubRows.filter(item => item.row.rank === 1).length,
     bestRank: clubRows.length ? Math.min(...clubRows.map(item => item.row.rank)) : null,
