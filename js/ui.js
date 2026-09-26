@@ -174,7 +174,7 @@ export function matchOutcomeForClub(match, clubId) {
   const goalsFor = isHome ? match.result.score.home : match.result.score.away;
   const goalsAgainst = isHome ? match.result.score.away : match.result.score.home;
   const opponent = isHome ? match.fixture.away : match.fixture.home;
-  return { isHome, goalsFor, goalsAgainst, opponent, mark: goalsFor > goalsAgainst ? '○' : goalsFor < goalsAgainst ? '●' : '△', label: goalsFor > goalsAgainst ? '勝利' : goalsFor < goalsAgainst ? '敗戦' : '引分' };
+  return { isHome, goalsFor, goalsAgainst, opponent, mark: goalsFor > goalsAgainst ? '●' : goalsFor < goalsAgainst ? '○' : '△', label: goalsFor > goalsAgainst ? '勝利' : goalsFor < goalsAgainst ? '敗戦' : '引分' };
 }
 
 export function renderSeasonMatchList(matches, clubId) {
