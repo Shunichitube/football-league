@@ -78,6 +78,14 @@ if (typeof document !== 'undefined' && !globalThis.__footballLeagueRenameHook) {
   });
 }
 
+
+const rankWidths = { G:18, F:28, E:38, D:48, C:58, B:68, A:78, S:88, SS:100 };
+function growthBar(ability, changes = []) {
+  const change = changes.find(c => c.key === ability.key);
+  const before = rankWidths[change?.from], after = rankWidths[ability.rank];
+  return after > before ? `<em class="growth-bar-gain" style="left:${before}%;width:${after-before}%" aria-hidden="true"></em>` : '';
+}
+
 export function renderPlayerCard(player, options = {}) {
   playerRefs.set(player.id, player);
   const display = displayPlayer(player);
@@ -101,7 +109,7 @@ export function renderPlayerCard(player, options = {}) {
       ${release}
     </div>
     <div class="player-abilities">
-      <dl class="ability-grid">${publicAbilities(player).map(ability => `<div><dt>${ability.label}</dt><dd><span>${ability.rank}</span><i class="rank-bar rank-${ability.rank}"><b></b></i></dd></div>`).join('')}</dl>
+      <dl class="ability-grid">${publicAbilities(player).map(ability => `<div><dt>${ability.label}</dt><dd><span>${ability.rank}</span><i class="rank-bar rank-${ability.rank}"><b></b>${growthBar(ability, options.growthChanges)}</i></dd></div>`).join('')}</dl>
     </div>
     <div class="player-special-row">${specialAbility}</div>
   </article>`;

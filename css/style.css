@@ -65,3 +65,20 @@
 .log p{display:flex;align-items:center;gap:.42rem}
 .log p time{flex:0 0 auto}
 .log p.goal .event-time{margin-left:.1rem}
+
+/* Growth results: highlight categories; animate only visible rank gain. */
+.growth-result{--growth-color:transparent}
+.growth-result.growth-focus{--growth-color:#38bdf8}
+.growth-result.growth-awakened{--growth-color:#c084fc}
+.growth-result.growth-special-0{--growth-color:#94a3b8}
+.growth-result.growth-special-1{--growth-color:#4ade80}
+.growth-result.growth-special-2{--growth-color:#c084fc}
+.growth-result.growth-special-3{--growth-color:#facc15}
+.growth-result[class*="growth-special-"],.growth-result.growth-focus,.growth-result.growth-awakened{border:2px solid var(--growth-color)}
+.growth-labels{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.5rem}
+.growth-labels:empty{display:none}
+.growth-labels span{border:1px solid var(--growth-color);border-radius:999px;padding:.2rem .5rem;color:var(--growth-color);font-size:.78rem;font-weight:700}
+.growth-result .rank-bar{position:relative}
+.growth-bar-gain{position:absolute;top:0;height:100%;background:#fef08a;animation:growth-gain-pulse .8s ease-in-out 4}
+@keyframes growth-gain-pulse{50%{opacity:.2}}
+@media(prefers-reduced-motion:reduce){.growth-bar-gain{animation:none}}
