@@ -383,6 +383,7 @@ function renderRoomScreen(room, playerId = null) {
     </div>`;
 
   app.innerHTML = `<div class="multiplayer-room mp-game-shell">
+    <span class="room-id" hidden>${escapeHtml(rawId)}</span>
     ${renderGameSyncBar(source, localPlayer)}
     ${renderSetupEditor(source, localPlayer)}
     ${renderSeasonResult(source, localPlayer)}
