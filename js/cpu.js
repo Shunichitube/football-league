@@ -1,7 +1,7 @@
 import { calculateOverall, createPlayer } from './data.js?v=0.17.2';
-import { processOffseason, renewalFee } from './development.js?v=0.17.3';
+import { processOffseason, renewalFee } from './development.js?v=0.17.30';
 import { createRandom } from './random.js';
-import { cpuBid, cpuCandidatePick } from './market.js?v=0.17.2';
+import { cpuBid, cpuCandidatePick } from './market.js?v=0.17.30';
 import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=0.17.2';
 
 const LINEUP_ROLES = ['DF', 'MF', 'MF', 'FW'];
@@ -138,18 +138,21 @@ export function prepareCpuMarketSpace(league) {
   for (const club of league.clubs.filter(candidate => candidate.controllerType === 'CPU')) {
     for (let releasedCount = 0; releasedCount < 3 && club.roster.length > 5;) {
       const average = club.roster.reduce((sum, player) => sum + calculateOverall(player), 0) / club.roster.length;
-      const candidates = club.roster.filter(player => player.primaryPosition !== 'GK' || club.roster.filter(candidate => candidate.primaryPosition === 'GK').length > 1);
+      const candidates = club.roster.filter(player => player.primaryPosition === 'GK'
+        ? club.roster.filter(candidate => candidate.primaryPosition === 'GK').length > 1
+        : club.roster.filter(candidate => candidate.primaryPosition !== 'GK').length > 4);
       const scored = candidates.map(player => {
         const positionPlayers = club.roster.filter(candidate => candidate.primaryPosition === player.primaryPosition);
         const positionRank = [...positionPlayers].sort((a,b) => calculateOverall(b) - calculateOverall(a)).findIndex(candidate => candidate.id === player.id);
         const weak = average - calculateOverall(player);
+        const replaceInitial = player.isInitial && positionPlayers.some(candidate => candidate.id !== player.id && calculateOverall(candidate) > calculateOverall(player)) ? 20 : 0;
         const bench = club.lineup.includes(player.id) ? 0 : 3;
         const age = player.age >= 33 ? 4 : player.age >= 30 ? 2 : 0;
         const youngProtection = player.age <= 23 ? -6 : 0;
         const special = player.specialAbility ? -1 : 0;
         const excess = positionPlayers.length > REQUIRED[player.primaryPosition] ? 3 : 0;
         const shortage = positionPlayers.length < REQUIRED[player.primaryPosition] ? -4 : 0;
-        return { player, score: weak + (positionRank > 0 ? 3 : 0) + bench + age + youngProtection + special + excess + shortage };
+        return { player, score: replaceInitial + weak + (positionRank > 0 ? 3 : 0) + bench + age + youngProtection + special + excess + shortage };
       }).sort((a,b) => b.score - a.score || a.player.age - b.player.age);
       const target = scored[0];
       const openSlots = 12 - club.roster.length;

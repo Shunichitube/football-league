@@ -3,7 +3,7 @@ export function formatMatchEvents(events, clubs, nameOf = name => name) {
   const rows = [], score = { home: 0, away: 0 };
   let lastLeader = null;
   const name = value => nameOf(value || '選手');
-  const add = (event, text, goal = false) => rows.push({ time: event.time, text, goal });
+  const add = (event, text, goal = false, sideOverride = null) => rows.push({ time: event.time, text, goal, side: sideOverride || event.side || null });
   const attackText = (d, stage) => {
     if (d.longFeed) return `${name(d.passer)}から${name(d.receiver)}へロングフィードが通る`;
     if (d.corner) return `${name(d.passer)}のコーナーキックが${name(d.receiver)}につながる`;
@@ -18,11 +18,17 @@ export function formatMatchEvents(events, clubs, nameOf = name => name) {
     const next = events[index + 1], previous = events[index - 1];
     const toCorner = next?.kind === 'CORNER' && next.time === event.time;
     if (d.stage === 2 && d.shooter) {
-      if (d.corner) add(event, `${name(d.passer)}のコーナーキック`);
+      const opposite = value => value === 'home' ? 'away' : value === 'away' ? 'home' : null;
+      const attackSide = ['SAVE', 'GK CATCH'].includes(kind)
+        ? opposite(side)
+        : kind === 'REBOUND' && d.rebound === 'cleared'
+          ? opposite(side)
+          : side;
+      if (d.corner) add(event, `${name(d.passer)}のコーナーキック`, false, attackSide);
       const attack = attackText(d, 2);
-      if (attack) add(event, attack);
-      if (d.keeper) add(event, `${name(d.keeper)}も加わり、攻撃を組み立てる`);
-      add(event, `${name(d.shooter)}が${d.corner ? 'コーナーキックから' : ''}シュート`);
+      if (attack) add(event, attack, false, attackSide);
+      if (d.keeper) add(event, `${name(d.keeper)}も加わり、攻撃を組み立てる`, false, attackSide);
+      add(event, `${name(d.shooter)}が${d.corner ? 'コーナーキックから' : ''}シュート`, false, attackSide);
     }
     switch (kind) {
       case 'STAGE 1 SUCCESS':
@@ -81,7 +87,8 @@ export function formatMatchEvents(events, clubs, nameOf = name => name) {
   rows.push({
     time: events.at(-1)?.time || '40:00',
     text: `試合終了　${clubs.home?.name || 'HOME'}　${score.home}－${score.away}　${clubs.away?.name || 'AWAY'}`,
-    goal: false
+    goal: false,
+    side: null
   });
   return rows;
 }

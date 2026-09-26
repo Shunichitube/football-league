@@ -27,3 +27,58 @@
 .award-club{display:flex;align-items:center;gap:.3rem;margin:.35rem 0 0;font-size:.72rem;font-weight:700}
 
 .log p.goal{color:#facc15;font-weight:700}.log p.goal strong{font-weight:700}.log .event-time{margin-left:.5rem;font-variant-numeric:tabular-nums}
+
+/* Club setup: keep the native color picker large enough to show the selected color.
+   The generic input padding otherwise collapses the Chromium swatch into a thin line. */
+.setup input[type="color"]{
+  height:48px;
+  padding:4px;
+  cursor:pointer;
+  overflow:hidden;
+}
+.setup input[type="color"]::-webkit-color-swatch-wrapper{
+  padding:0;
+}
+.setup input[type="color"]::-webkit-color-swatch{
+  border:0;
+  border-radius:6px;
+}
+.setup input[type="color"]::-moz-color-swatch{
+  border:0;
+  border-radius:6px;
+}
+
+.draft-history{margin:1rem 0 1.4rem;background:#0b1220;border:1px solid #475569;border-radius:14px;overflow:hidden}
+.draft-history-heading{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.8rem 1rem;border-bottom:1px solid #334155;background:#172033}
+.draft-history-heading h3{margin:0;font-size:1rem}
+.draft-history-heading span{color:var(--muted);font-size:.78rem;font-weight:800}
+.draft-history-table-wrap{overflow-x:auto}
+.draft-history-table{min-width:700px;background:transparent}
+.draft-history-table th{background:#0f172a}
+.draft-history-table td:nth-child(2),.draft-history-table th:nth-child(2),.draft-history-table td:nth-child(3),.draft-history-table th:nth-child(3){text-align:left}
+.draft-history-table tr.you{background:color-mix(in srgb,var(--accent) 18%,transparent)}
+.draft-rank{color:#facc15}
+.draft-lottery{display:inline-flex;padding:.18rem .48rem;border:1px solid #f59e0b;border-radius:999px;color:#fbbf24;font-size:.7rem;font-weight:900}
+
+.player-name-box{display:inline-flex;align-items:center;gap:.4rem;min-width:0}
+.player-club-dot,.match-event-club-dot{flex:0 0 auto}
+.log p{display:flex;align-items:center;gap:.42rem}
+.log p time{flex:0 0 auto}
+.log p.goal .event-time{margin-left:.1rem}
+
+/* Growth results: highlight categories; animate only visible rank gain. */
+.growth-result{--growth-color:transparent}
+.growth-result.growth-focus{--growth-color:#38bdf8}
+.growth-result.growth-awakened{--growth-color:#c084fc}
+.growth-result.growth-special-0{--growth-color:#94a3b8}
+.growth-result.growth-special-1{--growth-color:#4ade80}
+.growth-result.growth-special-2{--growth-color:#c084fc}
+.growth-result.growth-special-3{--growth-color:#facc15}
+.growth-result[class*="growth-special-"],.growth-result.growth-focus,.growth-result.growth-awakened{border:2px solid var(--growth-color)}
+.growth-labels{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.5rem}
+.growth-labels:empty{display:none}
+.growth-labels span{border:1px solid var(--growth-color);border-radius:999px;padding:.2rem .5rem;color:var(--growth-color);font-size:.78rem;font-weight:700}
+.growth-result .rank-bar{position:relative}
+.growth-bar-gain{position:absolute;top:0;height:100%;background:#fef08a;animation:growth-gain-pulse .8s ease-in-out 4}
+@keyframes growth-gain-pulse{50%{opacity:.2}}
+@media(prefers-reduced-motion:reduce){.growth-bar-gain{animation:none}}

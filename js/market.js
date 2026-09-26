@@ -124,8 +124,8 @@ export function createAuctionPool(seed, season = 1, releasedPlayers = []) {
 }
 export function publicValue(player) { return BASE_VALUE[displayPlayer(player).overallRank]; }
 export function cpuCandidatePick(club, candidates, rng) {
-  // 複数の空き枠を持って市場へ入ったCPUは、競売用に1枠を残す。
-  if (club.reserveAuctionSlot && club.roster.length >= 11) return null;
+  // 複数の空き枠を持って市場へ入ったCPUは、競売用に2枠を残す。
+  if (club.reserveAuctionSlot && club.roster.length >= 10) return null;
   const futureCounts = Object.fromEntries(Object.keys(REQUIRED_POSITIONS).map(position => [position, club.roster.filter(player => player.primaryPosition === position && player.age < 34).length]));
   return [...candidates].sort((a,b) => cpuDraftScore(club, b, futureCounts, rng) - cpuDraftScore(club, a, futureCounts, rng))[0];
 }
@@ -138,9 +138,11 @@ export function cpuBid(club, player, rng) {
   const bestCurrent = samePosition.length ? Math.max(...samePosition.map(publicValue)) : null;
   // 表示総合ランクだけを比較し、明確な上位ランクなら補強候補にする。
   const upgrade = bestCurrent !== null && publicValue(player) > bestCurrent ? rng.int(8,16) : 0;
+  // 十分な人数が揃った後は、上位ランクの選手を待つ。
+  if (club.roster.length >= 10 && !shortage && !upgrade) return 0;
   const age = player.age <= 23 ? 3 : player.age >= 30 ? -3 : 0;
   const value = Math.max(0, Math.round((publicValue(player) + shortage + upgrade + age) * (.75 + rng.next() * .3)));
-  return Math.min(value, Math.max(0, club.funds - 50));
+  return Math.min(value, Math.max(0, club.funds - (upgrade || shortage ? 10 : 50)));
 }
 export function addPlayer(club, player, cost) { if (club.roster.length >= 12) return false; club.roster.push(player); club.funds -= cost; return true; }
 

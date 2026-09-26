@@ -1,4 +1,4 @@
-import { formatMatchEvents } from './match-log.js?v=0.17.29';
+import { formatMatchEvents } from './match-log.js?v=0.17.31';
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.17.2';
 import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.17.2';
 import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.17.2';
@@ -78,6 +78,14 @@ if (typeof document !== 'undefined' && !globalThis.__footballLeagueRenameHook) {
   });
 }
 
+
+const rankWidths = { G:18, F:28, E:38, D:48, C:58, B:68, A:78, S:88, SS:100 };
+function growthBar(ability, changes = []) {
+  const change = changes.find(c => c.key === ability.key);
+  const before = rankWidths[change?.from], after = rankWidths[ability.rank];
+  return after > before ? `<em class="growth-bar-gain" style="left:${before}%;width:${after-before}%" aria-hidden="true"></em>` : '';
+}
+
 export function renderPlayerCard(player, options = {}) {
   playerRefs.set(player.id, player);
   const display = displayPlayer(player);
@@ -92,7 +100,7 @@ export function renderPlayerCard(player, options = {}) {
     : '';
   return `<article class="player-card">
     <div class="player-profile">
-      <div class="player-title"><span class="player-name-box" style="min-width:0">${nameMarkup(display)}${renameButton(player, options)}</span><strong class="overall-rank">総合 ${display.overallRank}</strong></div>
+      <div class="player-title"><span class="player-name-box" style="min-width:0">${options.clubColor ? `<i class="club-color-dot player-club-dot" style="--club:${escapeHtml(options.clubColor)}"></i>` : ''}${nameMarkup(display)}${renameButton(player, options)}</span><strong class="overall-rank">総合 ${display.overallRank}</strong></div>
       <span class="position-badge">${positionLabel(display.primaryPosition)}</span>
       <p class="player-meta">年齢 <b>${display.age}歳</b></p>
       <p class="player-meta">契約 <b>${display.contractYears}年</b></p>
@@ -101,7 +109,7 @@ export function renderPlayerCard(player, options = {}) {
       ${release}
     </div>
     <div class="player-abilities">
-      <dl class="ability-grid">${publicAbilities(player).map(ability => `<div><dt>${ability.label}</dt><dd><span>${ability.rank}</span><i class="rank-bar rank-${ability.rank}"><b></b></i></dd></div>`).join('')}</dl>
+      <dl class="ability-grid">${publicAbilities(player).map(ability => `<div><dt>${ability.label}</dt><dd><span>${ability.rank}</span><i class="rank-bar rank-${ability.rank}"><b></b>${growthBar(ability, options.growthChanges)}</i></dd></div>`).join('')}</dl>
     </div>
     <div class="player-special-row">${specialAbility}</div>
   </article>`;
@@ -112,9 +120,10 @@ export function positionCounts(roster) {
 }
 
 export function renderRosterPanel(club, options = {}) {
+  const rosterSort = options.rosterSort || 'position';
   return `<section class="overlay-panel roster-panel" role="dialog" aria-modal="true" aria-label="所属選手">
     <div class="overlay-heading"><div><p class="eyebrow">${escapeHtml(club.name)}</p><h2>所属選手</h2></div><button type="button" data-stage10="close" class="subtle">閉じる</button></div>
-    <div class="position-counts">${positionCounts(club.roster).map(row => `<span>${row.label} <b>${row.count}</b></span>`).join('')}</div>
+    <div class="bench-heading roster-sort-heading"><div class="position-counts">${positionCounts(club.roster).map(row => `<span>${row.label} <b>${row.count}</b></span>`).join('')}</div><label>並び順<select data-player-sort="roster"><option value="position" ${rosterSort === 'position' ? 'selected' : ''}>ポジション順</option><option value="overall" ${rosterSort === 'overall' ? 'selected' : ''}>総合ランク順</option><option value="age" ${rosterSort === 'age' ? 'selected' : ''}>年齢順</option><option value="contract" ${rosterSort === 'contract' ? 'selected' : ''}>契約年数順</option></select></label></div>
     <div class="candidate-grid">${club.roster.map(player => renderPlayerCard(player, { allowRelease: Boolean(options.allowRelease), allowRename: Boolean(options.allowRename || options.allowRelease) })).join('')}</div>
   </section>`;
 }
@@ -165,7 +174,7 @@ export function matchOutcomeForClub(match, clubId) {
   const goalsFor = isHome ? match.result.score.home : match.result.score.away;
   const goalsAgainst = isHome ? match.result.score.away : match.result.score.home;
   const opponent = isHome ? match.fixture.away : match.fixture.home;
-  return { isHome, goalsFor, goalsAgainst, opponent, mark: goalsFor > goalsAgainst ? '○' : goalsFor < goalsAgainst ? '●' : '△', label: goalsFor > goalsAgainst ? '勝利' : goalsFor < goalsAgainst ? '敗戦' : '引分' };
+  return { isHome, goalsFor, goalsAgainst, opponent, mark: goalsFor > goalsAgainst ? '●' : goalsFor < goalsAgainst ? '○' : '△', label: goalsFor > goalsAgainst ? '勝利' : goalsFor < goalsAgainst ? '敗戦' : '引分' };
 }
 
 export function renderSeasonMatchList(matches, clubId) {
@@ -202,13 +211,13 @@ export function renderMatchDetail(match) {
   const midpoint = Math.ceil(rows.length / 2);
   const homeRows = (hasTeamIds ? rows.filter(row => row.teamId === homeId) : rows.slice(0, midpoint)).sort(compareMatchRows);
   const awayRows = (hasTeamIds ? rows.filter(row => row.teamId === awayId) : rows.slice(midpoint)).sort(compareMatchRows);
-  const resultCard = row => `<article class="candidate match-player-result">${renderPlayerCard(row.player)}<p><b>調子 ${match.result.forms[row.player.id] || '−'}</b>・評価 ${row.rating.toFixed(1)}</p><p>得点 ${row.goals}・アシスト ${row.assists}・シュート ${row.shots}</p><p>攻撃貢献 ${row.attackContributions}・守備成功 ${row.defensiveStops}・セーブ ${row.saves}</p></article>`;
+  const resultCard = row => { const clubColor = row.teamId === awayId ? match.fixture.away.color : match.fixture.home.color; return `<article class="candidate match-player-result">${renderPlayerCard(row.player,{clubColor})}<p><b>調子 ${match.result.forms[row.player.id] || '−'}</b>・評価 ${row.rating.toFixed(1)}</p><p>得点 ${row.goals}・アシスト ${row.assists}・シュート ${row.shots}</p><p>攻撃貢献 ${row.attackContributions}・守備成功 ${row.defensiveStops}・セーブ ${row.saves}</p></article>`; };
   return `<main class="match-detail"><p class="eyebrow">第${match.round}節 試合詳細</p>
     <div class="scoreboard"><span><i class="club-color-dot" style="--club:${escapeHtml(match.fixture.home.color)}"></i>${escapeHtml(match.fixture.home.name)}</span><b>${match.result.score.home} - ${match.result.score.away}</b><span><i class="club-color-dot" style="--club:${escapeHtml(match.fixture.away.color)}"></i>${escapeHtml(match.fixture.away.name)}</span></div>
     <section class="match-summary"><p><b>得点者：</b>${scorers}</p><p><b>アシスト：</b>${assists}</p><p><b>試合MVP：</b>${escapeHtml(mvp.player.name)}（評価 ${mvp.rating.toFixed(1)}）</p></section>
     <section class="match-team-results"><h2><i class="club-color-dot" style="--club:${escapeHtml(match.fixture.home.color)}"></i>${escapeHtml(match.fixture.home.name)}（ホーム）</h2><div class="candidate-grid">${homeRows.map(resultCard).join('')}</div></section>
     <section class="match-team-results"><h2><i class="club-color-dot" style="--club:${escapeHtml(match.fixture.away.color)}"></i>${escapeHtml(match.fixture.away.name)}（アウェー）</h2><div class="candidate-grid">${awayRows.map(resultCard).join('')}</div></section>
-    <h2>試合イベント</h2><div class="log static">${formatMatchEvents(match.result.events, match.fixture, displayedEventName).map(event => `<p${event.goal ? ' class="goal"' : ''}>${event.goal ? `<strong>${escapeHtml(event.text)}</strong> <span class="event-time">${escapeHtml(event.time)}</span>` : `<time>${escapeHtml(event.time)}</time>${escapeHtml(event.text)}`}</p>`).join('')}</div>
+    <h2>試合イベント</h2><div class="log static">${formatMatchEvents(match.result.events, match.fixture, displayedEventName).map(event => { const eventColor=event.side==='home'?match.fixture.home.color:event.side==='away'?match.fixture.away.color:null; return `<p${event.goal ? ' class="goal"' : ''}>${eventColor?`<i class="club-color-dot match-event-club-dot" style="--club:${escapeHtml(eventColor)}"></i>`:''}${event.goal ? `<strong>${escapeHtml(event.text)}</strong> <span class="event-time">${escapeHtml(event.time)}</span>` : `<time>${escapeHtml(event.time)}</time>${escapeHtml(event.text)}`}</p>`; }).join('')}</div>
     <button type="button" data-nav="seasonResults" class="subtle">シーズン結果へ戻る</button>
   </main>`;
 }
