@@ -9,3 +9,10 @@ class_name = "RoomObject"
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["RoomObject"]
+
+[build]
+command = "node scripts/build-assets.mjs"
+
+[assets]
+directory = "./dist"
+run_worker_first = ["/api/*"]
