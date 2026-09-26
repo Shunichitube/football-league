@@ -243,33 +243,53 @@ function playerStatus(player, phase) {
   return [player.ready ? '完了' : '未完了', player.ready ? 'mp-ready' : 'mp-not-ready'];
 }
 
-function renderAssignedClub(room, localPlayer) {
+function renderGameSyncBar(room, localPlayer) {
   const phase = room?.phase || room?.room?.phase;
-  const clubs = room?.clubs || room?.room?.clubs || [];
-  const players = room?.players || room?.room?.players || [];
-  if (!['team-setup', 'season-ready', 'season-result', 'game-complete', 'offseason-events', 'offseason-events-ready', 'development', 'development-ready', 'growth-result', 'release', 'release-ready', 'draft', 'draft-ready', 'auction', 'auction-ready'].includes(phase)) return '';
+  if (!phase || phase === 'lobby') return '';
+  const source = room?.room || room;
+  const players = source.players || [];
+  const clubs = source.clubs || [];
   const assignedClub = clubs.find(club => club.playerId === localPlayer?.id) || clubs.find(club => club.id === localPlayer?.clubId);
-  const yourClub = assignedClub ? assignedClub.name : '未割り当て';
-  return `<section class="hero mp-assigned-club">
-    <p class="eyebrow">YOUR CLUB</p>
-    <p>あなたのクラブチーム</p>
-    <b>${escapeHtml(yourClub)}</b>
-    <p class="hint">入力したクラブチーム名で参加します。枠は参加順で割り当てられます。</p>
-  </section>
-  <section class="match-card">
-    <h2>クラブチーム一覧</h2>
-    <div class="mp-club-grid">${clubs.map(club => `<div class="mp-club-card ${club.controller === 'HUMAN' ? 'human' : ''}"><b>${escapeHtml(club.name)}</b><small>${club.controller === 'HUMAN' ? escapeHtml(teamNameById(players, club.playerId) || '参加者') : 'CPU'}</small></div>`).join('')}</div>
+  const incomplete = players.filter(player => !player.phaseComplete);
+  const waitingLabel = ['draft-ready','auction-ready','offseason-events-ready','development-ready','release-ready','season-ready'].includes(phase)
+    ? '確定待ち'
+    : incomplete.length ? `${incomplete.length}クラブ待ち` : '全員完了';
+  return `<section class="mp-sync-bar" aria-label="マルチプレイ同期状態">
+    <span><i class="club-color-dot" style="--club:${escapeHtml(localPlayer?.color || '#4ade80')}"></i><b>${escapeHtml(assignedClub?.name || localPlayer?.teamName || 'クラブ')}</b></span>
+    <span class="mp-sync-phase">${escapeHtml(phaseLabel(phase))}</span>
+    <span class="mp-sync-state">${escapeHtml(waitingLabel)}</span>
+    <span class="mp-sync-room">ROOM ${escapeHtml(source.roomId || '')}</span>
   </section>`;
 }
 
-function renderWorkSummary(players, phase) {
-  if (phase === 'lobby') return '';
-  if (phase === 'season-ready') return `<section class="mp-work-summary"><b>全員完了</b><p class="hint">参加クラブ全員の作業が完了したので、シーズン開始待ちです。</p></section>`;
-  if (phase === 'season-result') return `<section class="mp-work-summary"><b>シーズン完了</b><p class="hint">ホストがシーズン結果を共有しました。</p></section>`;
-  if (phase !== 'team-setup') return '';
-  const done = players.filter(player => player.phaseComplete).length;
-  const incomplete = players.filter(player => !player.phaseComplete);
-  return `<section class="mp-work-summary"><b>作業状況：${done}/${players.length} 完了</b>${incomplete.length ? `<p class="hint">まだ完了していないクラブ：</p><ul class="mp-incomplete">${incomplete.map(player => `<li>${escapeHtml(player.teamName || player.name || 'クラブ')}</li>`).join('')}</ul>` : '<p class="hint">全員完了しました。次フェーズへ進みます。</p>'}</section>`;
+function renderLobbyOverview(room, localPlayer) {
+  const source = room?.room || room;
+  const players = source.players || [];
+  const isHost = localPlayer?.id && localPlayer.id === source.hostPlayerId;
+  const allReady = players.length > 0 && players.every(player => player.ready);
+  return `<main class="multiplayer-room mp-lobby">
+    <p class="eyebrow">MULTIPLAYER</p>
+    <h1>ルーム</h1>
+    <section class="hero">
+      <p>ルームID</p>
+      <h2 class="room-id">${escapeHtml(source.roomId || '未取得')}</h2>
+      <p class="hint">このIDを参加者に共有してください。</p>
+    </section>
+    <section class="match-card">
+      <h2>参加クラブ</h2>
+      <div class="mp-player-list">${players.map(player => {
+        const [label, klass] = playerStatus(player, 'lobby');
+        return `<div class="mp-player-row" style="--accent:${escapeHtml(player.color || '#4ade80')}"><span><b>${escapeHtml(player.teamName || player.name || 'クラブ')}</b>${player.id === source.hostPlayerId ? '<span class="mp-host-badge">HOST</span>' : ''}</span><span class="${klass}">${label}</span></div>`;
+      }).join('')}</div>
+    </section>
+    <div class="season-result-actions">
+      ${localPlayer ? `<button type="button" data-mp-ready="${escapeHtml(source.roomId)}" data-mp-ready-value="${localPlayer.ready ? 'false' : 'true'}">${localPlayer.ready ? '準備完了解除' : '準備完了'}</button>` : ''}
+      ${isHost ? `<button type="button" data-mp-start="${escapeHtml(source.roomId)}" ${allReady ? '' : 'disabled'}>ゲーム開始</button>` : ''}
+      <button type="button" data-mp-refresh="${escapeHtml(source.roomId)}" class="subtle">更新</button>
+      <button type="button" data-mp-back-title class="subtle">タイトルへ戻る</button>
+    </div>
+    ${isHost && !allReady ? '<p class="hint">参加クラブ全員が準備完了するとゲームを開始できます。</p>' : ''}
+  </main>`;
 }
 
 function renderSetupEditor(room, localPlayer) {
@@ -279,18 +299,18 @@ function renderSetupEditor(room, localPlayer) {
   if (!club) return `<section class="match-card"><h2>編成・戦術</h2><p class="lineup-error">担当クラブを取得できませんでした。更新してください。</p></section>`;
   const draft = getSetupDraft(room, localPlayer, club);
   applyDraftToClub(club, draft);
-  return `<section class="match-card mp-setup-editor">
-    <div>
-      <h2>編成・戦術</h2>
-      <p class="hint">シングルプレイと同じ編成画面です。選手を選び、配置したい枠を押してください。</p>
-    </div>
+  return `<main class="mp-phase-main mp-setup-editor" style="--club:${escapeHtml(club.color || localPlayer?.color || '#4ade80')}">
+    <div class="squad-heading-row"><div class="squad-heading-copy">
+      <h2>編成</h2>
+      <p class="hint">所属選手を選び、配置したい枠を押してください。能力はすべてランク表示です。</p>
+    </div></div>
     <section class="mp-tactic-panel">
       <label>戦術
         <select data-mp-tactic>${TACTICS.map(([key, label]) => `<option value="${key}" ${key === draft.tactic ? 'selected' : ''}>${label}</option>`).join('')}</select>
       </label>
     </section>
     ${renderLineupEditor(club, draft.selectedPlayerId, draft.message, draft.messageIsError, draft.benchSort)}
-  </section>`;
+  </main>`;
 }
 
 function buildSeasonResult(room) {
@@ -340,48 +360,37 @@ function renderSeasonResult(room, localPlayer) {
 
 function renderRoomScreen(room, playerId = null) {
   currentRoom = room?.room || room;
-  const rawId = roomIdOf(room) || room?.roomId || '未取得';
+  const source = room?.room || room;
+  const rawId = roomIdOf(room) || source?.roomId || '未取得';
   const session = readSession(rawId);
   const localPlayerId = playerId || session?.playerId || null;
-  const id = escapeHtml(rawId);
-  const phase = room?.phase || room?.room?.phase || 'ROOM';
-  const players = room?.players || room?.room?.players || [];
-  const clubs = room?.clubs || room?.room?.clubs || [];
-  const localPlayer = players.find(player => player.id === localPlayerId);
-  const isHost = localPlayerId && localPlayerId === (room?.hostPlayerId || room?.room?.hostPlayerId);
-  const allReady = players.length > 0 && players.every(player => player.ready);
-  const isLobby = phase === 'lobby';
-  const isTeamSetup = phase === 'team-setup';
-  app.innerHTML = `<main class="multiplayer-room">
-    <p class="eyebrow">MULTIPLAYER ROOM</p>
-    <h1>ルーム</h1>
-    <section class="hero">
-      <p>ルームID</p>
-      <h2 class="room-id">${id}</h2>
-      <p class="hint">このIDを参加者に共有してください。</p>
-    </section>
-    ${renderAssignedClub(room, localPlayer)}
-    ${renderSetupEditor(room, localPlayer)}
-    ${renderSeasonResult(room, localPlayer)}
-    <section class="match-card">
-      <h2>現在の状態</h2>
-      <p>フェーズ：<b>${escapeHtml(phaseLabel(phase))}</b></p>
-      <p>参加クラブ：<b>${players.length}</b>チーム</p>
-      ${renderWorkSummary(players, phase)}
-      ${players.length ? `<div class="mp-player-list">${players.map(player => { const [label, klass] = playerStatus(player, phase); return `<div class="mp-player-row" style="--accent:${escapeHtml(player.color || '#4ade80')}"><span><b>${escapeHtml(player.teamName || player.name || 'クラブ')}</b>${player.id === (room?.hostPlayerId || room?.room?.hostPlayerId) ? '<span class="mp-host-badge">HOST</span>' : ''}<br><small>${escapeHtml(isLobby ? '開始前' : clubName(clubs, player.clubId))}</small></span><span class="${klass}">${label}</span></div>`; }).join('')}</div>` : '<p class="hint">まだ参加クラブはありません。</p>'}
-    </section>
-    <div class="season-result-actions">
-      ${localPlayer && isLobby ? `<button type="button" data-mp-ready="${id}" data-mp-ready-value="${localPlayer.ready ? 'false' : 'true'}">${localPlayer.ready ? '準備完了解除' : '準備完了'}</button>` : ''}
-      ${isHost && isLobby ? `<button type="button" data-mp-start="${id}" ${allReady ? '' : 'disabled'}>ゲーム開始</button>` : ''}
-      ${localPlayer && isTeamSetup ? `<button type="button" data-mp-submit-setup="${id}" ${localPlayer.phaseComplete ? 'disabled' : ''}>${localPlayer.phaseComplete ? '作業完了済み' : '編成・戦術を送信'}</button>` : ''}
-      ${phase === 'season-ready' && isHost ? `<button type="button" data-mp-simulate-season="${id}">シーズンをシミュレート</button>` : ''}
-      <button type="button" data-mp-refresh="${id}" class="subtle">更新</button>
+  const phase = source?.phase || 'ROOM';
+  const players = source?.players || [];
+  const localPlayer = players.find(player => player.id === localPlayerId) || null;
+  const isHost = localPlayerId && localPlayerId === source?.hostPlayerId;
+
+  if (phase === 'lobby') {
+    app.innerHTML = renderLobbyOverview(source, localPlayer);
+    return;
+  }
+
+  const phaseActions = `
+    <div class="season-result-actions mp-phase-actions">
+      ${phase === 'team-setup' && localPlayer ? `<button type="button" data-mp-submit-setup="${escapeHtml(rawId)}" ${localPlayer.phaseComplete ? 'disabled' : ''}>${localPlayer.phaseComplete ? '作業完了済み' : '編成・戦術を確定'}</button>` : ''}
+      ${phase === 'season-ready' && isHost ? `<button type="button" data-mp-simulate-season="${escapeHtml(rawId)}">シーズンをシミュレート</button>` : ''}
+      <button type="button" data-mp-refresh="${escapeHtml(rawId)}" class="subtle">更新</button>
       <button type="button" data-mp-back-title class="subtle">タイトルへ戻る</button>
-    </div>
-    ${isHost && isLobby && !allReady ? '<p class="hint">ゲーム開始は、参加クラブ全員が準備完了になると押せます。</p>' : ''}
-    ${isTeamSetup ? '<p class="hint">選んだ編成・戦術はシーズン一括シミュレーションに反映されます。</p>' : ''}
-    ${phase === 'season-ready' && isHost ? '<p class="hint">各クラブが送信した編成・戦術でシーズンを一括シミュレートします。</p>' : ''}
-  </main>`;
+    </div>`;
+
+  app.innerHTML = `<div class="multiplayer-room mp-game-shell">
+    ${renderGameSyncBar(source, localPlayer)}
+    ${renderSetupEditor(source, localPlayer)}
+    ${renderSeasonResult(source, localPlayer)}
+    <div data-mp-phase-anchor></div>
+    ${phaseActions}
+    ${phase === 'team-setup' && localPlayer?.phaseComplete ? '<p class="hint mp-waiting-note">編成・戦術を送信済みです。他クラブの完了を待っています。</p>' : ''}
+    ${phase === 'season-ready' && !isHost ? '<p class="hint mp-waiting-note">全クラブの準備が完了しました。ホストのシーズン実行を待っています。</p>' : ''}
+  </div>`;
 }
 
 async function createRoom() {
