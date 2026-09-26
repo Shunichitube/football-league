@@ -284,7 +284,7 @@ function roomParticipantMarkup() {
   return (roomAdapter?.participantStatuses()||[]).map(row=>`<span class="room-participant is-${row.state}">${e(row.name)}${row.self?'（自分）':''}：${e(row.label)}</span>`).join('');
 }
 function roomEntry() {
-  return `<main class="setup"><h2>マルチプレイ</h2><label>クラブ名<input id="room-name" maxlength="12" placeholder="東京ファイブ"></label><label>チームカラー<input id="room-color" type="color" value="#4ade80"></label><button data-room="create">ルームを作成</button><label>ルームID<input id="room-code" maxlength="12" autocomplete="off" placeholder="12桁のルームID"></label><button data-room="join">ルームに参加</button>${roomAdapter.client.session?'<button data-room="resume" class="subtle">参加中のルームに戻る</button>':''}${roomSync()}<button data-room="leave" class="subtle">戻る</button></main>`;
+  return `<main class="setup"><h2>マルチプレイ</h2><label>クラブ名<input id="room-name" maxlength="12" placeholder="東京ファイブ"></label><p class="hint">チームカラーは参加順に自動で割り当てられます。</p><button data-room="create">ルームを作成</button><label>ルームID<input id="room-code" maxlength="12" autocomplete="off" placeholder="12桁のルームID"></label><button data-room="join">ルームに参加</button>${roomAdapter.client.session?'<button data-room="resume" class="subtle">参加中のルームに戻る</button>':''}${roomSync()}<button data-room="leave" class="subtle">戻る</button></main>`;
 }
 function roomLobby() {
   const room=roomAdapter.room;
@@ -341,7 +341,7 @@ function roomClick(event){
   const roomAction=target.closest('[data-room]')?.dataset.room;
   if(roomAction){
     if(roomAction==='open'){s.view='roomEntry';render();}
-    if(roomAction==='create'||roomAction==='join')sendRoom(roomAdapter.enter(roomAction,document.querySelector('#room-name').value,document.querySelector('#room-color').value,document.querySelector('#room-code').value));
+    if(roomAction==='create'||roomAction==='join')sendRoom(roomAdapter.enter(roomAction,document.querySelector('#room-name').value,document.querySelector('#room-code').value));
     if(roomAction==='resume')sendRoom(roomAdapter.resume());
     if(roomAction==='retry'){roomAdapter.active=true;sendRoom(roomAdapter.client.retry().then(()=>roomAdapter.client.startPolling()));}
     if(roomAction==='start')sendRoom(roomAdapter.client.mutate('start'));
