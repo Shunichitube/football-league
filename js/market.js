@@ -2,7 +2,8 @@ import { calculateOverall, createPlayer, displayPlayer, FIELD_STAT_KEYS, STAT_LA
 import { createRandom, weightedPick } from './random.js';
 import { ACTION_TYPES } from './rules.js?v=0.17.2';
 
-const DRAFT_DISTRIBUTION = [['G', 35], ['F', 35], ['E', 20], ['D', 8], ['C', 2]];
+const DRAFT_DISTRIBUTION = [['G', 15], ['F', 25], ['E', 40], ['D', 15], ['C', 4], ['B', 1]];
+const DRAFT_COST = 5;
 // 新規に生成する競売選手だけに適用する分布。放出選手は能力を保持したまま戻る。
 const AUCTION_DISTRIBUTION = [['F', 15], ['E', 30], ['D', 30], ['C', 20], ['B', 4], ['A', 1]];
 const RANGE = { G: [50,55], F: [56,60], E: [61,65], D: [66,70], C: [71,75], B: [76,80], A: [81,85], S: [86,90] };
@@ -114,7 +115,15 @@ export function createScoutComment(player, rng) {
 export function createDraftPool(seed, season = 1) { const rng = createRandom(`${seed}:season:${season}:draft-pool`); return Array.from({ length: 24 }, (_, i) => playerForTier(season * 10000 + 1000 + i, marketPosition(rng), tier(DRAFT_DISTRIBUTION, rng), rng.int(18,22), rng)); }
 export function createAuctionPool(seed, season = 1, releasedPlayers = []) {
   const rng = createRandom(`${seed}:season:${season}:auction-pool`);
-  const returning = [...releasedPlayers].map(player => ({ player, roll: rng.next() }))
+  const returning = [...releasedPlayers]
+    .filter(player => {
+      const rank = displayPlayer(player).overallRank;
+      const eligibleRanks = player.age >= 30
+        ? ['SS', 'S', 'A', 'B']
+        : ['SS', 'S', 'A', 'B', 'C'];
+      return eligibleRanks.includes(rank);
+    })
+    .map(player => ({ player, roll: rng.next() }))
     .sort((a, b) => publicValue(b.player) - publicValue(a.player) || a.roll - b.roll)
     .slice(0, 9)
     .map(row => ({ ...row.player, marketSource: 'released' }));
@@ -149,7 +158,7 @@ export function addPlayer(club, player, cost) { if (club.roster.length >= 12) re
 export function resolveDraftActions({ clubs, candidates, pendingClubIds, actions, rng }) {
   const eligible = pendingClubIds.filter(id => {
     const club = clubs.find(candidate => candidate.id === id);
-    return club && club.funds >= 1 && club.roster.length < 12;
+    return club && club.funds >= DRAFT_COST && club.roster.length < 12;
   });
   const actionByClub = new Map((actions || []).filter(action => action.type === ACTION_TYPES.DRAFT_PICK).map(action => [action.clubId, action]));
   const selections = eligible.map(clubId => {
@@ -170,7 +179,7 @@ export function resolveDraftActions({ clubs, candidates, pendingClubIds, actions
   const acquiredPlayerIds = new Set();
   for (const group of groups.values()) {
     const winner = group[rng.int(0, group.length - 1)];
-    if (addPlayer(winner.club, winner.player, 1)) {
+    if (addPlayer(winner.club, winner.player, DRAFT_COST)) {
       acquired.push({ clubId: winner.club.id, player: winner.player, contested: group.length > 1, contenderIds: group.map(row => row.club.id) });
       winnerIds.add(winner.club.id);
       acquiredPlayerIds.add(winner.player.id);
