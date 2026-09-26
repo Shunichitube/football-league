@@ -87,3 +87,53 @@
 .history-page>h1{margin:.2rem 0 1.2rem}.club-achievements,.history-chart-card{margin:1rem 0 1.4rem;padding:1rem;border:1px solid var(--line);border-radius:16px;background:var(--card)}.club-achievements{border-top:3px solid var(--club,var(--accent))}.history-section-heading{display:flex;align-items:end;justify-content:space-between;gap:1rem;margin-bottom:.8rem}.history-section-heading h2{margin:.1rem 0}.achievement-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.65rem}.achievement-grid>div{display:flex;flex-direction:column;gap:.2rem;padding:.8rem;border:1px solid var(--line);border-radius:12px;background:#0f172a;text-align:center}.achievement-grid span,.history-record span{font-size:.76rem;color:var(--muted);font-weight:700}.achievement-grid b{font-size:1.35rem}.history-record-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.65rem;margin-top:.8rem}.history-record{display:flex;flex-direction:column;gap:.3rem;padding:.85rem;border:1px solid var(--line);border-radius:12px;background:#0f172a;min-width:0}.history-record strong{font-size:1rem;overflow-wrap:anywhere}.history-record small{color:#cbd5e1}.draft-masterpiece{border-color:#a78bfa}.history-chart-wrap{overflow-x:auto}.rank-history-chart{display:block;min-width:620px;width:100%;height:auto}.rank-chart-axis text{fill:var(--muted);font-size:12px}.rank-chart-grid{stroke:#334155;stroke-width:1}.rank-chart-line path{fill:none;stroke:var(--club);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.rank-chart-line circle{fill:var(--club);stroke:#0b1220;stroke-width:2}.rank-chart-legend{display:flex;flex-wrap:wrap;gap:.55rem 1rem;margin-top:.5rem;font-size:.78rem;font-weight:700}.season-history-details{margin:1rem 0;border:1px solid var(--line);border-radius:14px;padding:.8rem}.season-history-details>summary{cursor:pointer;font-weight:800}.season-history-details[open]>summary{margin-bottom:.8rem}.history-actions{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
 @media(max-width:720px){.achievement-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.history-record-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:480px){.history-record-grid{grid-template-columns:1fr}.club-achievements,.history-chart-card{padding:.8rem}.achievement-grid b{font-size:1.15rem}}
+
+
+/* Living clubhouse prototype: animated Canvas layer behind the existing UI. */
+#living-club-bg{
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  z-index:0;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .45s ease;
+}
+body.living-bg-active #living-club-bg{opacity:1}
+#app{position:relative;z-index:1}
+body.living-bg-active{
+  background:#07111f;
+}
+body.living-bg-active #app>main.screen-title,
+body.living-bg-active #app>main.screen-home{
+  position:relative;
+}
+body.living-bg-active #app>main.screen-title::before,
+body.living-bg-active #app>main.screen-home::before{
+  content:"";
+  position:absolute;
+  inset:-1.2rem -1rem;
+  z-index:-1;
+  border-radius:24px;
+  background:linear-gradient(180deg,rgba(7,17,31,.08),rgba(7,17,31,.52));
+  backdrop-filter:blur(1.5px);
+}
+body.living-bg-active header{
+  position:relative;
+  z-index:2;
+  background:rgba(7,17,31,.72);
+  backdrop-filter:blur(8px);
+}
+body.living-bg-active .hero{
+  background:linear-gradient(145deg,color-mix(in srgb,var(--club,#4ade80) 20%,rgba(15,23,42,.82)),rgba(15,23,42,.86));
+  backdrop-filter:blur(8px);
+}
+@media(max-width:560px){
+  #living-club-bg{opacity:.55}
+  body.living-bg-active #app>main.screen-title::before,
+  body.living-bg-active #app>main.screen-home::before{inset:-.7rem -.4rem}
+}
+@media(prefers-reduced-motion:reduce){
+  #living-club-bg{transition:none}
+}
