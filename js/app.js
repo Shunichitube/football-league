@@ -2,10 +2,10 @@ import { applySeasonFinances, awards, createLeague, finalizeSeason, simulateRema
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.17.2';
 import { createRandom } from './random.js';
 import { createAuctionPool, createDraftPool, resolveAuctionActions, resolveDraftActions } from './market.js?v=0.17.2';
-import { escapeHtml as e, renderLineupEditor, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=0.17.29';
+import { escapeHtml as e, renderLineupEditor, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=0.17.30';
 import { decideCpuAuctionAction, decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=0.17.27';
 import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=0.17.2';
-const app=document.querySelector('#app');let s={view:'title',league:null,draft:null,auction:null,match:null,round:0,note:'',rosterOpen:false,detailPlayerId:null,selectedLineupPlayerId:null,lineupMessage:'',lineupError:false,seasonSimulation:null,benchSort:'position',draftSort:'position',developmentSort:'position',releaseSort:'position'};
+const app=document.querySelector('#app');let s={view:'title',league:null,draft:null,auction:null,match:null,round:0,note:'',rosterOpen:false,detailPlayerId:null,selectedLineupPlayerId:null,lineupMessage:'',lineupError:false,seasonSimulation:null,benchSort:'position',rosterSort:'position',draftSort:'position',developmentSort:'position',releaseSort:'position'};
 const me=()=>s.league.clubs.find(c=>c.controllerType==='HUMAN')||s.league.clubs.find(c=>c.id===s.league.humanClubId);const player=p=>renderPlayerCard(p);const positionLabel=position=>POSITION_LABELS[position]||position;
 const POSITION_SORT_ORDER={GK:0,DF:1,MF:2,FW:3},RANK_SORT_ORDER={SS:0,S:1,A:2,B:3,C:4,D:5,E:6,F:7,G:8};
 function sortPlayers(players,mode='position'){return [...players].map((player,index)=>({player,index})).sort((a,b)=>{const pa=a.player,pb=b.player,pos=(POSITION_SORT_ORDER[pa.primaryPosition]??99)-(POSITION_SORT_ORDER[pb.primaryPosition]??99),rank=RANK_SORT_ORDER[displayPlayer(pa).overallRank]-RANK_SORT_ORDER[displayPlayer(pb).overallRank],age=pa.age-pb.age,contract=pa.contractYears-pb.contractYears,joined=a.index-b.index;if(mode==='overall')return rank||pos||age||contract||joined;if(mode==='age')return age||pos||rank||contract||joined;if(mode==='contract')return contract||pos||rank||age||joined;return pos||rank||age||contract||joined}).map(row=>row.player)}
@@ -169,7 +169,7 @@ function stage10Render() {
   document.querySelectorAll('.overlay-backdrop,.overlay-panel').forEach(node=>node.remove());
   stage10BaseRender();
   if (!s.league || !s.rosterOpen) return;
-  document.body.insertAdjacentHTML('beforeend', `<div class="overlay-backdrop" data-stage10="close"></div>${renderRosterPanel(me(), { allowRelease: Boolean(s.league.releasePhaseOpen) })}`);
+  const rosterClub={...me(),roster:sortPlayers(me().roster,s.rosterSort)};document.body.insertAdjacentHTML('beforeend', `<div class="overlay-backdrop" data-stage10="close"></div>${renderRosterPanel(rosterClub, { allowRelease: Boolean(s.league.releasePhaseOpen), rosterSort: s.rosterSort })}`);
 }
 render = stage10Render;
 document.addEventListener('click', event => {
@@ -224,6 +224,7 @@ document.addEventListener('click', event => {
 document.addEventListener('change', event => {
   if (event.target.matches('[data-bench-sort]')) { s.benchSort=event.target.value; return render(); }
   const scope=event.target.closest('[data-player-sort]')?.dataset.playerSort;
+  if(scope==='roster')s.rosterSort=event.target.value;
   if(scope==='draft')s.draftSort=event.target.value;
   if(scope==='development')s.developmentSort=event.target.value;
   if(scope==='release')s.releaseSort=event.target.value;
