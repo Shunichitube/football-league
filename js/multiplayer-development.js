@@ -1,10 +1,10 @@
-import { processLeagueOffseason, prepareCpuMarketSpace, selectBestLineup } from './cpu.js?v=0.17.27';
-import { trainingSkills } from './development.js?v=0.17.3';
+import { processLeagueOffseason, prepareCpuMarketSpace, selectBestLineup } from './cpu.js?v=0.17.30';
+import { trainingSkills } from './development.js?v=0.17.30';
 import { STAT_LABELS } from './data.js?v=0.17.2';
 import { startNextSeason } from './league.js?v=0.17.27';
-import { createDraftPool } from './market.js?v=0.17.2';
+import { createDraftPool } from './market.js?v=0.17.30';
 import { ACTION_TYPES, applyClubAction } from './rules.js?v=0.17.2';
-import { renderPlayerCard } from './ui.js?v=0.17.29';
+import { renderPlayerCard } from './ui.js?v=0.17.34';
 
 const SESSION_KEY = 'football-league:multiplayer-session';
 const DEVELOPMENT_KEY = 'football-league:multiplayer-development';
