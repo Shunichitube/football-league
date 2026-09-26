@@ -1,8 +1,8 @@
-import { decideCpuAuctionAction, prepareCpuClubs } from './cpu.js?v=0.17.27';
-import { resolveAuctionActions } from './market.js?v=0.17.2';
+import { decideCpuAuctionAction, prepareCpuClubs } from './cpu.js?v=0.17.30';
+import { resolveAuctionActions } from './market.js?v=0.17.30';
 import { createRandom } from './random.js';
 import { ACTION_TYPES } from './rules.js?v=0.17.2';
-import { renderPlayerCard } from './ui.js?v=0.17.29';
+import { renderPlayerCard } from './ui.js?v=0.17.34';
 
 const SESSION_KEY = 'football-league:multiplayer-session';
 const app = document.querySelector('#app');
