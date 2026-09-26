@@ -47,3 +47,15 @@
   border:0;
   border-radius:6px;
 }
+
+.draft-history{margin:1rem 0 1.4rem;background:#0b1220;border:1px solid #475569;border-radius:14px;overflow:hidden}
+.draft-history-heading{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.8rem 1rem;border-bottom:1px solid #334155;background:#172033}
+.draft-history-heading h3{margin:0;font-size:1rem}
+.draft-history-heading span{color:var(--muted);font-size:.78rem;font-weight:800}
+.draft-history-table-wrap{overflow-x:auto}
+.draft-history-table{min-width:700px;background:transparent}
+.draft-history-table th{background:#0f172a}
+.draft-history-table td:nth-child(2),.draft-history-table th:nth-child(2),.draft-history-table td:nth-child(3),.draft-history-table th:nth-child(3){text-align:left}
+.draft-history-table tr.you{background:color-mix(in srgb,var(--accent) 18%,transparent)}
+.draft-rank{color:#facc15}
+.draft-lottery{display:inline-flex;padding:.18rem .48rem;border:1px solid #f59e0b;border-radius:999px;color:#fbbf24;font-size:.7rem;font-weight:900}
