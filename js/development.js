@@ -1,14 +1,14 @@
 import { rankOf } from './config.js';
 import { calculateOverall, FIELD_STAT_KEYS, FIELD_PLAYER_STAT_KEYS } from './data.js?v=0.17.2';
-import { SPECIAL_ABILITIES } from './market.js?v=0.17.2';
+import { SPECIAL_ABILITIES } from './market.js?v=0.17.30';
 import { weightedPick } from './random.js';
 
 const RANKS = ['G', 'F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS'];
 const RANK_MIN = { G: 50, F: 56, E: 61, D: 66, C: 71, B: 76, A: 81, S: 86, SS: 91 };
 const CONTRACT_EVENTS = {
-  SS: { rate: .70, min: 12, max: 18 }, S: { rate: .60, min: 12, max: 18 },
-  A: { rate: .50, min: 8, max: 12 }, B: { rate: .30, min: 5, max: 8 },
-  C: { rate: .20, min: 3, max: 5 }, D: { rate: .10, min: 3, max: 5 }
+  SS: { rate: .70, min: 40, max: 50 }, S: { rate: .60, min: 30, max: 40 },
+  A: { rate: .50, min: 20, max: 30 }, B: { rate: .30, min: 15, max: 25 },
+  C: { rate: .20, min: 10, max: 15 }, D: { rate: .10, min: 5, max: 10 }
 };
 const SPECIAL_TRAINING_COST = { E: 8, F: 5, G: 2 };
 const ageBase = age => age <= 19 ? 2.4 : age <= 21 ? 2 : age <= 23 ? 1.6 : age <= 25 ? 1 : age <= 28 ? .4 : 0;
