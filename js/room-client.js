@@ -30,12 +30,12 @@ export class RoomClient {
     this.room = room;
     this.onRoom(room);
   }
-  async enter(kind, teamName, color, roomId = '') {
+  async enter(kind, teamName, roomId = '') {
     if (this.busy) return;
     if (this.pending) throw new Error('前回の送信結果を「再接続・送信確認」で確認してください。');
     this.stop();
     const normalized = roomId.trim().toUpperCase();
-    const pending = { kind: 'entry', path: kind === 'create' ? '' : `/${encodeURIComponent(normalized)}/join`, body: { teamName, color, requestId: crypto.randomUUID() } };
+    const pending = { kind: 'entry', path: kind === 'create' ? '' : `/${encodeURIComponent(normalized)}/join`, body: { teamName, requestId: crypto.randomUUID() } };
     return this.send(pending);
   }
   async mutate(action, input = {}) {
