@@ -58,6 +58,19 @@ function publicPlayer(player) {
   };
 }
 
+function withoutHiddenGrowth(value) {
+  if (value == null) return value;
+  const copy = JSON.parse(JSON.stringify(value));
+  const visit = node => {
+    if (!node || typeof node !== 'object') return;
+    if (Object.prototype.hasOwnProperty.call(node, 'hiddenGrowth')) delete node.hiddenGrowth;
+    if (Array.isArray(node)) node.forEach(visit);
+    else Object.values(node).forEach(visit);
+  };
+  visit(copy);
+  return copy;
+}
+
 function publicRoom(state) {
   return {
     roomId: state.roomId,
@@ -67,11 +80,11 @@ function publicRoom(state) {
     players: state.players.map(publicPlayer),
     clubs: state.clubs,
     seasonResult: state.seasonResult || null,
-    leagueState: state.leagueState || null,
+    leagueState: withoutHiddenGrowth(state.leagueState || null),
     offseasonState: state.offseasonState || null,
-    growthResult: state.growthResult || null,
-    draftState: state.draftState || null,
-    auctionState: state.auctionState || null,
+    growthResult: withoutHiddenGrowth(state.growthResult || null),
+    draftState: withoutHiddenGrowth(state.draftState || null),
+    auctionState: withoutHiddenGrowth(state.auctionState || null),
     createdAt: state.createdAt,
     updatedAt: state.updatedAt
   };
