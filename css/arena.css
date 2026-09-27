@@ -1,0 +1,32 @@
+/* The title is a dedicated scene, with one transform for all scene art. */
+body.arena-active{background:#071421;overflow:hidden}
+#arena-background{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+body.arena-active #app{position:relative;z-index:1;min-height:100svh}
+#app>main.arena-title{position:absolute;top:calc(var(--arena-y,0px) + 250px * var(--arena-scale,1));left:50%;transform:translateX(-50%);width:min(600px,92vw);min-height:0;margin:0;padding:0;display:flex;align-items:center;flex-direction:column;text-align:center;isolation:isolate}
+.arena-title::before{content:"";position:absolute;z-index:-1;inset:-45px -65px -28px;background:radial-gradient(ellipse,#031522df 0%,#031522a6 42%,transparent 72%);pointer-events:none}
+.arena-title .arena-crest{display:flex;align-items:center;gap:18px;margin:0 0 12px;color:#ffdc59;font-size:clamp(20px,2.3vw,38px);line-height:1}
+.arena-crest::before,.arena-crest::after{content:"";height:1px;width:55px;background:#d9eafa99}
+#app .arena-title h1{font-family:Arial,Helvetica,sans-serif;font-size:clamp(46px,5.15vw,96px);font-weight:900;line-height:.89;letter-spacing:-.055em;margin:0 0 20px;color:#f7fcff;text-shadow:0 4px 20px #00112666}
+#app .arena-title h1 b{display:block;color:#19ee94;font-weight:900}
+#app .arena-title button{width:clamp(260px,18vw,340px);min-height:48px;padding:.72rem 1.1rem;margin:4px 0;border-radius:9px;font-size:clamp(16px,1.16vw,21px);line-height:1.2;transition:background .15s,transform .15s,box-shadow .15s}
+#app .arena-title button[data-a]{background:#19ee94;color:#022719;border:1px solid #71ffc5;box-shadow:0 6px 26px #00c7802b}
+#app .arena-title button.subtle{background:#04352fde;border:1px solid #20e29a;color:#f1fff9;backdrop-filter:blur(8px)}
+#app .arena-title button:hover{transform:translateY(-2px);box-shadow:0 5px 22px #19ee9450}
+#app .arena-title button:focus-visible{outline:3px solid #fff;outline-offset:4px}
+#app .arena-title .arena-motion{position:fixed;top:calc(100svh - var(--arena-y,0px) - 250px * var(--arena-scale,1) - 52px);width:auto;min-height:32px;padding:5px 12px;font-size:11px;font-weight:500;color:#d0e0ea;background:#071421b8;border:1px solid #b0d4e52e;border-radius:20px}
+body.arena-fallback.arena-active{background:#071421 url('../assets/arena/arena-base.webp') center/cover}
+@media(max-width:600px){
+  #app>main.arena-title{top:29svh;width:92vw}
+  #app .arena-title h1{font-size:clamp(43px,11.9vw,68px);margin-bottom:24px}
+  .arena-title::before{inset:-40px -4vw -40px;background:radial-gradient(ellipse,#031522ee,#031522ab 48%,transparent 75%)}
+  #app .arena-title button{width:min(300px,82vw);min-height:52px;font-size:17px;margin:5px 0}
+  #app .arena-title .arena-motion{top:calc(71svh - 55px);font-size:11px;min-height:32px;width:auto}
+}
+@media(max-height:500px) and (min-width:601px){
+  #app>main.arena-title{top:24svh}
+  #app .arena-title h1{font-size:48px;margin-bottom:10px}
+  .arena-title .arena-crest{font-size:20px;margin-bottom:7px}
+  #app .arena-title button{min-height:40px;padding:8px;font-size:15px}
+  #app .arena-title .arena-motion{display:none}
+}
+@media(prefers-reduced-motion:reduce){#app .arena-title button{transition:none}}

@@ -1,0 +1,71 @@
+# Arena rebuild — stage record
+
+## Stage A — completed
+- Target: dev/living-clubhouse-ui, baseline 82ce8d6fd1d4ab7c77e171acd011f95c659d462d.
+- Clean branch cloned into arena-work; older v3 workspace untouched.
+- Full-history backup: ../arena-before-rebuild.bundle; git bundle verify passed.
+- Restore separately: git clone -b dev/living-clubhouse-ui ../arena-before-rebuild.bundle restored-arena.
+- Existing new-game/load data attributes and game modules will be preserved.
+- Player appearance will reuse three-background.js playerTexture (24 × 32 pixels).
+- No merge, deployment or main modification.
+
+## Stage B — completed
+- Generated original empty architecture and alpha net with built-in image_gen (not API fallback).
+- Source artwork preserved in assets/arena/source for reproducibility.
+- Extracted tier fascia/rails and bench front edges from exact architecture coordinates; removed their original pixels from BASE to avoid duplicate architecture.
+- Four runtime assets: arena-base.webp, foreground-railing.png, bench-front.png, goal-front-net.png. All 1672 × 941.
+- Three PNGs verified RGBA with truly transparent pixels. Nets registered using projective transforms.
+
+## Stage C — completed
+- Replaced Three.js CDN background with local Canvas renderer. Removed obsolete prototype CSS block.
+- One uniform cover transform for all artwork; no independently stretched assets.
+- Crowd → railing, court actors → nets, bench backs → reserves → bench front.
+
+## Stage D — completed
+- Existing playerTexture 24 × 32 design reused; original spectator design reused.
+- Cached static crowd plus selected cheering/jumping fans and checker flags; seating zones exclude stairs.
+- Ten court players, ball, separate left/right bench reserves. Eighteen-second exhibition cycle.
+
+## Stage E — completed
+- Blank scoreboard and LED slots receive replaceable display content.
+- Four fixture-aligned beams, sparse confetti, central title and real new/load action routes.
+- Pause control, reduced-motion handling, 30fps ceiling, hidden-tab suspension and navigation cleanup.
+- Title scene only: gameplay views, save format and simulation modules unchanged.
+
+## Stage F — in progress
+- 1600 × 900 real browser: artwork, seating density, rails, bench overlap, nets, display and central menu inspected.
+- Fixed image decode incompatibility in embedded browser by using image load events with bounded fallback.
+- New game successfully entered existing draft screen; Continue reached existing three-slot load screen.
+- Existing suite: 35 pass / 5 fail. Exact same five failures reproduced on unmodified baseline, logged in baseline-tests.txt.
+
+### Stage F — completed
+- Real browser viewports: 1600 × 900 desktop, 390 × 844 portrait, 844 × 390 landscape. No horizontal overflow in landscape; portrait primary buttons 300 × 52px.
+- 1,389 independently rendered seated spectators, selected animated fans, plus near silhouettes; 10 court players and 20 bench reserves.
+- Verified New → setup → draft → auction → lineup; saved a disposable QA club to empty localhost slot 3; reloaded → Continue → slot 3 → restored lineup → simulated all 10 fixtures → season results.
+- No production origin or existing production save was accessed. The localhost slot 3 contains “アリーナ確認用” for repeat verification.
+- Navigating away removes the arena canvas. Pause snapshots compared byte-for-byte equal; resume works. Browser error log empty.
+- Corrected both bench teams to retain consistent green/navy kits. Added kick/stride poses from original sprite and foreground supporter zone.
+- Added transform/continuous exhibition-loop isolation tests: 2 pass. Full suite: 42 tests, 37 pass, same 5 baseline failures, no new failures.
+- Evidence: arena-desktop.png, arena-mobile.png, arena-landscape.png; arena-tests.txt, baseline-tests.txt.
+
+## Changed files
+- index.html: loads arena stylesheet/module instead of Three.js prototype; app cache version updated.
+- js/app.js: title markup only; new/load action attributes unchanged.
+- css/style.css: removes previous living-background override block.
+- css/arena.css: dedicated central title and responsive menu styling.
+- js/arena-background.js: title scene lifecycle and graceful image failure fallback.
+- js/arena-scene.js: coordinate transform, cached crowd, original sprite drawing, local-depth compositing, presentation clock, display/effects.
+- assets/arena/{arena-base.webp,foreground-railing.png,bench-front.png,goal-front-net.png}: runtime layer art.
+- assets/arena/source/{architecture.png,net.png}: original built-in image generation results.
+- scripts/prepare-arena-assets.py: reproducible registered cutouts and alpha net warp.
+- tests/arena.test.js: aspect-preserving transforms and continuous isolated exhibition.
+- docs/ARENA_REBUILD.md, ARENA_ART_PROMPTS.md, screenshots and test logs.
+
+## Remaining limitations
+- The pre-existing five test failures remain intentionally outside this visual rebuild: two match-log wording assertions; duplicated special-ability expectations; contract aging expectation; substitute appearance count.
+- Reduced-motion and hidden-tab suspension implemented; OS reduced-motion setting was not changed during browser QA.
+- Mobile uses a central crop of the same arena; side goals and benches can be outside the portrait viewport.
+- Art matches the reference composition/theme, not an exact reproduction. Existing block-style characters were retained as requested.
+- Main, hosted site and game simulation/data/storage modules unchanged. No merge or deployment.
+- Final runtime art total: 521,285 bytes (about 509 KiB); zeroed unused RGB behind alpha to avoid shipping the entire source image inside transparent layers.
+- Final git diff whitespace check passed. New exhibition tests rerun after final animation adjustments: 2/2 pass.

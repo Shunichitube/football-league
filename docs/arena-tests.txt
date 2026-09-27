@@ -1,0 +1,211 @@
+✔ all scene points share one aspect-preserving transform across desktop and phone (0.5986ms)
+✔ exhibition has pass, shot, save and continuous loop, independent of game state (3.0912ms)
+✔ SAVE corner threshold is 20%; MISS and GK CATCH do not award corners (12.625ms)
+✔ REBOUND preserves recovery priority and applies 15% only after failed recovery (3.0493ms)
+✔ corner skips stage one and keeps PASS tactics and fixed +2 (1.8999ms)
+✔ goals show the score first, equalizer, comeback and renewed lead (0.8627ms)
+✖ pass, corner, shot and save use the recorded participants (1.762ms)
+✔ all remaining kinds are plain Japanese and only goals are highlighted (0.4728ms)
+✖ legacy saves and renamed participants remain readable (0.2438ms)
+✔ 同じseedは同じ試合結果になる (9.9687ms)
+✔ 1試合は80フェーズを完走し、初期ロスターは5人 (1.6904ms)
+✔ 6クラブの日程は全30試合で、各クラブが10試合になる (0.296ms)
+✔ リーグ一括進行は10節・全30試合を処理し、人間クラブ10試合を保存する (36.5487ms)
+✔ 保存した人間クラブ戦は節・スコア・選手成績・イベント・調子を保持する (21.3074ms)
+✔ 市場候補は仕様数で生成され、CPU入札は資金と登録上限を超えない (2.0291ms)
+✔ 市場候補の能力傾向は現在のDF/MF/FW/GK役割を反映する (10.9714ms)
+✔ GK特殊能力は現行6種類で、旧GK特能は生成対象に含まれない (0.1152ms)
+✖ 市場の特殊能力は約40%で、全候補が生成対象に含まれる (26.4836ms)
+✔ hiddenGrowthは能力別で、GKはGK能力・守備・走力・パスが成長期待の中心になる (0.6524ms)
+✔ GKのシュート・ドリブルは育成選択肢に残るが通常成長・覚醒・特別特訓では伸びない (0.9285ms)
+✔ スカウトコメントは能力別成長傾向で変わる (0.2753ms)
+✔ 選手カードは公開ランクだけを表示し、内部能力値とhiddenGrowthを表示しない (0.3741ms)
+✔ GKカードはGK能力ランクと現行特殊能力の説明を表示する (0.2197ms)
+✔ 所属選手パネルは現在のポジション人数と全選手の公開情報を表示する (0.3316ms)
+✔ CPUは新加入の強い選手を含めてスタメン5人を再選出する (0.7544ms)
+✔ CPUはスタメン能力に応じて戦術を自動変更する (0.3115ms)
+✔ CPU育成対象は公開能力・年齢・起用実績から2人を選びhiddenGrowthを参照しない (0.3398ms)
+✖ 全6クラブへ加齢・成長・衰退・契約年数処理を適用する (1.2191ms)
+✔ CPUは契約満了者を更新・放出しつつ最低5人とGKを維持する (0.8306ms)
+✔ Season 1ドラフトは6クラブ同時指名で競合抽選し、外れクラブを再指名へ残す (0.5098ms)
+✔ 人間とCPUの競売Actionは同じ共通ルールで資金・移籍を処理する (0.3901ms)
+✔ 編成・戦術・契約はControllerに依存しない共通Actionで更新する (0.3186ms)
+✔ 人間編成は現在の5枠・重複禁止・適性外警告を共通ルールで判定する (0.2256ms)
+✔ 編成配置は既存スタメンの移動時に入替え、同一選手を重複させない (0.1549ms)
+✔ 編成画面はスタメン5枠と控えを分離し、カード上で能力ランクを表示する (0.4101ms)
+✖ 変更したスタメンだけが実際の試合へ出場する (2.0871ms)
+✔ シーズン結果一覧・試合詳細・個人成績は現行UIで表示できる (25.7197ms)
+✔ 全クラブへ年間100ptと順位賞金を加算し、持越しを150ptに制限する (0.6617ms)
+✔ ExportしたJSONはImportでき、不正形式は拒否する (1.414ms)
+✔ 補強・試合・資金・育成・契約を含む10シーズンサイクルを全6クラブで完走する (615.6325ms)
+✔ ClubとControllerは同一Club構造のcontrollerTypeで分離される (0.1733ms)
+✔ 試合結果はcontrollerTypeに依存しない (4.4216ms)
+ℹ tests 42
+ℹ suites 0
+ℹ pass 37
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 877.2795
+
+✖ failing tests:
+
+test at tests\match-log.test.js:18:1
+✖ pass, corner, shot and save use the recorded participants (1.762ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      '中村から鈴木へパスが通る',
+      '中村のコーナーキック',
+      '中村のコーナーキックが佐藤につながる',
+      '鈴木がコーナーキックからシュート',
+      '田中が鈴木のシュートを弾き出し、コーナーキック',
+  +   '試合終了　ホーム　0－0　アウェー'
+    ]
+  
+      at TestContext.<anonymous> (file:///C:/Users/tube5/OneDrive/%E3%83%89%E3%82%AD%E3%83%A5%E3%83%A1%E3%83%B3%E3%83%88/ChatGPT/%E3%83%95%E3%83%83%E3%83%88%E3%82%B5%E3%83%AB%E3%80%80%E3%82%AA%E3%83%B3%E3%83%A9%E3%82%A4%E3%83%B3%E5%8C%96/arena-work/tests/match-log.test.js:24:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ '中村から鈴木へパスが通る', '中村のコーナーキック', '中村のコーナーキックが佐藤につながる', '鈴木がコーナーキックからシュート', '田中が鈴木のシュートを弾き出し、コーナーキック', '試合終了　ホーム　0－0　アウェー' ],
+    expected: [ '中村から鈴木へパスが通る', '中村のコーナーキック', '中村のコーナーキックが佐藤につながる', '鈴木がコーナーキックからシュート', '田中が鈴木のシュートを弾き出し、コーナーキック' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\match-log.test.js:44:1
+✖ legacy saves and renamed participants remain readable (0.2438ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '高橋が攻撃をつなぐ'
+  - '高橋から鈴木へパスが通る'
+       ^
+  
+      at TestContext.<anonymous> (file:///C:/Users/tube5/OneDrive/%E3%83%89%E3%82%AD%E3%83%A5%E3%83%A1%E3%83%B3%E3%83%88/ChatGPT/%E3%83%95%E3%83%83%E3%83%88%E3%82%B5%E3%83%AB%E3%80%80%E3%82%AA%E3%83%B3%E3%83%A9%E3%82%A4%E3%83%B3%E5%8C%96/arena-work/tests/match-log.test.js:49:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '高橋が攻撃をつなぐ',
+    expected: '高橋から鈴木へパスが通る',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\sim.test.js:111:1
+✖ 市場の特殊能力は約40%で、全候補が生成対象に含まれる (26.4836ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    [
+      'エース',
+      'カウンター起点',
+      'カットイン',
+      'カバーリング',
+  ...
+      '回復力',
+  -   '回復力',
+  -   '回復力',
+      '守護神',
+      '安定感',
+      '最終防衛線'
+    ]
+  
+      at TestContext.<anonymous> (file:///C:/Users/tube5/OneDrive/%E3%83%89%E3%82%AD%E3%83%A5%E3%83%A1%E3%83%B3%E3%83%88/ChatGPT/%E3%83%95%E3%83%83%E3%83%88%E3%82%B5%E3%83%AB%E3%80%80%E3%82%AA%E3%83%B3%E3%83%A9%E3%82%A4%E3%83%B3%E5%8C%96/arena-work/tests/sim.test.js:122:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [
+      'エース',           'カウンター起点',
+      'カットイン',       'カバーリング',
+      'スイーパーGK',     'スピードスター',
+      'セービング',       'チャンスメイカー',
+      'ドリブラー',       'ハードワーカー',
+      'パスカット',       'パワープレー',
+      'ビルドアップ',     'フィニッシャー',
+      'ボールハンター',   'ポストプレーヤー',
+      'ミドルシューター', 'ロングフィード',
+      '万能型',           '個人技',
+      '勝負強さ',         '回復力',
+      '守護神',           '安定感',
+      '最終防衛線'
+    ],
+    expected: [
+      'エース',           'カウンター起点',
+      'カットイン',       'カバーリング',
+      'スイーパーGK',     'スピードスター',
+      'セービング',       'チャンスメイカー',
+      'ドリブラー',       'ハードワーカー',
+      'パスカット',       'パワープレー',
+      'ビルドアップ',     'フィニッシャー',
+      'ボールハンター',   'ポストプレーヤー',
+      'ミドルシューター', 'ロングフィード',
+      '万能型',           '個人技',
+      '勝負強さ',         '回復力',
+      '回復力',           '回復力',
+      '守護神',           '安定感',
+      '最終防衛線'
+    ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\sim.test.js:235:1
+✖ 全6クラブへ加齢・成長・衰退・契約年数処理を適用する (1.2191ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  3 !== 2
+  
+      at TestContext.<anonymous> (file:///C:/Users/tube5/OneDrive/%E3%83%89%E3%82%AD%E3%83%A5%E3%83%A1%E3%83%B3%E3%83%88/ChatGPT/%E3%83%95%E3%83%83%E3%83%88%E3%82%B5%E3%83%AB%E3%80%80%E3%82%AA%E3%83%B3%E3%83%A9%E3%82%A4%E3%83%B3%E5%8C%96/arena-work/tests/sim.test.js:250:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 3,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\sim.test.js:352:1
+✖ 変更したスタメンだけが実際の試合へ出場する (2.0871ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  11 !== 10
+  
+      at TestContext.<anonymous> (file:///C:/Users/tube5/OneDrive/%E3%83%89%E3%82%AD%E3%83%A5%E3%83%A1%E3%83%B3%E3%83%88/ChatGPT/%E3%83%95%E3%83%83%E3%83%88%E3%82%B5%E3%83%AB%E3%80%80%E3%82%AA%E3%83%B3%E3%83%A9%E3%82%A4%E3%83%B3%E5%8C%96/arena-work/tests/sim.test.js:363:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 11,
+    expected: 10,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
