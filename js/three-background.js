@@ -41,16 +41,41 @@ scene.add(rim);
 const world = new THREE.Group();
 scene.add(world);
 
+// Deterministic, chunky grass grain; nearest filtering matches the pixel characters.
+function makeGrassTexture(){
+  const canvas=document.createElement('canvas'); canvas.width=32; canvas.height=32;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#d0dbce'; ctx.fillRect(0,0,32,32);
+  let seed=173;
+  function random(){seed=(Math.imul(seed,1664525)+1013904223)>>>0; return seed/4294967296;}
+  const tones=['#b5c5af','#c0ceba','#dce5d6','#edf1df'];
+  for(let i=0;i<190;i++){
+    ctx.fillStyle=tones[Math.floor(random()*tones.length)];
+    ctx.fillRect(Math.floor(random()*16)*2,Math.floor(random()*16)*2,2,random()<.3?4:2);
+  }
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.colorSpace=THREE.SRGBColorSpace;
+  texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
+  texture.magFilter=texture.minFilter=THREE.NearestFilter;
+  texture.generateMipmaps=false;
+  texture.repeat.set(8,4);
+  return texture;
+}
+const grassTexture=makeGrassTexture();
+const stripeGrass=grassTexture.clone();
+stripeGrass.repeat.set(.79,4);
+stripeGrass.needsUpdate=true;
+
 const pitch = new THREE.Mesh(
   new THREE.PlaneGeometry(16, 8.7),
-  new THREE.MeshStandardMaterial({ color: 0x187447, roughness: 0.96, metalness: 0 })
+  new THREE.MeshStandardMaterial({ color: 0x258354, map: grassTexture, roughness: 1, metalness: 0 })
 );
 pitch.rotation.x = -Math.PI / 2;
 pitch.receiveShadow = true;
 world.add(pitch);
 
-const stripeMatA = new THREE.MeshStandardMaterial({ color: 0x1c7c4c, roughness: 1 });
-const stripeMatB = new THREE.MeshStandardMaterial({ color: 0x176b42, roughness: 1 });
+const stripeMatA = new THREE.MeshStandardMaterial({ color: 0x298c59, map: stripeGrass, roughness: 1 });
+const stripeMatB = new THREE.MeshStandardMaterial({ color: 0x237f50, map: stripeGrass, roughness: 1 });
 for (let i = 0; i < 10; i++) {
   const stripe = new THREE.Mesh(new THREE.PlaneGeometry(1.58, 8.55), i % 2 ? stripeMatA : stripeMatB);
   stripe.rotation.x = -Math.PI / 2;
@@ -256,13 +281,12 @@ function pixelTexture(kit,index,appearance='player'){
   const kitShade='#'+new THREE.Color(kit).multiplyScalar(.48).getHexString();
   const kitLight='#'+new THREE.Color(kit).lerp(new THREE.Color('#ffffff'),.22).getHexString();
 
-  // Oversized front-facing head with ears, two eyes and a small mouth.
+  // Oversized front-facing head with ears and two simple dark eyes.
   rect(skinShade,6,4,12,10); rect(skin,7,4,10,9);
   rect(skinShade,5,8,1,3); rect(skinShade,18,8,1,3);
   rect('#3b2925',8,7,2,1); rect('#3b2925',14,7,2,1);
   // Small dark eyes without whites for a softer expression.
   rect('#171b23',9,9,1,2); rect('#171b23',14,9,1,2);
-  rect(skinShade,11,10,2,2); rect('#854b3e',10,12,4,1);
   const isWoman=appearance==='woman';
   if(isWoman){
     // Long hair, ponytail and bob silhouettes among the female supporters.
@@ -402,6 +426,8 @@ function makePracticeBall(){
   texture.magFilter=texture.minFilter=THREE.NearestFilter; texture.generateMipmaps=false;
   const ball=sprite(new THREE.SpriteMaterial({map:texture,alphaTest:.5}),.30);
   ball.scale.x=.30;
+  // Rotate about the middle: a foot-anchored rotating sprite cuts through the turf.
+  ball.center.set(.5,.5);
   world.add(ball);
   const shadow=new THREE.Mesh(shadowGeometry,shadowMaterial);
   shadow.rotation.x=-Math.PI/2; shadow.scale.set(.5,.35,1); world.add(shadow);
@@ -475,7 +501,7 @@ function updateBall(t){
     const travel=THREE.MathUtils.clamp((f-.20)/.65,0,1);
     const a=sender.position,b=receiver.position;
     group.ball.position.set(
-      THREE.MathUtils.lerp(a.x,b.x,travel),.075+Math.sin(travel*Math.PI)*.05,
+      THREE.MathUtils.lerp(a.x,b.x,travel),.24+Math.sin(travel*Math.PI)*.03,
       THREE.MathUtils.lerp(a.z,b.z,travel)+.28
     );
     group.ball.material.rotation=-travel*Math.PI*4;
