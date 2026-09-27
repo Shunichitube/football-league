@@ -370,6 +370,7 @@ function sprite(material,height){
   const result=new THREE.Sprite(material);
   result.center.set(.5,0); result.scale.set(height*3/4,height,1); return result;
 }
+const CHARACTER_HEIGHT=.68;
 const crowd=[];
 const crowdMaterials=Array.from({length:24},(_,i)=>new THREE.SpriteMaterial({
   map:pixelTexture(['#68a9e0','#eb9e61','#81c6a0','#e18fa8','#ba9ce0','#e6c66a'][i%6],
@@ -377,7 +378,7 @@ const crowdMaterials=Array.from({length:24},(_,i)=>new THREE.SpriteMaterial({
 }));
 function addSupporter(x,y,z,index){
   const variant=index%crowdMaterials.length;
-  const person=sprite(crowdMaterials[variant],.68);
+  const person=sprite(crowdMaterials[variant],CHARACTER_HEIGHT);
   person.position.set(x,y,z);
   person.userData={baseY:y,phase:index*1.7,isWoman:variant%2===0};
   world.add(person); crowd.push(person);
@@ -398,9 +399,9 @@ const shadowGeometry=new THREE.CircleGeometry(.3,24);
 function makePlayer(starter=true,index=0){
   const g=new THREE.Group();
   const kit=new THREE.SpriteMaterial({map:pixelTexture(starter?'#4ade80':'#64748b',index),alphaTest:.5});
-  const body=sprite(kit,1.45); g.add(body);
+  const body=sprite(kit,CHARACTER_HEIGHT); g.add(body);
   const shadow=new THREE.Mesh(shadowGeometry,shadowMaterial);
-  shadow.rotation.x=-Math.PI/2; shadow.scale.set(1,.55,1);
+  shadow.rotation.x=-Math.PI/2; shadow.scale.set(.6,.33,1);
   shadow.position.y=.055; g.add(shadow);
   g.userData={body,kit,starter,index,phase:index*.71,baseX:0,baseZ:0};
   return g;
@@ -412,7 +413,7 @@ const placements=[
   [1.8,-1.6],[4.0,-2.5],[6.0,-.9],[5.2,2.0],[2.5,1.8]
 ];
 const players=placements.map((p,i)=>{
-  const g=makePlayer(i<5,i); g.position.set(p[0],0,p[1]); g.scale.setScalar(.9);
+  const g=makePlayer(i<5,i); g.position.set(p[0],0,p[1]);
   g.userData.baseX=p[0]; g.userData.baseZ=p[1]; world.add(g); return g;
 });
 function makePracticeBall(){
@@ -439,6 +440,57 @@ const passingGroups=[0,5].map((offset,index)=>({
   ...makePracticeBall()
 }));
 
+// Foreground technical areas face the pitch (-Z), with seated backs toward the camera.
+function seatedBackTexture(kit,index){
+  const canvas=document.createElement('canvas'); canvas.width=24; canvas.height=32;
+  const ctx=canvas.getContext('2d');
+  function rect(color,x,y,w,h){ctx.fillStyle=color;ctx.fillRect(x,y,w,h);}
+  const hair=['#35241c','#81502d','#191d29','#a7532d','#44302b'][index%5];
+  const shade='#'+new THREE.Color(kit).multiplyScalar(.48).getHexString();
+  // Back of head: hair and nape only, no facial features.
+  rect('#111923',5,2,14,12); rect(hair,6,3,12,10);
+  rect('#d3a27d',10,12,4,2);
+  rect('#111923',5,14,14,11);
+  rect(shade,6,15,12,9); rect(kit,8,15,8,8);
+  rect('#dce8ed',10,15,4,1);
+  // Small pixel jersey number on the back.
+  rect('#f5f4eb',11,17,2,5);
+  if(index%2) rect('#f5f4eb',10,17,4,1);
+  rect('#111923',3,17,3,8); rect('#111923',18,17,3,8);
+  rect(kit,4,18,2,4); rect(kit,18,18,2,4);
+  rect('#d3a27d',4,22,2,2); rect('#d3a27d',18,22,2,2);
+  // Bent legs extend sideways from the seated hips, not a standing pose.
+  rect('#111923',4,24,16,4);
+  rect('#bbc7d2',5,24,14,2); rect('#f5f4eb',7,24,10,1);
+  rect('#27313e',4,27,4,2); rect('#27313e',16,27,4,2);
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.colorSpace=THREE.SRGBColorSpace;
+  texture.magFilter=texture.minFilter=THREE.NearestFilter;
+  texture.generateMipmaps=false;
+  return texture;
+}
+const benchPlayers=[];
+for(const side of [-1,1]){
+  const centerX=side*4.5;
+  const platform=block(6.4,.12,1.65,centerX,.015,6.15,0x2d4b59);
+  platform.name='bench-area';
+  block(6.4,.035,.08,centerX,.09,5.36,0xe5bd79);
+  block(5.5,.12,.5,centerX,.29,6.25,0xb98a53);
+  for(const x of [-2.35,2.35]) block(.14,.26,.44,centerX+x,.13,6.25,0x233646);
+  // Low back rail leaves hair and jersey numbers visible.
+  block(5.5,.13,.09,centerX,.32,6.55,0x698a93);
+  for(let i=0;i<5;i++){
+    const material=new THREE.SpriteMaterial({
+      map:seatedBackTexture(side===-1?'#4ade80':'#64748b',i),alphaTest:.5
+    });
+    const person=sprite(material,CHARACTER_HEIGHT);
+    person.position.set(centerX+(i-2)*1.05,.12,6.25);
+    person.userData={starter:side===-1,index:i};
+    person.name='seated-bench-player';
+    world.add(person); benchPlayers.push(person);
+  }
+}
+
 const clubColor = new THREE.Color(0x4ade80);
 let lastClubColor='';
 function readClubColor(){
@@ -451,6 +503,10 @@ function readClubColor(){
     const material=p.userData.kit;
     material.map.dispose();
     material.map=pixelTexture(color,p.userData.index);
+  }
+  for(const p of benchPlayers) if(p.userData.starter){
+    p.material.map.dispose();
+    p.material.map=seatedBackTexture(color,p.userData.index);
   }
 }
 
