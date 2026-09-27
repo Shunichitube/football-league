@@ -1,0 +1,64 @@
+main.screen-auction.auction-page {
+  width: min(1460px, 98vw);
+  max-width: none;
+  margin: .65rem auto 2rem;
+  color: #eaf7ff;
+}
+.auction-page .auction-top { display:flex; justify-content:space-between; align-items:center; gap:1rem; padding:0 .7rem; }
+.auction-page .auction-top h2 { margin:.05rem 0 .5rem; font-size:clamp(1.25rem,2.5vw,2rem); }
+.auction-page .auction-top .eyebrow { color:#69d8ec; margin:.1rem 0; }
+.auction-venue {
+  position:relative;
+  aspect-ratio: 1672 / 940;
+  background:linear-gradient(180deg,#07142600 72%,#07142699),url('../assets/auction-arena.webp') center / cover no-repeat;
+  border:1px solid #315a72;
+  box-shadow:0 22px 70px #0009, inset 0 0 35px #008dd228;
+  overflow:hidden;
+}
+.auction-stage-screen {
+  position:absolute; left:34.3%; top:25.7%; width:31.4%; height:22.6%;
+  display:grid; grid-template-columns: 1.55fr 1fr; gap:2%; padding:1%;
+  background:linear-gradient(115deg,#07152bf2,#102649f4);
+  border:1px solid #377dcc; box-shadow:inset 0 0 22px #0675d242,0 0 13px #02bdf077;
+  overflow:hidden;
+}
+.auction-player { min-width:0; display:flex; flex-direction:column; justify-content:center; }
+.auction-kicker { color:#79dfff; font-size:clamp(.5rem,.85vw,.82rem); font-weight:900; letter-spacing:.08em; }
+.auction-player strong { font-size:clamp(.8rem,1.8vw,1.8rem); line-height:1.15; margin:.3em 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.auction-player span:not(.auction-kicker) { font-size:clamp(.55rem,1vw,.95rem); color:#bddcf3; }
+.auction-player p { font-size:clamp(.48rem,.75vw,.75rem); line-height:1.3; color:#b8cbdd; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.auction-score { display:flex; flex-direction:column; justify-content:center; align-items:center; border-left:1px solid #4783a6; background:#071729aa; text-align:center; }
+.auction-score span { color:#bddcf3; font-size:clamp(.48rem,.85vw,.82rem); }
+.auction-score b { color:#7afbd6; font-size:clamp(.85rem,2.3vw,2.4rem); font-variant-numeric:tabular-nums; text-shadow:0 0 15px #0cf8c9a0; }
+.auction-score b.urgent { color:#ff8b6d; text-shadow:0 0 14px #ff6548; }
+.auction-score strong { color:#ffe281; font-size:clamp(.72rem,1.7vw,1.7rem); line-height:1.15; }
+.auction-score small { color:#c4d9e9; font-size:clamp(.42rem,.67vw,.72rem); margin-top:.25em; }
+.auction-desk-row { position:absolute; left:19%; right:19%; top:54.7%; height:6.1%; display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:1%; }
+.auction-desk { background:#061a2be8; border:1px solid var(--desk-color); border-radius:3px; box-shadow:0 0 9px var(--desk-color); display:flex; flex-direction:column; align-items:center; justify-content:center; overflow:hidden; }
+.auction-desk.leading { border-color:#ffdd6b; box-shadow:0 0 18px #ffc84f; }
+.auction-desk span { font-size:clamp(.34rem,.65vw,.7rem); white-space:nowrap; max-width:98%; overflow:hidden; text-overflow:ellipsis; }
+.auction-desk b { font-size:clamp(.5rem,1.1vw,1.1rem); line-height:1.15; color:#effbff; }
+.auction-desk.leading b { color:#ffe181; }
+.auction-controls { display:flex; justify-content:space-between; align-items:center; gap:1rem; margin:.7rem 0; padding:.8rem 1rem; border:1px solid #29719c; border-radius:12px; background:#081c31ed; box-shadow:0 8px 24px #0006; }
+.auction-controls>div:first-child { display:flex; align-items:baseline; gap:.8rem; flex-wrap:wrap; }
+.auction-controls span,.auction-controls small { color:#afd1e6; }
+.auction-controls strong { color:#8ef5ee; font-size:1.65rem; font-variant-numeric:tabular-nums; }
+.auction-buttons { display:flex; gap:.4rem; }
+.auction-buttons button { margin:0; min-width:120px; background:#1bbfed; color:#041828; }
+.auction-buttons button.subtle { background:#11273e; color:#f0f9ff; border-color:#6292ae; }
+.auction-buttons button:disabled { background:#243546; color:#809bb0; }
+.auction-status { margin:.4rem .6rem 1rem; color:#b7d6ea; }
+.auction-details { padding:.75rem 1rem; background:#101f33; border:1px solid #355879; border-radius:10px; }
+.auction-details summary { cursor:pointer; font-weight:800; }
+.auction-details .player-card { margin-top:1rem; max-width:620px; }
+@media(max-width:700px) {
+  .auction-page .auction-top { align-items:flex-start; flex-direction:column; }
+  .auction-venue { aspect-ratio: 1 / 1; background-size:auto 100%; background-position:center; }
+  .auction-stage-screen { left:17%; width:66%; top:26%; height:23%; }
+  .auction-player p { display:none; }
+  .auction-desk-row { left:1%; right:1%; top:55%; height:10%; }
+  .auction-desk span { font-size:.45rem; }
+  .auction-desk b { font-size:.72rem; }
+  .auction-controls { align-items:stretch; flex-direction:column; }
+  .auction-buttons button { flex:1; }
+}
