@@ -76,3 +76,10 @@
 - Replaced Three.js texture wrappers with Canvas outputs and equivalent linear-light color conversion. Current arena layers and game logic retained.
 - Both coaches placed beside the existing benches; scene module cache version updated.
 - Per user request, no extra tests added or run; refreshed the existing preview to show the replacement.
+
+## Goal, ball and open bench correction
+- Moved both goalkeepers onto the court, outside the front-net polygons; goal zone now draws behind court actors. Updated shot/save endpoints to the new right goalkeeper position.
+- Replaced the ball with a native 16px shaded football sprite and dark panel pattern. Added a separate soft elliptical ground shadow that stays on the floor during small ball lifts.
+- Removed enclosing concrete bench walls using registered floor cutouts. Extracted bench-seats.png separately from bench-front.png; seat backs/cushions/supports now render before seated players. Raised and resized the seated bodies to align hips with the cushions.
+- Background and scene cache versions updated. Visually confirmed in the local browser; no additional automated tests per user preference.
+- Screenshot: arena-bench-ball-fixed.png. Main and hosted site untouched.

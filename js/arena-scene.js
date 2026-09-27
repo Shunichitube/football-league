@@ -7,14 +7,14 @@ export function arenaTransform(width, height) {
 }
 export function exhibitionAt(seconds) {
   const t = seconds % 18;
-  const points = [[570,620],[725,687],[850,650],[1518,548]];
+  const points = [[570,620],[725,687],[850,650],[1447,578]];
   let from=points[0],to=points[0],progress=0,phase='idle';
   if(t>=2&&t<5){phase='move';to=[605,640];progress=(t-2)/3;}
   if(t>=5&&t<8){phase='pass';from=[605,640];to=points[1];progress=(t-5)/3;}
   if(t>=8&&t<11){phase='pass';from=points[1];to=points[2];progress=(t-8)/3;}
   if(t>=11&&t<12.5){phase='shoot';from=points[2];to=points[3];progress=(t-11)/1.5;}
-  if(t>=12.5&&t<15){phase='save';from=points[3];to=[1453,576];progress=(t-12.5)/2.5;}
-  if(t>=15){phase='reset';from=[1453,576];to=points[0];progress=(t-15)/3;}
+  if(t>=12.5&&t<15){phase='save';from=points[3];to=[1390,615];progress=(t-12.5)/2.5;}
+  if(t>=15){phase='reset';from=[1390,615];to=points[0];progress=(t-15)/3;}
   return { phase, ball:[from[0]+(to[0]-from[0])*progress,from[1]+(to[1]-from[1])*progress], keeper: t>=11&&t<15 ? Math.sin((t-11)/4*Math.PI)*15 : 0 };
 }
 
@@ -22,17 +22,36 @@ const makeCanvas=(w,h)=>Object.assign(document.createElement('canvas'),{width:w,
 const supporterColors=['#68a9e0','#eb9e61','#81c6a0','#e18fa8','#ba9ce0','#e6c66a'];
 function spectator(index){return pixelTexture(supporterColors[index%6],index,index%2===0?'woman':'man');}
 
+// A native 16px football sprite, matching the outlined character artwork.
+function footballTexture(){
+  const ball=makeCanvas(16,16),c=ball.getContext('2d');
+  for(let y=0;y<16;y++)for(let x=0;x<16;x++){
+    const radius=Math.hypot(x-7.5,y-7.5);
+    if(radius>7.5)continue;
+    c.fillStyle=radius>6.4?'#172838':y>10?'#aabcc5':x<7&&y<7?'#ffffff':'#e8f2ef';
+    c.fillRect(x,y,1,1);
+  }
+  const panel=(points)=>{c.fillStyle='#172838';c.beginPath();c.moveTo(...points[0]);for(const point of points.slice(1))c.lineTo(...point);c.closePath();c.fill();};
+  panel([[7,5],[10,6],[10,9],[7,11],[5,8]]);
+  panel([[3,2],[6,1],[6,3],[3,5]]);
+  panel([[12,3],[14,5],[13,8],[11,6]]);
+  panel([[2,9],[4,10],[5,13],[3,13]]);
+  panel([[10,12],[13,11],[12,14],[9,14]]);
+  c.fillStyle='#ffffff';c.fillRect(5,4,2,1);c.fillRect(3,6,1,2);
+  return ball;
+}
+
 export async function mountArena(canvas){
   const ctx=canvas.getContext('2d',{alpha:false});
   if(!ctx)return ()=>{};
   const images={};
-  await Promise.all(['arena-base.webp','foreground-railing.png','bench-front.png','goal-front-net.png'].map(async name=>{
+  await Promise.all(['arena-base.webp','foreground-railing.png','bench-seats.png','bench-front.png','goal-front-net.png'].map(async name=>{
     const img=new Image();
     await new Promise((resolve,reject)=>{
       const timeout=setTimeout(()=>reject(new Error(`Arena image timed out: ${name}`)),15000);
       img.onload=()=>{clearTimeout(timeout);resolve();};
       img.onerror=()=>{clearTimeout(timeout);reject(new Error(`Arena image failed: ${name}`));};
-      img.src=new URL(`../assets/arena/${name}`,import.meta.url).href;
+      img.src=new URL(`../assets/arena/${name}?v=1.2.0`,import.meta.url).href;
     });
     images[name]=img;
   }));
@@ -73,7 +92,9 @@ export async function mountArena(canvas){
   const sprites=Array.from({length:20},(_,i)=>pixelTexture(kits[Math.floor(i/5)%2],i));
   const reserves=kits.map(kit=>Array.from({length:10},(_,i)=>seatedBackTexture(kit,i)));
   const coaches=[coachTexture(0),coachTexture(1)];
-  const players=[[148,550],[460,598],[570,620],[725,687],[850,650],[1520,550],[1118,594],[967,624],[1235,698],[1058,752]];
+  const ballSprite=footballTexture();
+  // Both keepers stand inside the court, clear of the projected goal mouths.
+  const players=[[225,585],[460,598],[570,620],[725,687],[850,650],[1447,585],[1118,594],[967,624],[1235,698],[1058,752]];
   const nearFans=makeCanvas(48,32),nc=nearFans.getContext('2d');
   nc.drawImage(fans[0],0,0);nc.drawImage(cheers[4],24,0);
   nc.globalCompositeOperation='source-in';nc.fillStyle='#050e22';nc.fillRect(0,0,48,32);
@@ -141,6 +162,8 @@ export async function mountArena(canvas){
     }
     for(const x of [75,360,534,1121,1292,1590])flag(x,423,t,x);
     ctx.drawImage(images['foreground-railing.png'],0,0,W,H);
+    // The goal zone is behind the court zone; its net cannot cover a keeper.
+    ctx.drawImage(images['goal-front-net.png'],0,0,W,H);
     const play=exhibitionAt(t);
     const actors=players.map(([x,y],i)=>{
       if(i===2&&t%18>=2&&t%18<5){const f=(t%18-2)/3;x+=35*f;y+=20*f;}
@@ -149,13 +172,21 @@ export async function mountArena(canvas){
       return {i,x,y};
     }).sort((a,b)=>a.y-b.y);
     for(const p of actors)actor(p.i,p.x,p.y,.96+(p.y-530)/520,t);
-    shadow(...play.ball,.48);ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(play.ball[0],play.ball[1]-5,6,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#152438';ctx.fillRect(play.ball[0]-2,play.ball[1]-8,4,4);ctx.fillRect(play.ball[0]+2,play.ball[1]-3,2,2);
-    // Bench players are between the seat backs and their extracted front edges.
+    const [bx,by]=play.ball;
+    const lift=play.phase==='shoot'?Math.sin((t%18-11)/1.5*Math.PI)*8:Math.abs(Math.sin(t*8))*1.2;
+    ctx.save();ctx.translate(bx+2,by+1);ctx.scale(1,.3);
+    const ballShadow=ctx.createRadialGradient(0,0,1,0,0,11+lift*.25);
+    ballShadow.addColorStop(0,'#001c18a8');ballShadow.addColorStop(.55,'#001c185c');ballShadow.addColorStop(1,'#001c1800');
+    ctx.fillStyle=ballShadow;ctx.beginPath();ctx.arc(0,0,11+lift*.25,0,Math.PI*2);ctx.fill();ctx.restore();
+    ctx.drawImage(ballSprite,Math.round(bx-8),Math.round(by-16-lift),16,16);
+    // Independent chair backs and seat/leg texture are behind the seated bodies.
+    // No enclosing wall or fence blocks the open technical area.
+    ctx.drawImage(images['bench-seats.png'],0,0,W,H);
+    ctx.drawImage(images['bench-front.png'],0,0,W,H);
     for(let i=0;i<10;i++){
       for(let side=0;side<2;side++){
         const x=(side?1110:116)+i*48.5;
-        ctx.drawImage(reserves[side][i],x-13.56,819,27.12,36.16);
+        ctx.drawImage(reserves[side][i],x-16.8,810,33.6,44.8);
       }
     }
     // Back-facing coaches, original tracksuits, cap and clipboard, beside both benches.
@@ -164,8 +195,6 @@ export async function mountArena(canvas){
       shadow(x,y,1.35);
       ctx.drawImage(coaches[i],x-16.2,y-43.2,32.4,43.2);
     }
-    ctx.drawImage(images['bench-front.png'],0,0,W,H);
-    ctx.drawImage(images['goal-front-net.png'],0,0,W,H);
     // Near supporters are a separate local foreground zone, in front of benches.
     for(let i=0;i<32;i++){
       const cheer=i%3!==0,scale=4.3+(i*7%5)*.26,x=i*55-30,y=982-Math.max(0,Math.sin(t*2+i))*5;

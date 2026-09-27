@@ -40,10 +40,17 @@ for x1,y1,x2,y2 in [(232,303,1440,303),(312,446,1358,446),(0,479,232,445),(1440,
         rd.line((x,y-9,x,y+5),fill='#637d98',width=2)
 rails.save(OUT/'foreground-railing.png')
 
-bench = extract('bench', [
-    [(78,846),(588,846),(588,874),(78,874)],
-    [(1084,846),(1595,846),(1595,874),(1084,874)],
-], '#16283f')
+# Open technical areas: replace the enclosing concrete walls with a cutout of
+# unobstructed concourse floor at the same depth. Seats stay independent.
+floor = source.crop((750, 794, 920, 880))
+for box in [(65,794,605,878),(1068,794,1607,878)]:
+    base.paste(floor.resize((box[2]-box[0],box[3]-box[1]),Image.Resampling.BICUBIC),box)
+seats = Image.new('RGBA', source.size)
+bench = Image.new('RGBA', source.size)
+for x1,x2 in [(80,583),(1087,1593)]:
+    seats.paste(source.crop((x1,821,x2,846)),(x1,821))
+    bench.paste(source.crop((x1,846,x2,873)),(x1,846))
+seats.save(OUT/'bench-seats.png')
 bench.save(OUT/'bench-front.png')
 base.convert('RGB').save(OUT/'arena-base.webp', quality=93, method=6)
 
