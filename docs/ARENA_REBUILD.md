@@ -83,3 +83,13 @@
 - Removed enclosing concrete bench walls using registered floor cutouts. Extracted bench-seats.png separately from bench-front.png; seat backs/cushions/supports now render before seated players. Raised and resized the seated bodies to align hips with the cushions.
 - Background and scene cache versions updated. Visually confirmed in the local browser; no additional automated tests per user preference.
 - Screenshot: arena-bench-ball-fixed.png. Main and hosted site untouched.
+
+## Multiplayer V3 system import
+- Source: origin/dev/multiplayer-v3 at 609ac47 (latest fetched source), rather than the older sibling v3 snapshot.
+- Copied the complete V3 js game modules, RoomClient, RoomAdapter, phase-work, worker routing/Room Durable Object/game processing, room.css and build configuration.
+- Preserved current arena art, characters, goalkeeper/ball/bench fixes and title presentation. Added the real data-room="open" multiplayer action to the title.
+- Removed the old standalone screen classifier script: V3 classifies screens explicitly from the app render route.
+- Asset build includes arena images. Existing V3 syntax guard allows presentation-only background observers while retaining Room/DOM boundary checks.
+- Minimal verification: 32 JS files parsed, 24 module instances linked, asset build completed. No extra test suite or live multiplayer session run.
+- Current Python static preview does not execute /api/rooms. Multiplayer requires the included Cloudflare Worker/Durable Object runtime (e.g. wrangler dev); no deployment or push was performed.
+- Rollback point before import: ca24985. Target branch remains dev/living-clubhouse-ui.

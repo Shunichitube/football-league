@@ -1,0 +1,19 @@
+name = "football-league-multiplayer-v3"
+main = "worker/index.js"
+compatibility_date = "2026-09-25"
+
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "RoomObject"
+
+[[migrations]]
+tag = "v3-initial"
+new_sqlite_classes = ["RoomObject"]
+
+[build]
+command = "node scripts/build-assets.mjs"
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]

@@ -5,6 +5,8 @@ import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.17.2';
 
 export const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
 
+let renameHandler = null;
+export function configureRename(handler) { renameHandler = handler; }
 const RENAME_LIMIT = 10;
 const playerRefs = new Map();
 const renamedNameMap = new Map();
@@ -60,7 +62,7 @@ function applyRename(player, name) {
 }
 if (typeof document !== 'undefined' && !globalThis.__footballLeagueRenameHook) {
   globalThis.__footballLeagueRenameHook = true;
-  document.addEventListener('click', event => {
+  document.addEventListener('click', async event => {
     const renameId = event.target.closest('[data-rename-player]')?.dataset.renamePlayer;
     const submitId = event.target.closest('[data-rename-submit]')?.dataset.renameSubmit;
     if (renameId) { const player = playerRefs.get(renameId); if (player) showRenameModal(player); return; }
@@ -69,8 +71,17 @@ if (typeof document !== 'undefined' && !globalThis.__footballLeagueRenameHook) {
     const player = playerRefs.get(submitId), input = document.querySelector('[data-rename-input]'), error = document.querySelector('[data-rename-error]');
     const result = normalizePlayerName(input?.value);
     if (result.error) { if (error) { error.textContent = result.error; error.style.display = 'block'; } return; }
-    if (player) applyRename(player, result.name);
-    removeRenameModal();
+    if (!player) return;
+    const button = event.target.closest('[data-rename-submit]');
+    if (button?.disabled) return;
+    if (button) button.disabled = true;
+    try {
+      const handled = renameHandler ? await renameHandler(player.id, result.name) : false;
+      if (handled === false) applyRename(player, result.name);
+      removeRenameModal();
+    } catch (failure) {
+      if (error) { error.textContent = failure.message; error.style.display = 'block'; }
+    } finally { if (button) button.disabled = false; }
   });
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && document.querySelector('.rename-modal-panel')) removeRenameModal();
