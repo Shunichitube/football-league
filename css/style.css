@@ -90,7 +90,7 @@
 
 
 /* Living clubhouse prototype: animated Canvas layer behind the existing UI. */
-#living-club-bg{
+#three-club-bg{
   position:fixed;
   inset:0;
   width:100%;
@@ -100,7 +100,7 @@
   opacity:0;
   transition:opacity .45s ease;
 }
-body.living-bg-active #living-club-bg{opacity:1}
+body.living-bg-active #three-club-bg{opacity:1}
 #app{position:relative;z-index:1}
 body.living-bg-active{
   background:#07111f;
@@ -130,10 +130,10 @@ body.living-bg-active .hero{
   backdrop-filter:blur(8px);
 }
 @media(max-width:560px){
-  #living-club-bg{opacity:.55}
+  #three-club-bg{opacity:.55}
   body.living-bg-active #app>main.screen-title::before,
   body.living-bg-active #app>main.screen-home::before{inset:-.7rem -.4rem}
 }
 @media(prefers-reduced-motion:reduce){
-  #living-club-bg{transition:none}
+  #three-club-bg{transition:none}
 }
