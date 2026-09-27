@@ -69,3 +69,10 @@
 - Main, hosted site and game simulation/data/storage modules unchanged. No merge or deployment.
 - Final runtime art total: 521,285 bytes (about 509 KiB); zeroed unused RGB behind alpha to avoid shipping the entire source image inside transparent layers.
 - Final git diff whitespace check passed. New exhibition tests rerun after final animation adjustments: 2/2 pass.
+
+## Character restoration — 0860bd5
+- Restored pixelTexture, seatedBackTexture and coachTexture artwork directly from 0860bd579b08b540ff9cc51f94c58a00c1723315 into arena-characters.js.
+- Retained original hair variants, outlines, shaded clothing, women/men supporter styles, back-facing substitutes and tracksuit coaches with clipboard/cap.
+- Replaced Three.js texture wrappers with Canvas outputs and equivalent linear-light color conversion. Current arena layers and game logic retained.
+- Both coaches placed beside the existing benches; scene module cache version updated.
+- Per user request, no extra tests added or run; refreshed the existing preview to show the replacement.

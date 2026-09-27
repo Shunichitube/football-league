@@ -1,4 +1,4 @@
-import { mountArena } from './arena-scene.js';
+import { mountArena } from './arena-scene.js?v=1.1.0';
 
 // A screen lifetime owns every animation/listener. Navigation destroys it.
 const app=document.querySelector('#app');

@@ -1,3 +1,4 @@
+import { pixelTexture, seatedBackTexture, coachTexture } from './arena-characters.js';
 // Presentation only: no game, random-generator or storage imports.
 export const ARENA = Object.freeze({ width: 1672, height: 941 });
 export function arenaTransform(width, height) {
@@ -17,41 +18,9 @@ export function exhibitionAt(seconds) {
   return { phase, ball:[from[0]+(to[0]-from[0])*progress,from[1]+(to[1]-from[1])*progress], keeper: t>=11&&t<15 ? Math.sin((t-11)/4*Math.PI)*15 : 0 };
 }
 
-const skinTones=['#f2c49b','#d79a72','#b87552','#7e4d37'];
-const hairColors=['#161a22','#4b2d1f','#7c4b2a','#d2a13a','#8a3d2f'];
-const crowdColors=['#22c55e','#4ade80','#60a5fa','#fbbf24','#fb7185','#a78bfa','#e2e8f0','#f97316'];
 const makeCanvas=(w,h)=>Object.assign(document.createElement('canvas'),{width:w,height:h});
-
-// Original three-background.js playerTexture pixels, preserved without redesign.
-function playerTexture(seed,kit){
-  const canvas=makeCanvas(24,32),ctx=canvas.getContext('2d');
-  const skin=skinTones[seed%skinTones.length],hair=hairColors[seed%hairColors.length];
-  ctx.fillStyle='#111827';ctx.fillRect(5,2,14,12);
-  ctx.fillStyle=skin;ctx.fillRect(6,4,12,10);
-  ctx.fillStyle=hair;ctx.fillRect(5,1,14,5);
-  ctx.fillStyle='#111827';ctx.fillRect(9,8,1,2);ctx.fillRect(14,8,1,2);
-  ctx.fillStyle=kit;ctx.fillRect(6,15,12,9);ctx.fillRect(3,16,3,6);ctx.fillRect(18,16,3,6);
-  ctx.fillStyle=skin;ctx.fillRect(3,22,3,2);ctx.fillRect(18,22,3,2);
-  ctx.fillStyle='#f8fafc';ctx.fillRect(7,24,10,4);
-  ctx.fillStyle=kit;ctx.fillRect(7,28,4,2);ctx.fillRect(13,28,4,2);
-  ctx.fillStyle='#111827';ctx.fillRect(6,30,5,2);ctx.fillRect(13,30,5,2);
-  return canvas;
-}
-function spectator(seed,cheer=false){
-  const c=makeCanvas(20,28),ctx=c.getContext('2d');
-  ctx.fillStyle='#0a0f18';ctx.fillRect(5,2,10,10);
-  ctx.fillStyle=skinTones[seed%4];ctx.fillRect(6,4,8,8);
-  ctx.fillStyle=hairColors[(seed*3)%5];ctx.fillRect(5,1,10,4);
-  if(seed%3===0)ctx.fillRect(4,3,2,7);
-  if(seed%4===0)ctx.fillRect(14,3,2,7);
-  ctx.fillStyle='#111827';ctx.fillRect(8,7,1,1);ctx.fillRect(12,7,1,1);
-  ctx.fillStyle=crowdColors[seed%8];ctx.fillRect(5,12,10,8);
-  ctx.fillRect(3,cheer?8:13,3,6);ctx.fillRect(14,cheer?8:13,3,6);
-  ctx.fillStyle=skinTones[seed%4];ctx.fillRect(3,cheer?6:18,3,2);ctx.fillRect(14,cheer?6:18,3,2);
-  ctx.fillStyle='#334155';ctx.fillRect(6,20,3,6);ctx.fillRect(11,20,3,6);
-  ctx.fillStyle='#111827';ctx.fillRect(5,25,4,2);ctx.fillRect(11,25,4,2);
-  return c;
-}
+const supporterColors=['#68a9e0','#eb9e61','#81c6a0','#e18fa8','#ba9ce0','#e6c66a'];
+function spectator(index){return pixelTexture(supporterColors[index%6],index,index%2===0?'woman':'man');}
 
 export async function mountArena(canvas){
   const ctx=canvas.getContext('2d',{alpha:false});
@@ -69,16 +38,16 @@ export async function mountArena(canvas){
   }));
   const crowd=makeCanvas(ARENA.width,ARENA.height),cc=crowd.getContext('2d');
   cc.imageSmoothingEnabled=false;
-  const fans=Array.from({length:80},(_,i)=>spectator(i)),cheers=Array.from({length:80},(_,i)=>spectator(i,true));
+  const fans=Array.from({length:80},(_,i)=>spectator(i)),cheers=Array.from({length:80},(_,i)=>spectator(i));
   const moving=[];let count=0;
   function zone(topLeft,topRight,bottomLeft,bottomRight,yTop,yBottom,rows,spacing){
     for(let row=0;row<rows;row++){
       const v=row/(rows-1),left=topLeft+(bottomLeft-topLeft)*v,right=topRight+(bottomRight-topRight)*v,y=yTop+(yBottom-yTop)*v;
-      const size=.55+v*.16;
+      const size=.5+v*.12;
       for(let x=left+spacing/2;x<right-spacing/2;x+=spacing){
         const seed=count++,fan={x:x+(row%2)*2,y,size,seed};
         if(seed%29===0)moving.push(fan);
-        else cc.drawImage(fans[seed%80],Math.round(fan.x-10*size),Math.round(y-28*size),20*size,28*size);
+        else cc.drawImage(fans[seed%80],Math.round(fan.x-12*size),Math.round(y-32*size),24*size,32*size);
       }
     }
   }
@@ -92,20 +61,22 @@ export async function mountArena(canvas){
       if(side)x=ARENA.width-x;
       if(col>10&&row<3)continue;
       const seed=count++,size=.76;
-      cc.drawImage(fans[seed%80],x-10*size,y-28*size,20*size,28*size);
+      cc.drawImage(fans[seed%80],x-12*size,y-32*size,24*size,32*size);
     }
     for(let row=0;row<5;row++)for(let col=0;col<9;col++){
       const x=side?1672-col*13:col*13,y=244+row*10+col*2.3,seed=count++;
-      cc.drawImage(fans[seed%80],x-6,y-18,12,18);
+      cc.drawImage(fans[seed%80],x-6.75,y-18,13.5,18);
     }
   }
   canvas.dataset.spectators=String(count);
-  const kits=['#19dc89','#153b69'];
-  const sprites=Array.from({length:20},(_,i)=>playerTexture(i,i===0?'#fbbf24':i===5?'#f05263':kits[Math.floor(i/5)%2]));
+  const kits=['#4ade80','#64748b'];
+  const sprites=Array.from({length:20},(_,i)=>pixelTexture(kits[Math.floor(i/5)%2],i));
+  const reserves=kits.map(kit=>Array.from({length:10},(_,i)=>seatedBackTexture(kit,i)));
+  const coaches=[coachTexture(0),coachTexture(1)];
   const players=[[148,550],[460,598],[570,620],[725,687],[850,650],[1520,550],[1118,594],[967,624],[1235,698],[1058,752]];
-  const nearFans=makeCanvas(40,28),nc=nearFans.getContext('2d');
-  nc.drawImage(fans[0],0,0);nc.drawImage(cheers[4],20,0);
-  nc.globalCompositeOperation='source-in';nc.fillStyle='#050e22';nc.fillRect(0,0,40,28);
+  const nearFans=makeCanvas(48,32),nc=nearFans.getContext('2d');
+  nc.drawImage(fans[0],0,0);nc.drawImage(cheers[4],24,0);
+  nc.globalCompositeOperation='source-in';nc.fillStyle='#050e22';nc.fillRect(0,0,48,32);
   const reduce=matchMedia('(prefers-reduced-motion: reduce)');
   let frame=0,last=0,clock=0,previous=0,paused=false,dead=false;
   const W=ARENA.width,H=ARENA.height;
@@ -165,7 +136,7 @@ export async function mountArena(canvas){
     ctx.imageSmoothingEnabled=false;ctx.drawImage(crowd,0,0);
     for(const fan of moving){
       const hop=Math.max(0,Math.sin(t*3+fan.seed))*2;
-      ctx.drawImage((Math.sin(t*2+fan.seed)>0?cheers:fans)[fan.seed%80],fan.x-10*fan.size,fan.y-28*fan.size-hop,20*fan.size,28*fan.size);
+      ctx.drawImage((Math.sin(t*2+fan.seed)>0?cheers:fans)[fan.seed%80],fan.x-12*fan.size,fan.y-32*fan.size-hop,24*fan.size,32*fan.size);
       if(fan.seed%3===0)flag(fan.x,fan.y-10,t,fan.seed);
     }
     for(const x of [75,360,534,1121,1292,1590])flag(x,423,t,x);
@@ -182,15 +153,23 @@ export async function mountArena(canvas){
     ctx.fillStyle='#152438';ctx.fillRect(play.ball[0]-2,play.ball[1]-8,4,4);ctx.fillRect(play.ball[0]+2,play.ball[1]-3,2,2);
     // Bench players are between the seat backs and their extracted front edges.
     for(let i=0;i<10;i++){
-      actor(1+i%4,116+i*48.5,855,1.13,t,true);
-      actor(6+i%4,1110+i*48.5,855,1.13,t,true);
+      for(let side=0;side<2;side++){
+        const x=(side?1110:116)+i*48.5;
+        ctx.drawImage(reserves[side][i],x-13.56,819,27.12,36.16);
+      }
+    }
+    // Back-facing coaches, original tracksuits, cap and clipboard, beside both benches.
+    for(let i=0;i<2;i++){
+      const x=i?1040:634,y=852;
+      shadow(x,y,1.35);
+      ctx.drawImage(coaches[i],x-16.2,y-43.2,32.4,43.2);
     }
     ctx.drawImage(images['bench-front.png'],0,0,W,H);
     ctx.drawImage(images['goal-front-net.png'],0,0,W,H);
     // Near supporters are a separate local foreground zone, in front of benches.
     for(let i=0;i<32;i++){
       const cheer=i%3!==0,scale=4.3+(i*7%5)*.26,x=i*55-30,y=982-Math.max(0,Math.sin(t*2+i))*5;
-      ctx.drawImage(nearFans,cheer?20:0,0,20,20,x,y-20*scale,20*scale,20*scale);
+      ctx.drawImage(nearFans,cheer?24:0,0,24,20,x,y-20*scale,24*scale,20*scale);
     }
     for(const x of [30,155,1510,1640]){ctx.save();ctx.translate(x,903);ctx.scale(2,2);flag(0,0,t,x);ctx.restore();}
     // Beams originate at the actual ceiling fixtures in the generated art.
