@@ -105,3 +105,11 @@
 - Wrapped club setup, load slots, multiplayer entry and room lobby in accessible, scrollable dialogs over the arena.
 - Kept arena animation alive across popup navigation; retained existing game and room actions. Added close and Escape controls, inert background and keyboard focus containment.
 - Visually confirmed setup, load and multiplayer entry plus close/reopen in browser. Live lobby requires the Room API, unavailable on this static preview; its shared dialog integration is implemented but live entry was not verified. No extra test suite run.
+## Draft ceremony background
+
+- Generated assets/arena/draft-hall.webp using the built-in imagegen tool; empty arena architecture without emblems or people.
+- Added js/draft-hall.js with independent pixel spectators and slow spotlight movement, using existing character art. Motion stops with reduced-motion or hidden pages and is disposed on leaving draft.
+- Six desk panels and visible club labels use actual league club colors and names. No invented team emblems.
+- Added responsive stage space above readable navy player cards. Browser confirmed draft entry and visual layout; no extra test suite run. Screenshot: docs/draft-hall.png.
+
+Generation prompt: Generate a polished 16:9 game background for FOOTBALL LEAGUE draft ceremony. Symmetrical indoor futsal arena converted to dramatic draft stage, deep navy architecture, blue and emerald accent lighting, overhead steel trusses, huge suspended circular LED ring near top, big rectangular LED video screen center, tall vertical banners either side, central podium and stairs, six neutral navy team desks three left three right at lower middle, dark foreground press desks. Refined detailed 3D/pixel-art compatible game illustration. Camera centered facing stage, wide composition. NO people, NO spectators (empty dark tiered seats at sides for runtime pixel crowds), NO logos, NO team emblems, NO text, NO spotlight beams (runtime effects added later). All screens blank dark navy. Team desk front panels plain dark navy, no colored crests. Subtle floor reflections, not mirror glossy. Strong depth, richly detailed architecture. This is a production background asset, not UI mockup. Output landscape 1536x864 or equivalent 16:9.

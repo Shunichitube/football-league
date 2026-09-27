@@ -350,6 +350,13 @@ render=function renderApplication(){
   else if(s.view==='roomLobby')app.innerHTML=roomLobby();
   else sharedRender();
   classifyScreens(s.view);
+  if(s.view==='draft'){
+    app.dataset.draftClubs=JSON.stringify(s.league.clubs.map(c=>({name:c.name,color:c.color})));
+    const stage=document.createElement('section');stage.className='draft-stage-window';
+    stage.setAttribute('aria-label','ドラフト会場');
+    stage.innerHTML=`<p>FOOTBALL LEAGUE</p><h1>DRAFT</h1><span>${s.draft.completed?'指名完了':`第${s.draft.round}巡 / 全4巡`}</span><div class="draft-club-colors">${s.league.clubs.map(c=>`<span style="--club:${e(c.color)}"><i></i>${e(c.name)}</span>`).join('')}</div>`;
+    app.querySelector('main')?.before(stage);
+  }else delete app.dataset.draftClubs;
   updateRoomStatus();
   const popupNames={setup:'クラブを作成',loadTitle:'続きから',roomEntry:'マルチプレイ',roomLobby:'ロビー'};
   if(popupNames[s.view]){
