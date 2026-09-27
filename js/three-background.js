@@ -187,43 +187,77 @@ world.add(boardFrame);
 
 // Tiny canvas textures are drawn as pixel art, never smoothed.
 function pixelTexture(kit,index){
-  const canvas=document.createElement('canvas'); canvas.width=16; canvas.height=24;
+  // Chunky 24 x 32 sprite: large head, compact body, one-pixel silhouette.
+  const canvas=document.createElement('canvas'); canvas.width=24; canvas.height=32;
   const ctx=canvas.getContext('2d'); ctx.imageSmoothingEnabled=false;
-  function rect(color,x,y,w,h){ctx.fillStyle=color;ctx.fillRect(x,y,w,h);}
-  const skin=['#e0ad86','#b87955','#f0c6a2'][index%3];
-  const hair=['#251e23','#75452d','#d8b365','#151a25','#9a5732','#352b37'][index%6];
-  // Eight-pixel-wide, front-facing head. Hair never covers the eyes.
-  rect('#101b2a',3,1,10,8);
-  rect(skin,4,2,8,7);
-  switch(index%6){
-    case 0: // Cropped hair.
-      rect(hair,4,1,8,2); rect(hair,3,3,1,2); rect(hair,12,3,1,2); break;
-    case 1: // Side part with a swept fringe.
-      rect(hair,3,1,9,2); rect(hair,4,3,3,1); rect(hair,3,3,1,3); break;
-    case 2: // Spiky blond silhouette.
-      rect(hair,4,2,8,1);
-      for(const x of [4,7,10]) rect(hair,x,0,2,2);
-      break;
-    case 3: // Narrow mohawk.
-      rect(hair,7,0,2,4); break;
-    case 4: // Longer hair framing both cheeks.
-      rect(hair,3,1,10,2); rect(hair,3,3,1,6); rect(hair,12,3,1,6);
-      rect(hair,4,3,2,1); break;
-    case 5: // Rounded curls.
-      rect(hair,3,1,10,3); rect(hair,5,0,6,1);
-      rect(hair,2,2,2,3); rect(hair,12,2,2,3); break;
+  const pixels=Array.from({length:32},()=>Array(24).fill(null));
+  function rect(color,x,y,w,h){
+    for(let py=y;py<y+h;py++) for(let px=x;px<x+w;px++)
+      if(pixels[py]&&px>=0&&px<24) pixels[py][px]=color;
   }
-  rect('#fff3de',5,4,2,2); rect('#fff3de',9,4,2,2);
-  rect('#182437',6,5,1,1); rect('#182437',9,5,1,1);
-  rect('#b37454',7,6,2,1);
-  rect('#713f3d',6,7,4,1);
-  rect(kit,4,8,8,8); rect(kit,2,9,12,4);
-  rect(['#e0ad86','#b87955','#f0c6a2'][index%3],2,13,2,3);
-  rect(['#e0ad86','#b87955','#f0c6a2'][index%3],12,13,2,3);
-  rect('#f1f5f9',7,9,2,3);
-  rect('#17273a',4,16,8,3);
-  rect('#dce9ef',5,19,2,3); rect('#dce9ef',9,19,2,3);
-  rect('#0b1220',4,22,3,2); rect('#0b1220',9,22,3,2);
+  const skin=['#efba87','#bf8159','#f4cea4'][index%3];
+  const skinShade=['#c88a61','#925a40','#d6a17c'][index%3];
+  const hair=['#35241c','#81502d','#d5a344','#191d29','#a7532d','#44302b'][index%6];
+  const hairLight=['#65412a','#af7540','#f3cc69','#41485a','#d38547','#77513a'][index%6];
+  const kitShade='#'+new THREE.Color(kit).multiplyScalar(.48).getHexString();
+  const kitLight='#'+new THREE.Color(kit).lerp(new THREE.Color('#ffffff'),.22).getHexString();
+
+  // Oversized front-facing head with ears, two eyes and a small mouth.
+  rect(skinShade,6,4,12,10); rect(skin,7,4,10,9);
+  rect(skinShade,5,8,1,3); rect(skinShade,18,8,1,3);
+  rect('#3b2925',8,7,2,1); rect('#3b2925',14,7,2,1);
+  rect('#fff3df',8,8,2,3); rect('#fff3df',14,8,2,3);
+  rect('#20242c',9,8,1,3); rect('#20242c',14,8,1,3);
+  rect(skinShade,11,10,2,2); rect('#854b3e',10,12,4,1);
+  switch(index%6){
+    case 0: // Short, square crop.
+      rect(hair,6,2,12,3); rect(hair,6,5,2,2); rect(hair,17,5,1,2);
+      rect(hairLight,8,2,7,1); break;
+    case 1: // Side part and long swept fringe.
+      rect(hair,6,2,12,3); rect(hair,6,5,4,2); rect(hair,6,7,1,2);
+      rect(hairLight,8,2,3,2); rect(hairLight,12,3,5,1); break;
+    case 2: // Spiky silhouette.
+      rect(hair,6,3,12,2);
+      for(const x of [6,10,14]) rect(hair,x,1,2,3);
+      rect(hairLight,10,1,1,3); rect(hairLight,14,2,1,2); break;
+    case 3: // Mohawk with shaved sides.
+      rect(hair,10,1,4,5); rect(hairLight,11,1,1,4);
+      rect(hair,6,5,1,2); rect(hair,17,5,1,2); break;
+    case 4: // Bob with side locks.
+      rect(hair,5,2,14,3); rect(hair,5,5,2,8); rect(hair,17,5,2,8);
+      rect(hair,7,5,3,1); rect(hairLight,7,2,9,1);
+      rect(hairLight,5,6,1,5); break;
+    case 5: // Rounded curls.
+      rect(hair,5,3,14,3); rect(hair,7,1,10,3);
+      rect(hair,4,5,3,3); rect(hair,17,5,3,3);
+      for(const x of [7,11,15]) rect(hairLight,x,2,2,2);
+      break;
+  }
+  rect(skinShade,10,14,4,1);
+  // Broad shoulders, stepped sleeves and shaded vertical shirt panels.
+  rect(kitShade,7,15,10,9); rect(kit,8,16,8,8);
+  rect(kit,5,16,3,6); rect(kit,16,16,3,6);
+  rect(kitShade,3,18,3,4); rect(kitShade,18,18,3,4);
+  rect(kitLight,8,16,2,7); rect(kitShade,12,16,2,8);
+  rect('#edf4f5',10,15,4,1);
+  rect(skinShade,3,22,3,2); rect(skin,3,22,2,1);
+  rect(skinShade,18,22,3,2); rect(skin,18,22,2,1);
+  // White shorts, separate legs and colored socks echo classic football sprites.
+  rect('#bbc7d2',7,24,10,4); rect('#f5f4eb',8,24,8,3);
+  rect('#788596',11,26,2,2);
+  rect(kitShade,7,28,4,2); rect(kitShade,13,28,4,2);
+  rect(kitLight,7,28,1,2); rect(kitLight,13,28,1,2);
+  rect('#27313e',6,30,5,1); rect('#27313e',13,30,5,1);
+
+  // Outline the final silhouette without a grid or smoothing artifacts.
+  for(let y=0;y<32;y++) for(let x=0;x<24;x++){
+    const fill=pixels[y][x];
+    const edge=!fill&&[[x-1,y],[x+1,y],[x,y-1],[x,y+1]]
+      .some(([nx,ny])=>pixels[ny]?.[nx]);
+    if(fill||edge){
+      ctx.fillStyle=fill||'#111923'; ctx.fillRect(x,y,1,1);
+    }
+  }
   const texture=new THREE.CanvasTexture(canvas);
   texture.magFilter=THREE.NearestFilter; texture.minFilter=THREE.NearestFilter;
   texture.generateMipmaps=false; texture.colorSpace=THREE.SRGBColorSpace;
@@ -231,7 +265,7 @@ function pixelTexture(kit,index){
 }
 function sprite(material,height){
   const result=new THREE.Sprite(material);
-  result.center.set(.5,0); result.scale.set(height*2/3,height,1); return result;
+  result.center.set(.5,0); result.scale.set(height*3/4,height,1); return result;
 }
 const crowd=[];
 const crowdMaterials=Array.from({length:8},(_,i)=>new THREE.SpriteMaterial({
@@ -252,7 +286,7 @@ const shadowGeometry=new THREE.CircleGeometry(.3,24);
 function makePlayer(starter=true,index=0){
   const g=new THREE.Group();
   const kit=new THREE.SpriteMaterial({map:pixelTexture(starter?'#4ade80':'#64748b',index),alphaTest:.5});
-  const body=sprite(kit,1.25); g.add(body);
+  const body=sprite(kit,1.45); g.add(body);
   const shadow=new THREE.Mesh(shadowGeometry,shadowMaterial);
   shadow.rotation.x=-Math.PI/2; shadow.scale.set(1,.55,1);
   shadow.position.y=.055; g.add(shadow);
