@@ -149,9 +149,10 @@ export async function mountArena(canvas){
     }
   }
   // Two open-sided dugouts share the arena coordinates and local depth order.
-  function shelter(x,front=false){
+  function shelter(x,front=false,mirrored=false){
     const width=510;
     ctx.save();ctx.lineJoin='round';
+    if(mirrored){ctx.translate(2*x+width,0);ctx.scale(-1,1);}
     if(!front){
       shadow(x+width/2,866,21);
       const glass=ctx.createLinearGradient(0,768,0,852);
@@ -236,7 +237,7 @@ export async function mountArena(canvas){
     ballShadow.addColorStop(0,'#001c18a8');ballShadow.addColorStop(.55,'#001c185c');ballShadow.addColorStop(1,'#001c1800');
     ctx.fillStyle=ballShadow;ctx.beginPath();ctx.arc(0,0,11+lift*.25,0,Math.PI*2);ctx.fill();ctx.restore();
     ctx.drawImage(ballSprite,Math.round(bx-8),Math.round(by-16-lift),16,16);
-    shelter(77);shelter(1084);
+    shelter(77);shelter(1084,false,true);
     for(let i=0;i<10;i++){
       for(let side=0;side<2;side++){
         const x=(side?1110:116)+i*48.5;
@@ -246,7 +247,7 @@ export async function mountArena(canvas){
     // Chair backs occlude the seated bodies; roof supports occupy the local foreground.
     ctx.drawImage(images['bench-seats.png'],0,0,W,H);
     ctx.drawImage(images['bench-front.png'],0,0,W,H);
-    shelter(77,true);shelter(1084,true);
+    shelter(77,true);shelter(1084,true,true);
     equipment(0);equipment(1);
     // Back-facing coaches, original tracksuits, cap and clipboard, beside both benches.
     for(let i=0;i<2;i++){
