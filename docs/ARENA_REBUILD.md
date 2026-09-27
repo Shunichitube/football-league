@@ -93,3 +93,10 @@
 - Minimal verification: 32 JS files parsed, 24 module instances linked, asset build completed. No extra test suite or live multiplayer session run.
 - Current Python static preview does not execute /api/rooms. Multiplayer requires the included Cloudflare Worker/Durable Object runtime (e.g. wrangler dev); no deployment or push was performed.
 - Rollback point before import: ca24985. Target branch remains dev/living-clubhouse-ui.
+
+## Bench shelter follow-up
+- Added translucent curved dugout roofs and separate foreground supports to both benches.
+- Seated reserves now render behind the existing chair textures; raised their seating alignment so heads and shoulders remain visible.
+- Added spare footballs, water bottles, team-colored coolers and folded bibs with ground shadows.
+- Confirmed the home screen visually in the local browser; no additional test suite run. Game and multiplayer logic unchanged.
+
