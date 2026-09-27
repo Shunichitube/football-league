@@ -193,6 +193,52 @@ boardFrame.position.copy(board.position).addScaledVector(
   new THREE.Vector3(0,0,1).applyQuaternion(camera.quaternion),-.02);
 world.add(boardFrame);
 
+// A restrained pixel-art interior: teal panels, warm brass and square light bands.
+function interiorTexture(){
+  const canvas=document.createElement('canvas'); canvas.width=64; canvas.height=16;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#203b4b'; ctx.fillRect(0,0,64,16);
+  for(let x=0;x<64;x+=4) for(let y=0;y<16;y+=4){
+    ctx.fillStyle=['#315467','#3f6974','#527e83'][(x/4+y/4)%3];
+    ctx.fillRect(x,y,3,3);
+  }
+  ctx.fillStyle='#e5bd79'; ctx.fillRect(0,14,64,2);
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.colorSpace=THREE.SRGBColorSpace;
+  texture.magFilter=texture.minFilter=THREE.NearestFilter;
+  texture.generateMipmaps=false;
+  return texture;
+}
+const mosaicMaterial=new THREE.MeshBasicMaterial({map:interiorTexture()});
+for(const x of [-10.3,-6.9,6.9,10.3]){
+  const panel=new THREE.Mesh(new THREE.PlaneGeometry(3.1,1.05),mosaicMaterial);
+  panel.position.set(x,3.3,-7.72); world.add(panel);
+}
+const trimMaterial=new THREE.MeshBasicMaterial({color:0xe5bd79});
+for(const z of [-4.65,4.65]){
+  const trim=new THREE.Mesh(new THREE.BoxGeometry(18,.06,.09),trimMaterial);
+  trim.position.set(0,.045,z); world.add(trim);
+}
+// Chunky perimeter tiles frame the court without changing its markings.
+const tileGeometry=new THREE.BoxGeometry(.32,.04,.32);
+const tileMaterial=new THREE.MeshStandardMaterial({color:0x62868b,roughness:1});
+const tiles=new THREE.InstancedMesh(tileGeometry,tileMaterial,104);
+const tileTransform=new THREE.Object3D();
+for(let i=0;i<104;i++){
+  tileTransform.position.set(-8.67+(i%52)*.34,.015,i<52?-4.98:4.98);
+  tileTransform.updateMatrix(); tiles.setMatrixAt(i,tileTransform.matrix);
+}
+world.add(tiles);
+for(const side of [-1,1]){
+  for(let i=0;i<12;i++){
+    const step=block(.34,.09,.34,side*9.6,.08,-3.7+i*.68,0x92bac2);
+    step.material.emissive=new THREE.Color(0x365963);
+  }
+}
+// Nearest-neighbor filtering keeps signage as crisp as the characters.
+boardTexture.magFilter=boardTexture.minFilter=THREE.NearestFilter;
+boardTexture.generateMipmaps=false;
+
 // Tiny canvas textures are drawn as pixel art, never smoothed.
 function pixelTexture(kit,index,appearance='player'){
   // Chunky 24 x 32 sprite: large head, compact body, one-pixel silhouette.
@@ -336,23 +382,36 @@ function makePlayer(starter=true,index=0){
   return g;
 }
 
+// Two five-player passing circles, one in each half of the court.
 const placements=[
-  [-3.4,-1.5],[-1.4,-.5],[1.0,-1.3],[3.2,-.3],
-  [-4.3,1.6],[-2.2,2.0],[0,1.7],[2.4,2.1],[4.2,1.45],[5.4,-1.8],
-  [-5.7,3.2],[5.8,3.15]
+  [-5.8,-1.6],[-3.8,-2.5],[-1.8,-.9],[-2.6,2.0],[-5.3,1.8],
+  [1.8,-1.6],[4.0,-2.5],[6.0,-.9],[5.2,2.0],[2.5,1.8]
 ];
-const players = placements.map((p,i)=>{
+const players=placements.map((p,i)=>{
   const g=makePlayer(i<5,i); g.position.set(p[0],0,p[1]); g.scale.setScalar(.9);
   g.userData.baseX=p[0]; g.userData.baseZ=p[1]; world.add(g); return g;
 });
-
-const ball = new THREE.Mesh(
-  new THREE.SphereGeometry(.13,16,12),
-  new THREE.MeshStandardMaterial({ color:0xf8fafc, roughness:.55 })
-);
-ball.castShadow=true;
-ball.position.set(-3.4,.16,-1.5);
-world.add(ball);
+function makePracticeBall(){
+  const canvas=document.createElement('canvas'); canvas.width=8; canvas.height=8;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#152130'; ctx.fillRect(2,0,4,8); ctx.fillRect(0,2,8,4);
+  ctx.fillStyle='#f4f4de'; ctx.fillRect(2,1,4,6); ctx.fillRect(1,2,6,4);
+  ctx.fillStyle='#28384a'; ctx.fillRect(3,3,2,2); ctx.fillRect(1,2,1,2); ctx.fillRect(5,5,1,2);
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.colorSpace=THREE.SRGBColorSpace;
+  texture.magFilter=texture.minFilter=THREE.NearestFilter; texture.generateMipmaps=false;
+  const ball=sprite(new THREE.SpriteMaterial({map:texture,alphaTest:.5}),.30);
+  ball.scale.x=.30;
+  world.add(ball);
+  const shadow=new THREE.Mesh(shadowGeometry,shadowMaterial);
+  shadow.rotation.x=-Math.PI/2; shadow.scale.set(.5,.35,1); world.add(shadow);
+  return {ball,shadow};
+}
+const passingGroups=[0,5].map((offset,index)=>({
+  members:players.slice(offset,offset+5),
+  route:[0,2,4,1,3], phase:index*1.15,
+  ...makePracticeBall()
+}));
 
 const clubColor = new THREE.Color(0x4ade80);
 let lastClubColor='';
@@ -398,24 +457,35 @@ addEventListener('resize',resize,{passive:true}); resize();
 function animatePlayer(p,t,i){
   const u=p.userData;
   const sway=Math.sin(t*1.35+u.phase);
-  const roam=i>=4&&i<10 ? .16 : 0;
+  const roam=.10;
   p.position.x=u.baseX + Math.sin(t*.43+u.phase)*roam;
   p.position.z=u.baseZ + Math.cos(t*.37+u.phase)*roam*.65;
+  u.body.position.x=0;
   u.body.position.y=Math.max(0,sway*.025);
   u.body.material.rotation=Math.sin(t*.8+u.phase)*.025;
 }
 
 function updateBall(t){
-  const drill=[players[0],players[1],players[2],players[3]];
-  const cycle=(t*.34)%4;
-  const from=Math.floor(cycle),to=(from+1)%4,f=cycle-from;
-  const a=drill[from].position,b=drill[to].position;
-  const ease=f<.5?2*f*f:1-Math.pow(-2*f+2,2)/2;
-  ball.position.x=THREE.MathUtils.lerp(a.x,b.x,ease);
-  ball.position.z=THREE.MathUtils.lerp(a.z,b.z,ease);
-  ball.position.y=.14+Math.sin(Math.PI*f)*.35;
-
-
+  for(const group of passingGroups){
+    const cycle=(t/2.4+group.phase)%5;
+    const leg=Math.floor(cycle), f=cycle-leg;
+    const sender=group.members[group.route[leg]];
+    const receiver=group.members[group.route[(leg+1)%5]];
+    // Hold at the feet, kick, roll across, then allow the receiver to control it.
+    const travel=THREE.MathUtils.clamp((f-.20)/.65,0,1);
+    const a=sender.position,b=receiver.position;
+    group.ball.position.set(
+      THREE.MathUtils.lerp(a.x,b.x,travel),.075+Math.sin(travel*Math.PI)*.05,
+      THREE.MathUtils.lerp(a.z,b.z,travel)+.28
+    );
+    group.ball.material.rotation=-travel*Math.PI*4;
+    group.shadow.position.set(group.ball.position.x,.055,group.ball.position.z);
+    const kick=Math.sin(THREE.MathUtils.clamp((f-.14)/.18,0,1)*Math.PI);
+    sender.userData.body.position.x=Math.sign(b.x-a.x)*kick*.09;
+    sender.userData.body.material.rotation+=Math.sign(b.x-a.x)*kick*.08;
+    const receive=Math.sin(THREE.MathUtils.clamp((f-.82)/.18,0,1)*Math.PI);
+    receiver.userData.body.position.y+=receive*.035;
+  }
 }
 
 function render(ms){
