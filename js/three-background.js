@@ -5,10 +5,10 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x07111f);
-scene.fog = new THREE.Fog(0x07111f, 18, 34);
+scene.fog = new THREE.Fog(0x07111f, 28, 55);
 
 const camera = new THREE.OrthographicCamera(-9, 9, 5.2, -5.2, 0.1, 100);
-camera.position.set(10.5, 11.5, 13.5);
+camera.position.set(0, 13, 16);
 camera.lookAt(0, 0, 0);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
@@ -20,10 +20,10 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
 document.body.prepend(renderer.domElement);
 
-const hemi = new THREE.HemisphereLight(0xbfe5ff, 0x0c1a12, 1.65);
+const hemi = new THREE.HemisphereLight(0xbfe5ff, 0x0c1a12, .6);
 scene.add(hemi);
 
-const key = new THREE.DirectionalLight(0xffffff, 2.2);
+const key = new THREE.DirectionalLight(0xffffff, .8);
 key.position.set(-5, 12, 7);
 key.castShadow = true;
 key.shadow.mapSize.set(2048, 2048);
@@ -33,7 +33,7 @@ key.shadow.camera.top = 10;
 key.shadow.camera.bottom = -10;
 scene.add(key);
 
-const rim = new THREE.DirectionalLight(0x7dd3fc, 0.85);
+const rim = new THREE.DirectionalLight(0x7dd3fc, .35);
 rim.position.set(8, 7, -8);
 scene.add(rim);
 
@@ -80,68 +80,141 @@ circle.rotation.x = -Math.PI / 2;
 circle.position.y = .04;
 world.add(circle);
 
+// Goal mouths lie in the Y/Z plane; depth extends away from the court.
 function makeGoal(side){
-  const group = new THREE.Group();
-  const postMat = new THREE.MeshStandardMaterial({ color: 0xf2fbff, roughness: .5 });
-  const netMat = new THREE.MeshBasicMaterial({ color: 0xcdebf7, transparent:true, opacity:.17, wireframe:true });
-  const postGeoV = new THREE.BoxGeometry(.1,1.4,.1);
-  const postGeoH = new THREE.BoxGeometry(.1,.1,2.55);
-  for (const z of [-1.25,1.25]) {
-    const p = new THREE.Mesh(postGeoV,postMat); p.position.set(0,.7,z); p.castShadow=true; group.add(p);
+  const direction=side==='left'?-1:1;
+  const group=new THREE.Group();
+  const postMat=new THREE.MeshStandardMaterial({color:0xf2fbff,roughness:.5});
+  function post(w,h,d,x,y,z){
+    const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),postMat);
+    mesh.position.set(x,y,z); mesh.castShadow=true; group.add(mesh);
   }
-  const bar = new THREE.Mesh(postGeoH,postMat); bar.rotation.y=Math.PI/2; bar.position.set(0,1.4,0); bar.castShadow=true; group.add(bar);
-  const net = new THREE.Mesh(new THREE.BoxGeometry(1.0,1.35,2.45,4,3,6),netMat);
-  net.position.set(side==='left' ? -.48 : .48,.67,0);
-  group.add(net);
-  group.position.x = side==='left' ? -7.87 : 7.87;
+  for(const z of [-1.25,1.25]){
+    post(.09,1.4,.09,0,.7,z);
+    post(1,.06,.06,direction*.5,.03,z);
+    post(.06,1.1,.06,direction, .55,z);
+  }
+  post(.09,.09,2.59,0,1.4,0);
+  post(.06,.06,2.55,direction,1.1,0);
+  const vertices=[];
+  function segment(a,b){vertices.push(...a,...b);}
+  // Rectangular mesh on the back, sides and sloping roof only.
+  for(let i=0;i<=10;i++){
+    const z=-1.25+i*.25;
+    segment([direction,0,z],[direction,1.1,z]);
+    segment([0,1.4,z],[direction,1.1,z]);
+  }
+  for(let i=0;i<=7;i++){
+    const f=i/7;
+    segment([direction,1.1*f,-1.25],[direction,1.1*f,1.25]);
+    for(const z of [-1.25,1.25])
+      segment([0,1.4*f,z],[direction,1.1*f,z]);
+  }
+  for(let i=0;i<=4;i++){
+    const f=i/4,x=direction*f,h=1.4-.3*f;
+    for(const z of [-1.25,1.25]) segment([x,0,z],[x,h,z]);
+    segment([x,h,-1.25],[x,h,1.25]);
+  }
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+  group.add(new THREE.LineSegments(geometry,new THREE.LineBasicMaterial({
+    color:0xcdebf7,transparent:true,opacity:.32
+  })));
+  group.position.x=direction*7.87;
   world.add(group);
 }
 makeGoal('left'); makeGoal('right');
 
-const standMat = new THREE.MeshStandardMaterial({ color: 0x122235, roughness:.85 });
-const stand = new THREE.Mesh(new THREE.BoxGeometry(13.8,2.4,2.2),standMat);
-stand.position.set(0,1.2,-6.1);
-stand.receiveShadow=true; stand.castShadow=true;
-scene.add(stand);
-
-for(let i=0;i<18;i++){
-  const lamp = new THREE.Mesh(
-    new THREE.BoxGeometry(.22,.12,.12),
-    new THREE.MeshBasicMaterial({ color: i%3===0 ? 0x86efac : 0xe0ecff })
-  );
-  lamp.position.set(-6.1+i*.72,2.15,-4.96);
-  scene.add(lamp);
+function block(w,h,d,x,y,z,color){
+  const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),
+    new THREE.MeshStandardMaterial({color,roughness:.9}));
+  mesh.position.set(x,y,z); mesh.receiveShadow=true; world.add(mesh); return mesh;
 }
+block(23,.18,15,0,-.14,0,0x111e2b);
+block(23,7,.25,0,3.4,-8,0x15263b);
+for(const x of [-11.4,11.4]) block(.25,7,15,x,3.4,-.5,0x101f32);
+for(let row=0;row<4;row++)
+  block(20,.4+row*.38,.8,0,(.4+row*.38)/2,-5.1-row*.8,0x23344b);
 
-const sign = new THREE.Mesh(
-  new THREE.BoxGeometry(4.6,.95,.12),
-  new THREE.MeshStandardMaterial({ color:0x0a1522, emissive:0x0a1522, roughness:.6 })
-);
-sign.position.set(0,2.55,-4.98);
-scene.add(sign);
+// Open cutaway roof: visible rear trusses do not cover the playing area.
+for(const y of [5.25,5.7]) block(22,.09,.09,0,y,-7.4,0x466077);
+for(let x=-10;x<=10;x+=1){
+  const brace=block(.065,.62,.065,x,5.48,-7.4,0x466077);
+  brace.rotation.z=(x%2?1:-1)*.75;
+}
+for(const x of [-9,-3,3,9]){
+  block(.12,1.6,.12,x,6.2,-7.4,0x30485d);
+  const fixture=block(1.25,.16,.4,x,5,-6.2,0x72899a);
+  fixture.material.emissive=new THREE.Color(0xcceeff);
+  fixture.material.emissiveIntensity=1.8;
+  const light=new THREE.SpotLight(0xe6f3ff,100,30,Math.PI/5,.8,1.3);
+  light.position.set(x,7,-3);
+  light.target.position.set(x*.45,0,0);
+  scene.add(light,light.target);
+}
+const boardCanvas=document.createElement('canvas');
+boardCanvas.width=512; boardCanvas.height=96;
+const boardContext=boardCanvas.getContext('2d');
+boardContext.fillStyle='#06111d'; boardContext.fillRect(0,0,512,96);
+boardContext.fillStyle='#81e7ff'; boardContext.textAlign='center';
+boardContext.font='bold 28px monospace'; boardContext.fillText('FOOTBALL LEAGUE',256,38);
+boardContext.font='18px monospace'; boardContext.fillStyle='#d5ffe6';
+boardContext.fillText('HOME  00 : 00  AWAY',256,73);
+const boardTexture=new THREE.CanvasTexture(boardCanvas);
+boardTexture.colorSpace=THREE.SRGBColorSpace;
+const board=new THREE.Mesh(new THREE.PlaneGeometry(5.4,1.01),
+  new THREE.MeshBasicMaterial({map:boardTexture}));
+board.position.set(0,3.85,-7.8); world.add(board);
 
+// Tiny canvas textures are drawn as pixel art, never smoothed.
+function pixelTexture(kit,index){
+  const canvas=document.createElement('canvas'); canvas.width=16; canvas.height=24;
+  const ctx=canvas.getContext('2d'); ctx.imageSmoothingEnabled=false;
+  function rect(color,x,y,w,h){ctx.fillStyle=color;ctx.fillRect(x,y,w,h);}
+  rect('#101b2a',5,1,6,7);
+  rect(['#e0ad86','#b87955','#f0c6a2'][index%3],5,3,6,5);
+  rect('#251e23',5,1,6,3);
+  rect('#182437',10,5,1,1);
+  rect(kit,4,8,8,8); rect(kit,2,9,12,4);
+  rect(['#e0ad86','#b87955','#f0c6a2'][index%3],2,13,2,3);
+  rect(['#e0ad86','#b87955','#f0c6a2'][index%3],12,13,2,3);
+  rect('#f1f5f9',7,9,2,3);
+  rect('#17273a',4,16,8,3);
+  rect('#dce9ef',5,19,2,3); rect('#dce9ef',9,19,2,3);
+  rect('#0b1220',4,22,3,2); rect('#0b1220',9,22,3,2);
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.magFilter=THREE.NearestFilter; texture.minFilter=THREE.NearestFilter;
+  texture.generateMipmaps=false; texture.colorSpace=THREE.SRGBColorSpace;
+  return texture;
+}
+function sprite(material,height){
+  const result=new THREE.Sprite(material);
+  result.center.set(.5,0); result.scale.set(height*2/3,height,1); return result;
+}
+const crowd=[];
+const crowdMaterials=Array.from({length:8},(_,i)=>new THREE.SpriteMaterial({
+  map:pixelTexture(['#6b88ac','#d78b57','#86aa95','#c26274'][i%4],i),alphaTest:.5
+}));
+for(let row=0;row<4;row++) for(let col=0;col<42;col++){
+  if(col===10||col===31) continue; // Stand aisles.
+  const person=sprite(crowdMaterials[(col+row*3)%8],.57);
+  const y=.43+row*.38;
+  person.position.set(-9.6+col*.47,y,-5.05-row*.8);
+  person.userData={baseY:y,phase:col*1.7+row*.9};
+  world.add(person); crowd.push(person);
+}
+const shadowMaterial=new THREE.MeshBasicMaterial({
+  color:0x020b14,transparent:true,opacity:.35,depthWrite:false
+});
+const shadowGeometry=new THREE.CircleGeometry(.3,24);
 function makePlayer(starter=true,index=0){
-  const g = new THREE.Group();
-  const skin = new THREE.MeshStandardMaterial({ color:[0xe0ad86,0xc98e68,0xf0c6a2][index%3], roughness:.9 });
-  const hair = new THREE.MeshStandardMaterial({ color:[0x241a14,0x4a2d1b,0x16181d][index%3], roughness:1 });
-  const kit = new THREE.MeshStandardMaterial({ color: starter ? 0x4ade80 : 0x64748b, roughness:.78 });
-  const shorts = new THREE.MeshStandardMaterial({ color:0xe5e7eb, roughness:.8 });
-  const shoe = new THREE.MeshStandardMaterial({ color:0x111827, roughness:.7 });
-
-  const torso = new THREE.Mesh(new THREE.BoxGeometry(.48,.62,.30),kit); torso.position.y=1.18; torso.castShadow=true; g.add(torso);
-  const head = new THREE.Mesh(new THREE.SphereGeometry(.24,16,12),skin); head.position.y=1.72; head.castShadow=true; g.add(head);
-  const cap = new THREE.Mesh(new THREE.SphereGeometry(.245,16,8,0,Math.PI*2,0,Math.PI*.55),hair); cap.position.y=1.78; cap.castShadow=true; g.add(cap);
-
-  const hip = new THREE.Mesh(new THREE.BoxGeometry(.42,.22,.30),shorts); hip.position.y=.78; hip.castShadow=true; g.add(hip);
-  const lLeg = new THREE.Mesh(new THREE.BoxGeometry(.13,.55,.13),skin); lLeg.position.set(-.12,.42,0); lLeg.castShadow=true; g.add(lLeg);
-  const rLeg = lLeg.clone(); rLeg.position.x=.12; g.add(rLeg);
-  const lShoe = new THREE.Mesh(new THREE.BoxGeometry(.16,.10,.28),shoe); lShoe.position.set(-.12,.11,.05); lShoe.castShadow=true; g.add(lShoe);
-  const rShoe = lShoe.clone(); rShoe.position.x=.12; g.add(rShoe);
-
-  const lArm = new THREE.Mesh(new THREE.BoxGeometry(.12,.52,.12),skin); lArm.position.set(-.33,1.12,0); lArm.rotation.z=.12; lArm.castShadow=true; g.add(lArm);
-  const rArm = lArm.clone(); rArm.position.x=.33; rArm.rotation.z=-.12; g.add(rArm);
-
-  g.userData={torso,lLeg,rLeg,lArm,rArm,kit,starter,index,phase:index*.71,baseX:0,baseZ:0};
+  const g=new THREE.Group();
+  const kit=new THREE.SpriteMaterial({map:pixelTexture(starter?'#4ade80':'#64748b',index),alphaTest:.5});
+  const body=sprite(kit,1.25); g.add(body);
+  const shadow=new THREE.Mesh(shadowGeometry,shadowMaterial);
+  shadow.rotation.x=-Math.PI/2; shadow.scale.set(1,.55,1);
+  shadow.position.y=.055; g.add(shadow);
+  g.userData={body,kit,starter,index,phase:index*.71,baseX:0,baseZ:0};
   return g;
 }
 
@@ -151,7 +224,7 @@ const placements=[
   [-5.7,3.2],[5.8,3.15]
 ];
 const players = placements.map((p,i)=>{
-  const g=makePlayer(i<5,i); g.position.set(p[0],0,p[1]); g.scale.setScalar(.72);
+  const g=makePlayer(i<5,i); g.position.set(p[0],0,p[1]); g.scale.setScalar(.9);
   g.userData.baseX=p[0]; g.userData.baseZ=p[1]; world.add(g); return g;
 });
 
@@ -164,10 +237,18 @@ ball.position.set(-3.4,.16,-1.5);
 world.add(ball);
 
 const clubColor = new THREE.Color(0x4ade80);
+let lastClubColor='';
 function readClubColor(){
   const raw=app?.querySelector('.hero[style*="--club"]')?.style.getPropertyValue('--club')?.trim();
   if(raw){ try{ clubColor.set(raw); }catch{} }
-  for(const p of players) if(p.userData.starter) p.userData.kit.color.copy(clubColor);
+  const color='#'+clubColor.getHexString();
+  if(color===lastClubColor) return;
+  lastClubColor=color;
+  for(const p of players) if(p.userData.starter){
+    const material=p.userData.kit;
+    material.map.dispose();
+    material.map=pixelTexture(color,p.userData.index);
+  }
 }
 
 function activeScreen(){
@@ -186,16 +267,10 @@ function refreshActive(){
 new MutationObserver(refreshActive).observe(app,{childList:true,subtree:true,attributes:true,attributeFilter:['class','style']});
 refreshActive();
 
-const pointer={x:0,y:0};
-addEventListener('pointermove',e=>{
-  pointer.x=(e.clientX/innerWidth-.5)*2;
-  pointer.y=(e.clientY/innerHeight-.5)*2;
-},{passive:true});
-
 function resize(){
   renderer.setSize(innerWidth,innerHeight,false);
   const aspect=innerWidth/innerHeight;
-  const h=5.2;
+  const h=Math.max(6.8,11.8/aspect);
   camera.top=h; camera.bottom=-h; camera.left=-h*aspect; camera.right=h*aspect;
   camera.updateProjectionMatrix();
 }
@@ -207,12 +282,8 @@ function animatePlayer(p,t,i){
   const roam=i>=4&&i<10 ? .16 : 0;
   p.position.x=u.baseX + Math.sin(t*.43+u.phase)*roam;
   p.position.z=u.baseZ + Math.cos(t*.37+u.phase)*roam*.65;
-  p.position.y=Math.max(0,sway*.018);
-  u.lArm.rotation.x=sway*.35;
-  u.rArm.rotation.x=-sway*.35;
-  u.lLeg.rotation.x=-sway*.22;
-  u.rLeg.rotation.x=sway*.22;
-  p.rotation.y=Math.sin(t*.28+u.phase)*.18;
+  u.body.position.y=Math.max(0,sway*.025);
+  u.body.material.rotation=Math.sin(t*.8+u.phase)*.025;
 }
 
 function updateBall(t){
@@ -225,27 +296,18 @@ function updateBall(t){
   ball.position.z=THREE.MathUtils.lerp(a.z,b.z,ease);
   ball.position.y=.14+Math.sin(Math.PI*f)*.35;
 
-  const kicker=drill[from];
-  kicker.rotation.y=Math.atan2(b.x-a.x,b.z-a.z);
-  if(f<.18) kicker.userData.rLeg.rotation.x=-.85*Math.sin((f/.18)*Math.PI);
+
 }
 
-let last=0;
 function render(ms){
   requestAnimationFrame(render);
-  if(document.hidden) return;
+  if(document.hidden||!document.body.classList.contains('living-bg-active')) return;
   const t=reducedMotion.matches?0:ms*.001;
-  const dt=Math.min(.032,(ms-last)*.001||.016); last=ms;
-
-  readClubColor();
   players.forEach((p,i)=>animatePlayer(p,t,i));
+  crowd.forEach(p=>{
+    p.position.y=p.userData.baseY+Math.sin(t*1.4+p.userData.phase)*.018;
+  });
   updateBall(t);
-
-  const targetX=pointer.x*.35,targetZ=pointer.y*.12;
-  camera.position.x=THREE.MathUtils.lerp(camera.position.x,10.5+targetX,dt*2.5);
-  camera.position.z=THREE.MathUtils.lerp(camera.position.z,13.5+targetZ,dt*2.5);
-  camera.lookAt(0,0,0);
-
   renderer.render(scene,camera);
 }
 requestAnimationFrame(render);
