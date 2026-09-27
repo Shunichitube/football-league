@@ -156,29 +156,32 @@ function block(w,h,d,x,y,z,color){
     new THREE.MeshStandardMaterial({color,roughness:.9}));
   mesh.position.set(x,y,z); mesh.receiveShadow=true; world.add(mesh); return mesh;
 }
-block(28,.18,17,0,-.14,0,0x344859);
-block(28,7,.25,0,3.4,-8,0x3d536e);
-for(const x of [-13.9,13.9]) block(.25,7,17,x,3.4,-.5,0x324961);
-for(let row=0;row<4;row++)
-  block(25,.4+row*.30,.65,0,(.4+row*.30)/2,-5.1-row*.65,0x456079);
-// Side terraces occupy the former empty strips, clear of both goal nets.
-for(const side of [-1,1]) for(let row=0;row<4;row++)
-  block(.65,.4+row*.24,6.1,side*(10.1+row*.65),(.4+row*.24)/2,-.3,0x456079);
-for(const side of [-1,1]){
-  const ribbon=block(.08,.12,12,side*13.7,3.1,-1,0x9dd9ef);
-  ribbon.material.emissive=new THREE.Color(0x73b7d3);
-  ribbon.material.emissiveIntensity=.6;
+block(32,.18,19,0,-.14,0,0x747f7d);
+block(19,.03,11,0,-.03,.2,0x233e46);
+// A single horseshoe-like architectural frame replaces the scattered wall ornaments.
+block(32,7,.3,0,3.4,-9.4,0x223b4b);
+for(const x of [-15.8,15.8]) block(.25,5.6,19,x,2.7,-.5,0x2d4655);
+for(let row=0;row<5;row++){
+  const height=.4+row*.42;
+  block(30,height,.8,0,height/2,-5.1-row*.8,row%2?0x34596a:0x416d78);
 }
-
-// Open cutaway roof: visible rear trusses do not cover the playing area.
-for(const y of [5.25,5.7]) block(22,.09,.09,0,y,-7.4,0x466077);
-for(let x=-10;x<=10;x+=1){
-  const brace=block(.065,.62,.065,x,5.48,-7.4,0x466077);
-  brace.rotation.z=(x%2?1:-1)*.75;
+// Raised access ledges let visitors leave the first row without cutting through risers.
+for(const side of [-1,1]) block(3.3,.4,1.0,side*13.55,.2,-4.15,0x416d78);
+// Warm timber acoustic fins, continuous canopy and an illuminated gold fascia.
+block(31,.22,.35,0,4.7,-9.4,0x142b38);
+block(31,.08,.08,0,4.55,-9.18,0xf1d398);
+for(let i=0;i<39;i++) block(.12,1.65,.16,-15.2+i*.8,4.04,-9.15,0xb18b60);
+for(const side of [-1,1]){
+  block(.15,.18,14,side*15.65,3.8,-.5,0x142b38);
+  const strip=block(.08,.08,14,side*15.55,3.7,-.5,0xc0e5d9);
+  strip.material.emissive=new THREE.Color(0x8fc5b6);
+  strip.material.emissiveIntensity=.7;
+  // Recessed lounge decks leave a broad, clear concourse outside the goals.
+  block(2.5,.14,8,side*13.4,.02,.4,0x4d686e);
 }
 const lampPanels=[];
 for(const x of [-9,-5,5,9]){
-  block(.12,1.6,.12,x,6.2,-7.4,0x30485d);
+  block(.10,.7,.10,x,4.7,-6.2,0x30485d);
   const fixture=block(1.65,.62,.24,x,4.8,-6.2,0x30485d);
   fixture.name='arena-lamp-housing';
   // Face the visible LED banks toward the camera rather than exposing only their tops.
@@ -190,7 +193,7 @@ for(const x of [-9,-5,5,9]){
     panel.name='arena-lamp-panel';
     world.add(panel); lampPanels.push(panel);
   }
-  const light=new THREE.SpotLight(0xe6f3ff,100,30,Math.PI/5,.8,1.3);
+  const light=new THREE.SpotLight(0xe6f3ff,65,30,Math.PI/5,.8,1.3);
   light.position.set(x,7,-3);
   light.target.position.set(x*.45,0,0);
   scene.add(light,light.target);
@@ -207,7 +210,7 @@ const boardTexture=new THREE.CanvasTexture(boardCanvas);
 boardTexture.colorSpace=THREE.SRGBColorSpace;
 const board=new THREE.Mesh(new THREE.PlaneGeometry(5.4,1.01),
   new THREE.MeshBasicMaterial({map:boardTexture}));
-board.position.set(0,3.65,-7.2);
+board.position.set(0,4.05,-8.7);
 board.quaternion.copy(camera.quaternion);
 board.name='arena-scoreboard';
 world.add(board);
@@ -218,49 +221,11 @@ boardFrame.position.copy(board.position).addScaledVector(
   new THREE.Vector3(0,0,1).applyQuaternion(camera.quaternion),-.02);
 world.add(boardFrame);
 
-// A restrained pixel-art interior: teal panels, warm brass and square light bands.
-function interiorTexture(){
-  const canvas=document.createElement('canvas'); canvas.width=64; canvas.height=16;
-  const ctx=canvas.getContext('2d');
-  ctx.fillStyle='#203b4b'; ctx.fillRect(0,0,64,16);
-  for(let x=0;x<64;x+=4) for(let y=0;y<16;y+=4){
-    ctx.fillStyle=['#315467','#3f6974','#527e83'][(x/4+y/4)%3];
-    ctx.fillRect(x,y,3,3);
-  }
-  ctx.fillStyle='#e5bd79'; ctx.fillRect(0,14,64,2);
-  const texture=new THREE.CanvasTexture(canvas);
-  texture.colorSpace=THREE.SRGBColorSpace;
-  texture.magFilter=texture.minFilter=THREE.NearestFilter;
-  texture.generateMipmaps=false;
-  return texture;
-}
-const mosaicMaterial=new THREE.MeshBasicMaterial({map:interiorTexture()});
-for(const x of [-10.3,-6.9,6.9,10.3]){
-  const panel=new THREE.Mesh(new THREE.PlaneGeometry(3.1,1.05),mosaicMaterial);
-  panel.position.set(x,3.3,-7.72); world.add(panel);
-}
-const trimMaterial=new THREE.MeshBasicMaterial({color:0xe5bd79});
-for(const z of [-4.65,4.65]){
-  const trim=new THREE.Mesh(new THREE.BoxGeometry(18,.06,.09),trimMaterial);
-  trim.position.set(0,.045,z); world.add(trim);
-}
-// Chunky perimeter tiles frame the court without changing its markings.
-const tileGeometry=new THREE.BoxGeometry(.32,.04,.32);
-const tileMaterial=new THREE.MeshStandardMaterial({color:0x62868b,roughness:1});
-const tiles=new THREE.InstancedMesh(tileGeometry,tileMaterial,104);
-const tileTransform=new THREE.Object3D();
-for(let i=0;i<104;i++){
-  tileTransform.position.set(-8.67+(i%52)*.34,.015,i<52?-4.98:4.98);
-  tileTransform.updateMatrix(); tiles.setMatrixAt(i,tileTransform.matrix);
-}
-world.add(tiles);
-for(const side of [-1,1]){
-  for(let i=0;i<12;i++){
-    const step=block(.34,.09,.34,side*9.6,.08,-3.7+i*.68,0x92bac2);
-    step.material.emissive=new THREE.Color(0x365963);
-  }
-}
-// Nearest-neighbor filtering keeps signage as crisp as the characters.
+// Continuous pixel-edged court surround instead of isolated decorative tiles.
+for(const z of [-4.65,4.65]) block(18,.04,.10,0,.04,z,0xe8c780);
+for(const x of [-9,9]) block(.10,.04,9.4,x,.04,0,0xe8c780);
+for(const side of [-1,1]) for(let i=0;i<10;i++)
+  block(.10,.04,.44,side*10.1,.035,-3.9+i*.85,0xb8d9cc);
 boardTexture.magFilter=boardTexture.minFilter=THREE.NearestFilter;
 boardTexture.generateMipmaps=false;
 
@@ -343,12 +308,27 @@ function pixelTexture(kit,index,appearance='player'){
   rect(kitLight,7,28,1,2); rect(kitLight,13,28,1,2);
   rect('#27313e',6,30,5,1); rect('#27313e',13,30,5,1);
 
-  if(appearance!=='player'){
+  if(appearance==='man'||appearance==='woman'){
     // Casual trousers and scarves distinguish supporters from the players.
     rect('#34415b',7,24,10,4); rect('#536685',8,24,3,6);
     rect('#536685',13,24,3,6); rect('#34415b',11,26,2,4);
     if(index%2===0){
       rect('#f9de8b',8,15,8,2); rect('#f9de8b',8,17,2,5);
+    }
+  }
+
+  if(appearance==='back'||appearance==='back-seated'){
+    // Preserve the same head silhouette / hairstyle and palette as the front view.
+    rect(index%6===3?skinShade:hair,6,4,12,9);
+    if(index%6===3){rect(hair,10,4,4,8);rect(hairLight,11,4,1,6);}
+    else rect(hairLight,7,4,1,6);
+    rect(skinShade,10,12,4,2);
+    rect(kit,8,16,8,8); rect(kitShade,6,16,2,8);
+    rect('#edf4f5',11,18,2,4);
+    if(appearance==='back-seated'){
+      for(let y=26;y<32;y++) pixels[y].fill(null);
+      rect('#bbc7d2',6,24,12,3);
+      rect('#27313e',5,27,4,2); rect('#27313e',15,27,4,2);
     }
   }
 
@@ -383,15 +363,9 @@ function addSupporter(x,y,z,index){
   person.userData={baseY:y,phase:index*1.7,isWoman:variant%2===0};
   world.add(person); crowd.push(person);
 }
-// 248 tightly packed supporters, with a narrow central access aisle.
-for(let row=0;row<4;row++) for(let col=0;col<64;col++){
-  if(col===31||col===32) continue;
-  addSupporter(-11.5+col*.365,.43+row*.30,-5.05-row*.65,col+row*7);
-}
-// 72 more supporters wrap around the ends of the arena (320 total).
-for(const side of [-1,1]) for(let row=0;row<4;row++) for(let col=0;col<9;col++)
-  addSupporter(side*(10.1+row*.65),.43+row*.24,-2.9+col*.65,
-    col+row*9+(side===1?5:0));
+// Five stagger-free rows: actual opaque sprite width fits between adjacent seats.
+for(let row=0;row<5;row++) for(let col=0;col<64;col++)
+  addSupporter(-14.69+col*.46,.43+row*.42,-5.05-row*.8,col+row*7);
 const shadowMaterial=new THREE.MeshBasicMaterial({
   color:0x020b14,transparent:true,opacity:.35,depthWrite:false
 });
@@ -409,8 +383,8 @@ function makePlayer(starter=true,index=0){
 
 // Two five-player passing circles, one in each half of the court.
 const placements=[
-  [-5.8,-1.6],[-3.8,-2.5],[-1.8,-.9],[-2.6,2.0],[-5.3,1.8],
-  [1.8,-1.6],[4.0,-2.5],[6.0,-.9],[5.2,2.0],[2.5,1.8]
+  [-6,-2.2],[-4,-3],[-2,-2.0],[-2.7,.5],[-5.5,.5],
+  [2,-2.2],[4,-3],[6,-2.0],[5.3,.5],[2.5,.5]
 ];
 const players=placements.map((p,i)=>{
   const g=makePlayer(i<5,i); g.position.set(p[0],0,p[1]);
@@ -442,32 +416,7 @@ const passingGroups=[0,5].map((offset,index)=>({
 
 // Foreground technical areas face the pitch (-Z), with seated backs toward the camera.
 function seatedBackTexture(kit,index){
-  const canvas=document.createElement('canvas'); canvas.width=24; canvas.height=32;
-  const ctx=canvas.getContext('2d');
-  function rect(color,x,y,w,h){ctx.fillStyle=color;ctx.fillRect(x,y,w,h);}
-  const hair=['#35241c','#81502d','#191d29','#a7532d','#44302b'][index%5];
-  const shade='#'+new THREE.Color(kit).multiplyScalar(.48).getHexString();
-  // Back of head: hair and nape only, no facial features.
-  rect('#111923',5,2,14,12); rect(hair,6,3,12,10);
-  rect('#d3a27d',10,12,4,2);
-  rect('#111923',5,14,14,11);
-  rect(shade,6,15,12,9); rect(kit,8,15,8,8);
-  rect('#dce8ed',10,15,4,1);
-  // Small pixel jersey number on the back.
-  rect('#f5f4eb',11,17,2,5);
-  if(index%2) rect('#f5f4eb',10,17,4,1);
-  rect('#111923',3,17,3,8); rect('#111923',18,17,3,8);
-  rect(kit,4,18,2,4); rect(kit,18,18,2,4);
-  rect('#d3a27d',4,22,2,2); rect('#d3a27d',18,22,2,2);
-  // Bent legs extend sideways from the seated hips, not a standing pose.
-  rect('#111923',4,24,16,4);
-  rect('#bbc7d2',5,24,14,2); rect('#f5f4eb',7,24,10,1);
-  rect('#27313e',4,27,4,2); rect('#27313e',16,27,4,2);
-  const texture=new THREE.CanvasTexture(canvas);
-  texture.colorSpace=THREE.SRGBColorSpace;
-  texture.magFilter=texture.minFilter=THREE.NearestFilter;
-  texture.generateMipmaps=false;
-  return texture;
+  return pixelTexture(kit,index,'back-seated');
 }
 const benchPlayers=[];
 for(const side of [-1,1]){
@@ -475,10 +424,12 @@ for(const side of [-1,1]){
   const platform=block(6.4,.12,1.65,centerX,.015,6.15,0x2d4b59);
   platform.name='bench-area';
   block(6.4,.035,.08,centerX,.09,5.36,0xe5bd79);
-  block(5.5,.12,.5,centerX,.29,6.25,0xb98a53);
-  for(const x of [-2.35,2.35]) block(.14,.26,.44,centerX+x,.13,6.25,0x233646);
-  // Low back rail leaves hair and jersey numbers visible.
-  block(5.5,.13,.09,centerX,.32,6.55,0x698a93);
+  // Individual stools have no front rail to intersect a player standing up.
+  for(let i=0;i<5;i++){
+    const x=centerX+(i-2)*1.05;
+    block(.56,.10,.34,x,.18,6.43,0xb98a53);
+    block(.10,.15,.22,x,.075,6.43,0x233646);
+  }
   for(let i=0;i<5;i++){
     const material=new THREE.SpriteMaterial({
       map:seatedBackTexture(side===-1?'#4ade80':'#64748b',i),alphaTest:.5
@@ -505,19 +456,23 @@ function venueSign(text,x,y,z,width,height,club=false){
   texture.magFilter=texture.minFilter=THREE.NearestFilter; texture.generateMipmaps=false;
   const panel=new THREE.Mesh(new THREE.PlaneGeometry(width,height),
     new THREE.MeshBasicMaterial({map:texture}));
-  panel.position.set(x,y,z); world.add(panel);
+  panel.position.set(x,y,z); panel.quaternion.copy(camera.quaternion); world.add(panel);
   if(club){
-    const border=block(width+.14,height+.14,.07,x,y,z-.06,0x4ade80);
-    clubDecor.push(border.material);
+    const border=new THREE.Mesh(new THREE.PlaneGeometry(width+.14,height+.14),
+      new THREE.MeshBasicMaterial({color:0x4ade80}));
+    border.quaternion.copy(camera.quaternion);
+    border.position.copy(panel.position).addScaledVector(
+      new THREE.Vector3(0,0,1).applyQuaternion(camera.quaternion),-.02);
+    world.add(border);clubDecor.push(border.material);
   }
   return panel;
 }
-venueSign('OUR HOME',-4.2,2.55,-7.5,3.4,.7,true);
-venueSign('ONE CLUB',4.2,2.75,-7.5,3.1,.65,true);
+venueSign('OUR HOME',-6.0,3.5,-8.6,4.5,.7,true);
+venueSign('ONE CLUB',6.0,3.5,-9.12,4.5,.7,true);
 venueSign('共に戦おう',-7.3,.58,-4.70,3,.5,true);
 venueSign('一蹴入魂',6.4,.58,-4.70,3.5,.5,true);
 for(const side of [-1,1]){
-  const x=side*13;
+  const x=side*15.2;
   // Dark recess, chunky jambs and an illuminated exit sign.
   block(1.25,2.15,.08,x,1.07,-7.72,0x0c1824);
   for(const dx of [-.68,.68]) block(.12,2.25,.2,x+dx,1.12,-7.60,0x839ca8);
@@ -578,7 +533,7 @@ function coachTexture(index){
 }
 const coaches=[-1,1].map((side,i)=>{
   const p=sprite(new THREE.SpriteMaterial({map:coachTexture(i),alphaTest:.5}),CHARACTER_HEIGHT);
-  p.position.set(side*1.55,.10,5.8); p.name='coach';
+  p.position.set(side*1.0,.10,5.8); p.name='coach';
   world.add(p); return p;
 });
 
@@ -600,36 +555,59 @@ function routeState(u,t){
   const [aTime,a]=u.schedule[segment], [bTime,b]=u.schedule[segment+1];
   return {a,b,f:(local-aTime)/(bTime-aTime),segment};
 }
-benchPlayers.forEach((p,i)=>{
-  const seat=p.position.clone(), side=Math.sign(seat.x);
-  const launch=new THREE.Vector3(side*2.25,.08,4.95+(i%2)*.22);
-  const turn=new THREE.Vector3(side*7.1,.08,launch.z);
+benchPlayers.forEach(p=>{
   const u=p.userData;
   u.seatedMap=p.material.map;
-  u.runningMap=pixelTexture(u.starter?'#4ade80':'#64748b',u.index);
-  u.sprint={seat,start:0,cycle:0,schedule:null,build(cycle){
-    const rest=10+variety(i,cycle,1)*34;
-    const run=2.4+variety(i,cycle,2)*1.8;
-    const pause=.5+variety(i,cycle,3)*2;
-    return [[0,seat],[rest,seat],[rest+2.5,launch],[rest+2.5+run,turn],
-      [rest+2.5+run+pause,turn],[rest+2.5+run*2+pause,launch],
-      [rest+5+run*2+pause,seat],[rest+8+run*2+pause,seat]];
-  }};
+  u.frontMap=pixelTexture(u.starter?'#4ade80':'#64748b',u.index);
+  u.backMap=pixelTexture(u.starter?'#4ade80':'#64748b',u.index,'back');
+  u.seat=p.position.clone();
 });
+const trainingBall=makePracticeBall();
+let trainingCycle=0, trainingStart=0;
+function trainingDuration(cycle){return 66+variety(91,cycle,1)*12;}
 function animateSprints(t){
-  benchPlayers.forEach(p=>{
-    const u=p.userData, state=u.sprint;
-    if(reducedMotion.matches){
-      p.position.copy(state.seat); p.material.map=u.seatedMap;p.material.rotation=0;return;
-    }
-    const {a,b,f,segment}=routeState(state,t);
+  if(t<trainingStart){trainingStart=0;trainingCycle=0;}
+  while(t>=trainingStart+trainingDuration(trainingCycle)){
+    trainingStart+=trainingDuration(trainingCycle);trainingCycle++;
+  }
+  const phase=t-trainingStart, member=trainingCycle%5;
+  const active=[];
+  for(const p of benchPlayers){
+    const u=p.userData, side=u.starter?-1:1;
+    p.position.copy(u.seat);p.material.map=u.seatedMap;p.material.rotation=0;
+    if(reducedMotion.matches||u.index!==member) continue;
+    const launch=new THREE.Vector3(u.seat.x,.08,4.9);
+    const entry=new THREE.Vector3(side*6.8,.08,4.9);
+    const start=new THREE.Vector3(side*6.8,.08,3.35);
+    const end=new THREE.Vector3(side*2.6,.08,3.35);
+    const speedOffset=side<0?0:1.2;
+    const clock=Math.max(0,phase-speedOffset);
+    // The sole active reserve on each side gets an exclusive entry and training lane.
+    const stops=[[0,u.seat],[5,u.seat],[7,launch],[10,entry],[13,start],
+      [17,end],[20,start],[24,end],[27,end],[43,end],[47,start],
+      [50,entry],[53,launch],[55,u.seat],[100,u.seat]];
+    let i=0;while(i<stops.length-2&&clock>=stops[i+1][0])i++;
+    const [ta,a]=stops[i],[tb,b]=stops[i+1];
+    const f=THREE.MathUtils.clamp((clock-ta)/(tb-ta),0,1);
     p.position.lerpVectors(a,b,f);
-    const seated=segment===0||segment===6;
-    p.material.map=seated?u.seatedMap:u.runningMap;
-    const moving=a!==b;
-    p.material.rotation=moving?Math.sin(t*15+u.index)*.065:0;
-    if(moving) p.position.y+=Math.abs(Math.sin(t*15+u.index))*.045;
-  });
+    const seated=i===0||i===13;
+    if(!seated){
+      p.material.map=b.z<a.z||i===8?u.backMap:u.frontMap;
+      if(a!==b){p.position.y+=Math.abs(Math.sin(t*15))*.025;p.material.rotation=Math.sin(t*15)*.04;}
+    }
+    active.push(p);
+  }
+  // After sprinting, the two substitutes exchange passes before returning to their seats.
+  const passing=!reducedMotion.matches&&phase>=29&&phase<=42&&active.length===2;
+  trainingBall.ball.visible=trainingBall.shadow.visible=passing;
+  if(passing){
+    const f=(phase-29)/1.9, n=Math.floor(f), mix=f-n;
+    const a=active[n%2].position,b=active[(n+1)%2].position;
+    trainingBall.ball.position.set(THREE.MathUtils.lerp(a.x,b.x,mix),.24,
+      THREE.MathUtils.lerp(a.z,b.z,mix)+.20);
+    trainingBall.ball.material.rotation=-f*Math.PI*2;
+    trainingBall.shadow.position.set(trainingBall.ball.position.x,.055,trainingBall.ball.position.z);
+  }
 }
 
 // Asymmetric equipment clusters beside the benches.
@@ -649,34 +627,34 @@ for(const side of [-1,1]){
 }
 
 // Reuse twelve existing spectators, so entering/exiting never duplicates occupied seats.
-const visitingSupporters=crowd.filter(p=>p.position.z===-5.05&&Math.abs(p.position.x)>9.45)
-  .slice(0,12);
-visitingSupporters.forEach((p,i)=>{
-  const seat=p.position.clone(), side=Math.sign(seat.x);
-  const front=new THREE.Vector3(seat.x,.08,-4.48);
-  const corner=new THREE.Vector3(side*13,.08,-4.48);
-  const door=new THREE.Vector3(side*13,.08,-7.45);
-  p.userData.visit={seat,start:0,cycle:0,schedule:null,build(cycle){
-    const wait=6+variety(i+40,cycle,1)*48;
-    const speed=.65+variety(i+40,cycle,2)*.55;
-    const outside=8+variety(i+40,cycle,3)*35;
-    const leg1=3/speed,leg2=7/speed,leg3=4/speed;
-    const exit=wait+leg1+leg2+leg3,enter=exit+outside;
-    return [[0,seat],[wait,seat],[wait+leg1,front],[wait+leg1+leg2,corner],
-      [exit,door],[enter,door],[enter+leg3,corner],[enter+leg3+leg2,front],
-      [enter+leg3+leg2+leg1,seat],[enter+leg3+leg2+leg1+5,seat]];
-  }};
-});
+const visitingSupporters=[
+  ...crowd.filter(p=>p.position.z===-5.05&&p.position.x< -12).slice(0,6),
+  ...crowd.filter(p=>p.position.z===-5.05&&p.position.x>12).slice(-6)
+];
+visitingSupporters.forEach(p=>{p.userData.visit={seat:p.position.clone()};});
 function animateVisitors(t){
-  for(const p of visitingSupporters){
-    const u=p.userData.visit;
-    if(reducedMotion.matches){p.visible=true;p.position.copy(u.seat);continue;}
-    const {a,b,f,segment}=routeState(u,t);
-    p.position.lerpVectors(a,b,f);
-    p.visible=segment!==4;
-    if(a!==b) p.position.y+=Math.abs(Math.sin(t*7+p.userData.phase))*.025;
-    if(segment===0||segment===8) p.position.y-=.035;
-  }
+  // One visitor per gate at a time prevents aisle crossings and seat duplication.
+  const cycle=Math.floor(t/100), phase=t%100;
+  visitingSupporters.forEach((p,i)=>{
+    const seat=p.userData.visit.seat,side=Math.sign(seat.x);
+    p.position.copy(seat);p.visible=true;
+    if(reducedMotion.matches||i%6!==cycle%6) return;
+    const offset=side<0?0:8+variety(47,cycle,1)*12;
+    const clock=phase-offset;
+    const front=new THREE.Vector3(seat.x,.43,-3.9);
+    const corner=new THREE.Vector3(side*15.2,.43,-3.9);
+    const door=new THREE.Vector3(side*15.2,.08,-7.45);
+    const wait=3+variety(i,cycle,2)*7, walk=4+variety(i,cycle,3)*3;
+    const stops=[[0,seat],[wait,seat],[wait+walk,front],[wait+walk*2,corner],
+      [wait+walk*3,door],[wait+walk*3+10,door],[wait+walk*4+10,corner],
+      [wait+walk*5+10,front],[wait+walk*6+10,seat],[100,seat]];
+    if(clock<0)return;
+    let j=0;while(j<stops.length-2&&clock>=stops[j+1][0])j++;
+    const [ta,a]=stops[j],[tb,b]=stops[j+1];
+    p.position.lerpVectors(a,b,THREE.MathUtils.clamp((clock-ta)/(tb-ta),0,1));
+    p.visible=j!==4;
+    if(a!==b)p.position.y+=Math.abs(Math.sin(t*7))* .02;
+  });
 }
 
 const clubColor = new THREE.Color(0x4ade80);
@@ -696,10 +674,12 @@ function readClubColor(){
   for(const p of benchPlayers) if(p.userData.starter){
     const u=p.userData;
     const wasSeated=p.material.map===u.seatedMap;
-    u.seatedMap.dispose(); u.runningMap.dispose();
+    const wasBack=p.material.map===u.backMap;
+    u.seatedMap.dispose();u.frontMap.dispose();u.backMap.dispose();
     u.seatedMap=seatedBackTexture(color,u.index);
-    u.runningMap=pixelTexture(color,u.index);
-    p.material.map=wasSeated?u.seatedMap:u.runningMap;
+    u.frontMap=pixelTexture(color,u.index);
+    u.backMap=pixelTexture(color,u.index,'back');
+    p.material.map=wasSeated?u.seatedMap:wasBack?u.backMap:u.frontMap;
   }
 }
 
@@ -723,7 +703,7 @@ function resize(){
   renderer.setSize(innerWidth,innerHeight,false);
   const aspect=innerWidth/innerHeight;
   // Include the scoreboard, lamp banks and truss, with room below the header.
-  const h=Math.max(7.9,14.3/aspect);
+  const h=Math.max(8.3,16.4/aspect);
   camera.top=h; camera.bottom=-h; camera.left=-h*aspect; camera.right=h*aspect;
   camera.updateProjectionMatrix();
 }
