@@ -351,7 +351,8 @@ const PLAYER_ANIMATIONS={
   idle:{frames:2,fps:2.4},
   walk:{frames:4,fps:7},
   kick:{frames:4,fps:11},
-  receive:{frames:2,fps:7}
+  receive:{frames:2,fps:7},
+  celebrate:{frames:3,fps:7}
 };
 const playerFrameCache=new Map();
 
@@ -419,6 +420,14 @@ function makeAnimatedPlayerTexture(kit,index,state='idle',frame=0){
     shorts(24+crouch);
     leg(7,28+crouch,Math.max(1,2-crouch),kitShade);
     leg(14,28+crouch,Math.max(1,2-crouch),kitShade);
+    shoe(6,30,5); shoe(13,30,5);
+  }else if(state==='celebrate'){
+    // Arms up and a tiny hop: readable even when the sprite is small.
+    const cheer=frame%3;
+    r(kitShade,3,15-cheer,3,5); r(skinShade,3,13-cheer,3,3);
+    r(kitShade,18,15-cheer,3,5); r(skinShade,18,13-cheer,3,3);
+    shorts(24);
+    leg(7,28,2,kitShade); leg(14,28,2,kitShade);
     shoe(6,30,5); shoe(13,30,5);
   }else{
     // Idle is a two-frame breathing pose.
@@ -527,11 +536,98 @@ function makePracticeBall(){
   shadow.rotation.x=-Math.PI/2; shadow.scale.set(.5,.35,1); world.add(shadow);
   return {ball,shadow};
 }
-const passingGroups=[0,5].map((offset,index)=>({
+const passingGroups=[0].map((offset,index)=>({
   members:players.slice(offset,offset+5),
   route:[0,2,4,1,3], phase:index*1.15,
   ...makePracticeBall()
 }));
+
+// Right-side practice becomes a short pass -> shot -> keeper reaction loop.
+const shotBall=makePracticeBall();
+const keeper=makePlayer(false,21);
+keeper.userData.animations=buildPlayerAnimationSet('#ef4444',21);
+keeper.userData.kit.map=keeper.userData.animations.idle[0];
+keeper.userData.baseX=7.25;
+keeper.userData.baseZ=0;
+keeper.position.set(7.25,0,0);
+keeper.name='practice-keeper';
+world.add(keeper);
+
+let arenaCheerPulse=0;
+let shotCycle=-1;
+const shotTargets=[-.72,.58,-.25,.82];
+
+function animateShotDrill(t){
+  const period=10.5;
+  const cycle=Math.floor(t/period);
+  const phase=t-cycle*period;
+  if(cycle!==shotCycle) shotCycle=cycle;
+
+  const feeder=players[9];
+  const shooter=players[8];
+  const targetZ=shotTargets[cycle%shotTargets.length];
+  const feederFoot=new THREE.Vector3(feeder.position.x,.24,feeder.position.z+.26);
+  const shooterFoot=new THREE.Vector3(shooter.position.x,.24,shooter.position.z+.26);
+  const goalTarget=new THREE.Vector3(7.78,.46,targetZ);
+
+  // Keep the drill ball tucked away between repetitions.
+  shotBall.ball.visible=shotBall.shadow.visible=phase>=1.4&&phase<=6.1;
+  keeper.position.set(7.25,0,0);
+  keeper.userData.body.material.rotation=0;
+  keeper.userData.body.position.set(0,0,0);
+  setPlayerAnimation(keeper,'idle',t,.2);
+  arenaCheerPulse=0;
+  board.material.color.setRGB(1,1,1);
+
+  if(phase<1.4) return;
+
+  if(phase<2.6){
+    // Feeder rolls the ball into the shooter's path.
+    const f=THREE.MathUtils.smoothstep((phase-1.4)/1.2,0,1);
+    shotBall.ball.position.lerpVectors(feederFoot,shooterFoot,f);
+    shotBall.ball.position.y=.24+Math.sin(f*Math.PI)*.025;
+    shotBall.ball.material.rotation=-f*Math.PI*3;
+    if(phase<1.8) setPlayerAnimation(feeder,'kick',phase-1.4,0);
+    else setPlayerAnimation(feeder,'idle',t,.1);
+  }else if(phase<3.25){
+    shotBall.ball.position.copy(shooterFoot);
+    setPlayerAnimation(shooter,'receive',phase-2.6,0);
+  }else if(phase<4.0){
+    shotBall.ball.position.copy(shooterFoot);
+    setPlayerAnimation(shooter,'kick',phase-3.25,0);
+    shooter.userData.body.position.x=Math.sin((phase-3.25)/.75*Math.PI)*.07;
+  }else if(phase<4.75){
+    // The shot rises slightly toward one of four repeatable target zones.
+    const f=THREE.MathUtils.smoothstep((phase-4.0)/.75,0,1);
+    shotBall.ball.position.lerpVectors(shooterFoot,goalTarget,f);
+    shotBall.ball.position.y=.24+Math.sin(f*Math.PI)*.34;
+    shotBall.ball.material.rotation=-f*Math.PI*8;
+
+    const diveDir=Math.sign(targetZ)||1;
+    const dive=THREE.MathUtils.smoothstep((phase-4.06)/.58,0,1);
+    keeper.position.z=THREE.MathUtils.lerp(0,targetZ*.78,dive);
+    keeper.userData.body.position.y=Math.sin(dive*Math.PI)*.18;
+    keeper.userData.body.material.rotation=-diveDir*dive*.72;
+  }else if(phase<6.1){
+    // Goal / save reaction: nearby crowd, flags and scoreboard all answer the moment.
+    const reaction=1-THREE.MathUtils.clamp((phase-4.75)/1.35,0,1);
+    arenaCheerPulse=Math.sin(reaction*Math.PI*.5)*.95;
+    board.material.color.setRGB(.78,1,.84);
+
+    keeper.position.z=targetZ*.78;
+    keeper.userData.body.position.y=.08;
+    keeper.userData.body.material.rotation=-Math.sign(targetZ||1)*.58;
+
+    setPlayerAnimation(shooter,'celebrate',phase-4.75,0);
+    shooter.userData.body.position.y+=Math.abs(Math.sin((phase-4.75)*8))*.08;
+  }else{
+    shotBall.ball.visible=shotBall.shadow.visible=false;
+  }
+
+  if(shotBall.ball.visible){
+    shotBall.shadow.position.set(shotBall.ball.position.x,.055,shotBall.ball.position.z);
+  }
+}
 
 // Foreground technical areas face the pitch (-Z), with seated backs toward the camera.
 function seatedBackTexture(kit,index){
@@ -627,7 +723,7 @@ for(const side of [-1,1]){
 }
 function animateFlags(t){
   for(const {group,cloth,phase} of supporterFlags){
-    group.rotation.z=Math.sin(t*.65+phase)*.24;
+    group.rotation.z=Math.sin(t*(.65+arenaCheerPulse*.8)+phase)*(.24+arenaCheerPulse*.16);
     const points=cloth.geometry.attributes.position;
     for(let i=0;i<points.count;i++)
       points.setZ(i,Math.sin(points.getX(i)*4-t*1.7+phase)*.08*(points.getX(i)+.625));
@@ -787,8 +883,11 @@ function readClubColor(){
   clubDecor.forEach(material=>material.color.copy(clubColor));
   for(const p of players) if(p.userData.starter){
     const material=p.userData.kit;
-    material.map.dispose();
-    material.map=pixelTexture(color,p.userData.index);
+    p.userData.animations=buildPlayerAnimationSet(color,p.userData.index);
+    material.map=p.userData.animations.idle[0];
+    material.needsUpdate=true;
+    p.userData.animationState='idle';
+    p.userData.animationFrame=0;
   }
   for(const p of benchPlayers) if(p.userData.starter){
     const u=p.userData;
@@ -894,12 +993,14 @@ function render(ms){
     if(p.userData.visit) return;
     const cheering=Math.abs(p.position.x)<3&&p.position.z<-5.6;
     p.position.y=p.userData.baseY+Math.sin(t*1.4+p.userData.phase)*.018
-      +(cheering?Math.max(0,Math.sin(t*2.8))*.055:0);
+      +(cheering?Math.max(0,Math.sin(t*2.8))*.055:0)
+      +arenaCheerPulse*(.025+((p.userData.phase*13)%1)*.055);
   });
   animateFlags(t);
   animateSprints(t);
   animateVisitors(t);
   updateBall(t);
+  animateShotDrill(t);
   renderer.render(scene,camera);
 }
 requestAnimationFrame(render);
