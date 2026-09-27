@@ -8,8 +8,9 @@ scene.background = new THREE.Color(0x07111f);
 scene.fog = new THREE.Fog(0x07111f, 28, 55);
 
 const camera = new THREE.OrthographicCamera(-9, 9, 5.2, -5.2, 0.1, 100);
-camera.position.set(0, 13, 16);
-camera.lookAt(0, 0, 0);
+// Raise the framing without tilting the horizontal court axis.
+camera.position.set(0, 15, 16);
+camera.lookAt(0, 2, 0);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
 renderer.domElement.id = 'three-club-bg';
@@ -142,11 +143,20 @@ for(let x=-10;x<=10;x+=1){
   const brace=block(.065,.62,.065,x,5.48,-7.4,0x466077);
   brace.rotation.z=(x%2?1:-1)*.75;
 }
-for(const x of [-9,-3,3,9]){
+const lampPanels=[];
+for(const x of [-9,-5,5,9]){
   block(.12,1.6,.12,x,6.2,-7.4,0x30485d);
-  const fixture=block(1.25,.16,.4,x,5,-6.2,0x72899a);
-  fixture.material.emissive=new THREE.Color(0xcceeff);
-  fixture.material.emissiveIntensity=1.8;
+  const fixture=block(1.65,.62,.24,x,4.8,-6.2,0x30485d);
+  fixture.name='arena-lamp-housing';
+  // Face the visible LED banks toward the camera rather than exposing only their tops.
+  for(let row=0;row<2;row++) for(let col=0;col<5;col++){
+    const panel=new THREE.Mesh(new THREE.PlaneGeometry(.24,.18),
+      new THREE.MeshBasicMaterial({color:0xe6f6ff,toneMapped:false}));
+    panel.position.set(x+(col-2)*.3,4.8+(row-.5)*.26,-6.05);
+    panel.quaternion.copy(camera.quaternion);
+    panel.name='arena-lamp-panel';
+    world.add(panel); lampPanels.push(panel);
+  }
   const light=new THREE.SpotLight(0xe6f3ff,100,30,Math.PI/5,.8,1.3);
   light.position.set(x,7,-3);
   light.target.position.set(x*.45,0,0);
@@ -164,17 +174,49 @@ const boardTexture=new THREE.CanvasTexture(boardCanvas);
 boardTexture.colorSpace=THREE.SRGBColorSpace;
 const board=new THREE.Mesh(new THREE.PlaneGeometry(5.4,1.01),
   new THREE.MeshBasicMaterial({map:boardTexture}));
-board.position.set(0,3.85,-7.8); world.add(board);
+board.position.set(0,3.65,-7.2);
+board.quaternion.copy(camera.quaternion);
+board.name='arena-scoreboard';
+world.add(board);
+const boardFrame=new THREE.Mesh(new THREE.PlaneGeometry(5.65,1.26),
+  new THREE.MeshBasicMaterial({color:0x4d9db7}));
+boardFrame.quaternion.copy(camera.quaternion);
+boardFrame.position.copy(board.position).addScaledVector(
+  new THREE.Vector3(0,0,1).applyQuaternion(camera.quaternion),-.02);
+world.add(boardFrame);
 
 // Tiny canvas textures are drawn as pixel art, never smoothed.
 function pixelTexture(kit,index){
   const canvas=document.createElement('canvas'); canvas.width=16; canvas.height=24;
   const ctx=canvas.getContext('2d'); ctx.imageSmoothingEnabled=false;
   function rect(color,x,y,w,h){ctx.fillStyle=color;ctx.fillRect(x,y,w,h);}
-  rect('#101b2a',5,1,6,7);
-  rect(['#e0ad86','#b87955','#f0c6a2'][index%3],5,3,6,5);
-  rect('#251e23',5,1,6,3);
-  rect('#182437',10,5,1,1);
+  const skin=['#e0ad86','#b87955','#f0c6a2'][index%3];
+  const hair=['#251e23','#75452d','#d8b365','#151a25','#9a5732','#352b37'][index%6];
+  // Eight-pixel-wide, front-facing head. Hair never covers the eyes.
+  rect('#101b2a',3,1,10,8);
+  rect(skin,4,2,8,7);
+  switch(index%6){
+    case 0: // Cropped hair.
+      rect(hair,4,1,8,2); rect(hair,3,3,1,2); rect(hair,12,3,1,2); break;
+    case 1: // Side part with a swept fringe.
+      rect(hair,3,1,9,2); rect(hair,4,3,3,1); rect(hair,3,3,1,3); break;
+    case 2: // Spiky blond silhouette.
+      rect(hair,4,2,8,1);
+      for(const x of [4,7,10]) rect(hair,x,0,2,2);
+      break;
+    case 3: // Narrow mohawk.
+      rect(hair,7,0,2,4); break;
+    case 4: // Longer hair framing both cheeks.
+      rect(hair,3,1,10,2); rect(hair,3,3,1,6); rect(hair,12,3,1,6);
+      rect(hair,4,3,2,1); break;
+    case 5: // Rounded curls.
+      rect(hair,3,1,10,3); rect(hair,5,0,6,1);
+      rect(hair,2,2,2,3); rect(hair,12,2,2,3); break;
+  }
+  rect('#fff3de',5,4,2,2); rect('#fff3de',9,4,2,2);
+  rect('#182437',6,5,1,1); rect('#182437',9,5,1,1);
+  rect('#b37454',7,6,2,1);
+  rect('#713f3d',6,7,4,1);
   rect(kit,4,8,8,8); rect(kit,2,9,12,4);
   rect(['#e0ad86','#b87955','#f0c6a2'][index%3],2,13,2,3);
   rect(['#e0ad86','#b87955','#f0c6a2'][index%3],12,13,2,3);
@@ -270,7 +312,8 @@ refreshActive();
 function resize(){
   renderer.setSize(innerWidth,innerHeight,false);
   const aspect=innerWidth/innerHeight;
-  const h=Math.max(6.8,11.8/aspect);
+  // Include the scoreboard, lamp banks and truss, with room below the header.
+  const h=Math.max(8.3,11.8/aspect);
   camera.top=h; camera.bottom=-h; camera.left=-h*aspect; camera.right=h*aspect;
   camera.updateProjectionMatrix();
 }
