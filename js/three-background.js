@@ -240,13 +240,11 @@ for(const side of [-1,1]){
   const glow=block(2.25,.10,.10,side*11.7,4.02,-8.57,0x4ade80);
   glow.material.emissive=new THREE.Color(0x4ade80);
   glow.material.emissiveIntensity=1.35;
-  clubDecor?.push?.(glow.material);
 }
 for(const x of [-12.2,-8.1,-4.05,0,4.05,8.1,12.2]){
   const led=block(3.75,.09,.10,x,2.95,-5.0,0x4ade80);
   led.material.emissive=new THREE.Color(0x2fbf6d);
   led.material.emissiveIntensity=1.0;
-  clubDecor?.push?.(led.material);
 }
 
 // Continuous pixel-edged court surround instead of isolated decorative tiles.
