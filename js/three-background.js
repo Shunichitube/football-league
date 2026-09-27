@@ -491,6 +491,97 @@ for(const side of [-1,1]){
   }
 }
 
+// Club identity and small signs of daily use, all confined to the concourse.
+const clubDecor=[];
+function venueSign(text,x,y,z,width,height,club=false){
+  const canvas=document.createElement('canvas'); canvas.width=128; canvas.height=32;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#142937'; ctx.fillRect(0,0,128,32);
+  ctx.fillStyle='#edf3dc'; ctx.font='bold 12px monospace'; ctx.textAlign='center';
+  ctx.fillText(text,64,21);
+  for(let i=0;i<128;i+=8){ctx.fillRect(i,0,4,2);ctx.fillRect(i,30,4,2);}
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.colorSpace=THREE.SRGBColorSpace;
+  texture.magFilter=texture.minFilter=THREE.NearestFilter; texture.generateMipmaps=false;
+  const panel=new THREE.Mesh(new THREE.PlaneGeometry(width,height),
+    new THREE.MeshBasicMaterial({map:texture}));
+  panel.position.set(x,y,z); world.add(panel);
+  if(club){
+    const border=block(width+.14,height+.14,.07,x,y,z-.06,0x4ade80);
+    clubDecor.push(border.material);
+  }
+  return panel;
+}
+venueSign('OUR HOME',-4.2,2.55,-7.5,3.4,.7,true);
+venueSign('ONE CLUB',4.2,2.75,-7.5,3.1,.65,true);
+venueSign('HOME END',-7.3,.58,-4.70,3,.5,true);
+venueSign('LET US PLAY',6.4,.58,-4.70,3.5,.5,true);
+for(const side of [-1,1]){
+  const x=side*13;
+  // Dark recess, chunky jambs and an illuminated exit sign.
+  block(1.25,2.15,.08,x,1.07,-7.72,0x0c1824);
+  for(const dx of [-.68,.68]) block(.12,2.25,.2,x+dx,1.12,-7.60,0x839ca8);
+  block(1.48,.12,.2,x,2.25,-7.60,0x839ca8);
+  venueSign('GATE '+(side<0?'A':'B'),x,2.55,-7.55,1.4,.35);
+  block(1.05,.04,3.05,x,.02,-6.1,0x789398);
+}
+block(.68,1.5,.08,0,.75,-7.73,0x0c1824);
+venueSign('PLAYERS',0,1.72,-7.55,1.25,.30);
+
+// Asymmetric equipment clusters beside the benches.
+for(const side of [-1,1]){
+  const x=side*7.85;
+  block(.55,.38,.4,x,.24,6.0,0x609ea8); // Drinks cooler.
+  block(.60,.07,.44,x,.46,6.0,0xe2e7dc);
+  block(.60,.23,.32,x-side*.3,.19,6.65,0x263749); // Kit bag.
+  block(.22,.06,.08,x-side*.3,.34,6.65,0xbb9368);
+  for(let i=0;i<3;i++){
+    block(.09,.20,.09,x-side*(.1+i*.16),.18,5.53,0x8acddb);
+    block(.07,.04,.07,x-side*(.1+i*.16),.30,5.53,0xe6e9d7);
+  }
+  const spare=makePracticeBall();
+  spare.ball.position.set(x-side*.7,.24,6.85);
+  spare.shadow.position.set(x-side*.7,.055,6.85);
+}
+
+// Reuse twelve existing spectators, so entering/exiting never duplicates occupied seats.
+const visitingSupporters=crowd.filter(p=>p.position.z===-5.05&&Math.abs(p.position.x)>9.45)
+  .slice(0,12);
+visitingSupporters.forEach((p,i)=>{
+  const seat=p.position.clone(), side=Math.sign(seat.x);
+  p.userData.visit={
+    seat, offset:i*5.7, duration:78+i*1.3,
+    front:new THREE.Vector3(seat.x,.08,-4.48),
+    corner:new THREE.Vector3(side*13,.08,-4.48),
+    door:new THREE.Vector3(side*13,.08,-7.45)
+  };
+});
+function animateVisitors(t){
+  for(const p of visitingSupporters){
+    const u=p.userData.visit;
+    if(reducedMotion.matches){
+      p.visible=true; p.position.copy(u.seat); p.scale.y=CHARACTER_HEIGHT; continue;
+    }
+    const phase=(t+u.offset)%u.duration;
+    const stops=[
+      [0,u.seat],[15,u.seat],[19,u.front],[28,u.corner],[35,u.door],
+      [45,u.door],[52,u.corner],[61,u.front],[65,u.seat],[u.duration,u.seat]
+    ];
+    let segment=0;
+    while(segment<stops.length-2&&phase>=stops[segment+1][0]) segment++;
+    const [start,a]=stops[segment], [end,b]=stops[segment+1];
+    const f=(phase-start)/(end-start);
+    p.position.lerpVectors(a,b,f);
+    p.visible=phase<35||phase>=45;
+    const walking=a!==b;
+    if(walking) p.position.y+=Math.abs(Math.sin((t+u.offset)*8))*.025;
+    // A small settling motion as the supporter reaches the seat.
+    const seated=phase<15||phase>=65;
+    p.scale.y=CHARACTER_HEIGHT;
+    if(seated) p.position.y-=.035;
+  }
+}
+
 const clubColor = new THREE.Color(0x4ade80);
 let lastClubColor='';
 function readClubColor(){
@@ -499,6 +590,7 @@ function readClubColor(){
   const color='#'+clubColor.getHexString();
   if(color===lastClubColor) return;
   lastClubColor=color;
+  clubDecor.forEach(material=>material.color.copy(clubColor));
   for(const p of players) if(p.userData.starter){
     const material=p.userData.kit;
     material.map.dispose();
@@ -576,8 +668,12 @@ function render(ms){
   const t=reducedMotion.matches?0:ms*.001;
   players.forEach((p,i)=>animatePlayer(p,t,i));
   crowd.forEach(p=>{
-    p.position.y=p.userData.baseY+Math.sin(t*1.4+p.userData.phase)*.018;
+    if(p.userData.visit) return;
+    const cheering=Math.abs(p.position.x)<3&&p.position.z<-5.6;
+    p.position.y=p.userData.baseY+Math.sin(t*1.4+p.userData.phase)*.018
+      +(cheering?Math.max(0,Math.sin(t*2.8))*.055:0);
   });
+  animateVisitors(t);
   updateBall(t);
   renderer.render(scene,camera);
 }
