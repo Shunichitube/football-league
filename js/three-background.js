@@ -497,7 +497,7 @@ function venueSign(text,x,y,z,width,height,club=false){
   const canvas=document.createElement('canvas'); canvas.width=128; canvas.height=32;
   const ctx=canvas.getContext('2d');
   ctx.fillStyle='#142937'; ctx.fillRect(0,0,128,32);
-  ctx.fillStyle='#edf3dc'; ctx.font='bold 12px monospace'; ctx.textAlign='center';
+  ctx.fillStyle='#edf3dc'; ctx.font='bold 16px "Yu Gothic", "Meiryo", sans-serif'; ctx.textAlign='center';
   ctx.fillText(text,64,21);
   for(let i=0;i<128;i+=8){ctx.fillRect(i,0,4,2);ctx.fillRect(i,30,4,2);}
   const texture=new THREE.CanvasTexture(canvas);
@@ -514,8 +514,8 @@ function venueSign(text,x,y,z,width,height,club=false){
 }
 venueSign('OUR HOME',-4.2,2.55,-7.5,3.4,.7,true);
 venueSign('ONE CLUB',4.2,2.75,-7.5,3.1,.65,true);
-venueSign('HOME END',-7.3,.58,-4.70,3,.5,true);
-venueSign('LET US PLAY',6.4,.58,-4.70,3.5,.5,true);
+venueSign('共に戦おう',-7.3,.58,-4.70,3,.5,true);
+venueSign('一蹴入魂',6.4,.58,-4.70,3.5,.5,true);
 for(const side of [-1,1]){
   const x=side*13;
   // Dark recess, chunky jambs and an illuminated exit sign.
@@ -527,6 +527,110 @@ for(const side of [-1,1]){
 }
 block(.68,1.5,.08,0,.75,-7.73,0x0c1824);
 venueSign('PLAYERS',0,1.72,-7.55,1.25,.30);
+
+const supporterFlags=[];
+for(const side of [-1,1]){
+  const group=new THREE.Group();
+  group.position.set(side*6.25,1.0,-5.8);
+  const pole=new THREE.Mesh(new THREE.BoxGeometry(.045,1.8,.045),
+    new THREE.MeshBasicMaterial({color:0xe4e8d8}));
+  pole.position.y=.9; group.add(pole);
+  const canvas=document.createElement('canvas'); canvas.width=24; canvas.height=16;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,24,16);
+  ctx.fillStyle='#78958a';
+  for(let y=0;y<16;y+=4) for(let x=0;x<24;x+=4)
+    if((x+y)%8===0) ctx.fillRect(x,y,4,4);
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.magFilter=texture.minFilter=THREE.NearestFilter; texture.generateMipmaps=false;
+  texture.colorSpace=THREE.SRGBColorSpace;
+  const cloth=new THREE.Mesh(new THREE.PlaneGeometry(1.25,.8,8,4),
+    new THREE.MeshBasicMaterial({map:texture,color:0x4ade80,side:THREE.DoubleSide}));
+  cloth.position.set(.62,1.35,0);
+  group.add(cloth); world.add(group);
+  clubDecor.push(cloth.material);
+  supporterFlags.push({group,cloth,phase:side<0?0:2.1});
+}
+function animateFlags(t){
+  for(const {group,cloth,phase} of supporterFlags){
+    group.rotation.z=Math.sin(t*.65+phase)*.24;
+    const points=cloth.geometry.attributes.position;
+    for(let i=0;i<points.count;i++)
+      points.setZ(i,Math.sin(points.getX(i)*4-t*1.7+phase)*.08*(points.getX(i)+.625));
+    points.needsUpdate=true;
+  }
+}
+
+// Back-facing coaches in dark tracksuits, with a cap and a clipboard.
+function coachTexture(index){
+  const texture=seatedBackTexture('#253446',index);
+  const ctx=texture.image.getContext('2d');
+  ctx.clearRect(3,14,18,18);
+  ctx.fillStyle='#111923'; ctx.fillRect(5,14,14,11);
+  ctx.fillStyle='#26394d'; ctx.fillRect(6,15,12,9);
+  ctx.fillStyle='#aebcc4'; ctx.fillRect(7,16,10,1);
+  ctx.fillStyle='#172333'; ctx.fillRect(7,24,4,6); ctx.fillRect(13,24,4,6);
+  ctx.fillStyle='#111923'; ctx.fillRect(6,30,5,2); ctx.fillRect(13,30,5,2);
+  ctx.fillStyle='#b59363'; ctx.fillRect(18,19,4,7);
+  ctx.fillStyle='#e0dcc5'; ctx.fillRect(19,20,2,4);
+  if(index===0){ctx.fillStyle='#31485a';ctx.fillRect(5,2,14,4);}
+  texture.needsUpdate=true; return texture;
+}
+const coaches=[-1,1].map((side,i)=>{
+  const p=sprite(new THREE.SpriteMaterial({map:coachTexture(i),alphaTest:.5}),CHARACTER_HEIGHT);
+  p.position.set(side*1.55,.10,5.8); p.name='coach';
+  world.add(p); return p;
+});
+
+// Independent repeatable random streams make each new visit / training bout different.
+function variety(seed,cycle,salt){
+  let value=Math.imul(seed+17,374761393)^Math.imul(cycle+31,668265263)^Math.imul(salt+7,1274126177);
+  value=Math.imul(value^(value>>>13),1274126177);
+  return ((value^(value>>>16))>>>0)/4294967296;
+}
+function routeState(u,t){
+  if(t<u.start){u.start=0;u.cycle=0;u.schedule=null;}
+  if(!u.schedule) u.schedule=u.build(u.cycle);
+  while(t>=u.start+u.schedule.at(-1)[0]){
+    u.start+=u.schedule.at(-1)[0]; u.schedule=u.build(++u.cycle);
+  }
+  const local=t-u.start;
+  let segment=0;
+  while(segment<u.schedule.length-2&&local>=u.schedule[segment+1][0]) segment++;
+  const [aTime,a]=u.schedule[segment], [bTime,b]=u.schedule[segment+1];
+  return {a,b,f:(local-aTime)/(bTime-aTime),segment};
+}
+benchPlayers.forEach((p,i)=>{
+  const seat=p.position.clone(), side=Math.sign(seat.x);
+  const launch=new THREE.Vector3(side*2.25,.08,4.95+(i%2)*.22);
+  const turn=new THREE.Vector3(side*7.1,.08,launch.z);
+  const u=p.userData;
+  u.seatedMap=p.material.map;
+  u.runningMap=pixelTexture(u.starter?'#4ade80':'#64748b',u.index);
+  u.sprint={seat,start:0,cycle:0,schedule:null,build(cycle){
+    const rest=10+variety(i,cycle,1)*34;
+    const run=2.4+variety(i,cycle,2)*1.8;
+    const pause=.5+variety(i,cycle,3)*2;
+    return [[0,seat],[rest,seat],[rest+2.5,launch],[rest+2.5+run,turn],
+      [rest+2.5+run+pause,turn],[rest+2.5+run*2+pause,launch],
+      [rest+5+run*2+pause,seat],[rest+8+run*2+pause,seat]];
+  }};
+});
+function animateSprints(t){
+  benchPlayers.forEach(p=>{
+    const u=p.userData, state=u.sprint;
+    if(reducedMotion.matches){
+      p.position.copy(state.seat); p.material.map=u.seatedMap;p.material.rotation=0;return;
+    }
+    const {a,b,f,segment}=routeState(state,t);
+    p.position.lerpVectors(a,b,f);
+    const seated=segment===0||segment===6;
+    p.material.map=seated?u.seatedMap:u.runningMap;
+    const moving=a!==b;
+    p.material.rotation=moving?Math.sin(t*15+u.index)*.065:0;
+    if(moving) p.position.y+=Math.abs(Math.sin(t*15+u.index))*.045;
+  });
+}
 
 // Asymmetric equipment clusters beside the benches.
 for(const side of [-1,1]){
@@ -549,36 +653,29 @@ const visitingSupporters=crowd.filter(p=>p.position.z===-5.05&&Math.abs(p.positi
   .slice(0,12);
 visitingSupporters.forEach((p,i)=>{
   const seat=p.position.clone(), side=Math.sign(seat.x);
-  p.userData.visit={
-    seat, offset:i*5.7, duration:78+i*1.3,
-    front:new THREE.Vector3(seat.x,.08,-4.48),
-    corner:new THREE.Vector3(side*13,.08,-4.48),
-    door:new THREE.Vector3(side*13,.08,-7.45)
-  };
+  const front=new THREE.Vector3(seat.x,.08,-4.48);
+  const corner=new THREE.Vector3(side*13,.08,-4.48);
+  const door=new THREE.Vector3(side*13,.08,-7.45);
+  p.userData.visit={seat,start:0,cycle:0,schedule:null,build(cycle){
+    const wait=6+variety(i+40,cycle,1)*48;
+    const speed=.65+variety(i+40,cycle,2)*.55;
+    const outside=8+variety(i+40,cycle,3)*35;
+    const leg1=3/speed,leg2=7/speed,leg3=4/speed;
+    const exit=wait+leg1+leg2+leg3,enter=exit+outside;
+    return [[0,seat],[wait,seat],[wait+leg1,front],[wait+leg1+leg2,corner],
+      [exit,door],[enter,door],[enter+leg3,corner],[enter+leg3+leg2,front],
+      [enter+leg3+leg2+leg1,seat],[enter+leg3+leg2+leg1+5,seat]];
+  }};
 });
 function animateVisitors(t){
   for(const p of visitingSupporters){
     const u=p.userData.visit;
-    if(reducedMotion.matches){
-      p.visible=true; p.position.copy(u.seat); p.scale.y=CHARACTER_HEIGHT; continue;
-    }
-    const phase=(t+u.offset)%u.duration;
-    const stops=[
-      [0,u.seat],[15,u.seat],[19,u.front],[28,u.corner],[35,u.door],
-      [45,u.door],[52,u.corner],[61,u.front],[65,u.seat],[u.duration,u.seat]
-    ];
-    let segment=0;
-    while(segment<stops.length-2&&phase>=stops[segment+1][0]) segment++;
-    const [start,a]=stops[segment], [end,b]=stops[segment+1];
-    const f=(phase-start)/(end-start);
+    if(reducedMotion.matches){p.visible=true;p.position.copy(u.seat);continue;}
+    const {a,b,f,segment}=routeState(u,t);
     p.position.lerpVectors(a,b,f);
-    p.visible=phase<35||phase>=45;
-    const walking=a!==b;
-    if(walking) p.position.y+=Math.abs(Math.sin((t+u.offset)*8))*.025;
-    // A small settling motion as the supporter reaches the seat.
-    const seated=phase<15||phase>=65;
-    p.scale.y=CHARACTER_HEIGHT;
-    if(seated) p.position.y-=.035;
+    p.visible=segment!==4;
+    if(a!==b) p.position.y+=Math.abs(Math.sin(t*7+p.userData.phase))*.025;
+    if(segment===0||segment===8) p.position.y-=.035;
   }
 }
 
@@ -597,8 +694,12 @@ function readClubColor(){
     material.map=pixelTexture(color,p.userData.index);
   }
   for(const p of benchPlayers) if(p.userData.starter){
-    p.material.map.dispose();
-    p.material.map=seatedBackTexture(color,p.userData.index);
+    const u=p.userData;
+    const wasSeated=p.material.map===u.seatedMap;
+    u.seatedMap.dispose(); u.runningMap.dispose();
+    u.seatedMap=seatedBackTexture(color,u.index);
+    u.runningMap=pixelTexture(color,u.index);
+    p.material.map=wasSeated?u.seatedMap:u.runningMap;
   }
 }
 
@@ -673,6 +774,8 @@ function render(ms){
     p.position.y=p.userData.baseY+Math.sin(t*1.4+p.userData.phase)*.018
       +(cheering?Math.max(0,Math.sin(t*2.8))*.055:0);
   });
+  animateFlags(t);
+  animateSprints(t);
   animateVisitors(t);
   updateBall(t);
   renderer.render(scene,camera);
