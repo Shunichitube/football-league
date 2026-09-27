@@ -346,6 +346,119 @@ function pixelTexture(kit,index,appearance='player'){
   texture.generateMipmaps=false; texture.colorSpace=THREE.SRGBColorSpace;
   return texture;
 }
+
+const PLAYER_ANIMATIONS={
+  idle:{frames:2,fps:2.4},
+  walk:{frames:4,fps:7},
+  kick:{frames:4,fps:11},
+  receive:{frames:2,fps:7}
+};
+const playerFrameCache=new Map();
+
+function makeAnimatedPlayerTexture(kit,index,state='idle',frame=0){
+  const key=[kit,index,state,frame].join('|');
+  if(playerFrameCache.has(key)) return playerFrameCache.get(key);
+
+  const base=pixelTexture(kit,index);
+  const source=base.image;
+  const canvas=document.createElement('canvas');
+  canvas.width=24; canvas.height=32;
+  const ctx=canvas.getContext('2d');
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(source,0,0);
+
+  // Clear limbs only; head and torso keep the existing character identity.
+  ctx.clearRect(2,17,20,15);
+
+  const outline='#111923';
+  const skin=['#efba87','#bf8159','#f4cea4'][index%3];
+  const skinShade=['#c88a61','#925a40','#d6a17c'][index%3];
+  const kitColor=new THREE.Color(kit);
+  const kitShade='#'+kitColor.clone().multiplyScalar(.48).getHexString();
+  const kitLight='#'+kitColor.clone().lerp(new THREE.Color('#ffffff'),.22).getHexString();
+
+  function r(color,x,y,w,h){ctx.fillStyle=color;ctx.fillRect(x,y,w,h);}
+  function shorts(y=24){r('#bbc7d2',7,y,10,4);r('#f5f4eb',8,y,8,3);r('#788596',11,y+2,2,2);}
+  function leg(x,y,h,sock){r(outline,x-1,y-1,5,h+3);r(sock,x,y,3,h);r(kitLight,x,y,1,h);}
+  function shoe(x,y,w=5){r(outline,x,y,w,2);}
+
+  // Arms are redrawn so walk/kick are readable even at the current tiny scale.
+  if(state==='walk'){
+    const phase=frame%4;
+    const leftUp=phase===0||phase===3;
+    const rightUp=phase===1||phase===2;
+    r(kitShade,3,leftUp?17:19,3,4); r(skinShade,3,leftUp?21:23,3,2);
+    r(kitShade,18,rightUp?19:17,3,4); r(skinShade,18,rightUp?23:21,3,2);
+    shorts(24);
+    if(phase===0||phase===2){
+      leg(7,28,2,kitShade); leg(14,27,3,kitShade);
+      shoe(6,30,5); shoe(13,30,5);
+    }else{
+      leg(7,27,3,kitShade); leg(14,28,2,kitShade);
+      shoe(6,30,5); shoe(13,30,5);
+    }
+  }else if(state==='kick'){
+    const k=Math.min(frame,3);
+    r(kitShade,3,18-k%2,3,4); r(skinShade,3,22-k%2,3,2);
+    r(kitShade,18,18+(k===2?1:0),3,4); r(skinShade,18,22+(k===2?1:0),3,2);
+    shorts(24);
+    leg(7,28,2,kitShade); shoe(6,30,5);
+    if(k===0){
+      leg(14,28,2,kitShade); shoe(13,30,5);
+    }else if(k===1){
+      r(outline,13,27,5,4); r(kitShade,14,27,3,2); shoe(16,29,5);
+    }else if(k===2){
+      r(outline,13,25,8,4); r(kitShade,14,26,5,2); shoe(18,26,4);
+    }else{
+      r(outline,13,27,6,4); r(kitShade,14,27,4,2); shoe(17,29,4);
+    }
+  }else if(state==='receive'){
+    const crouch=frame%2;
+    r(kitShade,3,19,3,4); r(skinShade,3,23,3,2);
+    r(kitShade,18,19,3,4); r(skinShade,18,23,3,2);
+    shorts(24+crouch);
+    leg(7,28+crouch,Math.max(1,2-crouch),kitShade);
+    leg(14,28+crouch,Math.max(1,2-crouch),kitShade);
+    shoe(6,30,5); shoe(13,30,5);
+  }else{
+    // Idle is a two-frame breathing pose.
+    const breath=frame%2;
+    r(kitShade,3,18+breath,3,4); r(skinShade,3,22+breath,3,2);
+    r(kitShade,18,18+breath,3,4); r(skinShade,18,22+breath,3,2);
+    shorts(24);
+    leg(7,28,2,kitShade); leg(14,28,2,kitShade);
+    shoe(6,30,5); shoe(13,30,5);
+  }
+
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.magFilter=THREE.NearestFilter; texture.minFilter=THREE.NearestFilter;
+  texture.generateMipmaps=false; texture.colorSpace=THREE.SRGBColorSpace;
+  playerFrameCache.set(key,texture);
+  return texture;
+}
+
+function buildPlayerAnimationSet(kit,index){
+  const set={};
+  for(const [state,config] of Object.entries(PLAYER_ANIMATIONS)){
+    set[state]=Array.from({length:config.frames},(_,frame)=>makeAnimatedPlayerTexture(kit,index,state,frame));
+  }
+  return set;
+}
+
+function setPlayerAnimation(player,state,t,phase=0){
+  const u=player.userData;
+  const config=PLAYER_ANIMATIONS[state]||PLAYER_ANIMATIONS.idle;
+  const frames=u.animations?.[state]||u.animations?.idle;
+  if(!frames?.length) return;
+  const frame=Math.floor((t+phase)*config.fps)%frames.length;
+  if(u.animationState!==state||u.animationFrame!==frame){
+    u.body.material.map=frames[frame];
+    u.body.material.needsUpdate=true;
+    u.animationState=state;
+    u.animationFrame=frame;
+  }
+}
+
 function sprite(material,height){
   const result=new THREE.Sprite(material);
   result.center.set(.5,0); result.scale.set(height*3/4,height,1); return result;
@@ -372,12 +485,18 @@ const shadowMaterial=new THREE.MeshBasicMaterial({
 const shadowGeometry=new THREE.CircleGeometry(.3,24);
 function makePlayer(starter=true,index=0){
   const g=new THREE.Group();
-  const kit=new THREE.SpriteMaterial({map:pixelTexture(starter?'#4ade80':'#64748b',index),alphaTest:.5});
+  const kitColor=starter?'#4ade80':'#64748b';
+  const animations=buildPlayerAnimationSet(kitColor,index);
+  const kit=new THREE.SpriteMaterial({map:animations.idle[0],alphaTest:.5});
   const body=sprite(kit,CHARACTER_HEIGHT); g.add(body);
   const shadow=new THREE.Mesh(shadowGeometry,shadowMaterial);
   shadow.rotation.x=-Math.PI/2; shadow.scale.set(.6,.33,1);
   shadow.position.y=.055; g.add(shadow);
-  g.userData={body,kit,starter,index,phase:index*.71,baseX:0,baseZ:0};
+  g.userData={
+    body,kit,starter,index,phase:index*.71,baseX:0,baseZ:0,
+    animations,animationState:'idle',animationFrame:0,
+    motionState:'idle',motionUntil:0
+  };
   return g;
 }
 
@@ -713,11 +832,17 @@ function animatePlayer(p,t,i){
   const u=p.userData;
   const sway=Math.sin(t*1.35+u.phase);
   const roam=.10;
-  p.position.x=u.baseX + Math.sin(t*.43+u.phase)*roam;
-  p.position.z=u.baseZ + Math.cos(t*.37+u.phase)*roam*.65;
+  const dx=Math.sin(t*.43+u.phase)*roam;
+  const dz=Math.cos(t*.37+u.phase)*roam*.65;
+  p.position.x=u.baseX+dx;
+  p.position.z=u.baseZ+dz;
   u.body.position.x=0;
-  u.body.position.y=Math.max(0,sway*.025);
-  u.body.material.rotation=Math.sin(t*.8+u.phase)*.025;
+  u.body.position.y=Math.max(0,sway*.018);
+
+  // Between ball actions, players visibly walk when their practice drift changes.
+  const moving=Math.abs(Math.cos(t*.43+u.phase))>.48||Math.abs(Math.sin(t*.37+u.phase))>.60;
+  u.motionState=moving?'walk':'idle';
+  setPlayerAnimation(p,u.motionState,t,u.phase*.11);
 }
 
 function updateBall(t){
@@ -726,20 +851,37 @@ function updateBall(t){
     const leg=Math.floor(cycle), f=cycle-leg;
     const sender=group.members[group.route[leg]];
     const receiver=group.members[group.route[(leg+1)%5]];
-    // Hold at the feet, kick, roll across, then allow the receiver to control it.
     const travel=THREE.MathUtils.clamp((f-.20)/.65,0,1);
     const a=sender.position,b=receiver.position;
+
     group.ball.position.set(
       THREE.MathUtils.lerp(a.x,b.x,travel),.24+Math.sin(travel*Math.PI)*.03,
       THREE.MathUtils.lerp(a.z,b.z,travel)+.28
     );
     group.ball.material.rotation=-travel*Math.PI*4;
     group.shadow.position.set(group.ball.position.x,.055,group.ball.position.z);
-    const kick=Math.sin(THREE.MathUtils.clamp((f-.14)/.18,0,1)*Math.PI);
-    sender.userData.body.position.x=Math.sign(b.x-a.x)*kick*.09;
-    sender.userData.body.material.rotation+=Math.sign(b.x-a.x)*kick*.08;
-    const receive=Math.sin(THREE.MathUtils.clamp((f-.82)/.18,0,1)*Math.PI);
-    receiver.userData.body.position.y+=receive*.035;
+
+    // Four-frame kick animation just before the ball leaves the foot.
+    if(f>=.10&&f<.30){
+      const kickT=THREE.MathUtils.clamp((f-.10)/.20,0,.999);
+      const kickFrame=Math.floor(kickT*PLAYER_ANIMATIONS.kick.frames);
+      sender.userData.body.material.map=sender.userData.animations.kick[kickFrame];
+      sender.userData.body.material.needsUpdate=true;
+      sender.userData.animationState='kick';
+      sender.userData.animationFrame=kickFrame;
+      sender.userData.body.position.x=Math.sign(b.x-a.x)*Math.sin(kickT*Math.PI)*.08;
+    }
+
+    // Receiver dips into a two-frame trap as the pass arrives.
+    if(f>=.80){
+      const receiveT=THREE.MathUtils.clamp((f-.80)/.20,0,.999);
+      const receiveFrame=Math.floor(receiveT*PLAYER_ANIMATIONS.receive.frames);
+      receiver.userData.body.material.map=receiver.userData.animations.receive[receiveFrame];
+      receiver.userData.body.material.needsUpdate=true;
+      receiver.userData.animationState='receive';
+      receiver.userData.animationFrame=receiveFrame;
+      receiver.userData.body.position.y+=Math.sin(receiveT*Math.PI)*.025;
+    }
   }
 }
 
