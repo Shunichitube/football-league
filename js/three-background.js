@@ -4,8 +4,8 @@ const app = document.querySelector('#app');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x07111f);
-scene.fog = new THREE.Fog(0x07111f, 28, 55);
+scene.background = new THREE.Color(0x1c3046);
+scene.fog = new THREE.Fog(0x1c3046, 36, 65);
 
 const camera = new THREE.OrthographicCamera(-9, 9, 5.2, -5.2, 0.1, 100);
 // Raise the framing without tilting the horizontal court axis.
@@ -21,10 +21,10 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
 document.body.prepend(renderer.domElement);
 
-const hemi = new THREE.HemisphereLight(0xbfe5ff, 0x0c1a12, .6);
+const hemi = new THREE.HemisphereLight(0xbfe5ff, 0x35463e, 1.25);
 scene.add(hemi);
 
-const key = new THREE.DirectionalLight(0xffffff, .8);
+const key = new THREE.DirectionalLight(0xffffff, 1.25);
 key.position.set(-5, 12, 7);
 key.castShadow = true;
 key.shadow.mapSize.set(2048, 2048);
@@ -34,7 +34,7 @@ key.shadow.camera.top = 10;
 key.shadow.camera.bottom = -10;
 scene.add(key);
 
-const rim = new THREE.DirectionalLight(0x7dd3fc, .35);
+const rim = new THREE.DirectionalLight(0xaddfff, .65);
 rim.position.set(8, 7, -8);
 scene.add(rim);
 
@@ -131,11 +131,19 @@ function block(w,h,d,x,y,z,color){
     new THREE.MeshStandardMaterial({color,roughness:.9}));
   mesh.position.set(x,y,z); mesh.receiveShadow=true; world.add(mesh); return mesh;
 }
-block(23,.18,15,0,-.14,0,0x111e2b);
-block(23,7,.25,0,3.4,-8,0x15263b);
-for(const x of [-11.4,11.4]) block(.25,7,15,x,3.4,-.5,0x101f32);
+block(28,.18,17,0,-.14,0,0x344859);
+block(28,7,.25,0,3.4,-8,0x3d536e);
+for(const x of [-13.9,13.9]) block(.25,7,17,x,3.4,-.5,0x324961);
 for(let row=0;row<4;row++)
-  block(20,.4+row*.38,.8,0,(.4+row*.38)/2,-5.1-row*.8,0x23344b);
+  block(25,.4+row*.30,.65,0,(.4+row*.30)/2,-5.1-row*.65,0x456079);
+// Side terraces occupy the former empty strips, clear of both goal nets.
+for(const side of [-1,1]) for(let row=0;row<4;row++)
+  block(.65,.4+row*.24,6.1,side*(10.1+row*.65),(.4+row*.24)/2,-.3,0x456079);
+for(const side of [-1,1]){
+  const ribbon=block(.08,.12,12,side*13.7,3.1,-1,0x9dd9ef);
+  ribbon.material.emissive=new THREE.Color(0x73b7d3);
+  ribbon.material.emissiveIntensity=.6;
+}
 
 // Open cutaway roof: visible rear trusses do not cover the playing area.
 for(const y of [5.25,5.7]) block(22,.09,.09,0,y,-7.4,0x466077);
@@ -186,7 +194,7 @@ boardFrame.position.copy(board.position).addScaledVector(
 world.add(boardFrame);
 
 // Tiny canvas textures are drawn as pixel art, never smoothed.
-function pixelTexture(kit,index){
+function pixelTexture(kit,index,appearance='player'){
   // Chunky 24 x 32 sprite: large head, compact body, one-pixel silhouette.
   const canvas=document.createElement('canvas'); canvas.width=24; canvas.height=32;
   const ctx=canvas.getContext('2d'); ctx.imageSmoothingEnabled=false;
@@ -209,7 +217,23 @@ function pixelTexture(kit,index){
   // Small dark eyes without whites for a softer expression.
   rect('#171b23',9,9,1,2); rect('#171b23',14,9,1,2);
   rect(skinShade,11,10,2,2); rect('#854b3e',10,12,4,1);
-  switch(index%6){
+  const isWoman=appearance==='woman';
+  if(isWoman){
+    // Long hair, ponytail and bob silhouettes among the female supporters.
+    rect(hair,5,2,14,3); rect(hairLight,7,2,9,1);
+    const style=index%3;
+    if(style===0){
+      rect(hair,4,5,3,11); rect(hair,17,5,3,11);
+      rect(hairLight,4,7,1,7);
+    }else if(style===1){
+      rect(hair,5,5,2,3); rect(hair,17,5,2,3);
+      rect(hair,19,5,3,9); rect(kitLight,19,5,3,2);
+    }else{
+      rect(hair,4,5,3,8); rect(hair,17,5,3,8);
+      rect(hairLight,4,6,1,5);
+    }
+    rect(hair,7,5,3,1);
+  }else switch(index%6){
     case 0: // Short, square crop.
       rect(hair,6,2,12,3); rect(hair,6,5,2,2); rect(hair,17,5,1,2);
       rect(hairLight,8,2,7,1); break;
@@ -249,6 +273,15 @@ function pixelTexture(kit,index){
   rect(kitLight,7,28,1,2); rect(kitLight,13,28,1,2);
   rect('#27313e',6,30,5,1); rect('#27313e',13,30,5,1);
 
+  if(appearance!=='player'){
+    // Casual trousers and scarves distinguish supporters from the players.
+    rect('#34415b',7,24,10,4); rect('#536685',8,24,3,6);
+    rect('#536685',13,24,3,6); rect('#34415b',11,26,2,4);
+    if(index%2===0){
+      rect('#f9de8b',8,15,8,2); rect('#f9de8b',8,17,2,5);
+    }
+  }
+
   // Outline the final silhouette without a grid or smoothing artifacts.
   for(let y=0;y<32;y++) for(let x=0;x<24;x++){
     const fill=pixels[y][x];
@@ -268,17 +301,26 @@ function sprite(material,height){
   result.center.set(.5,0); result.scale.set(height*3/4,height,1); return result;
 }
 const crowd=[];
-const crowdMaterials=Array.from({length:8},(_,i)=>new THREE.SpriteMaterial({
-  map:pixelTexture(['#6b88ac','#d78b57','#86aa95','#c26274'][i%4],i),alphaTest:.5
+const crowdMaterials=Array.from({length:24},(_,i)=>new THREE.SpriteMaterial({
+  map:pixelTexture(['#68a9e0','#eb9e61','#81c6a0','#e18fa8','#ba9ce0','#e6c66a'][i%6],
+    i,i%2===0?'woman':'man'),alphaTest:.5
 }));
-for(let row=0;row<4;row++) for(let col=0;col<42;col++){
-  if(col===10||col===31) continue; // Stand aisles.
-  const person=sprite(crowdMaterials[(col+row*3)%8],.57);
-  const y=.43+row*.38;
-  person.position.set(-9.6+col*.47,y,-5.05-row*.8);
-  person.userData={baseY:y,phase:col*1.7+row*.9};
+function addSupporter(x,y,z,index){
+  const variant=index%crowdMaterials.length;
+  const person=sprite(crowdMaterials[variant],.68);
+  person.position.set(x,y,z);
+  person.userData={baseY:y,phase:index*1.7,isWoman:variant%2===0};
   world.add(person); crowd.push(person);
 }
+// 248 tightly packed supporters, with a narrow central access aisle.
+for(let row=0;row<4;row++) for(let col=0;col<64;col++){
+  if(col===31||col===32) continue;
+  addSupporter(-11.5+col*.365,.43+row*.30,-5.05-row*.65,col+row*7);
+}
+// 72 more supporters wrap around the ends of the arena (320 total).
+for(const side of [-1,1]) for(let row=0;row<4;row++) for(let col=0;col<9;col++)
+  addSupporter(side*(10.1+row*.65),.43+row*.24,-2.9+col*.65,
+    col+row*9+(side===1?5:0));
 const shadowMaterial=new THREE.MeshBasicMaterial({
   color:0x020b14,transparent:true,opacity:.35,depthWrite:false
 });
@@ -347,7 +389,7 @@ function resize(){
   renderer.setSize(innerWidth,innerHeight,false);
   const aspect=innerWidth/innerHeight;
   // Include the scoreboard, lamp banks and truss, with room below the header.
-  const h=Math.max(8.3,11.8/aspect);
+  const h=Math.max(7.9,14.3/aspect);
   camera.top=h; camera.bottom=-h; camera.left=-h*aspect; camera.right=h*aspect;
   camera.updateProjectionMatrix();
 }
