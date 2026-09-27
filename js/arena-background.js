@@ -2,9 +2,9 @@ import { mountArena } from './arena-scene.js?v=1.3.1';
 
 // A screen lifetime owns every animation/listener. Navigation destroys it.
 const app=document.querySelector('#app');
-let current=null,dispose=null,generation=0;
+let current=false,dispose=null,generation=0;
 function sync(){
-  const title=app.querySelector(':scope > .arena-title');
+  const title=!!app.querySelector(':scope > .arena-title');
   if(title===current)return;
   current=title;generation++;const token=generation;
   dispose?.();dispose=null;

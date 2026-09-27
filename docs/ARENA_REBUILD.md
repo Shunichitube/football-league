@@ -100,3 +100,8 @@
 - Added spare footballs, water bottles, team-colored coolers and folded bibs with ground shadows.
 - Confirmed the home screen visually in the local browser; no additional test suite run. Game and multiplayer logic unchanged.
 
+
+## Home entry popups
+- Wrapped club setup, load slots, multiplayer entry and room lobby in accessible, scrollable dialogs over the arena.
+- Kept arena animation alive across popup navigation; retained existing game and room actions. Added close and Escape controls, inert background and keyboard focus containment.
+- Visually confirmed setup, load and multiplayer entry plus close/reopen in browser. Live lobby requires the Room API, unavailable on this static preview; its shared dialog integration is implemented but live entry was not verified. No extra test suite run.

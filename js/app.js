@@ -351,7 +351,31 @@ render=function renderApplication(){
   else sharedRender();
   classifyScreens(s.view);
   updateRoomStatus();
+  const popupNames={setup:'クラブを作成',loadTitle:'続きから',roomEntry:'マルチプレイ',roomLobby:'ロビー'};
+  if(popupNames[s.view]){
+    const content=document.createElement('section');
+    content.className='arena-popup';content.setAttribute('role','dialog');
+    content.setAttribute('aria-modal','true');content.setAttribute('aria-label',popupNames[s.view]);
+    while(app.firstChild)content.append(app.firstChild);
+    const close=document.createElement('button');close.className='arena-popup-close subtle';
+    close.type='button';close.textContent='×';close.setAttribute('aria-label','ホームに戻る');
+    if(s.view==='roomEntry'||s.view==='roomLobby'){close.dataset.room='leave';close.disabled=roomAdapter.status.busy;}else close.dataset.a='title';
+    content.prepend(close);
+    app.innerHTML=title();app.firstElementChild.inert=true;app.firstElementChild.setAttribute('aria-hidden','true');
+    const overlay=document.createElement('div');overlay.className='arena-popup-overlay';overlay.append(content);app.append(overlay);
+    (content.querySelector('input:not([type="color"])')||close).focus({preventScroll:true});
+  }
 };
+document.addEventListener('keydown',event=>{
+  const panel=app.querySelector('.arena-popup');if(!panel)return;
+  if(event.key==='Escape'){event.preventDefault();panel.querySelector('.arena-popup-close').click();}
+  if(event.key==='Tab'){
+    const items=[...panel.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),a[href]')].filter(el=>!el.hidden&&el.getClientRects().length);
+    const first=items[0],last=items.at(-1);
+    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
+    else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
+  }
+});
 roomAdapter=new RoomAdapter(()=>s,next=>{s=next;},()=>render(),()=>updateRoomStatus());
 function reportRoomError(error){ roomAdapter.status.error=error.message; updateRoomStatus(); }
 function sendRoom(promise){Promise.resolve(promise).catch(reportRoomError);}
