@@ -206,8 +206,8 @@ function pixelTexture(kit,index){
   rect(skinShade,6,4,12,10); rect(skin,7,4,10,9);
   rect(skinShade,5,8,1,3); rect(skinShade,18,8,1,3);
   rect('#3b2925',8,7,2,1); rect('#3b2925',14,7,2,1);
-  rect('#fff3df',8,8,2,3); rect('#fff3df',14,8,2,3);
-  rect('#20242c',9,8,1,3); rect('#20242c',14,8,1,3);
+  // Small dark eyes without whites for a softer expression.
+  rect('#171b23',9,9,1,2); rect('#171b23',14,9,1,2);
   rect(skinShade,11,10,2,2); rect('#854b3e',10,12,4,1);
   switch(index%6){
     case 0: // Short, square crop.
