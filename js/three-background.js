@@ -41,6 +41,9 @@ scene.add(rim);
 const world = new THREE.Group();
 scene.add(world);
 
+// Background-first phase: keep every character layer hidden while the arena art is rebuilt.
+const BACKGROUND_ONLY=true;
+
 // Deterministic, chunky grass grain; nearest filtering matches the pixel characters.
 function makeGrassTexture(){
   const canvas=document.createElement('canvas'); canvas.width=32; canvas.height=32;
@@ -68,14 +71,14 @@ stripeGrass.needsUpdate=true;
 
 const pitch = new THREE.Mesh(
   new THREE.PlaneGeometry(16, 8.7),
-  new THREE.MeshStandardMaterial({ color: 0x258354, map: grassTexture, roughness: 1, metalness: 0 })
+  new THREE.MeshStandardMaterial({ color: 0x258354, map: grassTexture, roughness: .58, metalness: .04 })
 );
 pitch.rotation.x = -Math.PI / 2;
 pitch.receiveShadow = true;
 world.add(pitch);
 
-const stripeMatA = new THREE.MeshStandardMaterial({ color: 0x298c59, map: stripeGrass, roughness: 1 });
-const stripeMatB = new THREE.MeshStandardMaterial({ color: 0x237f50, map: stripeGrass, roughness: 1 });
+const stripeMatA = new THREE.MeshStandardMaterial({ color: 0x298c59, map: stripeGrass, roughness: .62, metalness:.03 });
+const stripeMatB = new THREE.MeshStandardMaterial({ color: 0x237f50, map: stripeGrass, roughness: .62, metalness:.03 });
 for (let i = 0; i < 10; i++) {
   const stripe = new THREE.Mesh(new THREE.PlaneGeometry(1.58, 8.55), i % 2 ? stripeMatA : stripeMatB);
   stripe.rotation.x = -Math.PI / 2;
@@ -208,18 +211,43 @@ boardContext.font='18px monospace'; boardContext.fillStyle='#d5ffe6';
 boardContext.fillText('HOME  00 : 00  AWAY',256,73);
 const boardTexture=new THREE.CanvasTexture(boardCanvas);
 boardTexture.colorSpace=THREE.SRGBColorSpace;
-const board=new THREE.Mesh(new THREE.PlaneGeometry(5.4,1.01),
+const board=new THREE.Mesh(new THREE.PlaneGeometry(7.2,1.35),
   new THREE.MeshBasicMaterial({map:boardTexture}));
-board.position.set(0,4.05,-8.7);
+board.position.set(0,4.15,-8.66);
 board.quaternion.copy(camera.quaternion);
 board.name='arena-scoreboard';
 world.add(board);
-const boardFrame=new THREE.Mesh(new THREE.PlaneGeometry(5.65,1.26),
-  new THREE.MeshBasicMaterial({color:0x4d9db7}));
+const boardFrame=new THREE.Mesh(new THREE.PlaneGeometry(7.6,1.72),
+  new THREE.MeshBasicMaterial({color:0x1b3347}));
 boardFrame.quaternion.copy(camera.quaternion);
 boardFrame.position.copy(board.position).addScaledVector(
   new THREE.Vector3(0,0,1).applyQuaternion(camera.quaternion),-.02);
 world.add(boardFrame);
+
+// Stronger arena silhouette: upper truss, side banner towers and glowing LED fascia.
+const upperArenaTruss=new THREE.Group();
+for(const z of [-7.0,-8.15]){
+  const beam=block(24,.16,.16,0,5.6,z,0x132333);
+  beam.material.metalness=.28; beam.material.roughness=.55;
+}
+for(const x of [-11.5,-7.7,-3.9,0,3.9,7.7,11.5]){
+  const brace=block(.12,1.05,.12,x,5.15,-7.55,0x20384a);
+  brace.rotation.z=(x%2===0?1:-1)*.18;
+}
+for(const side of [-1,1]){
+  const tower=block(2.6,2.7,.22,side*11.7,4.05,-8.75,0x10202f);
+  tower.material.metalness=.15;
+  const glow=block(2.25,.10,.10,side*11.7,4.02,-8.57,0x4ade80);
+  glow.material.emissive=new THREE.Color(0x4ade80);
+  glow.material.emissiveIntensity=1.35;
+  clubDecor?.push?.(glow.material);
+}
+for(const x of [-12.2,-8.1,-4.05,0,4.05,8.1,12.2]){
+  const led=block(3.75,.09,.10,x,2.95,-5.0,0x4ade80);
+  led.material.emissive=new THREE.Color(0x2fbf6d);
+  led.material.emissiveIntensity=1.0;
+  clubDecor?.push?.(led.material);
+}
 
 // Continuous pixel-edged court surround instead of isolated decorative tiles.
 for(const z of [-4.65,4.65]) block(18,.04,.10,0,.04,z,0xe8c780);
@@ -228,6 +256,15 @@ for(const side of [-1,1]) for(let i=0;i<10;i++)
   block(.10,.04,.44,side*10.1,.035,-3.9+i*.85,0xb8d9cc);
 boardTexture.magFilter=boardTexture.minFilter=THREE.NearestFilter;
 boardTexture.generateMipmaps=false;
+
+// Soft highlight band gives the indoor floor a polished, broadcast-lit feel.
+const courtSheen=new THREE.Mesh(
+  new THREE.PlaneGeometry(15.2,2.0),
+  new THREE.MeshBasicMaterial({color:0xd7fff0,transparent:true,opacity:.055,depthWrite:false})
+);
+courtSheen.rotation.x=-Math.PI/2;
+courtSheen.position.set(0,.052,1.55);
+world.add(courtSheen);
 
 // Tiny canvas textures are drawn as pixel art, never smoothed.
 function pixelTexture(kit,index,appearance='player'){
@@ -984,10 +1021,28 @@ function updateBall(t){
   }
 }
 
+function applyBackgroundOnlyMode(){
+  if(!BACKGROUND_ONLY) return;
+  players.forEach(p=>p.visible=false);
+  crowd.forEach(p=>p.visible=false);
+  benchPlayers.forEach(p=>p.visible=false);
+  coaches.forEach(p=>p.visible=false);
+  keeper.visible=false;
+  passingGroups.forEach(g=>{g.ball.visible=false;g.shadow.visible=false;});
+  trainingBall.ball.visible=trainingBall.shadow.visible=false;
+  shotBall.ball.visible=shotBall.shadow.visible=false;
+}
+applyBackgroundOnlyMode();
+
 function render(ms){
   requestAnimationFrame(render);
   if(document.hidden||!document.body.classList.contains('living-bg-active')) return;
   const t=reducedMotion.matches?0:ms*.001;
+  if(BACKGROUND_ONLY){
+    animateFlags(t);
+    renderer.render(scene,camera);
+    return;
+  }
   players.forEach((p,i)=>animatePlayer(p,t,i));
   crowd.forEach(p=>{
     if(p.userData.visit) return;
