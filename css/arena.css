@@ -95,18 +95,30 @@ body.auction-hall-active header{background:#051522e8}
   .auction-audience-bank.left.lower{clip-path:polygon(0 38.19%,14.29% 41.28%,14.29% 47.87%,0 45.53%)}
   .auction-audience-bank.right.upper{clip-path:polygon(100% 23.09%,85.71% 27.55%,85.71% 32.98%,100% 29.68%)}
   .auction-audience-bank.right.lower{clip-path:polygon(100% 38.19%,85.71% 41.28%,85.71% 47.87%,100% 45.53%)}
-  .auction-spectator{position:absolute;width:.718%;height:1.702%;object-fit:fill;image-rendering:pixelated;animation:auction-crowd-motion 3.1s steps(2,end) infinite alternate;animation-delay:var(--motion-delay)}
-  @keyframes auction-crowd-motion{0%,65%{transform:translateY(0)}100%{transform:translateY(-2px)}}
+  .auction-spectator{position:absolute;width:.718%;height:1.702%;object-fit:fill;image-rendering:pixelated;animation-duration:var(--motion-duration);animation-delay:var(--motion-delay);animation-timing-function:steps(2,end);animation-iteration-count:infinite}
+  .auction-spectator.motion-0{animation-name:auction-cheer-a}
+  .auction-spectator.motion-1{animation-name:auction-cheer-b}
+  .auction-spectator.motion-2{animation-name:auction-cheer-c}
+  .auction-spectator.motion-3{animation-name:auction-cheer-d}
+  @keyframes auction-cheer-a{0%,22%,36%,100%{transform:translate(0,0)}25%,32%{transform:translate(0,-2px)}}
+  @keyframes auction-cheer-b{0%,52%,75%,100%{transform:translate(0,0)}57%,70%{transform:translate(1px,-1px)}}
+  @keyframes auction-cheer-c{0%,35%,67%,100%{transform:translate(0,0)}40%,48%{transform:translate(-1px,-2px)}55%,62%{transform:translate(0,-1px)}}
+  @keyframes auction-cheer-d{0%,68%,90%,100%{transform:translate(0,0)}73%,84%{transform:translate(1px,-2px)}}
   .auction-staff,.auction-host{position:absolute;z-index:3;image-rendering:pixelated;pointer-events:none;object-fit:fill;filter:drop-shadow(0 2px 3px #001)}
-  .auction-staff{top:51%;width:2.15%;height:5%;animation:auction-staff-motion 4.2s ease-in-out infinite alternate;animation-delay:var(--motion-delay)}
-  @keyframes auction-staff-motion{to{transform:translateX(3px)}}
-  .auction-host{left:49.05%;top:49%;width:1.9%;height:6.2%;animation:auction-host-speak 5.5s ease-in-out infinite alternate}
+  .auction-staff{top:51%;width:2.15%;height:5%;animation-duration:var(--motion-duration);animation-delay:var(--motion-delay);animation-timing-function:ease-in-out;animation-iteration-count:infinite}
+  .auction-staff.motion-0{animation-name:auction-staff-a}
+  .auction-staff.motion-1{animation-name:auction-staff-b}
+  .auction-staff.motion-2{animation-name:auction-staff-c}
+  @keyframes auction-staff-a{0%,26%,54%,100%{transform:translateX(0)}34%,47%{transform:translateX(3px)}}
+  @keyframes auction-staff-b{0%,48%,84%,100%{transform:translateX(0)}55%,76%{transform:translateX(-2px)}}
+  @keyframes auction-staff-c{0%,18%,39%,75%,100%{transform:translateX(0)}25%,34%{transform:translateX(-2px)}82%,92%{transform:translateX(2px)}}
+  .auction-host{left:49.05%;top:49%;width:1.9%;height:6.2%;animation:auction-host-speak 7.3s ease-in-out infinite}
   .auction-furniture-front{position:absolute;z-index:4;left:18.54%;top:53.19%;width:62.92%;height:7.98%;pointer-events:none;background:url('../assets/arena/auction-furniture-front.png') center / 100% 100% no-repeat}
   .auction-foreground{position:absolute;inset:0;z-index:3;pointer-events:none}
   .auction-console-screen{position:absolute;width:2.9%;height:2.7%;border-radius:2px;background:linear-gradient(125deg,#4be9ff78,#2866c24d 50%,#b3efff91);box-shadow:0 0 12px #3fb9ffb0,0 0 34px #1c87e86b;opacity:.62;transform:perspective(70px) rotateX(12deg);animation:auction-monitor-glow 3.2s ease-in-out infinite alternate;animation-delay:var(--pulse-delay)}
   @keyframes auction-monitor-glow{to{opacity:.35;filter:hue-rotate(20deg)}}
   .auction-operator{position:absolute;top:80.9%;width:3.5%;height:9.1%;object-fit:fill;image-rendering:pixelated;filter:brightness(.45) drop-shadow(0 0 8px #29a8e232)}
-  @keyframes auction-host-speak{to{transform:translateX(7px)}}
+  @keyframes auction-host-speak{0%,20%,52%,76%,100%{transform:translateX(0)}30%,43%{transform:translateX(5px)}83%,93%{transform:translateX(-3px)}}
   .auction-ring-ticker{position:absolute;z-index:2;left:29.5%;top:11.6%;width:41%;height:5.2%;overflow:hidden;display:flex;align-items:center;pointer-events:none;mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
   .auction-ring-track{display:flex;width:200%;flex:none;animation:auction-ring-scroll 23s linear infinite}
   .auction-ring-track span{flex:none;width:50%;white-space:nowrap;text-align:center;color:#9df3ff;font:bold clamp(10px,1vw,17px) system-ui;letter-spacing:.1em;text-shadow:0 0 9px #18baff,0 0 18px #22d3ee;overflow:hidden}

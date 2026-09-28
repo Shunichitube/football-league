@@ -27,12 +27,13 @@ function auctionVenueCharacters(clubs){
     const chars=Array.from({length:110},(_,i)=>{
       const row=Math.floor(i/22),col=i%22,n=i+side*17+tier*7;
       const x=col*11,y=(tier?368:228)+row*12+col*1.7;
-      return `<img class="auction-spectator" src="${venueSprite(colors[n%6],n%36,n%2?'woman':'man')}" alt="" style="left:${(side?1672-x-12:x)/1672*100}%;top:${y/940*100}%;--motion-delay:${-(n%11)*.37}s">`;
+      const seed=(i*73+side*101+tier*47)%127;
+      return `<img class="auction-spectator motion-${seed%4}" src="${venueSprite(colors[n%6],n%36,n%2?'woman':'man')}" alt="" style="left:${(side?1672-x-12:x)/1672*100}%;top:${y/940*100}%;--motion-delay:${-(seed*0.29).toFixed(2)}s;--motion-duration:${(3.2+(seed%19)*.31).toFixed(2)}s">`;
     }).join('');
     return `<div class="auction-audience-bank ${side?'right':'left'} ${tier?'lower':'upper'}">${chars}</div>`;
   })).join('');
   const seats=[19,27,35,59,67,75];
-  const staff=clubs.slice(0,6).map((club,i)=>[0,1].map(role=>`<img class="auction-staff" src="${venueSprite(role?'#334155':club.color||'#60a5fa',i*2+role+24)}" alt="" style="left:${seats[i]+(role?3.6:1)}%;--motion-delay:${-(i*2+role)*.52}s">`).join('')).join('');
+  const staff=clubs.slice(0,6).map((club,i)=>[0,1].map(role=>`<img class="auction-staff motion-${(i*3+role)%3}" src="${venueSprite(role?'#334155':club.color||'#60a5fa',i*2+role+24)}" alt="" style="left:${seats[i]+(role?3.6:1)}%;--motion-delay:${-((i*7+role*11)*.83).toFixed(2)}s;--motion-duration:${(4.9+((i*5+role*3)%7)*.67).toFixed(2)}s">`).join('')).join('');
   const flags=['LIVE AUCTION','PLAYER BID','SOLD!','FINAL CALL'].map((label,i)=>`<span class="auction-banner-label banner-${i+1}">${label}</span>`).join('');
   const marquee='FOOTBALL LEAGUE　◆　LIVE PLAYER AUCTION　◆　入札受付中　◆　FOOTBALL LEAGUE　◆　';
   const ribbon=`<div class="auction-ring-ticker" aria-hidden="true"><div class="auction-ring-track"><span>${marquee}</span><span>${marquee}</span></div></div>`;
