@@ -53,7 +53,7 @@ body.draft-hall-active #app>main.screen-draft{background:#071827ed;border-radius
 @media(min-width:761px){body.draft-hall-active #app>main.screen-draft{width:calc(100% - 24px)}}
 /* Live auction: the existing card is the center of a large stage monitor. */
 body.auction-hall-active{background:#051120}
-body.auction-hall-active::before{content:"";position:fixed;inset:var(--auction-header-bottom,68px) 0 0;background:#051120 url('../assets/arena/auction-hall-v2.webp') center center / cover no-repeat;pointer-events:none;z-index:0}
+body.auction-hall-active::before{content:"";position:fixed;inset:var(--auction-header-bottom,68px) 0 0;background:#051120 url('../assets/arena/auction-hall-v3.webp') center center / cover no-repeat;pointer-events:none;z-index:0}
 body.auction-hall-active #app{position:relative;z-index:1}
 body.auction-hall-active header{background:#051522e8}
 #app main.auction-room{width:min(1280px,96%);max-width:none;margin:18px auto;padding:0}
@@ -88,22 +88,22 @@ body.auction-hall-active header{background:#051522e8}
 @media(min-width:761px){
   body.auction-hall-active::before{display:none}
   body.auction-hall-active #app>main.auction-room{position:relative;width:100%;min-height:calc(100dvh - var(--auction-header-bottom,68px));margin:0;overflow:hidden}
-  .auction-scene{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:max(115vw,calc((100dvh - var(--auction-header-bottom,68px)) * 2.045531));aspect-ratio:1673 / 940;background:#051120 url('../assets/arena/auction-hall-v2.webp') center / 100% 100% no-repeat}
+  .auction-scene{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:max(115vw,calc((100dvh - var(--auction-header-bottom,68px)) * 2.044681));aspect-ratio:1672 / 940;background:#051120 url('../assets/arena/auction-hall-v3.webp') center / 100% 100% no-repeat}
   .auction-crowd{position:absolute;inset:0;z-index:1;pointer-events:none}
-  .auction-spectator{position:absolute;width:.7%;height:2.1%;object-fit:fill;image-rendering:pixelated;filter:brightness(.72);opacity:.9}
+  .auction-spectator{position:absolute;width:.66%;height:1.85%;object-fit:fill;image-rendering:pixelated;filter:brightness(.72);opacity:.9}
   .auction-railing{position:absolute;width:14.47%;background-position:center;background-size:100% 100%;background-repeat:no-repeat}
   .rail-upper-left,.rail-upper-right{top:29.79%;height:4.79%}
   .rail-lower-left,.rail-lower-right{top:46.28%;height:5.32%}
   .rail-upper-left,.rail-lower-left{left:0}
   .rail-upper-right,.rail-lower-right{right:0}
-  .rail-upper-left{background-image:url('../assets/arena/audience-rail-upper-left.webp')}
-  .rail-upper-right{background-image:url('../assets/arena/audience-rail-upper-right.webp')}
-  .rail-lower-left{background-image:url('../assets/arena/audience-rail-lower-left.webp')}
-  .rail-lower-right{background-image:url('../assets/arena/audience-rail-lower-right.webp')}
+  .rail-upper-left{background-image:url('../assets/arena/audience-rail-upper-left-v3.webp')}
+  .rail-upper-right{background-image:url('../assets/arena/audience-rail-upper-right-v3.webp')}
+  .rail-lower-left{background-image:url('../assets/arena/audience-rail-lower-left-v3.webp')}
+  .rail-lower-right{background-image:url('../assets/arena/audience-rail-lower-right-v3.webp')}
   .auction-staff,.auction-host{position:absolute;z-index:3;image-rendering:pixelated;pointer-events:none;object-fit:fill;filter:drop-shadow(0 2px 3px #001)}
-  .auction-staff{top:50.9%;width:2.15%;height:5.4%}
-  .auction-host{left:48.95%;top:47.2%;width:2.1%;height:7.8%;animation:auction-host-speak 1.7s ease-in-out infinite alternate}
-  .auction-podium-front{position:absolute;z-index:4;left:47.22%;top:51.38%;width:5.62%;height:7.98%;pointer-events:none;background:url('../assets/arena/auction-podium-front.webp') center / 100% 100% no-repeat}
+  .auction-staff{top:49.9%;width:2.15%;height:6.2%}
+  .auction-host{left:49.05%;top:47.1%;width:1.9%;height:6.2%;animation:auction-host-speak 1.7s ease-in-out infinite alternate}
+  .auction-stage-front{position:absolute;z-index:4;left:18.54%;top:53.19%;width:62.92%;height:7.98%;pointer-events:none;background:url('../assets/arena/auction-stage-front-v3.webp') center / 100% 100% no-repeat}
   .auction-foreground{position:absolute;inset:0;z-index:3;pointer-events:none}
   .auction-console-screen{position:absolute;width:2.9%;height:2.2%;border-radius:2px;background:linear-gradient(125deg,#4be9ff78,#2866c24d 50%,#b3efff91);box-shadow:0 0 12px #3fb9ffb0,0 0 34px #1c87e86b;opacity:.62;transform:perspective(70px) rotateX(12deg);animation:auction-monitor-glow 3.2s ease-in-out infinite alternate;animation-delay:var(--pulse-delay)}
   @keyframes auction-monitor-glow{to{opacity:.35;filter:hue-rotate(20deg)}}
@@ -139,7 +139,7 @@ body.auction-hall-active header{background:#051522e8}
   .auction-scene .auction-price small{font-size:12px}
   .auction-scene .auction-leader{padding:4px;font-size:clamp(9px,.72vw,14px)}
   .auction-scene .auction-desks{position:absolute;z-index:5;inset:0;display:block;pointer-events:none}
-  .auction-scene .auction-desks article{position:absolute;top:54%;width:6.3%;height:6%;padding:2px;display:flex;flex-direction:column;justify-content:center;border-width:1px;border-top-width:3px;background:#05172bdc;box-shadow:none;overflow:hidden}
+  .auction-scene .auction-desks article{position:absolute;top:54%;width:6.3%;height:6%;padding:2px;display:flex;flex-direction:column;justify-content:center;border-width:1px;border-top-width:3px;background:#05172bf8;box-shadow:none;overflow:hidden}
   .auction-scene .auction-desks article:nth-child(1){left:19%}
   .auction-scene .auction-desks article:nth-child(2){left:27%}
   .auction-scene .auction-desks article:nth-child(3){left:35%}
@@ -157,7 +157,7 @@ body.auction-hall-active header{background:#051522e8}
   .auction-award-light::before,.auction-award-light::after{content:"";position:absolute;top:15%;width:37%;height:37%;background:linear-gradient(#b9e6ff61,#92d7ff00);filter:blur(5px);clip-path:polygon(0 0,5% 0,100% 100%,54% 100%)}
   .auction-award-light::before{left:18%;transform:rotate(-5deg)}
   .auction-award-light::after{right:18%;transform:scaleX(-1) rotate(-5deg)}
-  body.auction-hall-active #app>main.auction-room:has(.auction-complete){background:#051120 url('../assets/arena/auction-hall-v2.webp') center / cover no-repeat}
+  body.auction-hall-active #app>main.auction-room:has(.auction-complete){background:#051120 url('../assets/arena/auction-hall-v3.webp') center / cover no-repeat}
 }
 .auction-award{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;background:radial-gradient(ellipse at center,#082653ed,#031126f5 77%);overflow:hidden;border:2px solid var(--winner);color:#fff;text-shadow:0 2px 12px #001}
 .auction-award strong{position:relative;z-index:1;font-size:clamp(21px,2.4vw,44px);line-height:1.2;color:#fff;filter:drop-shadow(0 0 12px var(--winner))}

@@ -9,16 +9,17 @@ function venueSprite(color,index,appearance='man'){
 }
 function auctionVenueCharacters(clubs){
   const colors=['#60a5fa','#fbbf24','#4ade80','#f472b6','#a78bfa','#e2e8f0'];
-  const audience=Array.from({length:200},(_,i)=>{
-    const side=Math.floor(i/100),row=Math.floor(i%100/20),col=i%20;
-    const tiers=[23.1,25.9,35.1,38.1,41.1];
-    return `<img class="auction-spectator" src="${venueSprite(colors[i%6],i,i%4?'man':'woman')}" alt="" style="left:${side?85.2+col*.68:1.2+col*.68}%;top:${tiers[row]+(side?19-col:col)*.32+(row%2)*.12}%">`;
-  }).join('');
+  // Chair banks tilt inward. Each sprite sits in a photographed chair row,
+  // with the aisle and solid walls outside the audience bounds left clear.
+  const audience=[0,1].flatMap(side=>[
+    ...Array.from({length:5*22},(_,i)=>{const row=Math.floor(i/22),col=i%22,x=5+col*10.2;return {side,row,col,x,y:218+row*12+x*.16};}),
+    ...Array.from({length:6*22},(_,i)=>{const row=Math.floor(i/22),col=i%22,x=5+col*10.2;return {side,row:row+5,col,x,y:357+row*14+x*.13};})
+  ].map(({side,row,col,x,y})=>{const n=(side*11+row*7+col)%36;return `<img class="auction-spectator" src="${venueSprite(colors[n%6],n,n%4?'man':'woman')}" alt="" style="left:${(side?1672-x-11:x)/1672*100}%;top:${y/940*100}%">`;})).join('');
   const seats=[19,27,35,59,67,75];
   const staff=clubs.slice(0,6).map((club,i)=>[0,1].map(role=>`<img class="auction-staff" src="${venueSprite(role?'#334155':club.color||'#60a5fa',i*2+role+24)}" alt="" style="left:${seats[i]+(role?3.6:1)}%">`).join('')).join('');
   const consoles=[[5,80.5],[15,80.4],[25,80.5],[75,80.5],[85,80.4],[95,80.5]].map(([x,y],i)=>`<span class="auction-console-screen" style="left:${x}%;top:${y}%;--pulse-delay:${i*.43}s"></span>`).join('');
   const operators=[10,29,71,90].map((x,i)=>`<span class="auction-operator" style="left:${x}%;--coat:${i%2?'#0c1829':'#101b2c'}"></span>`).join('');
-  return `<div class="auction-crowd" aria-hidden="true">${audience}${['upper-left','upper-right','lower-left','lower-right'].map(part=>`<span class="auction-railing rail-${part}"></span>`).join('')}</div><div class="auction-light-beam beam-left" aria-hidden="true"></div><div class="auction-light-beam beam-right" aria-hidden="true"></div><img class="auction-host" src="${venueSprite('#172e50',71)}" alt="" aria-hidden="true"><span class="auction-podium-front" aria-hidden="true"></span>${staff}<div class="auction-foreground" aria-hidden="true">${consoles}${operators}</div>`;
+  return `<div class="auction-crowd" aria-hidden="true">${audience}${['upper-left','upper-right','lower-left','lower-right'].map(part=>`<span class="auction-railing rail-${part}"></span>`).join('')}</div><div class="auction-light-beam beam-left" aria-hidden="true"></div><div class="auction-light-beam beam-right" aria-hidden="true"></div><img class="auction-host" src="${venueSprite('#172e50',71)}" alt="" aria-hidden="true">${staff}<span class="auction-stage-front" aria-hidden="true"></span><div class="auction-foreground" aria-hidden="true">${consoles}${operators}</div>`;
 }
 export function auctionAvatar(player){
   const key=player.avatarIndex??String(player.id).split('').reduce((h,c)=>(h*31+c.charCodeAt(0))>>>0,7);
