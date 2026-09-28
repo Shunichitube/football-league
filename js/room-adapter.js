@@ -1,4 +1,4 @@
-import { RoomClient } from './room-client.js';
+import { RoomClient } from './room-client.js?v=0.20.0';
 import { clone, applyWork } from './phase-work.js';
 
 const VIEW = { lobby: 'roomLobby', draft: 'draft', 'draft-complete': 'draft', auction: 'auction', 'auction-complete': 'auction', 'team-setup': 'squad', 'season-ready': 'squad', 'season-result': 'seasonResults', 'offseason-events': 'offseasonEvents', development: 'development', 'growth-result': 'growth', release: 'release', 'game-complete': 'history' };
@@ -27,6 +27,7 @@ export class RoomAdapter {
   receive(room) {
     if (!this.active) return;
     const previous = this.getState();
+    if(room.serverNow)this.clockOffset=room.serverNow-Date.now();
     const changed = previous.roomPhaseRevision !== room.phaseRevision || previous.roomId !== room.roomId;
     if (!changed && previous.roomRevision === room.revision) { this.statusChanged(); return; }
     if (!room.game) {
@@ -59,6 +60,7 @@ export class RoomAdapter {
       this.render();
     } else {
       previous.roomRevision = room.revision;
+      if(room.phase==='auction'){previous.auction=clone(room.game.auction);previous.league=clone(room.game.league);previous.league.humanClubId=owner.clubId;this.render();return;}
       // Completion-only polls never replace an in-progress editor or modal.
       // Renames are public, independent of uncommitted phase work.
       const names = new Map(room.game.league.clubs.flatMap(club => club.roster.map(p => [p.id, p.name])));
@@ -109,7 +111,8 @@ export class RoomAdapter {
     return room.players.map(player => {
       let label = player.completed ? '完了' : '未完了';
       let state = player.completed ? 'done' : 'pending';
-      if (room.phase === 'lobby') { label = '参加済み'; state = 'neutral'; }
+      if(room.phase==='auction'){label=room.game.auction.live?.leader===player.clubId?'最高入札':room.game.auction.live?.passed.includes(player.clubId)?'辞退':'入札可能';state='neutral';}
+      else if (room.phase === 'lobby') { label = '参加済み'; state = 'neutral'; }
       else if (room.phase === 'season-ready') { label = '完了'; state = 'done'; }
       else if (room.phase === 'game-complete') { label = '終了'; state = 'done'; }
       else if (room.phase === 'draft' && !room.game.draft.pendingClubIds.includes(player.clubId)) {
@@ -130,6 +133,7 @@ export class RoomAdapter {
     if (this.client.pending) return '前回の送信結果を確認してください。';
     const room = this.room;
     if (!room) return '';
+    if(room.phase==='auction')return '公開入札中・残り5秒以内の入札で5秒に延長';
     if (room.phase === 'game-complete') return '全10シーズンが終了しました。';
     if (room.phase === 'season-ready') return this.isHost ? '全員の編成が完了しました。シーズンを実行できます。' : 'ホストのシーズン実行を待っています。';
     const players = room.phase === 'draft' ? room.players.filter(p => room.game.draft.pendingClubIds.includes(p.clubId)) : room.players;

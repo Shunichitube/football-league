@@ -118,3 +118,11 @@ Generation prompt: Generate a polished 16:9 game background for FOOTBALL LEAGUE 
 - Removed the ceremony header and club badges above the draft controls, restoring the previous full-width card layout while retaining animated hall art and club-color desks.
 - Removed hall-specific width, padding and margin overrides; prevented scrollbar-width horizontal overflow. Browser visual check completed; no test suite run.
 
+
+## Public live auction (2026-09-28)
+- Replaced one-shot secret bidding with repeated public ascending bids in solo and Room play. Each player starts at 30 seconds; accepted raises with <=5 seconds remaining reset the remaining time to 5 seconds. Minimum raise is 1pt; ties, expired bids, full rosters, insufficient funds and retracting a leading bid are rejected.
+- CPU clubs compete at timed intervals using private valuation ceilings. Settlement charges once and displays the result for 4 seconds before the next player.
+- Room deadlines and settlement are authoritative and persisted, with serialized Durable Object alarms and read/request catch-up. Clients poll at 750ms in auction, display server-relative time, publish bid amounts and receive same-lot updates. Legacy active secret auctions restart the current lot in the new format.
+- Large stage monitor reuses the existing player-card renderer beside a stable per-player pixel avatar, countdown and leading bid. Six desk displays use actual club colors. Future avatars may be assigned using avatarIndex. Existing hall architecture, spectators and lights remain separate.
+- Validation: five focused auction tests cover deadlines/extensions, invalid bids, single settlement, roster cap/pass, repeated Room bidding, stale lot rejection and persisted alarm settlement. Syntax/module checks and asset build passed. Browser verified solo entry, CPU progression, successful player bid and desktop layout (docs/live-auction.png).
+- Not deployed: Cloudflare multiplayer transport and real multi-device play were not verified in this Python static preview. Worker code is included for deployment with the frontend. No broad unrelated test suite run.

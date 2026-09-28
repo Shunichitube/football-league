@@ -88,9 +88,9 @@ export class RoomClient {
     const poll = async () => {
       if (generation !== this.pollGeneration || !this.session) return;
       if (!this.busy) { try { await this.refresh(); } catch (error) { this.onStatus({ error: error.message }); } }
-      if (generation === this.pollGeneration) this.timer = setTimeout(poll, 2500);
+      if (generation === this.pollGeneration) this.timer = setTimeout(poll, this.room?.phase === 'auction' ? 750 : 2500);
     };
-    this.timer = setTimeout(poll, 2500);
+    this.timer = setTimeout(poll, this.room?.phase === 'auction' ? 750 : 2500);
   }
   stop() { this.generation++; this.pollGeneration++; clearTimeout(this.timer); this.timer = null; }
   async resume() { await this.refresh(); this.startPolling(); }

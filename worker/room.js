@@ -1,5 +1,5 @@
 // v2's Room/token/private-input model, with serialized authoritative mutations.
-import { startGame, submitInput, runSeason, renamePlayer, publicRoom } from './room-game.js';
+import { advanceAuction, startGame, submitInput, runSeason, renamePlayer, publicRoom } from './room-game.js';
 
 const META = 'v3-meta';
 const COLORS = ['#ffffff','#60a5fa','#f59e0b','#f472b6','#34d399','#a78bfa'];
@@ -21,6 +21,10 @@ export class RoomObject {
     this.queue = operation.catch(() => {});
     return operation;
   }
+  alarm(){
+    const operation=this.queue.then(async()=>{const room=await this.load();if(room&&advanceAuction(room)){room.revision++;await this.save(room);}});
+    this.queue=operation.catch(()=>{});return operation;
+  }
   async load() {
     const meta = await this.state.storage.get(META);
     if (!meta) return null;
@@ -33,6 +37,8 @@ export class RoomObject {
     return JSON.parse(keys.map(key => chunks.get(key)).join(''));
   }
   async save(room) {
+    // Persist a wake-up alongside state so auctions finish without connected clients.
+
     // Match logs can exceed one DO value's 128 KiB limit. Commit all chunks atomically.
     const text = JSON.stringify(room), chunks = [];
     for (let i = 0; i < text.length; i += 16000) chunks.push(text.slice(i, i + 16000));
@@ -41,6 +47,8 @@ export class RoomObject {
       for (let i = 0; i < chunks.length; i++) await txn.put(`v3-chunk-${i}`, chunks[i]);
       for (let i = chunks.length; i < (old?.chunks || 0); i++) await txn.delete(`v3-chunk-${i}`);
       await txn.put(META, { chunks: chunks.length });
+      if(room.phase==='auction'&&room.game.auction.live&&txn.setAlarm){const lot=room.game.auction.live;await txn.setAlarm(lot.closed?lot.nextAt:Math.min(lot.endAt,lot.cpuAt));}
+      else if(txn.deleteAlarm)await txn.deleteAlarm();
     }).catch(() => { throw Object.assign(new Error('保存結果を確認できません。再送して確認してください。'), { status: 503 }); });
   }
   async handle(request) {
@@ -50,6 +58,7 @@ export class RoomObject {
       if (request.method === 'GET' && action === 'state') {
         assert(room, 'ルームが見つかりません。', 404);
         const player = authenticate(room, request, url.searchParams.get('playerId'));
+        if(advanceAuction(room)){room.revision++;await this.save(room);}
         return json({ room: publicRoom(room, player) });
       }
       assert(request.method === 'POST', '未対応のAPIです。', 404);
@@ -95,6 +104,7 @@ export class RoomObject {
         assert(receipt.signature === signature, '同じリクエストIDの内容が異なります。', 409);
         return json({ room: publicRoom(room, player), replayed: true });
       }
+      if(advanceAuction(room)){room.revision++;await this.save(room);}
       assert(body.phaseRevision === room.phaseRevision, 'フェーズが更新されています。最新状態を確認してください。', 409);
       if (action === 'start' || action === 'run-season') assert(player.id === room.hostPlayerId, 'ホストのみ実行できます。', 403);
       if (action === 'start') startGame(room);

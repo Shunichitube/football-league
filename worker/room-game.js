@@ -1,7 +1,8 @@
+import { openLot, raiseBid, passLot, tickLot } from '../js/live-auction.js';
 // Room owns the phase and private inputs. All game rules come from main's modules.
 import { createLeague, standings, simulateRemainingSeason, finalizeSeason, applySeasonFinances, recordDraftAcquisition, startNextSeason } from '../js/league.js?v=0.17.29';
-import { createDraftPool, createAuctionPool, resolveDraftActions, resolveAuctionActions } from '../js/market.js?v=0.17.31';
-import { decideCpuDraftAction, decideCpuAuctionAction, prepareCpuClubs, manageCpuContracts, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from '../js/cpu.js?v=0.17.30';
+import { createDraftPool, createAuctionPool, resolveDraftActions } from '../js/market.js?v=0.17.31';
+import { decideCpuDraftAction, prepareCpuClubs, manageCpuContracts, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from '../js/cpu.js?v=0.17.30';
 import { createContractEvents, createSpecialTrainingOffers } from '../js/development.js?v=0.17.31';
 import { ACTION_TYPES } from '../js/rules.js?v=0.17.2';
 import { createRandom } from '../js/random.js';
@@ -94,22 +95,19 @@ function beginAuction(room) {
   league.clubs.forEach(club => delete club.reserveAuctionSlot);
   room.game.auction = { pool: createAuctionPool(league.seed, league.season, league.releasedPlayers), i: 0, history: [], completed: false, rngState: null };
   enterPhase(room, 'auction');
+  openLot(room.game.auction,league.clubs,league.seed);
 }
-function resolveAuction(room) {
-  const { league, auction: a } = room.game, player = a.pool[a.i];
-  const rng = createRandom(`${league.seed}:season:${league.season}:auction`, a.rngState);
-  const actions = league.clubs.map(club => club.controllerType === 'CPU' ? decideCpuAuctionAction(club, player, rng) : { type: ACTION_TYPES.AUCTION_BID, clubId: club.id, playerId: player.id, bid: club.roster.length < 12 ? room.inputs[club.id].bid : 0 });
-  const result = resolveAuctionActions({ clubs: league.clubs, player, actions, rng });
-  a.rngState = rng.snapshot();
-  a.history.push({ player, winnerClubId: result.winner?.id || null, bid: result.bid || 0 });
-  if (result.winner) league.releasedPlayers = league.releasedPlayers.filter(row => row.id !== player.id);
-  a.i++;
-  if (a.i >= a.pool.length) {
-    a.completed = true;
-    league.releasedPlayers = [];
-    prepareCpuClubs(league);
-    enterPhase(room, 'auction-complete');
-  } else enterPhase(room, 'auction');
+export function advanceAuction(room,now=Date.now()) {
+  if(room.phase!=='auction')return false;
+  const {league,auction:a}=room.game;
+  if(!a.live){enterPhase(room,'auction');openLot(a,league.clubs,league.seed,now);return true;}
+  if(a.live.closed&&now>=a.live.nextAt){
+    a.i++;
+    if(a.i>=a.pool.length){a.completed=true;league.releasedPlayers=[];prepareCpuClubs(league);enterPhase(room,'auction-complete');}
+    else{enterPhase(room,'auction');openLot(a,league.clubs,league.seed,now);}
+    return true;
+  }
+  return tickLot(a,league,now);
 }
 function beginOffseason(room) {
   const game = room.game, league = game.league;
@@ -155,7 +153,7 @@ function resolveAll(room) {
   const { league } = room.game;
   switch (room.phase) {
     case 'draft-complete': return beginAuction(room);
-    case 'auction': return resolveAuction(room);
+    case 'auction': return advanceAuction(room);
     case 'auction-complete': return enterPhase(room, 'team-setup');
     case 'team-setup':
       for (const club of league.clubs.filter(club => club.controllerType === 'HUMAN')) Object.assign(club, { lineup: [...room.inputs[club.id].lineup], tactic: room.inputs[club.id].tactic });
@@ -184,6 +182,11 @@ function resolveAll(room) {
 export function submitInput(room, player, input) {
   const club = room.game?.league.clubs.find(club => club.id === player.clubId);
   requireValue(club && pendingIds(room).includes(club.id), '現在は入力対象ではありません。');
+  if(room.phase==='auction'){
+    requireValue(input?.playerId===room.game.auction.pool[room.game.auction.i].id,'出品選手が更新されています。');
+    if(input.pass===true)passLot(room.game.auction,club.id);else raiseBid(room.game.auction,room.game.league.clubs,club.id,input.bid);
+    return;
+  }
   requireValue(!Object.hasOwn(room.inputs, club.id), '入力は完了済みです。');
   requireValue(input && typeof input === 'object' && !Array.isArray(input), '入力が不正です。');
   let accepted;
@@ -191,9 +194,6 @@ export function submitInput(room, player, input) {
     case 'draft':
       requireValue(input.pass === true || (club.funds >= 5 && club.roster.length < 12 && room.game.draft.pool.some(p => p.id === input.playerId)), '指名対象または資金が不正です。');
       accepted = { pass: input.pass === true, playerId: input.pass === true ? null : input.playerId }; break;
-    case 'auction':
-      requireValue(Number.isInteger(input.bid) && input.bid >= 0 && input.bid <= club.funds, '入札額が不正です。');
-      accepted = { bid: club.roster.length >= 12 ? 0 : input.bid }; break;
     case 'team-setup': validateSetup(club, input); accepted = { lineup: [...input.lineup], tactic: input.tactic }; break;
     case 'development': validateTraining(club, input.selections); accepted = { selections: input.selections.map(row => ({ playerId: row.playerId, focus: row.focus })) }; break;
     case 'offseason-events':
@@ -233,6 +233,6 @@ export function publicRoom(room, owner = null) {
     game.events = owner ? { [owner.clubId]: game.events[owner.clubId] } : {};
     game.special = {};
   }
-  const result = { roomId: room.roomId, phase: room.phase, phaseRevision: room.phaseRevision, revision: room.revision, hostPlayerId: room.hostPlayerId, game, players: room.players.map(player => ({ id: player.id, teamName: player.teamName, color: player.color, clubId: player.clubId, completed: Object.hasOwn(room.inputs, player.clubId) })), ownInput: owner ? room.inputs[owner.clubId] || null : null };
-  return JSON.parse(JSON.stringify(result, (key, value) => ['hiddenGrowth','rngState','seed','accessToken'].includes(key) ? undefined : value));
+  const result = { serverNow: Date.now(), roomId: room.roomId, phase: room.phase, phaseRevision: room.phaseRevision, revision: room.revision, hostPlayerId: room.hostPlayerId, game, players: room.players.map(player => ({ id: player.id, teamName: player.teamName, color: player.color, clubId: player.clubId, completed: Object.hasOwn(room.inputs, player.clubId) })), ownInput: owner ? room.inputs[owner.clubId] || null : null };
+  return JSON.parse(JSON.stringify(result, (key, value) => ['hiddenGrowth','rngState','seed','accessToken','cpuLimits','cpuAt'].includes(key) ? undefined : value));
 }
