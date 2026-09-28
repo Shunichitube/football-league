@@ -2,6 +2,7 @@ import { formatMatchEvents } from './match-log.js?v=0.17.31';
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.17.2';
 import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.17.2';
 import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.17.2';
+import { pixelTexture } from './arena-characters.js';
 
 export const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
 
@@ -139,6 +140,14 @@ export function renderRosterPanel(club, options = {}) {
   </section>`;
 }
 
+const squadAvatars = new Map();
+function squadAvatar(player) {
+  const key = player.avatarIndex ?? String(player.id).split('').reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 7) % 80;
+  if (typeof document === 'undefined') return '';
+  if (!squadAvatars.has(key)) squadAvatars.set(key, pixelTexture('#60a5fa', key % 80).toDataURL());
+  return squadAvatars.get(key);
+}
+
 export function renderLineupEditor(club, selectedPlayerId = null, message = '', messageIsError = false, benchSort = 'position') {
   const validation = validateLineup(club);
   const starterIds = new Set(club.lineup || []);
@@ -148,9 +157,7 @@ export function renderLineupEditor(club, selectedPlayerId = null, message = '', 
     const pa=a.player,pb=b.player;
     const pos=(positionOrder[pa.primaryPosition]??99)-(positionOrder[pb.primaryPosition]??99);
     const rank=rankOrder[displayPlayer(pa).overallRank]-rankOrder[displayPlayer(pb).overallRank];
-    const age=pa.age-pb.age;
-    const contract=pa.contractYears-pb.contractYears;
-    const joined=a.index-b.index;
+    const age=pa.age-pb.age,contract=pa.contractYears-pb.contractYears,joined=a.index-b.index;
     if (benchSort === 'overall') return rank || pos || age || contract || joined;
     if (benchSort === 'age') return age || pos || rank || contract || joined;
     if (benchSort === 'contract') return contract || pos || rank || age || joined;
@@ -159,24 +166,26 @@ export function renderLineupEditor(club, selectedPlayerId = null, message = '', 
   const selected = club.roster.find(player => player.id === selectedPlayerId);
   const warnings = validation.ok ? validation.warnings : [];
   const status = message || validation.error || (warnings.length ? '適性外配置があります。警告内容を確認してください。' : 'スタメン5人を設定済みです。');
-  return `<section class="lineup-editor" aria-label="スタメン編成">
+  return `<section class="lineup-editor formation-editor" aria-label="スタメン編成">
     <div class="lineup-status ${messageIsError || !validation.ok ? 'error' : warnings.length ? 'warning' : 'valid'}" role="status">
       <b>${escapeHtml(status)}</b>
-      ${selected ? `<span>選択中：${escapeHtml(selected.name)}（${positionLabel(selected.primaryPosition)}）</span>` : '<span>選手を選択し、配置したい枠を押してください。</span>'}
+      <span>${selected ? `${escapeHtml(selected.name)}を選択中。配置先を選ぶか、右の能力カードと比較できます。` : 'アバターか控えを選択し、ピッチの枠を押すかドラッグしてください。'}</span>
       ${warnings.length ? `<ul>${warnings.map(warning => `<li>${escapeHtml(warning)}</li>`).join('')}</ul>` : ''}
+      <span class="formation-drop-status" aria-live="polite"></span>
     </div>
-    <h3>スタメン</h3>
-    <div class="lineup-slots">${LINEUP_SLOTS.map((slot, index) => {
+    <h3>フォーメーション・スタメン</h3>
+    <div class="lineup-slots formation-pitch">${LINEUP_SLOTS.map((slot, index) => {
       const player = club.roster.find(candidate => candidate.id === club.lineup?.[index]);
-      return `<section class="lineup-slot ${player && player.primaryPosition !== slot ? 'out-of-position' : ''}" data-slot-position="${slot}">
-        <div class="slot-heading"><b>${slotLabel(slot, index)}</b>${player ? `<span>本職 ${positionLabel(player.primaryPosition)}</span>` : '<span>未配置</span>'}</div>
-        ${player ? renderPlayerCard(player, { allowRename: true }) : '<p class="hint">選手が配置されていません。</p>'}
-        ${player ? `<button type="button" data-lineup-player="${escapeHtml(player.id)}" class="${selectedPlayerId === player.id ? '' : 'subtle'}">${selectedPlayerId === player.id ? '選択中' : 'この選手を選択'}</button>` : ''}
-        <button type="button" data-lineup-slot="${index}" ${selected ? '' : 'disabled'}>この枠に配置</button>
-      </section>`;
+      return `<button type="button" class="lineup-slot formation-token ${player && player.primaryPosition !== slot ? 'out-of-position' : ''} ${selectedPlayerId === player?.id ? 'selected-player' : ''}" data-lineup-slot="${index}" data-lineup-drag="${player ? escapeHtml(player.id) : ''}" ${player ? 'draggable="true"' : ''} aria-label="${slotLabel(slot,index)}：${player ? escapeHtml(player.name) : '空き枠'}">
+        <span class="formation-position">${slotLabel(slot,index)}</span>
+        ${player ? `<img src="${squadAvatar(player)}" alt="" draggable="false"><strong title="${escapeHtml(player.name)}">${escapeHtml(player.name)}</strong><span class="formation-rank">総合 ${escapeHtml(displayPlayer(player).overallRank)}</span>` : '<span class="formation-empty">＋ 配置する</span>'}
+      </button>`;
     }).join('')}</div>
-    <div class="bench-heading"><h3>控え</h3><label>並び順<select data-bench-sort><option value="position" ${benchSort === 'position' ? 'selected' : ''}>ポジション順</option><option value="overall" ${benchSort === 'overall' ? 'selected' : ''}>総合ランク順</option><option value="age" ${benchSort === 'age' ? 'selected' : ''}>年齢順</option><option value="contract" ${benchSort === 'contract' ? 'selected' : ''}>契約年数順</option></select></label></div>
-    <div class="candidate-grid bench-grid">${bench.length ? bench.map(player => `<article class="candidate bench-player ${selectedPlayerId === player.id ? 'selected-player' : ''}">${renderPlayerCard(player, { allowRename: true })}<button type="button" data-lineup-player="${escapeHtml(player.id)}" class="${selectedPlayerId === player.id ? '' : 'subtle'}">${selectedPlayerId === player.id ? '選択中' : 'この選手を選択'}</button></article>`).join('') : '<p class="hint">控え選手はいません。</p>'}</div>
+    <div class="bench-heading"><h3>選手カード・控え</h3><label>並び順<select data-bench-sort><option value="position" ${benchSort === 'position' ? 'selected' : ''}>ポジション順</option><option value="overall" ${benchSort === 'overall' ? 'selected' : ''}>総合ランク順</option><option value="age" ${benchSort === 'age' ? 'selected' : ''}>年齢順</option><option value="contract" ${benchSort === 'contract' ? 'selected' : ''}>契約年数順</option></select></label></div>
+    <div class="formation-cards">
+      ${selected ? `<section class="formation-selected"><p class="eyebrow">選択中の選手・能力比較</p>${renderPlayerCard(selected, { allowRename: true })}</section>` : '<p class="formation-select-hint">スタメンのアバターを選ぶと、ここで能力を確認できます。</p>'}
+      <div class="candidate-grid bench-grid">${bench.length ? bench.map(player => `<article class="candidate bench-player ${selectedPlayerId === player.id ? 'selected-player' : ''}" data-lineup-drag="${escapeHtml(player.id)}" draggable="true">${renderPlayerCard(player, { allowRename: true })}<button type="button" data-lineup-player="${escapeHtml(player.id)}" class="${selectedPlayerId === player.id ? '' : 'subtle'}">${selectedPlayerId === player.id ? '選択中' : 'この選手を選択'}</button></article>`).join('') : '<p class="hint">控え選手はいません。</p>'}</div>
+    </div>
   </section>`;
 }
 

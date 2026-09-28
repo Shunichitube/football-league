@@ -4,7 +4,7 @@ import { applySeasonFinances, awards, clubAchievements, createLeague, finalizeSe
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.17.2';
 import { createRandom } from './random.js';
 import { createAuctionPool, createDraftPool, resolveDraftActions } from './market.js?v=0.17.31';
-import { configureRename, escapeHtml as e, renderLineupEditor, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=0.19.0';
+import { configureRename, escapeHtml as e, renderLineupEditor, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=0.19.1';
 import { decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=0.17.30';
 import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=0.17.2';
 import { RoomAdapter } from './room-adapter.js?v=0.20.0';
@@ -28,7 +28,7 @@ function draft(){let d=s.draft,c=me();if(d.completed)return `${head()}<main><sec
 function auction(){if(!s.auction.completed&&!s.auction.live&&s.mode!=='room')openLot(s.auction,s.league.clubs,s.league.seed);return renderLiveAuction(s,me(),player,e,head());}
 function table(){let humanId=me().id,rows=standings(s.league).map(r=>`<tr class="${r.club.id===humanId?'you':''}"><td>${r.rank}</td><td><i class="club-color-dot" style="--club:${e(r.club.color)}"></i>${e(r.club.name)}</td><td>${r.played}</td><td>${r.wins}</td><td>${r.draws}</td><td>${r.losses}</td><td>${r.goalsFor}</td><td>${r.goalsAgainst}</td><td>${r.goalDifference}</td><td>${r.points}</td></tr>`).join('');return `${head()}<main><h2>順位表</h2><div class="table-wrap"><table><thead><tr><th>順位</th><th>クラブ</th><th>試合</th><th>勝</th><th>分</th><th>敗</th><th>得点</th><th>失点</th><th>得失</th><th>勝点</th></tr></thead><tbody>${rows}</tbody></table></div><button data-nav="home" class="subtle">戻る</button></main>`}
 function home(){let c=me(),lineup=validateLineup(c),remaining=Math.max(0,11-s.league.currentRound);if(s.league.completed)return `${head()}<main><section class="hero"><p>全10節・リーグ全30試合終了</p><h2>シーズン${s.league.season}終了</h2><button data-nav="seasonResults">シーズン結果を見る</button><button data-nav="stats" class="subtle">個人成績を見る</button></section></main>`;return `${head()}<main><section class="hero" style="--club:${c.color}"><p>残り${remaining}節</p><h2>編成と戦術を決めてシーズンを開始</h2>${lineup.ok?'<button data-a="season">シーズンをシミュレート</button>':`<p class="lineup-error">${e(lineup.error)}</p><button data-nav="squad">編成を確認する</button>`}</section><nav><button data-nav="squad">編成</button><button data-nav="table">順位表</button><button data-nav="stats">個人成績</button></nav></main>`}
-function squad(){let c=me(),lineup=validateLineup(c);return `${head()}<main style="--club:${e(c.color)}"><div class="squad-heading-row"><div class="squad-heading-copy"><h2>編成</h2><p class="hint">所属選手を選び、配置したい枠を押してください。能力はすべてランク表示です。</p></div></div>${renderLineupEditor(c,s.selectedLineupPlayerId,s.lineupMessage,s.lineupError,s.benchSort)}<button data-a="season" ${lineup.ok?'':'disabled'}>シーズンをシミュレート</button><button data-nav="home" class="subtle">戻る</button></main>`}
+function squad(){let c=me(),lineup=validateLineup(c);return `${head()}<main style="--club:${e(c.color)}"><div class="squad-heading-row"><div class="squad-heading-copy"><h2>編成</h2><p class="hint">アバターと選手カードを選んで配置・交代できます。ドラッグでも操作できます。</p></div></div>${renderLineupEditor(c,s.selectedLineupPlayerId,s.lineupMessage,s.lineupError,s.benchSort)}<button data-a="season" ${lineup.ok?'':'disabled'}>シーズンをシミュレート</button><button data-nav="home" class="subtle">戻る</button></main>`}
 function stats(){const c=me();return `${head()}<main><p class="eyebrow">シーズン${s.league.season}</p><h2>所属選手の個人成績</h2>${renderSeasonPlayerStats(c)}<button data-nav="${s.league.completed?'seasonResults':'home'}" class="subtle">戻る</button></main>`}
 function seasonResults(){const c=me(),row=standings(s.league).find(result=>result.club.id===c.id),matches=s.league.seasonResults||[];return `${head()}<main><p class="eyebrow">シーズン${s.league.season} 結果</p><h2>最終順位 ${row.rank}位</h2><section class="season-summary-grid"><div><span>勝点</span><b>${row.points}</b></div><div><span>勝</span><b>${row.wins}</b></div><div><span>分</span><b>${row.draws}</b></div><div><span>敗</span><b>${row.losses}</b></div><div><span>得点</span><b>${row.goalsFor}</b></div><div><span>失点</span><b>${row.goalsAgainst}</b></div><div><span>得失点差</span><b>${row.goalDifference}</b></div></section><h2>全10試合</h2>${renderSeasonMatchList(matches,c.id)}<div class="season-result-actions"><button data-nav="stats">シーズン個人成績</button>${s.mode==='room'&&roomAdapter.room.phase==='season-result'?'<button data-stage4="offseason">結果確認完了</button>':''}<button data-nav="table" class="subtle">最終順位表</button><button data-nav="home" class="subtle">ホームへ戻る</button></div></main>`}
 function matchDetail(){return `${head()}${renderMatchDetail(s.match)}`}
@@ -188,6 +188,20 @@ onGameClick('app',ev=>{const x=ev.target.closest('[data-stage6]')?.dataset.stage
 import { exportSave, importSave, loadSlot, saveSlot, slotInfo } from './storage.js?v=0.17.27';
 
 // Stage 14 lets the human controller submit the same SET_LINEUP action used by CPU controllers.
+function placeLineupPlayer(playerId, slotIndex) {
+  const selected = me().roster.find(player => player.id === playerId);
+  if (!selected || !Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex > 4) return;
+  const nextLineup = createLineupPlacement(me().lineup, playerId, slotIndex);
+  const result = applyClubAction(me(), { type: ACTION_TYPES.SET_LINEUP, clubId: me().id, lineup: nextLineup });
+  if (!result.ok) { s.lineupMessage = result.error; s.lineupError = true; }
+  else {
+    const slotNames = ['GK', 'DF', 'MF 1', 'MF 2', 'FW'];
+    s.lineupMessage = `${selected.name}を${slotNames[slotIndex]}へ配置しました。${result.warnings.length ? ' 適性外配置があります。' : ''}`;
+    s.lineupError = false;
+    s.selectedLineupPlayerId = null;
+  }
+  render();
+}
 onGameClick('app', event => {
   const playerId = event.target.closest('[data-lineup-player]')?.dataset.lineupPlayer;
   const slotValue = event.target.closest('[data-lineup-slot]')?.dataset.lineupSlot;
@@ -198,19 +212,60 @@ onGameClick('app', event => {
     render();
     return;
   }
-  if (slotValue === undefined || !s.selectedLineupPlayerId) return;
-  const slotIndex = Number(slotValue);
-  const selected = me().roster.find(player => player.id === s.selectedLineupPlayerId);
-  const nextLineup = createLineupPlacement(me().lineup, s.selectedLineupPlayerId, slotIndex);
-  const result = applyClubAction(me(), { type: ACTION_TYPES.SET_LINEUP, clubId: me().id, lineup: nextLineup });
-  if (!result.ok) { s.lineupMessage = result.error; s.lineupError = true; }
-  else {
-    const slotNames = ['GK', 'DF', 'MF 1', 'MF 2', 'FW'];
-    s.lineupMessage = `${selected.name}を${slotNames[slotIndex]}へ配置しました。${result.warnings.length ? ' 適性外配置があります。' : ''}`;
+  if (slotValue === undefined) return;
+  const slotIndex = Number(slotValue), occupantId = me().lineup[slotIndex];
+  if (!s.selectedLineupPlayerId) {
+    if (!occupantId) return;
+    s.selectedLineupPlayerId = occupantId;
+    s.lineupMessage = '';
     s.lineupError = false;
+    render();
+  } else if (s.selectedLineupPlayerId === occupantId) {
     s.selectedLineupPlayerId = null;
-  }
-  render();
+    render();
+  } else placeLineupPlayer(s.selectedLineupPlayerId, slotIndex);
+});
+let draggingLineupPlayerId = null;
+function previewLineupDrop(slot, playerId) {
+  const player = me().roster.find(candidate => candidate.id === playerId);
+  const index = Number(slot.dataset.lineupSlot), replacedId = me().lineup[index];
+  if (!player) return;
+  const replaced = me().roster.find(candidate => candidate.id === replacedId);
+  const originalIndex = me().lineup.indexOf(playerId);
+  const action = replacedId === playerId ? '現在の配置' : replaced ? `${originalIndex >= 0 ? '位置交換' : '交代'}：${player.name} ⇄ ${replaced.name}` : `配置：${player.name} → ${['GK','DF','MF 1','MF 2','FW'][index]}`;
+  app.querySelector('.formation-drop-status')?.replaceChildren(document.createTextNode(action));
+  slot.classList.add('drop-preview');
+  slot.dataset.dropLabel = action;
+}
+app.addEventListener('dragstart', event => {
+  const source = event.target.closest('[data-lineup-drag]');
+  if (!source || s.view !== 'squad' || (s.mode === 'room' && (roomAdapter.locked || roomAdapter.room.phase !== 'team-setup'))) return;
+  const id = source.dataset.lineupDrag;
+  if (!id || !me().roster.some(player => player.id === id)) return;
+  draggingLineupPlayerId = id;
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/plain', id);
+});
+app.addEventListener('dragover', event => {
+  const slot = event.target.closest('.formation-pitch [data-lineup-slot]');
+  if (!slot || !draggingLineupPlayerId) return;
+  event.preventDefault();event.dataTransfer.dropEffect = 'move';
+  app.querySelectorAll('.formation-token.drop-preview').forEach(node => { if (node !== slot) node.classList.remove('drop-preview'); });
+  previewLineupDrop(slot, draggingLineupPlayerId);
+});
+app.addEventListener('drop', event => {
+  const slot = event.target.closest('.formation-pitch [data-lineup-slot]');
+  if (!slot || !draggingLineupPlayerId) return;
+  event.preventDefault();
+  const id = draggingLineupPlayerId;
+  draggingLineupPlayerId = null;
+  if (me().lineup[Number(slot.dataset.lineupSlot)] === id) return;
+  placeLineupPlayer(id, Number(slot.dataset.lineupSlot));
+});
+app.addEventListener('dragend', () => {
+  draggingLineupPlayerId = null;
+  app.querySelectorAll('.formation-token.drop-preview').forEach(node => node.classList.remove('drop-preview'));
+  app.querySelector('.formation-drop-status')?.replaceChildren();
 });
 
 // Stage 10 keeps all public player information in one rank-only card and adds

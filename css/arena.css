@@ -181,3 +181,33 @@ body.auction-hall-active header{background:#051522e8}
 @keyframes auction-confetti-fall{to{top:110%;transform:translateX(var(--drift)) rotate(680deg)}}
 @media(prefers-reduced-motion:reduce){.auction-confetti i{animation:none;display:none}}
 @media(prefers-reduced-motion:reduce){.auction-light-beam,.auction-host,.auction-console-screen,.auction-spectator,.auction-staff,.auction-ring-track{animation:none}}
+
+/* Squad editor: avatars live on the tactics pitch; full ability cards stay on the right. */
+@media(min-width:761px){
+  main.screen-squad .formation-editor{grid-template-columns:minmax(0,42fr) minmax(0,58fr);grid-template-areas:'status status' 'starterTitle benchTitle' 'slots bench';gap:.55rem 1rem}
+  main.screen-squad .formation-pitch{min-height:560px;grid-template-columns:repeat(3,minmax(0,1fr)) !important;grid-template-rows:repeat(3,minmax(0,1fr)) !important;align-items:center;justify-items:center;gap:.35rem !important;padding:1.5rem !important;border:1px solid #38d9a199 !important;background:radial-gradient(circle at 50% 50%,#35d69a12 0 7%,transparent 7.2%),linear-gradient(90deg,transparent 49.7%,#5dd4a333 49.9% 50.1%,transparent 50.3%),linear-gradient(145deg,#0b2932,#0c2436 52%,#0b2232) !important;box-shadow:inset 0 0 50px #010a1dbd,0 0 28px #2cbf8b19;overflow:hidden}
+  main.screen-squad .formation-pitch::before{inset:1rem;border-color:#48d4ac55}
+  main.screen-squad .formation-pitch::after{bottom:1rem;border-color:#48d4ac55}
+  main.screen-squad .formation-pitch .formation-token,
+  main.screen-squad .formation-pitch .formation-token:first-child,
+  main.screen-squad .formation-pitch .formation-token:last-child{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;grid-column:auto;min-width:0;width:min(100%,156px);height:145px;min-height:0;margin:0;padding:5px !important;background:#081b2fe8;border:1px solid #4c8d89;border-radius:13px !important;color:#e7f9f5;cursor:pointer;z-index:1;transform:none !important;box-shadow:0 5px 15px #0008}
+  main.screen-squad .formation-pitch .formation-token:nth-child(5){grid-column:2 !important;grid-row:1}
+  main.screen-squad .formation-pitch .formation-token:nth-child(3){grid-column:1 !important;grid-row:2}
+  main.screen-squad .formation-pitch .formation-token:nth-child(2){grid-column:2 !important;grid-row:2}
+  main.screen-squad .formation-pitch .formation-token:nth-child(4){grid-column:3 !important;grid-row:2}
+  main.screen-squad .formation-pitch .formation-token:nth-child(1){grid-column:2 !important;grid-row:3}
+  main.screen-squad .formation-token img{width:62px;height:82px;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 5px 5px #0009)}
+  main.screen-squad .formation-token strong{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.8rem}
+  main.screen-squad .formation-position{align-self:flex-start;color:#79edba;font-size:.78rem;font-weight:900}
+  main.screen-squad .formation-rank{color:#f6d981;font-size:.68rem}
+  main.screen-squad .formation-empty{color:#9dcaba;font-size:.76rem}
+  main.screen-squad .formation-token:hover,main.screen-squad .formation-token:focus-visible,main.screen-squad .formation-token.selected-player{border-color:#58fac5;box-shadow:0 0 0 2px #42d99b77,0 0 20px #38f0aa55}
+  main.screen-squad .formation-token.drop-preview{border-color:#ffe28c;box-shadow:0 0 0 3px #ffe28caa,0 0 25px #ffe28c88}
+  main.screen-squad .formation-cards{grid-area:bench;min-width:0}
+  main.screen-squad .formation-cards .bench-grid{display:grid !important;grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:.65rem !important;margin-top:.5rem !important}
+  main.screen-squad .formation-selected{border:1px solid #5be0ae;border-radius:12px;padding:.7rem;background:#12313a;margin-bottom:.6rem}
+  main.screen-squad .formation-selected .eyebrow{margin:0 0 .4rem;color:#88f4cc}
+  main.screen-squad .formation-select-hint{padding:.65rem;margin:0;border:1px dashed #406879;border-radius:10px;color:#a8bbc6;font-size:.8rem}
+  main.screen-squad .bench-player[draggable=true]{cursor:grab}
+  main.screen-squad .formation-drop-status:not(:empty){color:#ffe28c;font-weight:800}
+}
