@@ -2,15 +2,15 @@ import { pixelTexture } from './arena-characters.js';
 // Decorative only. Club data flows one way from the current draft renderer.
 export async function mountDraftHall(canvas){
   const ctx=canvas.getContext('2d',{alpha:false}),base=new Image();
-  await new Promise((resolve,reject)=>{base.onload=resolve;base.onerror=reject;base.src=new URL('../assets/arena/draft-hall.webp',import.meta.url).href;});
+  await new Promise((resolve,reject)=>{base.onload=resolve;base.onerror=reject;base.src=new URL('../assets/arena/auction-hall-v3.webp',import.meta.url).href;});
   const colors=['#4ade80','#60a5fa','#fbbf24','#f472b6','#a78bfa','#e2e8f0'];
   const fans=Array.from({length:36},(_,i)=>pixelTexture(colors[i%6],i,i%2?'woman':'man'));
   const reduce=matchMedia('(prefers-reduced-motion: reduce)');
   let frame=0,dead=false,last=0,time=0,previous=0;
   function draw(){
-    const scale=Math.max(innerWidth/1672,innerHeight/941),dx=(innerWidth-1672*scale)/2;
+    const scale=Math.max(innerWidth/1672,innerHeight/940),dx=(innerWidth-1672*scale)/2;
     const dpr=Math.min(devicePixelRatio||1,2);ctx.setTransform(dpr*scale,0,0,dpr*scale,dpr*dx,0);
-    ctx.drawImage(base,0,0,1672,941);ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(base,0,0,1672,940);ctx.imageSmoothingEnabled=false;
     // Each tier is clipped to its seating envelope; aisle gaps stay clear.
     for(let side=0;side<2;side++)for(let tier=0;tier<2;tier++){
       ctx.save();if(side){ctx.translate(1672,0);ctx.scale(-1,1);}
