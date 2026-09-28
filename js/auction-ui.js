@@ -9,13 +9,14 @@ function venueSprite(color,index,appearance='man'){
 }
 function auctionVenueCharacters(clubs){
   const colors=['#60a5fa','#fbbf24','#4ade80','#f472b6','#a78bfa','#e2e8f0'];
-  const audience=Array.from({length:84},(_,i)=>{
-    const side=Math.floor(i/42),row=Math.floor(i%42/14),col=i%14;
-    return `<img class="auction-spectator" src="${venueSprite(colors[i%6],i,i%4?'man':'woman')}" alt="" style="left:${side?86+col*.85:2+col*.85}%;top:${29+row*4.2+(col%3)*.25}%">`;
+  const audience=Array.from({length:140},(_,i)=>{
+    const side=Math.floor(i/70),row=Math.floor(i%70/14),col=i%14;
+    const tiers=[24.5,27.5,37.5,41,44.5];
+    return `<img class="auction-spectator" src="${venueSprite(colors[i%6],i,i%4?'man':'woman')}" alt="" style="left:${side?86+col*.85:2+col*.85}%;top:${tiers[row]+(col%3)*.16}%">`;
   }).join('');
   const seats=[19,27,35,59,67,75];
   const staff=clubs.slice(0,6).map((club,i)=>[0,1].map(role=>`<img class="auction-staff" src="${venueSprite(role?'#334155':club.color||'#60a5fa',i*2+role+24)}" alt="" style="left:${seats[i]+(role?3.6:1)}%">`).join('')).join('');
-  return `<div class="auction-crowd" aria-hidden="true">${audience}<span class="auction-railing auction-railing-left"></span><span class="auction-railing auction-railing-right"></span></div><div class="auction-light-beam beam-left" aria-hidden="true"></div><div class="auction-light-beam beam-right" aria-hidden="true"></div><img class="auction-host" src="${venueSprite('#172e50',71)}" alt="" aria-hidden="true">${staff}`;
+  return `<div class="auction-crowd" aria-hidden="true">${audience}${['upper-left','upper-right','lower-left','lower-right'].map(part=>`<span class="auction-railing rail-${part}"></span>`).join('')}</div><div class="auction-light-beam beam-left" aria-hidden="true"></div><div class="auction-light-beam beam-right" aria-hidden="true"></div><img class="auction-host" src="${venueSprite('#172e50',71)}" alt="" aria-hidden="true"><span class="auction-podium-front" aria-hidden="true"></span>${staff}`;
 }
 export function auctionAvatar(player){
   const key=player.avatarIndex??String(player.id).split('').reduce((h,c)=>(h*31+c.charCodeAt(0))>>>0,7);
