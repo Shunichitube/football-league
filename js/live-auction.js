@@ -6,7 +6,7 @@ export function minimumAuctionBid(player){return MINIMUM_BID[displayPlayer(playe
 export function openLot(auction,clubs,seed,now=Date.now()){
   const player=auction.pool[auction.i];if(!player)return;
   const rng=createRandom(`${seed}:live:${player.id}`);
-  auction.live={playerId:player.id,endAt:now+30000,minimum:minimumAuctionBid(player),high:0,leader:null,bids:{},passed:[],closed:false,cpuAt:now+2000,cpuLimits:Object.fromEntries(clubs.filter(c=>c.controllerType==='CPU').map(c=>[c.id,cpuBid(c,player,rng)]))};
+  auction.live={playerId:player.id,endAt:now+30000,minimum:minimumAuctionBid(player),high:0,leader:null,bids:{},passed:[],closed:false,cpuAt:now,cpuLimits:Object.fromEntries(clubs.filter(c=>c.controllerType==='CPU').map(c=>[c.id,cpuBid(c,player,rng)]))};
 }
 export function raiseBid(auction,clubs,clubId,amount,now=Date.now()){
   const lot=auction.live,club=clubs.find(c=>c.id===clubId);
@@ -33,19 +33,21 @@ export function tickLot(auction,league,now=Date.now()){
     lot.closed=true;lot.nextAt=now+4000;return true;
   }
   if(now>=lot.endAt)return settle();
-  const required=Math.max(lot.high+1,lot.minimum??minimumAuctionBid(auction.pool[auction.i]));
   const previousPasses=lot.passed.length;
   let bidPlaced=false;
   if(now>=lot.cpuAt){
-    lot.cpuAt=now+2000;
-    // A club that cannot exceed the current price has left this lot.
-    for(const club of league.clubs){
-      if(club.controllerType==='CPU'&&club.id!==lot.leader&&Math.min(club.funds,lot.cpuLimits?.[club.id]||0)<required)passLot(auction,club.id);
-    }
-    const eligible=league.clubs.filter(c=>c.controllerType==='CPU'&&c.id!==lot.leader&&c.roster.length<12&&!lot.passed.includes(c.id)&&Math.min(c.funds,lot.cpuLimits[c.id]||0)>=required);
-    if(eligible.length){
-      const club=eligible[Math.floor(now/2000)%eligible.length];
-      raiseBid(auction,league.clubs,club.id,required,now);bidPlaced=true;
+    // Resolve the CPU bidding ladder in one update instead of waiting two seconds
+    // between each club. Every offer still passes through raiseBid and its limits.
+    lot.cpuAt=now+250;
+    for(let round=0;round<256;round++){
+      const required=Math.max(lot.high+1,lot.minimum??minimumAuctionBid(auction.pool[auction.i]));
+      for(const club of league.clubs){
+        if(club.controllerType==='CPU'&&club.id!==lot.leader&&!lot.passed.includes(club.id)&&Math.min(club.funds,lot.cpuLimits?.[club.id]||0)<required)passLot(auction,club.id);
+      }
+      const next=league.clubs.find(c=>c.controllerType==='CPU'&&c.id!==lot.leader&&c.roster.length<12&&!lot.passed.includes(c.id)&&Math.min(c.funds,lot.cpuLimits?.[c.id]||0)>=required);
+      if(!next)break;
+      raiseBid(auction,league.clubs,next.id,required,now);
+      bidPlaced=true;
     }
   }
   const nextRequired=Math.max(lot.high+1,lot.minimum??minimumAuctionBid(auction.pool[auction.i]));

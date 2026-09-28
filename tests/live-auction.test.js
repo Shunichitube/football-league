@@ -26,3 +26,19 @@ test('durable room alarm persists deadline and settles without a client',async()
 });
 
 test('opening bid follows the displayed rank minimum',()=>{const {league,a}=fixture();assert.equal(a.live.minimum,15);assert.equal(minimumAuctionBid(a.pool[0]),15);assert.throws(()=>raiseBid(a,league.clubs,league.clubs[0].id,14,2000));raiseBid(a,league.clubs,league.clubs[0].id,15,2000);assert.equal(a.live.high,15);});
+test('CPU clubs finish their bidding ladder immediately and respect limits',()=>{
+  const {league,a}=fixture(),[human,first,second]=league.clubs;
+  first.controllerType='CPU';second.controllerType='CPU';
+  a.live.cpuLimits={[first.id]:25,[second.id]:30};
+  assert.equal(a.live.cpuAt,1000);
+  assert.equal(tickLot(a,league,1000),true);
+  assert.equal(a.live.leader,second.id);
+  assert.equal(a.live.high,26);
+  assert.ok(a.live.passed.includes(first.id));
+  assert.equal(a.live.endAt,31000);
+  raiseBid(a,league.clubs,human.id,28,27000);
+  tickLot(a,league,27000);
+  assert.equal(a.live.high,29);
+  assert.equal(a.live.leader,second.id);
+  assert.equal(a.live.endAt,32000);
+});

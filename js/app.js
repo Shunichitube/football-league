@@ -1,4 +1,4 @@
-import { openLot, raiseBid, passLot, tickLot } from './live-auction.js';
+import { openLot, raiseBid, passLot, tickLot } from './live-auction.js?v=0.21.1';
 import { renderLiveAuction } from './auction-ui.js';
 import { applySeasonFinances, awards, clubAchievements, createLeague, finalizeSeason, recordDraftAcquisition, simulateRemainingSeason, standings as singleStandings, startNextSeason } from './league.js?v=0.17.29';
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.17.2';

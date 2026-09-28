@@ -1,4 +1,4 @@
-import { openLot, raiseBid, passLot, tickLot } from '../js/live-auction.js';
+import { openLot, raiseBid, passLot, tickLot } from '../js/live-auction.js?v=0.21.1';
 // Room owns the phase and private inputs. All game rules come from main's modules.
 import { createLeague, standings, simulateRemainingSeason, finalizeSeason, applySeasonFinances, recordDraftAcquisition, startNextSeason } from '../js/league.js?v=0.17.29';
 import { createDraftPool, createAuctionPool, resolveDraftActions } from '../js/market.js?v=0.17.31';
