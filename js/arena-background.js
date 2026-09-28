@@ -5,7 +5,7 @@ import { mountArena } from './arena-scene.js?v=1.3.1';
 const app=document.querySelector('#app');
 let current=null,dispose=null,generation=0;
 function sync(){
-  const title=app.querySelector(':scope > .arena-title')?'title':app.querySelector('.draft-stage-window')?'draft':null;
+  const title=app.querySelector(':scope > .arena-title')?'title':app.querySelector(':scope > main.screen-draft')?'draft':null;
   if(title===current)return;
   current=title;generation++;const token=generation;
   dispose?.();dispose=null;

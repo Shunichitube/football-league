@@ -113,3 +113,8 @@
 - Added responsive stage space above readable navy player cards. Browser confirmed draft entry and visual layout; no extra test suite run. Screenshot: docs/draft-hall.png.
 
 Generation prompt: Generate a polished 16:9 game background for FOOTBALL LEAGUE draft ceremony. Symmetrical indoor futsal arena converted to dramatic draft stage, deep navy architecture, blue and emerald accent lighting, overhead steel trusses, huge suspended circular LED ring near top, big rectangular LED video screen center, tall vertical banners either side, central podium and stairs, six neutral navy team desks three left three right at lower middle, dark foreground press desks. Refined detailed 3D/pixel-art compatible game illustration. Camera centered facing stage, wide composition. NO people, NO spectators (empty dark tiered seats at sides for runtime pixel crowds), NO logos, NO team emblems, NO text, NO spotlight beams (runtime effects added later). All screens blank dark navy. Team desk front panels plain dark navy, no colored crests. Subtle floor reflections, not mirror glossy. Strong depth, richly detailed architecture. This is a production background asset, not UI mockup. Output landscape 1536x864 or equivalent 16:9.
+
+## Compact draft layout
+- Removed the ceremony header and club badges above the draft controls, restoring the previous full-width card layout while retaining animated hall art and club-color desks.
+- Removed hall-specific width, padding and margin overrides; prevented scrollbar-width horizontal overflow. Browser visual check completed; no test suite run.
+
