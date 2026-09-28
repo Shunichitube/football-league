@@ -22,22 +22,23 @@ function auctionBackSprite(index){
 }
 function auctionVenueCharacters(clubs){
   const colors=['#60a5fa','#fbbf24','#4ade80','#f472b6','#a78bfa','#e2e8f0'];
-  // Chair banks tilt inward. Each sprite sits in a photographed chair row,
-  // with the aisle and solid walls outside the audience bounds left clear.
   // Use the draft hall's photographed seating envelopes and chair coordinates.
   const audience=[0,1].flatMap(side=>[0,1].map(tier=>{
     const chars=Array.from({length:110},(_,i)=>{
       const row=Math.floor(i/22),col=i%22,n=i+side*17+tier*7;
       const x=col*11,y=(tier?368:228)+row*12+col*1.7;
-      return `<img class="auction-spectator" src="${venueSprite(colors[n%6],n%36,n%2?'woman':'man')}" alt="" style="left:${(side?1672-x-12:x)/1672*100}%;top:${y/940*100}%">`;
+      return `<img class="auction-spectator" src="${venueSprite(colors[n%6],n%36,n%2?'woman':'man')}" alt="" style="left:${(side?1672-x-12:x)/1672*100}%;top:${y/940*100}%;--motion-delay:${-(n%11)*.37}s">`;
     }).join('');
     return `<div class="auction-audience-bank ${side?'right':'left'} ${tier?'lower':'upper'}">${chars}</div>`;
   })).join('');
   const seats=[19,27,35,59,67,75];
-  const staff=clubs.slice(0,6).map((club,i)=>[0,1].map(role=>`<img class="auction-staff" src="${venueSprite(role?'#334155':club.color||'#60a5fa',i*2+role+24)}" alt="" style="left:${seats[i]+(role?3.6:1)}%">`).join('')).join('');
+  const staff=clubs.slice(0,6).map((club,i)=>[0,1].map(role=>`<img class="auction-staff" src="${venueSprite(role?'#334155':club.color||'#60a5fa',i*2+role+24)}" alt="" style="left:${seats[i]+(role?3.6:1)}%;--motion-delay:${-(i*2+role)*.52}s">`).join('')).join('');
+  const flags=['LIVE AUCTION','PLAYER BID','SOLD!','FINAL CALL'].map((label,i)=>`<span class="auction-banner-label banner-${i+1}">${label}</span>`).join('');
+  const marquee='FOOTBALL LEAGUE　◆　LIVE PLAYER AUCTION　◆　入札受付中　◆　FOOTBALL LEAGUE　◆　';
+  const ribbon=`<div class="auction-ring-ticker" aria-hidden="true"><div class="auction-ring-track"><span>${marquee}</span><span>${marquee}</span></div></div>`;
   const consoles=[[53,755],[245,755],[372,755],[1243,755],[1377,755],[1558,755]].map(([x,y],i)=>`<span class="auction-console-screen" style="left:${x/1672*100}%;top:${y/940*100}%;--pulse-delay:${i*.43}s"></span>`).join('');
   const operators=[160,445,1227,1510].map((x,i)=>`<img class="auction-operator" src="${auctionBackSprite(i)}" alt="" style="left:${x/1672*100}%">`).join('');
-  return `<div class="auction-crowd" aria-hidden="true">${audience}</div><div class="auction-light-beam beam-left" aria-hidden="true"></div><div class="auction-light-beam beam-right" aria-hidden="true"></div><img class="auction-host" src="${venueSprite('#172e50',71)}" alt="" aria-hidden="true">${staff}<span class="auction-furniture-front" aria-hidden="true"></span><div class="auction-foreground" aria-hidden="true">${consoles}${operators}</div>`;
+  return `<div class="auction-crowd" aria-hidden="true">${audience}</div>${ribbon}${flags}<div class="auction-light-beam beam-left" aria-hidden="true"></div><div class="auction-light-beam beam-right" aria-hidden="true"></div><img class="auction-host" src="${venueSprite('#172e50',71)}" alt="" aria-hidden="true">${staff}<span class="auction-furniture-front" aria-hidden="true"></span><div class="auction-foreground" aria-hidden="true">${consoles}${operators}</div>`;
 }
 export function auctionAvatar(player){
   const key=player.avatarIndex??String(player.id).split('').reduce((h,c)=>(h*31+c.charCodeAt(0))>>>0,7);
