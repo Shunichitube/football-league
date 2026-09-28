@@ -44,6 +44,15 @@ function runCpuDraft(){let guard=0;while(s.view==='draft'&&guard++<100){let d=s.
 function beginDraft(){const season=s.league.season;s.draftHistoryOpen=false;s.league.releasePhaseOpen=false;s.match=null;s.seasonSimulation=null;s.league.clubs.forEach(club=>{club.reserveAuctionSlot=club.controllerType==='CPU'&&12-club.roster.length>=2});s.draft={pool:createDraftPool(s.league.seed,season),round:1,rng:createRandom(`${s.league.seed}:season:${season}:draft`),pendingClubIds:[],humanDeclined:false,history:[],completed:false};prepareDraftRound(s.draft);s.view='draft';s.note=`シーズン${season}ドラフトを開始します。`;runCpuDraft()}
 function pickDraft(p){let d=s.draft,humanId=me().id;if(!d.pendingClubIds.includes(humanId))return;const actions=d.pendingClubIds.map(id=>s.league.clubs.find(club=>club.id===id)).map(club=>club?.controllerType==='CPU'?decideCpuDraftAction(club,d.pool,d.rng):club?.id===humanId?{type:ACTION_TYPES.DRAFT_PICK,clubId:club.id,playerId:p.id}:null).filter(Boolean);const result=resolveDraftActions({clubs:s.league.clubs,candidates:d.pool,pendingClubIds:d.pendingClubIds,actions,rng:d.rng});recordDraftAcquisitions(d,result);d.pool=result.candidates;const acquired=result.acquired.find(row=>row.clubId===humanId);if(d.mode==='ORDERED')nextOrderedPick(d);else d.pendingClubIds=result.pendingClubIds;if(!acquired&&d.mode==='SIMULTANEOUS'){s.note=`${p.name}は競合抽選で外れました。外れクラブとして再指名してください。`;return}s.note=`${p.name}を${acquired?.contested?'競合抽選で':''}獲得しました。`;runCpuDraft()}
 function bid(amount){if(amount===0)passLot(s.auction,me().id);else raiseBid(s.auction,s.league.clubs,me().id,amount);}
+function refreshAuctionState(){
+  const room=app.querySelector('main.auction-room');
+  if(!room)return render();
+  const fresh=new DOMParser().parseFromString(auction(),'text/html');
+  for(const selector of ['.auction-price','.auction-leader','.auction-live p','.auction-controls','.auction-desks']){
+    const old=room.querySelector(selector),next=fresh.querySelector(selector);
+    if(old&&next&&old.outerHTML!==next.outerHTML)old.replaceWith(next);
+  }
+}
 setInterval(()=>{
   if(s.view!=='auction'||!s.auction||s.auction.completed)return;
   const a=s.auction,now=Date.now();
@@ -54,7 +63,12 @@ setInterval(()=>{
       if(a.i>=a.pool.length){a.completed=true;s.league.releasedPlayers=[];prepareCpuClubs(s.league);}
       else openLot(a,s.league.clubs,s.league.seed,now);
       render();
-    }else if(tickLot(a,s.league,now))render();
+    }else{
+      const lot=a.live,previousHigh=lot.high,previousClosed=lot.closed;
+      if(tickLot(a,s.league,now)&&(lot.high!==previousHigh||lot.closed!==previousClosed)){
+        if(lot.closed)render();else refreshAuctionState();
+      }
+    }
   }
   const clock=document.querySelector('[data-auction-time]');
   if(clock){const remaining=a.live?.closed?0:Math.max(0,Math.ceil(((a.live?.endAt||now)-now-(s.mode==='room'?(roomAdapter.clockOffset||0):0))/1000));clock.textContent=`0:${String(remaining).padStart(2,'0')}`;clock.classList.toggle('urgent',remaining<=5);}
@@ -455,7 +469,7 @@ document.addEventListener('click',event=>{
     const liveBid=event.target.closest('[data-live-bid]'),livePass=event.target.closest('[data-live-pass]');
     if(liveBid||livePass){
       if(s.mode==='room'){if(!roomAdapter.locked)sendRoom(roomAdapter.submit({playerId:s.auction.pool[s.auction.i].id,...(livePass?{pass:true}:{bid:Number(liveBid.dataset.liveBid)})}));}
-      else{bid(livePass?0:Number(liveBid.dataset.liveBid));render();}
+      else{bid(livePass?0:Number(liveBid.dataset.liveBid));refreshAuctionState();}
       return;
     }
     if(roomClick(event))return;

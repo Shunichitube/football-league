@@ -53,6 +53,7 @@ body.draft-hall-active #app>main.screen-draft{background:#071827ed;border-radius
 @media(min-width:761px){body.draft-hall-active #app>main.screen-draft{width:calc(100% - 24px)}}
 /* Live auction: the existing card is the center of a large stage monitor. */
 body.auction-hall-active{background:#051120}
+body.auction-hall-active::before{content:"";position:fixed;inset:var(--auction-header-bottom,68px) 0 0;background:#051120 url('../assets/arena/auction-hall.webp') center center / cover no-repeat;pointer-events:none;z-index:0}
 body.auction-hall-active #app{position:relative;z-index:1}
 body.auction-hall-active header{background:#051522e8}
 #app main.auction-room{width:min(1280px,96%);max-width:none;margin:18px auto;padding:0}
@@ -81,4 +82,3 @@ body.auction-hall-active header{background:#051522e8}
 @media(min-width:761px) and (max-height:820px){.auction-monitor{min-height:270px;padding:18px;gap:18px}.auction-avatar img{width:108px;height:144px}.auction-avatar>span{font-size:24px;padding:8px}.auction-avatar small{padding:12px}.auction-timer{font-size:48px;margin:4px 0 10px}.auction-price{font-size:36px}.auction-controls{margin:10px 0;padding:10px}.auction-desks article{padding:7px}.auction-desks strong{font-size:20px}.auction-player .player-card{padding:12px}#app main.auction-room{margin:10px auto}}
 
 .auction-monitor.auction-complete{display:block;text-align:center;padding:60px 24px}
-
