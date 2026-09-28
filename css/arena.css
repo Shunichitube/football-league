@@ -88,9 +88,9 @@ body.auction-hall-active header{background:#051522e8}
 @media(min-width:761px){
   body.auction-hall-active::before{display:none}
   body.auction-hall-active #app>main.auction-room{position:relative;width:100%;min-height:calc(100dvh - var(--auction-header-bottom,68px));margin:0;overflow:hidden}
-  .auction-scene{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:max(100vw,calc((100dvh - var(--auction-header-bottom,68px)) * 1.778723));aspect-ratio:1672 / 940;background:#051120 url('../assets/arena/auction-hall.webp') center / 100% 100% no-repeat}
+  .auction-scene{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:max(115vw,calc((100dvh - var(--auction-header-bottom,68px)) * 2.045531));aspect-ratio:1672 / 940;background:#051120 url('../assets/arena/auction-hall.webp') center / 100% 100% no-repeat}
   .auction-scene .auction-topline{position:absolute;top:16%;left:2%;right:2%;margin:0;text-shadow:0 2px 6px #001}
-  .auction-scene .auction-monitor{position:absolute;left:30%;top:26%;width:40%;height:25%;min-height:0;display:grid;grid-template-columns:18% minmax(0,1fr) 18%;gap:1.2%;padding:1%;border-width:2px;background:#081a36fa;box-shadow:0 0 14px #168affaa;overflow:hidden}
+  .auction-scene .auction-monitor{position:absolute;left:34%;top:26%;width:32%;height:22.5%;min-height:0;display:grid;grid-template-columns:18% minmax(0,1fr) 18%;gap:1.2%;padding:1%;border-width:2px;background:#081a36fa;box-shadow:0 0 14px #168affaa;overflow:hidden}
   .auction-scene .auction-avatar{min-width:0}
   .auction-scene .auction-avatar>span{font-size:clamp(13px,1.2vw,22px);padding:5px}
   .auction-scene .auction-avatar img{width:90%;height:65%;object-fit:contain}
