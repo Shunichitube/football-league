@@ -31,8 +31,13 @@ export function tickLot(auction,league,now=Date.now()){
   }
   if(now<lot.cpuAt)return false;
   lot.cpuAt=now+2000;
+  // A club that cannot exceed the current price has left this lot.
+  const previousPasses=lot.passed.length;
+  for(const club of league.clubs){
+    if(club.controllerType==='CPU'&&club.id!==lot.leader&&Math.min(club.funds,lot.cpuLimits?.[club.id]||0)<=lot.high)passLot(auction,club.id);
+  }
   const eligible=league.clubs.filter(c=>c.controllerType==='CPU'&&c.id!==lot.leader&&c.roster.length<12&&!lot.passed.includes(c.id)&&Math.min(c.funds,lot.cpuLimits[c.id]||0)>lot.high);
-  if(!eligible.length)return true;
+  if(!eligible.length)return lot.passed.length!==previousPasses;
   const club=eligible[Math.floor(now/2000)%eligible.length];
   raiseBid(auction,league.clubs,club.id,lot.high+1,now);return true;
 }

@@ -64,8 +64,8 @@ setInterval(()=>{
       else openLot(a,s.league.clubs,s.league.seed,now);
       render();
     }else{
-      const lot=a.live,previousHigh=lot.high,previousClosed=lot.closed;
-      if(tickLot(a,s.league,now)&&(lot.high!==previousHigh||lot.closed!==previousClosed)){
+      const lot=a.live,previousHigh=lot.high,previousClosed=lot.closed,previousPasses=lot.passed.length;
+      if(tickLot(a,s.league,now)&&(lot.high!==previousHigh||lot.closed!==previousClosed||lot.passed.length!==previousPasses)){
         if(lot.closed)render();else refreshAuctionState();
       }
     }
