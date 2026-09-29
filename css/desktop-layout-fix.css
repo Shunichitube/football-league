@@ -107,7 +107,7 @@
     grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
     gap: 0.4rem !important;
     align-items: stretch !important;
-    margin: 0.45rem 0 !important;
+    margin: 1.45rem 0 0.45rem !important;
   }
 
   main.screen-draft .candidate {
@@ -276,7 +276,7 @@
   }
 
   main.screen-draft .draft-stage-avatar {
-    top: 2.05rem;
+    top: 3.25rem;
     width: 138px;
     height: 136px;
   }
