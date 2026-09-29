@@ -441,3 +441,21 @@ body.auction-hall-active header{background:#051522e8}
   main.screen-squad .squad-player{width:min(100%,305px);height:min(100%,178px)}
   main.screen-squad .squad-season-action{min-height:51px;padding:4px 3px 0}
 }
+
+/* Align the interactive tablet glass with the slight perspective baked into the device plate. */
+@media (min-width:1100px) and (min-height:700px){
+  main.screen-squad .formation-side>.squad-tablet{clip-path:polygon(1.7% 0,98.2% 0,100% 100%,0 100%);transform:perspective(1500px) rotateX(1.15deg);transform-origin:center top}
+  main.screen-squad .squad-tablet-tactics{padding:9px 11px 10px 15px}
+  main.screen-squad .squad-tablet .tactic-panel{gap:9px}
+  main.screen-squad .squad-tablet .tactic-row{gap:7px}
+  main.screen-squad .squad-tablet .tactic-row button{min-height:44px;padding:7px 4px!important;font-size:clamp(12px,.78vw,16px);font-weight:850}
+  main.screen-squad .tactic-tendencies{display:flex;flex-direction:column;justify-content:space-evenly;flex:1;min-height:0;gap:4px;padding:7px 4px 3px;border-top:1px solid #4b9f9b64}
+  main.screen-squad .tactic-gauge{display:grid;grid-template-columns:minmax(0,1fr) minmax(65px,38%) 35px;gap:7px;align-items:center;min-height:29px;color:#d7f3e8;font-size:clamp(10px,.7vw,13px)}
+  main.screen-squad .tactic-gauge>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  main.screen-squad .tactic-gauge i{height:8px;overflow:hidden;border-radius:999px;background:#1a4251;box-shadow:inset 0 0 3px #0009}
+  main.screen-squad .tactic-gauge i b{display:block;width:var(--meter);height:100%;border-radius:inherit;background:linear-gradient(90deg,#17b4d8,#51f2b5);box-shadow:0 0 7px #4beac796}
+  main.screen-squad .tactic-gauge strong{text-align:right;font-size:clamp(10px,.7vw,13px);color:#8ef5ce}
+  main.screen-squad .tactic-bonus{display:flex;flex-direction:column;gap:2px;min-height:39px;margin:0;padding:5px 7px;border-top:1px solid #52b9a87a;background:#082b38b0;color:#d6f4e9;font-size:clamp(10px,.67vw,13px);line-height:1.2}
+  main.screen-squad .tactic-bonus span{color:#80dfc4;font-size:.85em;font-weight:850}
+  main.screen-squad .tactic-bonus b{font-weight:800}
+}
