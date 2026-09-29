@@ -19,24 +19,56 @@ export function pixelTexture(kit,index,appearance='player'){
     for(let py=y;py<y+h;py++) for(let px=x;px<x+w;px++)
       if(pixels[py]&&px>=0&&px<24) pixels[py][px]=color;
   }
-  const skin=['#efba87','#bf8159','#f4cea4'][index%3];
-  const skinShade=['#c88a61','#925a40','#d6a17c'][index%3];
-  const hair=['#35241c','#81502d','#d5a344','#191d29','#a7532d','#44302b'][index%6];
-  const hairLight=['#65412a','#af7540','#f3cc69','#41485a','#d38547','#77513a'][index%6];
+  const avatar=typeof index==='object'&&index?index:null;
+  const numericIndex=(avatar?.seed ?? Number(index)) || 0;
+  const skinIndex=avatar?.skinTone ?? numericIndex;
+  const hairColorIndex=avatar?.hairColor ?? numericIndex;
+  const hairStyleIndex=avatar?.hairStyle ?? numericIndex;
+  const faceStyle=avatar?.face ?? numericIndex;
+  const skin=['#efba87','#bf8159','#f4cea4'][skinIndex%3];
+  const skinShade=['#c88a61','#925a40','#d6a17c'][skinIndex%3];
+  const hair=['#35241c','#81502d','#d5a344','#191d29','#a7532d','#44302b','#e8e1cf','#6b7280','#c2410c','#2563eb','#16a34a','#9333ea'][hairColorIndex%12];
+  const hairLight=['#65412a','#af7540','#f3cc69','#41485a','#d38547','#77513a','#fff7df','#a1a8b3','#f97316','#60a5fa','#4ade80','#c084fc'][hairColorIndex%12];
   const kitShade=shadeKit(kit,.48);
   const kitLight=shadeKit(kit,1,.22);
 
   // Oversized front-facing head with ears and two simple dark eyes.
   rect(skinShade,6,4,12,10); rect(skin,7,4,10,9);
   rect(skinShade,5,8,1,3); rect(skinShade,18,8,1,3);
-  rect('#3b2925',8,7,2,1); rect('#3b2925',14,7,2,1);
-  // Small dark eyes without whites for a softer expression.
-  rect('#171b23',9,9,1,2); rect('#171b23',14,9,1,2);
+  if(faceStyle%7===1){
+    // Glasses.
+    rect('#171b23',8,8,4,3); rect('#171b23',13,8,4,3); rect('#171b23',12,9,1,1);
+    rect(skin,9,9,2,1); rect(skin,14,9,2,1);
+  }else if(faceStyle%7===2){
+    // Sharp eyebrows and upturned eyes.
+    rect('#3b2925',8,7,3,1); rect('#3b2925',13,7,3,1); rect('#171b23',10,9,1,1); rect('#171b23',14,9,1,1);
+    rect('#171b23',9,10,1,1); rect('#171b23',15,10,1,1);
+  }else if(faceStyle%7===3){
+    // Soft drooping eyebrows and eyes.
+    rect('#3b2925',8,8,3,1); rect('#3b2925',13,8,3,1); rect('#171b23',9,10,1,1); rect('#171b23',14,10,1,1);
+    rect('#171b23',10,9,1,1); rect('#171b23',15,9,1,1);
+  }else if(faceStyle%7===4){
+    // Narrow eyes.
+    rect('#3b2925',8,7,2,1); rect('#3b2925',14,7,2,1); rect('#171b23',8,10,4,1); rect('#171b23',13,10,4,1);
+  }else if(faceStyle%7===5){
+    // Sparkly eyes: tiny highlights inside oversized dark eyes.
+    rect('#3b2925',8,7,2,1); rect('#3b2925',14,7,2,1); rect('#171b23',8,9,3,3); rect('#171b23',14,9,3,3);
+    rect('#f7fbff',9,9,1,1); rect('#f7fbff',15,9,1,1);
+  }else if(faceStyle%7===6){
+    // Determined eyebrows: outer edges rise for a sharper, heroic look.
+    rect('#3b2925',8,7,1,1); rect('#3b2925',9,8,3,1);
+    rect('#3b2925',15,8,3,1); rect('#3b2925',18,7,1,1);
+    rect('#171b23',9,10,2,1); rect('#171b23',14,10,2,1);
+  }else{
+    rect('#3b2925',8,7,2,1); rect('#3b2925',14,7,2,1);
+    // Small dark eyes without whites for a softer expression.
+    rect('#171b23',9,9,1,2); rect('#171b23',14,9,1,2);
+  }
   const isWoman=appearance==='woman';
   if(isWoman){
     // Long hair, ponytail and bob silhouettes among the female supporters.
     rect(hair,5,2,14,3); rect(hairLight,7,2,9,1);
-    const style=index%3;
+    const style=numericIndex%3;
     if(style===0){
       rect(hair,4,5,3,11); rect(hair,17,5,3,11);
       rect(hairLight,4,7,1,7);
@@ -48,7 +80,7 @@ export function pixelTexture(kit,index,appearance='player'){
       rect(hairLight,4,6,1,5);
     }
     rect(hair,7,5,3,1);
-  }else switch(index%6){
+  }else switch(hairStyleIndex%20){
     case 0: // Short, square crop.
       rect(hair,6,2,12,3); rect(hair,6,5,2,2); rect(hair,17,5,1,2);
       rect(hairLight,8,2,7,1); break;
@@ -71,6 +103,49 @@ export function pixelTexture(kit,index,appearance='player'){
       rect(hair,4,5,3,3); rect(hair,17,5,3,3);
       for(const x of [7,11,15]) rect(hairLight,x,2,2,2);
       break;
+    case 6: // Flat top.
+      rect(hair,6,1,12,4); rect(hair,5,4,14,2); rect(hair,6,6,2,1); rect(hair,16,6,2,1);
+      rect(hairLight,7,1,9,1); break;
+    case 7: // Center part with curtains.
+      rect(hair,5,2,14,3); rect(hair,5,5,5,4); rect(hair,14,5,5,4);
+      rect(hairLight,8,2,3,2); rect(hairLight,13,2,3,2); rect(hair,11,2,2,5); break;
+    case 8: // Forward fringe.
+      rect(hair,5,2,14,3); rect(hair,6,5,12,2); rect(hair,8,7,7,2);
+      rect(hairLight,7,2,8,1); rect(hairLight,9,5,5,1); break;
+    case 9: // High messy spikes.
+      rect(hair,6,4,12,2);
+      for(const [x,h] of [[5,4],[8,5],[12,5],[16,4]]) rect(hair,x,1,2,h);
+      rect(hairLight,8,1,1,4); rect(hairLight,12,2,1,3); break;
+    case 10: // Undercut sweep.
+      rect(hair,6,2,12,3); rect(hair,5,5,12,2); rect(hair,5,7,5,2);
+      rect(hairLight,10,2,7,1); rect(hairLight,11,4,4,1); break;
+    case 11: // Bowl cut.
+      rect(hair,5,2,14,4); rect(hair,4,5,16,3); rect(hair,5,8,2,2); rect(hair,17,8,2,2);
+      rect(hairLight,7,2,9,1); break;
+    case 12: // Long side tail.
+      rect(hair,6,2,12,3); rect(hair,5,5,3,8); rect(hair,16,5,3,4); rect(hair,4,12,3,3);
+      rect(hairLight,7,2,7,1); rect(hairLight,5,6,1,6); break;
+    case 13: // Double side locks.
+      rect(hair,5,2,14,3); rect(hair,4,5,4,7); rect(hair,16,5,4,7); rect(hair,8,5,8,1);
+      rect(hairLight,7,2,8,1); rect(hairLight,4,6,1,4); rect(hairLight,18,6,1,4); break;
+    case 14: // Slick back.
+      rect(hair,6,2,12,3); rect(hair,7,5,10,1); rect(hair,8,6,8,1);
+      rect(hairLight,8,2,9,1); rect(hairLight,10,4,5,1); break;
+    case 15: // Tiny top knot.
+      rect(hair,6,4,12,2); rect(hair,9,2,6,3); rect(hair,10,0,4,2); rect(hair,6,6,1,2); rect(hair,17,6,1,2);
+      rect(hairLight,10,1,3,1); break;
+    case 16: // Shaggy mop.
+      rect(hair,5,2,14,4); rect(hair,4,5,4,5); rect(hair,9,5,3,3); rect(hair,15,5,5,5);
+      rect(hairLight,7,2,9,1); rect(hairLight,5,6,2,2); break;
+    case 17: // Angular fringe.
+      rect(hair,5,2,14,3); rect(hair,5,5,11,2); rect(hair,5,7,7,2); rect(hair,5,9,3,1);
+      rect(hairLight,8,2,8,1); rect(hairLight,7,5,4,1); break;
+    case 18: // Buzz cut.
+      rect(hair,7,3,10,2); rect(hair,6,5,12,1); rect(hair,6,6,2,1); rect(hair,16,6,2,1);
+      rect(hairLight,8,3,7,1); break;
+    case 19: // Big rounded afro.
+      rect(hair,6,1,12,3); rect(hair,4,3,16,5); rect(hair,3,6,4,4); rect(hair,17,6,4,4);
+      rect(hairLight,7,2,3,2); rect(hairLight,12,2,3,2); rect(hairLight,16,4,2,2); break;
   }
   rect(skinShade,10,14,4,1);
   // Broad shoulders, stepped sleeves and shaded vertical shirt panels.
@@ -92,7 +167,7 @@ export function pixelTexture(kit,index,appearance='player'){
     // Casual trousers and scarves distinguish supporters from the players.
     rect('#34415b',7,24,10,4); rect('#536685',8,24,3,6);
     rect('#536685',13,24,3,6); rect('#34415b',11,26,2,4);
-    if(index%2===0){
+    if(numericIndex%2===0){
       rect('#f9de8b',8,15,8,2); rect('#f9de8b',8,17,2,5);
     }
   }

@@ -88,6 +88,21 @@ test('市場候補は仕様数で生成され、CPU入札は資金と登録上�
   assert.equal(cpuBid(league.clubs[1], auction[0], createRandom('full')), 0);
 });
 
+test('ドラフト・競売候補には固定アバターが付き、放出選手のアバターは維持される', () => {
+  const draft = createDraftPool('avatar-market', 1);
+  const auction = createAuctionPool('avatar-market', 1);
+  for (const player of [...draft, ...auction]) {
+    assert.ok(player.avatar);
+    assert.equal(typeof player.avatar.hairStyle, 'number');
+    assert.equal(typeof player.avatar.hairColor, 'number');
+    assert.equal(typeof player.avatar.face, 'number');
+    assert.equal(typeof player.avatar.skinTone, 'number');
+  }
+  const released = { ...draft[0], age: 24, stats: { ...draft[0].stats, shoot: 80, speed: 80, defense: 80, dribble: 80, pass: 80, gk: draft[0].primaryPosition === 'GK' ? 80 : 50 } };
+  const returning = createAuctionPool('avatar-market-returning', 2, [released]).find(player => player.id === released.id);
+  assert.deepEqual(returning.avatar, released.avatar);
+});
+
 test('市場候補の能力傾向は現在のDF/MF/FW/GK役割を反映する', () => {
   const players = Array.from({ length: 80 }, (_, i) => createAuctionPool(`position-profile-${i}`)).flat();
   const average = (position, key) => {

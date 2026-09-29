@@ -22,6 +22,22 @@ const OVERALL_WEIGHTS = {
   GK: { gk: .70, defense: .10, speed: .10, pass: .10 }
 };
 
+function avatarSeed(value) {
+  return String(value).split('').reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 7);
+}
+
+function createAvatarProfile(id, position) {
+  const seed = avatarSeed(`${id}:${position}`);
+  const rareHair = seed % 20 === 0;
+  const naturalHairCount = 9;
+  return {
+    hairStyle: seed % 20,
+    hairColor: rareHair ? 9 + (Math.floor(seed / 20) % 3) : seed % naturalHairCount,
+    face: Math.floor(seed / 11) % 7,
+    skinTone: Math.floor(seed / 17) % 3
+  };
+}
+
 function weightedGrowthFocus(rng) {
   const total = GK_GROWTH_FOCUS_DISTRIBUTION.reduce((sum, [, weight]) => sum + weight, 0);
   let roll = rng.next() * total;
@@ -67,7 +83,7 @@ export function createPlayer(id, position, rng, options = {}) {
   const stats = { shoot: ability(), speed: ability(), defense: ability(), dribble: ability(), pass: ability(), gk: position === 'GK' ? ability() : 50 };
   if (position === 'GK') stats.gk = options.initial ? rng.int(50, 55) : rng.int(55, 70);
   if (position !== 'GK') stats.stamina = staminaValue(rng);
-  return { id: `p-${id}`, name: `${last} ${first}`, age: 25, nationality: '日本', primaryPosition: position, stats, isInitial: Boolean(options.initial), specialAbility: null, contractYears: 3, hiddenGrowth: growthProfile(position, rng, Boolean(options.initial)), honors: { mvp: 0, best5: 0 }, season: blankSeason(), career: blankSeason() };
+  return { id: `p-${id}`, name: `${last} ${first}`, age: 25, nationality: '日本', primaryPosition: position, stats, avatar: createAvatarProfile(id, position), isInitial: Boolean(options.initial), specialAbility: null, contractYears: 3, hiddenGrowth: growthProfile(position, rng, Boolean(options.initial)), honors: { mvp: 0, best5: 0 }, season: blankSeason(), career: blankSeason() };
 }
 
 export function blankSeason() { return { appearances: 0, goals: 0, assists: 0, shots: 0, attackContributions: 0, defensiveStops: 0, saves: 0, conceded: 0, ratingTotal: 0, playedPhases: 0 }; }
@@ -88,4 +104,3 @@ export function displayPlayer(player) {
 }
 
 export function playerById(club, id) { return club.roster.find(p => p.id === id); }
-

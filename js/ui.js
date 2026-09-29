@@ -1,8 +1,8 @@
 import { formatMatchEvents } from './match-log.js?v=0.17.31';
-import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.17.2';
+import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.22.0';
 import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.17.2';
 import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.17.2';
-import { pixelTexture } from './arena-characters.js';
+import { pixelTexture } from './arena-characters.js?v=0.22.0';
 
 export const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
 
@@ -142,9 +142,9 @@ export function renderRosterPanel(club, options = {}) {
 
 const squadAvatars = new Map();
 function squadAvatar(player) {
-  const key = player.avatarIndex ?? String(player.id).split('').reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 7) % 80;
+  const key = player.avatar ? `avatar:${JSON.stringify(player.avatar)}` : player.avatarIndex ?? String(player.id).split('').reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 7) % 80;
   if (typeof document === 'undefined') return '';
-  if (!squadAvatars.has(key)) squadAvatars.set(key, pixelTexture('#60a5fa', key % 80).toDataURL());
+  if (!squadAvatars.has(key)) squadAvatars.set(key, pixelTexture('#60a5fa', player.avatar || key % 80).toDataURL());
   return squadAvatars.get(key);
 }
 

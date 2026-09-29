@@ -1,4 +1,4 @@
-import { pixelTexture } from './arena-characters.js';
+import { pixelTexture } from './arena-characters.js?v=0.22.0';
 import { minimumAuctionBid } from './live-auction.js';
 const avatars=new Map();
 const venueSprites=new Map();
@@ -42,8 +42,8 @@ function auctionVenueCharacters(clubs){
   return `<div class="auction-crowd" aria-hidden="true">${audience}</div>${ribbon}${flags}<div class="auction-light-beam beam-left" aria-hidden="true"></div><div class="auction-light-beam beam-right" aria-hidden="true"></div><img class="auction-host" src="${venueSprite('#172e50',71)}" alt="" aria-hidden="true">${staff}<span class="auction-furniture-front" aria-hidden="true"></span><div class="auction-foreground" aria-hidden="true">${consoles}${operators}</div>`;
 }
 export function auctionAvatar(player){
-  const key=player.avatarIndex??String(player.id).split('').reduce((h,c)=>(h*31+c.charCodeAt(0))>>>0,7);
-  if(!avatars.has(key))avatars.set(key,pixelTexture('#60a5fa',key%80).toDataURL());
+  const key=player.avatar?`avatar:${JSON.stringify(player.avatar)}`:player.avatarIndex??String(player.id).split('').reduce((h,c)=>(h*31+c.charCodeAt(0))>>>0,7);
+  if(!avatars.has(key))avatars.set(key,pixelTexture('#60a5fa',player.avatar||key%80).toDataURL());
   return avatars.get(key);
 }
 export function renderLiveAuction(s,club,card,escape,header){
