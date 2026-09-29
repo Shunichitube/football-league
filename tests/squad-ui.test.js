@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createLeague } from '../js/league.js';
 import { createPlayer } from '../js/data.js';
 import { createRandom } from '../js/random.js';
-import { renderLineupEditor } from '../js/ui.js';
+import { renderLineupEditor, renderSquadComparison } from '../js/ui.js';
 import { ACTION_TYPES, applyClubAction, createLineupPlacement } from '../js/rules.js';
 import { saveSlot, loadSlot } from '../js/storage.js';
 
@@ -26,7 +26,11 @@ test('控えとの交代とスタメン位置交換を選手IDで保存・復元
   assert.match(html,/formation-pitch/);
   assert.match(html,/data-lineup-slot="2"/);
   assert.ok(html.includes(`data-lineup-drag="${reserve.id}"`));
-  assert.match(html,/選択中の選手・能力比較/);
+  assert.match(html,/選手比較/);
+  assert.equal((html.match(/class="squad-player /g) || []).length,club.roster.length);
+  assert.match(html,/先発・MF1/);
+  assert.match(html,/アバター|squad-avatar/);
+  assert.match(renderSquadComparison(club,club.lineup[2],reserve.id),/→/);
   const memory=new Map();globalThis.localStorage={setItem:(k,v)=>memory.set(k,v),getItem:k=>memory.get(k)};
   try{
     saveSlot(1,{league,view:'squad'});
@@ -34,4 +38,17 @@ test('控えとの交代とスタメン位置交換を選手IDで保存・復元
     assert.deepEqual(restored.lineup,club.lineup);
     assert.ok(restored.roster.some(p=>p.id===reserve.id));
   }finally{delete globalThis.localStorage;}
+});
+
+test('12人の所属選手を先発を含めて一覧表示し、既存能力で比較する', () => {
+  const league=createLeague({name:'YOU',color:'#4ade80',seed:'squad-roster-12'});
+  const club=league.clubs.find(c=>c.id===league.humanClubId);
+  while(club.roster.length<12) club.roster.push(createPlayer(`extra-${club.roster.length}`,'MF',createRandom(`roster-${club.roster.length}`)));
+  const html=renderLineupEditor(club,club.lineup[0]);
+  assert.equal((html.match(/class="squad-player /g)||[]).length,12);
+  assert.equal((html.match(/class="lineup-slot formation-token /g)||[]).length,5);
+  assert.match(html,/所属選手 <small>12\/12<\/small>/);
+  assert.match(html,/先発・GK/);
+  assert.match(html,/控え/);
+  assert.match(renderSquadComparison(club,club.lineup[0],club.roster[6].id),/compare-stats/);
 });

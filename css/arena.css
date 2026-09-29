@@ -213,3 +213,89 @@ body.auction-hall-active header{background:#051522e8}
   main.screen-squad .bench-player[draggable=true]{cursor:grab}
   main.screen-squad .formation-drop-status:not(:empty){color:#ffe28c;font-weight:800}
 }
+/* Clubhouse squad room: a single desktop scene, with the tactical board and roster sharing one viewport. */
+@media (min-width: 1100px) and (min-height: 700px) {
+  body:has(main.screen-squad){overflow:hidden;background:#071521}
+  body:has(main.screen-squad) #app{height:100dvh;overflow:hidden}
+  body:has(main.screen-squad) #app>header{height:52px;padding:6px 1.25vw;background:#061522ed;border-bottom:1px solid #71cfb565}
+  #app>main.screen-squad{position:relative;isolation:isolate;width:100%;max-width:none;height:calc(100dvh - 52px);min-height:0;margin:0;padding:10px 1.25vw 12px;display:flex;flex-direction:column;gap:8px;overflow:hidden;background:linear-gradient(90deg,#071b26ca 0 38%,#071421e8 39% 100%),radial-gradient(ellipse at 19% 32%,#3b978979,transparent 40%),linear-gradient(155deg,#123543,#091724 65%)}
+  #app>main.screen-squad::before{content:"";position:absolute;z-index:-1;inset:0;pointer-events:none;opacity:.3;background:repeating-linear-gradient(90deg,transparent 0 12%,#69c9bd20 12.1% 12.3%,transparent 12.4% 24%),linear-gradient(180deg,#71d2bb21 0 4px,transparent 5px 76%,#07101bd8 77% 100%)}
+  #app>main.screen-squad::after{content:"";position:absolute;z-index:-1;right:2%;top:7%;width:58%;height:88%;pointer-events:none;border:1px solid #67b3a626;border-radius:10px;background:linear-gradient(180deg,#69e1cc13,transparent 9%),repeating-linear-gradient(90deg,transparent 0 32%,#5a9b9a14 32.1% 32.3%,transparent 32.5% 33%);box-shadow:inset 0 0 55px #020b16}
+  main.screen-squad .squad-heading-row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0;min-height:35px}
+  main.screen-squad .squad-heading-copy h2{font-size:1.35rem;margin:0}
+  main.screen-squad .squad-actions{display:flex;gap:6px}
+  main.screen-squad .squad-actions button{margin:0;padding:5px 12px;min-height:32px;font-size:.76rem}
+  main.screen-squad .tactic-panel{display:flex;align-items:center;gap:10px;min-height:44px;margin:0!important;padding:4px 10px!important;border-radius:9px;background:#0b2634e6}
+  main.screen-squad .tactic-panel .eyebrow{white-space:nowrap;margin:0!important}
+  main.screen-squad .tactic-panel .tactic-row{display:flex;flex-wrap:nowrap;margin:0!important;gap:4px}
+  main.screen-squad .tactic-panel button{min-height:28px;padding:4px 9px!important;font-size:.73rem}
+  main.screen-squad .tactic-panel .hint{margin:0 0 0 auto!important;font-size:.68rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  main.screen-squad .formation-editor{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,38fr) minmax(0,62fr);grid-template-rows:auto minmax(0,1fr);grid-template-areas:'status status' 'side bench';gap:6px 12px;margin:0;align-items:stretch}
+  main.screen-squad .lineup-status{grid-area:status;display:flex;align-items:center;gap:12px;min-height:26px;padding:3px 10px!important;font-size:.72rem;background:#091c2bdf;overflow:hidden;white-space:nowrap}
+  main.screen-squad .lineup-status .formation-drop-status{margin-left:auto}
+  main.screen-squad .formation-side{grid-area:side;display:grid;grid-template-rows:auto minmax(0,1.35fr) minmax(0,.9fr);min-height:0;gap:5px}
+  main.screen-squad .formation-side>h3,.squad-compare>h3{font-size:.85rem;letter-spacing:.05em;margin:0!important;color:#c2f9ea}
+  main.screen-squad .formation-pitch{min-height:0;height:100%;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-template-rows:repeat(3,minmax(0,1fr))!important;gap:3px!important;align-items:center;justify-items:center;padding:9px!important;border-radius:13px!important;background:radial-gradient(circle at 50% 51%,#69e8bc16 0 14%,transparent 14.3%),linear-gradient(90deg,transparent 49.7%,#79cbbb3b 50%,transparent 50.3%),linear-gradient(145deg,#123c41,#102c38 55%,#0a2332)!important}
+  main.screen-squad .formation-pitch .formation-token,main.screen-squad .formation-pitch .formation-token:first-child,main.screen-squad .formation-pitch .formation-token:last-child{width:min(100%,116px);height:clamp(78px,11.3vh,119px);padding:3px!important;gap:0;line-height:1.1;border-radius:10px!important}
+  main.screen-squad .formation-token img{width:clamp(36px,3vw,54px);height:clamp(39px,5vh,57px)}
+  main.screen-squad .formation-token strong{font-size:.71rem}
+  main.screen-squad .formation-position,main.screen-squad .formation-rank{font-size:.64rem}
+  main.screen-squad .formation-pitch.awaiting-drop .formation-token{outline:1px dashed #65efb98a}
+  main.screen-squad .formation-pitch .formation-token.drop-preview{outline:2px solid #ffe28c;transform:scale(1.04)!important}
+  main.screen-squad .squad-compare{min-height:0;overflow:hidden;padding:8px 10px;border:1px solid #4b958b88;border-radius:12px;background:linear-gradient(160deg,#102c39ee,#081b2af2);box-shadow:inset 0 12px 30px #298e7a12}
+  main.screen-squad .squad-compare-content{height:calc(100% - 19px);min-height:0;display:flex;flex-direction:column;justify-content:center}
+  main.screen-squad .compare-empty{color:#abc6c9;font-size:.78rem;line-height:1.5}
+  main.screen-squad .compare-names{display:flex;align-items:center;gap:8px;min-height:28px;font-size:.77rem;white-space:nowrap}
+  main.screen-squad .compare-names strong{max-width:43%;overflow:hidden;text-overflow:ellipsis}
+  main.screen-squad .compare-names span{color:#83e9bf}
+  main.screen-squad .compare-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 8px}
+  main.screen-squad .compare-stats>div{display:grid;grid-template-columns:minmax(0,1fr) auto 15px;gap:4px;align-items:center;padding:3px 5px;border-radius:5px;background:#071726ad;font-size:.69rem}
+  main.screen-squad .compare-stats b{font-size:.76rem}.compare-stats .up{color:#76efae}.compare-stats .down{color:#ff948b}
+  main.screen-squad .formation-cards{grid-area:bench;display:flex;flex-direction:column;min-height:0;min-width:0}
+  main.screen-squad .bench-heading{display:flex;align-items:center;justify-content:space-between;min-height:25px;margin:0!important}
+  main.screen-squad .bench-heading h3{font-size:.85rem;margin:0!important}.bench-heading small{font-size:.7rem;color:#9bc4c3}
+  main.screen-squad .bench-heading label{display:flex;align-items:center;gap:5px;font-size:.68rem;white-space:nowrap}
+  main.screen-squad .bench-heading select{width:auto;margin:0;padding:2px 5px;font-size:.68rem}
+  main.screen-squad .formation-cards .bench-grid{flex:1;min-height:0;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-template-rows:repeat(4,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);gap:6px!important;margin:3px 0 0!important}
+  main.screen-squad .squad-player{position:relative;min-width:0;min-height:0;display:grid;grid-template-columns:minmax(0,25fr) minmax(0,28fr) minmax(0,47fr);gap:4px;padding:6px;border:1px solid #557780;border-radius:9px;background:linear-gradient(140deg,#152d3aeF,#0b1b2bf5);box-shadow:0 4px 12px #0005;cursor:pointer;overflow:hidden}
+  main.screen-squad .squad-player.starter{border-color:#4fb294a6}
+  main.screen-squad .squad-player:hover,main.screen-squad .squad-player:focus-visible,main.screen-squad .squad-player.selected-player{border-color:#77f5c1;box-shadow:0 0 0 1px #77f5c18c,0 5px 16px #0008}
+  main.screen-squad .squad-avatar{display:flex;align-items:center;justify-content:center;min-width:0;cursor:grab;border-radius:7px;background:radial-gradient(ellipse at 50% 70%,#448c7965,transparent 70%)}
+  main.screen-squad .squad-avatar img{max-width:100%;width:clamp(42px,4vw,74px);height:min(100%,126px);object-fit:contain;image-rendering:pixelated;pointer-events:none;filter:drop-shadow(0 5px 4px #000a)}
+  main.screen-squad .squad-avatar:hover img{transform:translateY(-3px) scale(1.05);filter:drop-shadow(0 8px 7px #000c)}
+  main.screen-squad .squad-player.is-dragging,main.screen-squad .squad-avatar.is-dragging{opacity:.65;transform:translateY(-3px);box-shadow:0 8px 18px #000c}
+  main.screen-squad .squad-identity{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;min-width:0;overflow:hidden;font-size:clamp(9px,.63vw,12px);line-height:1.13}
+  main.screen-squad .squad-identity .player-name{display:block;max-width:100%;font-size:clamp(11px,.76vw,15px)!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  main.screen-squad .squad-identity strong{color:#f5d986;font-size:clamp(10px,.67vw,13px)}
+  main.screen-squad .squad-identity span{color:#cfdfdf;white-space:nowrap}
+  main.screen-squad .squad-identity em{font-style:normal;color:#8ef1bf;white-space:nowrap}
+  main.screen-squad .squad-identity button{margin:1px 0 0!important;padding:2px 7px!important;min-height:19px;width:auto;font-size:clamp(9px,.58vw,11px)!important}
+  main.screen-squad .squad-abilities{display:flex;flex-direction:column;justify-content:center;gap:2px;min-width:0;margin:0}
+  main.screen-squad .squad-abilities>div{display:grid;grid-template-columns:minmax(0,38%) minmax(0,62%);align-items:center;gap:2px;min-width:0;padding:1px 2px;border-radius:3px;background:#071827b8}
+  main.screen-squad .squad-abilities dt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#b4c9d0;font-size:clamp(9px,.54vw,11px)}
+  main.screen-squad .squad-abilities dd{display:grid;grid-template-columns:12px minmax(0,1fr);align-items:center;gap:2px;min-width:0;margin:0;font-weight:800;font-size:clamp(9px,.57vw,11px)}
+  main.screen-squad .squad-abilities .rank-bar{width:100%;min-width:0;height:4px!important}
+}
+@media (min-width:761px) and (max-width:1099px), (max-height:699px) {
+  main.screen-squad .formation-cards .bench-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  main.screen-squad .squad-player{display:grid;grid-template-columns:25% 27% minmax(0,1fr);gap:5px;min-height:150px;padding:6px;background:#102735}
+  main.screen-squad .squad-avatar{display:flex;align-items:center;justify-content:center}
+  main.screen-squad .squad-avatar img{width:100%;max-height:110px;object-fit:contain;image-rendering:pixelated}
+  main.screen-squad .squad-identity{display:flex;flex-direction:column;gap:3px;min-width:0;font-size:.72rem}
+  main.screen-squad .squad-identity .player-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  main.screen-squad .squad-identity button{padding:3px!important;margin:0!important;font-size:.65rem!important}
+  main.screen-squad .squad-abilities{margin:0;min-width:0;font-size:.7rem}
+  main.screen-squad .squad-abilities>div{display:grid;grid-template-columns:45% 55%}
+  main.screen-squad .squad-abilities dd{display:flex;gap:3px;margin:0}
+  main.screen-squad .squad-abilities .rank-bar{min-width:0;flex:1}
+  main.screen-squad .formation-side>h3,main.screen-squad .squad-compare>h3{margin:5px 0;font-size:.9rem}
+  main.screen-squad .squad-compare{padding:12px;border:1px solid #4b958b;border-radius:10px;background:#102b39}
+  main.screen-squad .compare-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:4px}
+  main.screen-squad .compare-stats>div{display:flex;gap:5px}
+  main.screen-squad .compare-stats .up{color:#76efae}.compare-stats .down{color:#ff948b}
+}
+@media (min-width:1100px) and (min-height:700px){
+  main.screen-squad .squad-identity small{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#b0c5c9;font-size:clamp(8px,.53vw,10px)}
+  main.screen-squad .squad-card-actions{display:flex;max-width:100%;gap:2px}
+  main.screen-squad .squad-card-actions button{padding:2px 4px!important;min-height:18px;font-size:clamp(8px,.52vw,10px)!important}
+}
