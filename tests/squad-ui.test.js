@@ -31,7 +31,7 @@ test('控えとの交代とスタメン位置交換を選手IDで保存・復元
   assert.match(html,/squad-role-badge starter">先発 MF1/);
   assert.match(html,/class="squad-special"/);
   assert.match(html,/アバター|squad-avatar/);
-  assert.match(renderSquadComparison(club,club.lineup[2],reserve.id),/→/);
+  assert.match(renderSquadComparison(club,club.lineup[2],reserve.id),/compare-duel/);
   const memory=new Map();globalThis.localStorage={setItem:(k,v)=>memory.set(k,v),getItem:k=>memory.get(k)};
   try{
     saveSlot(1,{league,view:'squad'});
@@ -48,10 +48,10 @@ test('12人の所属選手を先発を含めて一覧表示し、既存能力で
   const html=renderLineupEditor(club,club.lineup[0]);
   assert.equal((html.match(/class="squad-player /g)||[]).length,12);
   assert.equal((html.match(/class="squad-special"/g)||[]).length,12);
-  assert.equal((html.match(/class="squad-role-badge /g)||[]).length,12);
+  assert.ok((html.match(/class="squad-role-badge /g)||[]).length>=17);
   assert.equal((html.match(/class="lineup-slot formation-token /g)||[]).length,5);
   assert.match(html,/所属選手 <small>12\/12<\/small>/);
   assert.match(html,/squad-role-badge starter">先発 GK/);
   assert.match(html,/控え/);
-  assert.match(renderSquadComparison(club,club.lineup[0],club.roster[6].id),/compare-stats/);
+  assert.match(renderSquadComparison(club,club.lineup[0],club.roster[6].id),/compare-duel/);
 });

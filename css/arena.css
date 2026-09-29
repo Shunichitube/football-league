@@ -353,3 +353,64 @@ body.auction-hall-active header{background:#051522e8}
   main.screen-squad .formation-token strong{padding:2px 6px;border-radius:4px;background:#0a2734c9}
   main.screen-squad .formation-token img{width:clamp(55px,4.3vw,78px);height:clamp(60px,7vh,78px)}
 }
+
+/* Final clubhouse mock: electronic board, physical tablet, and a reserved season action row. */
+@media (min-width:1100px) and (min-height:700px){
+  #app>main.screen-squad{padding:8px 1.2vw 10px;gap:6px;background:linear-gradient(90deg,#03121bb0,#03121b95 55%,#03121bc8),url('../assets/arena/squad-clubhouse-room.webp') center/cover no-repeat}
+  main.screen-squad .squad-heading-row{min-height:32px;padding:0 4px}
+  main.screen-squad .formation-editor{grid-template-columns:minmax(0,45fr) minmax(0,55fr);gap:10px;min-height:0}
+  main.screen-squad .formation-side{grid-template-rows:minmax(0,53fr) minmax(0,47fr);gap:10px;min-height:0}
+  main.screen-squad .formation-board-title{grid-row:1;grid-column:1;z-index:2;align-self:start;display:flex;align-items:center;gap:12px;margin:10px 16px;padding:4px 11px;width:max-content;max-width:calc(100% - 32px);border:1px solid #64ceb5a8;border-radius:7px;background:#092632d9;color:#e8faf6}
+  main.screen-squad .formation-board-title h3{margin:0!important;font-size:.85rem}
+  main.screen-squad .formation-board-title span{font-size:.7rem;color:#a5d4c7}
+  main.screen-squad .formation-side>.formation-pitch{grid-row:1;grid-column:1;grid-area:auto;align-self:stretch;min-height:0;height:100%;padding:43px 25px 12px!important;border:8px solid #0b1c29!important;border-radius:16px!important;background:repeating-linear-gradient(0deg,#68c9b00a 0 1px,transparent 1px 20px),repeating-linear-gradient(90deg,#68c9b00a 0 1px,transparent 1px 20px),radial-gradient(circle at 50% 50%,#54deb11f 0 12%,transparent 12.3%),linear-gradient(90deg,transparent 49.8%,#91ddbb35 50%,transparent 50.2%),linear-gradient(155deg,#075349dc,#0b2636f5)!important;box-shadow:inset 0 0 0 2px #538e94,inset 0 0 45px #51f1bd1b,0 12px 25px #000a!important}
+  main.screen-squad .formation-side>.formation-pitch::before{inset:51px 28px 15px;border-color:#8be7be5a;border-radius:5px}
+  main.screen-squad .formation-side>.formation-pitch::after{bottom:15px;border-color:#8be7be48}
+  main.screen-squad .formation-token .squad-role-badge{position:relative;top:auto;left:auto;align-self:center;margin:0 0 1px;min-height:17px;padding:1px 6px;font-size:clamp(9px,.62vw,12px)}
+  main.screen-squad .formation-pitch .formation-token,main.screen-squad .formation-pitch .formation-token:first-child,main.screen-squad .formation-pitch .formation-token:last-child{height:clamp(83px,11vh,120px);width:min(100%,135px);padding:2px!important}
+  main.screen-squad .formation-token img{height:clamp(40px,5.1vh,58px);width:clamp(40px,3.7vw,67px)}
+  main.screen-squad .formation-token strong{font-size:clamp(10px,.68vw,13px)}
+  main.screen-squad .formation-details{color:#d2eccf;background:#0b2932c9;border-radius:4px;padding:1px 4px;font-size:clamp(9px,.57vw,11px);white-space:nowrap}
+  main.screen-squad .formation-token.out-of-position .formation-details{color:#ffc484}
+  main.screen-squad .formation-side>.squad-tablet{grid-row:2;grid-column:1;grid-area:auto;display:grid;grid-template-columns:minmax(0,34fr) minmax(0,66fr);gap:7px;min-height:0;padding:14px 12px 12px;border:7px solid #0a1723;border-radius:22px;background:linear-gradient(130deg,#163443f5,#061b29fa);box-shadow:inset 0 0 0 2px #4b8591,0 14px 26px #000c,0 3px 0 #537b83;position:relative;overflow:hidden}
+  main.screen-squad .squad-tablet::after{content:"";position:absolute;top:6px;left:17%;width:28%;height:2px;border-radius:50%;background:#d7fff346;pointer-events:none}
+  main.screen-squad .squad-tablet-tactics,main.screen-squad .squad-compare{min-width:0;min-height:0;overflow:hidden;background:#061e2de8;border:1px solid #1a8d8b7d;border-radius:7px}
+  main.screen-squad .squad-tablet-tactics{padding:9px}
+  main.screen-squad .tactic-panel{display:flex;flex-direction:column;align-items:stretch;gap:8px;width:100%;height:100%;max-height:none;min-height:0;margin:0!important;padding:0!important;border:0;background:none}
+  main.screen-squad .tactic-panel h3,main.screen-squad .squad-compare h3{margin:0!important;color:#d9f9ed;font-size:clamp(12px,.82vw,16px);white-space:nowrap}
+  main.screen-squad .tactic-panel h3 small,main.screen-squad .squad-compare h3 small{font-size:.64em;color:#8cc9c3;margin-left:4px}
+  main.screen-squad .tactic-panel .tactic-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:0!important}
+  main.screen-squad .tactic-panel .tactic-row button{width:100%;min-width:0;min-height:37px;margin:0!important;padding:5px 3px!important;white-space:nowrap;font-size:clamp(10px,.71vw,13px);background:#0d3440;border:1px solid #40a7a0;color:#dbf7ed;border-radius:6px;box-shadow:none}
+  main.screen-squad .tactic-panel .tactic-row button.active{background:#63edb3;border-color:#a2ffd3;color:#07362a;box-shadow:0 0 13px #5af5b27d}
+  main.screen-squad .tactic-panel .hint{white-space:normal;overflow:auto;text-overflow:clip;font-size:clamp(10px,.64vw,12px);line-height:1.5;color:#c3dcdb;margin:0!important}
+  main.screen-squad .squad-compare{display:flex;flex-direction:column;margin:0;padding:8px 10px;box-shadow:none}
+  main.screen-squad .squad-compare-content{height:auto;flex:1;display:block;min-height:0}
+  main.screen-squad .compare-empty{display:grid;place-items:center;height:100%;padding:12px;text-align:center}
+  main.screen-squad .compare-duel{display:grid;grid-template-columns:minmax(0,1fr) 25px minmax(0,1fr);gap:3px;height:100%;min-height:0}
+  main.screen-squad .compare-person{display:flex;flex-direction:column;min-width:0;min-height:0}
+  main.screen-squad .compare-vs{align-self:start;text-align:center;margin-top:45px;color:#6bffe0;font-weight:900;font-size:clamp(11px,.82vw,16px)}
+  main.screen-squad .compare-profile{display:grid;grid-template-columns:49px minmax(0,1fr);grid-template-rows:18px minmax(0,1fr);align-items:center;gap:0 4px;min-height:71px;padding:1px 3px;border:1px solid #4c96938c;border-radius:5px;background:#092936cc}
+  main.screen-squad .compare-profile .squad-role-badge{grid-column:1/-1;grid-row:1;justify-self:start;font-size:10px;min-height:16px;padding:1px 5px}
+  main.screen-squad .compare-profile img{grid-column:1;grid-row:2;width:45px;height:51px;object-fit:contain;image-rendering:pixelated}
+  main.screen-squad .compare-profile>div{grid-column:2;grid-row:2;display:flex;flex-direction:column;gap:2px;overflow:hidden;font-size:clamp(9px,.57vw,11px)}
+  main.screen-squad .compare-profile strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:clamp(10px,.65vw,13px)}
+  main.screen-squad .compare-profile span,main.screen-squad .compare-profile small{white-space:nowrap;color:#c9e0dd}
+  main.screen-squad .compare-profile.compare-placeholder{display:grid;place-items:center;color:#9fc8c6;text-align:center;font-size:11px}
+  main.screen-squad .compare-ability-list{display:flex;flex-direction:column;justify-content:space-evenly;flex:1;min-height:0;padding-top:3px}
+  main.screen-squad .compare-ability-list>div{display:grid;grid-template-columns:clamp(30px,2.3vw,44px) 14px minmax(0,1fr) 11px;align-items:center;gap:3px;min-height:18px;padding:1px 2px;background:#081b2a8a;border-radius:3px;font-size:clamp(9px,.56vw,11px)}
+  main.screen-squad .compare-ability-list>div>span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#b8d6d4}
+  main.screen-squad .compare-ability-list .rank-bar{min-width:0;width:100%;height:5px!important}
+  main.screen-squad .compare-direction{font-size:9px;color:#8aa9a8}.compare-direction.up{color:#61efaa}.compare-direction.down{color:#ff9a85}
+  main.screen-squad .compare-special{display:flex;gap:5px;min-height:20px;align-items:center;margin:2px 0 0;padding:2px 4px;border-top:1px solid #4a968d7d;color:#81e5b6;font-size:clamp(9px,.58vw,11px);white-space:nowrap}
+  main.screen-squad .compare-special b{overflow:hidden;text-overflow:ellipsis;color:#e4f4ed}
+  main.screen-squad .formation-cards{min-height:0}
+  main.screen-squad .formation-cards .bench-grid{flex:1;min-height:0;grid-template-rows:repeat(4,minmax(0,1fr));align-items:center;gap:6px 8px!important;margin:2px 0 0!important}
+  main.screen-squad .squad-player{width:min(100%,335px);height:min(100%,178px);grid-template-rows:minmax(0,1fr) 20px}
+  main.screen-squad .squad-avatar{display:flex;flex-direction:column;justify-content:flex-start;gap:3px}
+  main.screen-squad .squad-avatar .squad-role-badge{align-self:center;margin:0;max-width:100%;font-size:clamp(9px,.57vw,11px);padding:2px 4px}
+  main.screen-squad .squad-avatar img{flex:1;min-height:0;width:clamp(48px,3.8vw,70px);height:75%;object-fit:contain}
+  main.screen-squad .squad-identity{gap:3px}
+  main.screen-squad .squad-season-action{display:flex;justify-content:flex-end;align-items:center;min-height:48px;flex:none;padding:2px 4px 0}
+  main.screen-squad .squad-season-action button{min-height:42px;min-width:245px;margin:0;padding:7px 15px;border:1px solid #90e7e8;background:linear-gradient(110deg,#0794c1,#0a438a);color:#f6fcff;font-size:.88rem;box-shadow:inset 0 1px #c2feff92,0 4px 12px #000a}
+}
+@media (min-width:1100px) and (min-height:700px){main.screen-squad .compare-no-rank b{display:none}}
