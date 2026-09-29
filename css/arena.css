@@ -44,12 +44,14 @@ body.arena-fallback.arena-active{background:#071421 url('../assets/arena/arena-b
 
 /* Keep the ceremony visible above the opaque, readable player cards. */
 body.draft-hall-active{background:#061321}
+body.draft-hall-active::before{content:"";position:fixed;inset:0;background:#061321 url('../assets/arena/draft-stage-podium.png') center center / cover no-repeat;pointer-events:none;z-index:0}
+body.draft-hall-active #arena-background{display:none}
 body.draft-hall-active #app{position:relative;z-index:1}
 body.draft-hall-active #app>header{background:#061522d9;border-bottom:1px solid #43deb64d;backdrop-filter:blur(8px)}
 body.draft-hall-active .candidate{background:#111f32f7;border-color:#68849b60}
 
 
-body.draft-hall-active #app>main.screen-draft{background:linear-gradient(180deg,#07182755 0%,#071827b8 27%,#071827e8 100%);border-radius:12px}
+body.draft-hall-active #app>main.screen-draft{background:linear-gradient(180deg,#07182710 0%,#07182766 34%,#071827aa 100%);border-radius:12px}
 @media(min-width:761px){body.draft-hall-active #app>main.screen-draft{width:calc(100% - 24px)}}
 /* Live auction: the existing card is the center of a large stage monitor. */
 body.auction-hall-active{background:#051120}

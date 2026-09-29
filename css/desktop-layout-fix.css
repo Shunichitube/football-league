@@ -10,6 +10,7 @@
     max-width: none;
     margin: 0.75rem 12px;
     position: relative;
+    padding-bottom: 6.25rem;
   }
 
   main.screen-squad {
@@ -264,7 +265,6 @@
   main.screen-draft .draft-action-dock {
     grid-template-columns: repeat(4,minmax(112px,1fr));
     gap: 0.55rem;
-    margin-top: 0.5rem;
     padding: 0.58rem;
   }
 
