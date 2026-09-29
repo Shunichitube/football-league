@@ -181,7 +181,7 @@ export function renderSquadComparison(club, selectedId, targetId = null) {
   return `<div class="compare-duel"><section class="compare-person">${profile(source)}<div class="compare-ability-list">${abilities.map(ability => `<div><span>${escapeHtml(ability.label)}</span><b>${escapeHtml(ability.rank)}</b><i class="rank-bar rank-${escapeHtml(ability.rank)}"><b></b></i></div>`).join('')}</div><p class="compare-special">特能 <b>${escapeHtml(left.specialAbility || '―')}</b></p></section><span class="compare-vs">VS</span><section class="compare-person">${profile(target)}<div class="compare-ability-list">${abilities.map(ability => {
     const rank = right?.ranks[ability.key];
     const change = rank ? Math.sign(order.indexOf(rank) - order.indexOf(ability.rank)) : 0;
-    return `<div><span>${escapeHtml(ability.label)}</span><b>${escapeHtml(rank || '―')}</b><i class="rank-bar ${rank ? `rank-${escapeHtml(rank)}` : 'compare-no-rank'}"><b></b></i><strong class="compare-direction ${change > 0 ? 'up' : change < 0 ? 'down' : ''}">${rank ? change > 0 ? '▲' : change < 0 ? '▼' : '＝' : ''}</strong></div>`;
+    return `<div><span>${escapeHtml(ability.label)}</span><b>${escapeHtml(rank || '―')}</b><i class="rank-bar ${rank ? `rank-${escapeHtml(rank)}` : 'compare-no-rank'}"><b></b></i><strong class="compare-direction ${change > 0 ? 'up' : change < 0 ? 'down' : ''}" aria-label="${rank ? change > 0 ? '比較対象が高い' : change < 0 ? '比較対象が低い' : '同じ' : ''}">${rank ? change > 0 ? '↑' : change < 0 ? '↓' : '＝' : ''}</strong></div>`;
   }).join('')}</div><p class="compare-special">特能 <b>${escapeHtml(right?.specialAbility || '―')}</b></p></section></div>`;
 }
 

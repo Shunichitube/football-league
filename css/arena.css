@@ -465,3 +465,36 @@ body.auction-hall-active header{background:#051522e8}
   main.screen-squad .tactic-bonus span{color:#80dfc4;font-size:.85em;font-weight:850}
   main.screen-squad .tactic-bonus b{font-weight:800}
 }
+
+/* Use the free space between roster cells and make the tablet comparison readable. */
+@media (min-width:1100px) and (min-height:700px){
+  main.screen-squad .formation-cards .bench-heading{min-height:39px;padding:5px 11px;margin-bottom:3px!important;border:1px solid #4d999599;border-radius:7px;background:linear-gradient(90deg,#082d3bdc,#092537c9);box-shadow:0 4px 12px #0010177a}
+  main.screen-squad .formation-cards .bench-heading h3{display:flex;align-items:center;gap:10px;font-size:clamp(14px,.98vw,19px)}
+  main.screen-squad .formation-cards .bench-heading h3 small{padding:3px 8px;border:1px solid #4eaaa796;border-radius:4px;background:#0a4350;color:#dbfff1;font-size:clamp(12px,.79vw,16px);font-weight:800}
+  main.screen-squad .formation-cards .bench-heading label{gap:9px;font-size:clamp(12px,.78vw,16px);font-weight:700;color:#d9f8ef}
+  main.screen-squad .formation-cards .bench-heading select{min-height:29px;padding:3px 9px;border:1px solid #4eaaa796;border-radius:5px;background:#0c3242;color:#e7fff6;font-size:clamp(12px,.78vw,16px)}
+  main.screen-squad .squad-player{width:min(100%,390px);height:min(100%,220px);grid-template-columns:minmax(0,27fr) minmax(0,29fr) minmax(0,44fr);column-gap:7px;padding:8px 9px 5px}
+  main.screen-squad .squad-avatar img{width:clamp(62px,4.6vw,90px)}
+  main.screen-squad .squad-role-badge{font-size:clamp(10px,.65vw,13px)}
+  main.screen-squad .squad-identity{gap:5px;font-size:clamp(12px,.78vw,16px)}
+  main.screen-squad .squad-identity .player-name{font-size:clamp(14px,.98vw,19px)!important}
+  main.screen-squad .squad-identity strong{font-size:clamp(12px,.8vw,16px)}
+  main.screen-squad .squad-identity small{font-size:clamp(10px,.67vw,13px)}
+  main.screen-squad .squad-identity button{font-size:clamp(10px,.65vw,13px)!important}
+  main.screen-squad .squad-abilities{gap:4px}
+  main.screen-squad .squad-abilities>div{padding:3px 4px}
+  main.screen-squad .squad-abilities dt,main.screen-squad .squad-abilities dd{font-size:clamp(11px,.75vw,15px)}
+  main.screen-squad .squad-special{font-size:clamp(11px,.72vw,14px)}
+  main.screen-squad .squad-compare h3{font-size:clamp(14px,.93vw,18px)}
+  main.screen-squad .compare-duel{grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr);gap:4px}
+  main.screen-squad .compare-profile{grid-template-columns:clamp(55px,3.7vw,72px) minmax(0,1fr);grid-template-rows:22px minmax(0,1fr);min-height:91px;gap:2px 5px;padding:4px 5px}
+  main.screen-squad .compare-profile .squad-role-badge{min-height:20px;font-size:clamp(10px,.65vw,13px)}
+  main.screen-squad .compare-profile img{width:clamp(53px,3.5vw,68px);height:65px}
+  main.screen-squad .compare-profile>div{gap:3px;font-size:clamp(11px,.73vw,14px)}
+  main.screen-squad .compare-profile strong{font-size:clamp(12px,.81vw,16px)}
+  main.screen-squad .compare-ability-list>div{grid-template-columns:clamp(39px,2.7vw,52px) 16px minmax(0,1fr) 20px;min-height:23px;font-size:clamp(11px,.68vw,13px)}
+  main.screen-squad .compare-direction{display:grid;place-items:center;min-width:20px;font-size:clamp(18px,1.15vw,23px);line-height:1;font-weight:1000;color:#769797}
+  main.screen-squad .compare-direction.up{color:#50f2a5;text-shadow:0 0 6px #23d9868c}
+  main.screen-squad .compare-direction.down{color:#ff6f6b;text-shadow:0 0 6px #ee554b80}
+  main.screen-squad .compare-special{min-height:25px;font-size:clamp(11px,.69vw,14px)}
+}
