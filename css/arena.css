@@ -414,3 +414,30 @@ body.auction-hall-active header{background:#051522e8}
   main.screen-squad .squad-season-action button{min-height:42px;min-width:245px;margin:0;padding:7px 15px;border:1px solid #90e7e8;background:linear-gradient(110deg,#0794c1,#0a438a);color:#f6fcff;font-size:.88rem;box-shadow:inset 0 1px #c2feff92,0 4px 12px #000a}
 }
 @media (min-width:1100px) and (min-height:700px){main.screen-squad .compare-no-rank b{display:none}}
+
+/* The venue and physical hardware are one fixed background plate. Only live UI occupies the display glass. */
+@media (min-width:1100px) and (min-height:700px){
+  #app>main.screen-squad{position:relative;width:100%;height:calc(100dvh - 52px);margin:0;padding:8px 1.2vw;overflow:hidden;background:#071521 url('../assets/arena/squad-clubhouse-devices.webp') center center / 100% 100% no-repeat}
+  main.screen-squad .squad-heading-row{position:relative;z-index:3;min-height:30px;margin:0;pointer-events:none}
+  main.screen-squad .squad-heading-copy{visibility:hidden}
+  main.screen-squad .squad-actions{pointer-events:auto;margin-left:auto}
+  main.screen-squad .formation-editor{display:block;position:static;flex:none;margin:0;min-height:0}
+  main.screen-squad .formation-editor:has(>.lineup-status[hidden]){display:block}
+  main.screen-squad .lineup-status:not([hidden]){position:absolute;z-index:5;left:50%;top:6%;width:48%;min-height:26px}
+  main.screen-squad .formation-side{position:absolute;inset:0 auto auto 0;display:block;width:50%;height:100%;margin:0;pointer-events:none}
+  main.screen-squad .formation-board-title{position:absolute;z-index:2;left:15%;top:10.7%;max-width:70%;margin:0;padding:3px 9px;border-color:#4cbdaa79;background:#032c35c9;pointer-events:auto}
+  main.screen-squad .formation-side>.formation-pitch{position:absolute;z-index:2;left:14.7%;top:14%;width:79%;height:39%;margin:0;padding:0 2%!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-template-rows:repeat(3,minmax(0,1fr))!important;gap:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;overflow:visible;pointer-events:auto}
+  main.screen-squad .formation-side>.formation-pitch::before,main.screen-squad .formation-side>.formation-pitch::after{content:none!important}
+  main.screen-squad .formation-pitch .formation-token,main.screen-squad .formation-pitch .formation-token:first-child,main.screen-squad .formation-pitch .formation-token:last-child{width:min(100%,142px);height:clamp(90px,11.5vh,124px);border:1px solid transparent!important;border-radius:7px!important;background:transparent!important;box-shadow:none!important}
+  main.screen-squad .formation-token .squad-role-badge{min-height:18px;padding:1px 6px}
+  main.screen-squad .formation-token img{width:clamp(47px,4vw,70px);height:clamp(46px,5.5vh,61px)}
+  main.screen-squad .formation-side>.squad-tablet{position:absolute;z-index:2;left:10.5%;top:60.5%;width:86%;height:32.2%;display:grid;grid-template-columns:minmax(0,40fr) minmax(0,60fr);gap:0;margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;overflow:hidden;pointer-events:auto}
+  main.screen-squad .squad-tablet::after{content:none}
+  main.screen-squad .squad-tablet-tactics,main.screen-squad .squad-compare{height:100%;border:0;border-radius:0;background:#041c2a35;box-shadow:none}
+  main.screen-squad .squad-tablet-tactics{padding:8px 9px}
+  main.screen-squad .squad-compare{padding:7px 9px}
+  main.screen-squad .formation-cards{position:absolute;z-index:2;left:50%;right:1.1%;top:10.5%;bottom:1%;width:auto;height:auto;display:flex;flex-direction:column;min-height:0;margin:0;pointer-events:auto}
+  main.screen-squad .formation-cards .bench-grid{flex:1;min-height:0;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-template-rows:repeat(4,minmax(0,1fr));gap:6px 8px!important;align-items:center;justify-items:center;margin:2px 0 0!important}
+  main.screen-squad .squad-player{width:min(100%,305px);height:min(100%,178px)}
+  main.screen-squad .squad-season-action{min-height:51px;padding:4px 3px 0}
+}
