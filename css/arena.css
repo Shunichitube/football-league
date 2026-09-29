@@ -299,3 +299,57 @@ body.auction-hall-active header{background:#051522e8}
   main.screen-squad .squad-card-actions{display:flex;max-width:100%;gap:2px}
   main.screen-squad .squad-card-actions button{padding:2px 4px!important;min-height:18px;font-size:clamp(8px,.52vw,10px)!important}
 }
+
+/* Squad room refinement: the whiteboard and comparison stay in one left column. */
+@media (min-width:1100px) and (min-height:700px){
+  #app>main.screen-squad{background:#081b28 url('../assets/arena/squad-clubhouse.svg') center center / 100% 100% no-repeat}
+  #app>main.screen-squad::before,#app>main.screen-squad::after{content:none}
+  main.screen-squad .tactic-panel{min-height:36px;max-height:36px;padding:2px 8px!important;border-radius:7px;background:#0a2430d9}
+  main.screen-squad .tactic-panel button{min-height:26px;padding:3px 9px!important;font-size:.75rem}
+  main.screen-squad .formation-editor{grid-template-columns:minmax(0,37fr) minmax(0,63fr);gap:5px 14px}
+  main.screen-squad .formation-editor:has(>.lineup-status[hidden]){grid-template-rows:minmax(0,1fr);grid-template-areas:'side bench'}
+  main.screen-squad .lineup-status[hidden]{display:none!important}
+  main.screen-squad .formation-side{position:static;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:20px minmax(0,58fr) minmax(0,42fr);align-content:stretch;gap:4px;min-height:0}
+  main.screen-squad .formation-side>h3{grid-area:auto;align-self:center;padding-left:8px}
+  main.screen-squad .formation-side>.lineup-slots{grid-area:auto;position:relative;min-height:0;height:100%;margin:0;padding:7px!important;border:1px solid #8ac4ae82!important;border-radius:7px!important;background:radial-gradient(circle at 50% 50%,#c4f2df0c 0 12%,transparent 12.2%),linear-gradient(90deg,transparent 49.7%,#a8d5b524 50%,transparent 50.3%),#173b41c2!important;box-shadow:inset 0 0 25px #0a2730a6!important;overflow:hidden}
+  main.screen-squad .formation-side>.lineup-slots::before{inset:7px;border-color:#b5e7cb20}
+  main.screen-squad .formation-side>.lineup-slots::after{bottom:7px;border-color:#b5e7cb24}
+  main.screen-squad .formation-pitch .formation-token,main.screen-squad .formation-pitch .formation-token:first-child,main.screen-squad .formation-pitch .formation-token:last-child{width:min(100%,112px);height:clamp(80px,10.7vh,112px);border:1px solid #bce2c066!important;background:#0c2833ac!important;box-shadow:0 5px 10px #0619236b!important}
+  main.screen-squad .formation-token img{width:clamp(42px,3.25vw,61px);height:clamp(45px,5.8vh,66px)}
+  main.screen-squad .formation-token strong{font-size:.74rem}
+  main.screen-squad .formation-side>.squad-compare{grid-area:auto;position:static;min-height:0;margin:0;padding:10px 12px;background:linear-gradient(145deg,#0b2734f0,#09202de8);border-color:#4b8b88a8}
+  main.screen-squad .compare-stats>div{font-size:.73rem;padding:5px 6px}
+  main.screen-squad .compare-stats b{font-size:.8rem}
+  main.screen-squad .formation-cards .bench-grid{justify-items:center;align-items:center;gap:8px 13px!important}
+  main.screen-squad .squad-player{grid-template-columns:minmax(0,27fr) minmax(0,29fr) minmax(0,44fr);grid-template-rows:minmax(0,1fr) 22px;column-gap:5px;row-gap:3px;width:min(100%,350px);height:min(100%,188px);padding:7px 8px 4px;border-color:#5b8b8a8c;background:linear-gradient(140deg,#142f3beF,#0b2030f5);border-radius:10px}
+  main.screen-squad .squad-player.starter{border-color:#5b8b8a8c}
+  main.screen-squad .squad-avatar{grid-column:1;grid-row:1}
+  main.screen-squad .squad-avatar img{width:clamp(54px,4.2vw,82px);height:min(100%,128px)}
+  main.screen-squad .squad-identity{grid-column:2;grid-row:1;gap:4px;font-size:clamp(10px,.67vw,13px)}
+  main.screen-squad .squad-identity .player-name{font-size:clamp(12px,.84vw,16px)!important}
+  main.screen-squad .squad-identity strong{font-size:clamp(11px,.7vw,14px)}
+  main.screen-squad .squad-role-badge{display:inline-flex;align-items:center;max-width:100%;min-height:19px;margin:2px 0;padding:2px 7px;border-radius:4px;border:1px solid #6a8a90;background:#243642;color:#c3d1d5;font-style:normal;font-size:clamp(9px,.6vw,12px);font-weight:800;white-space:nowrap}
+  main.screen-squad .squad-role-badge.starter{color:#0c382b;background:#8de8b0;border-color:#aaf4c4}
+  main.screen-squad .squad-abilities{grid-column:3;grid-row:1;gap:3px}
+  main.screen-squad .squad-abilities>div{grid-template-columns:minmax(0,39%) minmax(0,61%);padding:2px 3px}
+  main.screen-squad .squad-abilities dt{font-size:clamp(10px,.62vw,12px)}
+  main.screen-squad .squad-abilities dd{grid-template-columns:15px minmax(0,1fr);font-size:clamp(10px,.64vw,13px)}
+  main.screen-squad .squad-abilities .rank-bar{height:5px!important}
+  main.screen-squad .squad-special{grid-column:1/-1;grid-row:2;display:flex;align-items:center;gap:7px;min-width:0;padding:2px 7px;border-top:1px solid #7db1a34d;background:#0a1f2bdb;color:#d8e8e5;font-size:clamp(10px,.62vw,12px)}
+  main.screen-squad .squad-special span{color:#8bd7bd;font-weight:900;white-space:nowrap}
+  main.screen-squad .squad-special b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  main.screen-squad .squad-card-actions button{padding:2px 6px!important;min-height:19px;font-size:clamp(9px,.56vw,11px)!important}
+}
+@media (min-width:761px) and (max-width:1099px), (max-height:699px){
+  main.screen-squad .formation-side>.lineup-slots{grid-area:auto}
+  main.screen-squad .squad-role-badge{display:inline-block;border:1px solid #729ba1;border-radius:4px;padding:2px 6px;background:#25414a;color:#cef3db;font-style:normal;font-weight:800}
+  main.screen-squad .squad-special{grid-column:1/-1;border-top:1px solid #5f8e87;padding:3px 5px;color:#d8e8e5}
+}
+@media (min-width:1100px) and (min-height:700px){
+  main.screen-squad .formation-pitch .formation-token,main.screen-squad .formation-pitch .formation-token:first-child,main.screen-squad .formation-pitch .formation-token:last-child{border:1px solid transparent!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none}
+  main.screen-squad .formation-pitch .formation-token:hover,main.screen-squad .formation-pitch .formation-token:focus-visible,main.screen-squad .formation-pitch .formation-token.selected-player{background:#163d44a8!important;border-color:#8fe3b18c!important;box-shadow:0 0 15px #9af0bc43!important}
+  main.screen-squad .formation-pitch .formation-token.drop-preview{background:#255047b8!important;border-color:#ffe28c!important;box-shadow:0 0 15px #ffe28c7a!important}
+  main.screen-squad .formation-position{align-self:center;padding:2px 6px;border-radius:4px;background:#0a2734b8}
+  main.screen-squad .formation-token strong{padding:2px 6px;border-radius:4px;background:#0a2734c9}
+  main.screen-squad .formation-token img{width:clamp(55px,4.3vw,78px);height:clamp(60px,7vh,78px)}
+}

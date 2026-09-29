@@ -4,7 +4,7 @@ import { applySeasonFinances, awards, clubAchievements, createLeague, finalizeSe
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.22.0';
 import { createRandom } from './random.js';
 import { createAuctionPool, createDraftPool, resolveDraftActions } from './market.js?v=0.22.0';
-import { configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=0.22.2';
+import { configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=0.22.3';
 import { decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=0.17.30';
 import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=0.17.2';
 import { RoomAdapter } from './room-adapter.js?v=0.20.0';
@@ -261,6 +261,8 @@ function previewLineupDrop(slot, playerId) {
   const replaced = me().roster.find(candidate => candidate.id === replacedId);
   const originalIndex = me().lineup.indexOf(playerId);
   const action = replacedId === playerId ? '現在の配置' : replaced ? `${originalIndex >= 0 ? '位置交換' : '交代'}：${player.name} ⇄ ${replaced.name}` : `配置：${player.name} → ${['GK','DF','MF 1','MF 2','FW'][index]}`;
+  const status = app.querySelector('.lineup-status');
+  status?.removeAttribute('hidden');
   app.querySelector('.formation-drop-status')?.replaceChildren(document.createTextNode(action));
   slot.classList.add('drop-preview');
   slot.dataset.dropLabel = action;
@@ -299,6 +301,8 @@ app.addEventListener('dragend', () => {
   app.querySelectorAll('.is-dragging,.awaiting-drop').forEach(node => node.classList.remove('is-dragging','awaiting-drop'));
   app.querySelectorAll('.formation-token.drop-preview').forEach(node => node.classList.remove('drop-preview'));
   app.querySelector('.formation-drop-status')?.replaceChildren();
+  const status = app.querySelector('.lineup-status');
+  if (status && !status.querySelector('b')?.textContent) status.hidden = true;
 });
 
 // Stage 10 keeps all public player information in one rank-only card and adds
