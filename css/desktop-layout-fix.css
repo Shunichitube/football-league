@@ -9,6 +9,7 @@
     width: calc(100vw - 24px);
     max-width: none;
     margin: 0.75rem 12px;
+    position: relative;
   }
 
   main.screen-squad {
@@ -114,6 +115,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.32rem;
+    overflow: visible;
   }
 
   main.screen-draft .player-card,
@@ -128,7 +130,7 @@
     min-height: 136px;
     height: auto !important;
     padding: 0.5rem !important;
-    overflow: hidden;
+    overflow: visible;
   }
 
   main.screen-draft .player-profile,
@@ -260,7 +262,7 @@
   }
 
   main.screen-draft .draft-action-dock {
-    grid-template-columns: minmax(92px,0.7fr) minmax(92px,0.7fr) minmax(132px,1fr) minmax(112px,0.78fr) minmax(112px,0.78fr);
+    grid-template-columns: repeat(4,minmax(112px,1fr));
     gap: 0.55rem;
     margin-top: 0.5rem;
     padding: 0.58rem;
@@ -273,13 +275,15 @@
     line-height: 1.1;
   }
 
-  main.screen-draft .draft-selected-avatar {
-    min-height: 96px;
+  main.screen-draft .draft-stage-avatar {
+    top: 2.05rem;
+    width: 138px;
+    height: 136px;
   }
 
-  main.screen-draft .draft-selected-avatar img {
-    width: 74px;
-    height: 92px;
+  main.screen-draft .draft-stage-avatar img {
+    width: 96px;
+    height: 122px;
   }
 
   /* Auction: keep the phone-card ratio, do not stretch it across the desktop. */

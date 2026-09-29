@@ -103,7 +103,9 @@ export function renderPlayerCard(player, options = {}) {
   const display = displayPlayer(player);
   const description = display.specialAbility ? SPECIAL_ABILITY_DESCRIPTIONS[display.specialAbility] : '';
   const specialAbility = display.specialAbility
-    ? `<details class="special-ability-detail"><summary>★ ${escapeHtml(display.specialAbility)} <span>詳細</span></summary><p>${escapeHtml(description)}</p></details>`
+    ? options.specialHover
+      ? `<div class="special-ability-detail special-ability-hover"><span>★ ${escapeHtml(display.specialAbility)} <em>詳細</em></span><p>${escapeHtml(description)}</p></div>`
+      : `<details class="special-ability-detail"><summary>★ ${escapeHtml(display.specialAbility)} <span>詳細</span></summary><p>${escapeHtml(description)}</p></details>`
     : '<p class="special-ability none">―</p>';
   const release = options.allowRelease ? `<button type="button" data-stage10="release" data-release-player="${escapeHtml(player.id)}" class="subtle release-button">この選手を放出</button>` : '';
   const honors = player.honors || {};
