@@ -43,8 +43,8 @@ body.arena-fallback.arena-active{background:#071421 url('../assets/arena/arena-b
 @media(max-width:600px){.arena-popup-overlay{padding:12px}.arena-popup{padding:24px 18px;max-height:calc(100dvh - 24px);border-radius:14px}.arena-popup button{min-height:44px}}
 
 /* Keep the ceremony visible above the opaque, readable player cards. */
-body.draft-hall-active{background:#061321 url('../assets/arena/draft-stage-podium.png') center center / cover no-repeat fixed !important}
-body.draft-hall-active::before{content:"";position:fixed;inset:0;background:#061321 url('../assets/arena/draft-stage-podium.png') center center / cover no-repeat;pointer-events:none;z-index:0}
+body.draft-hall-active{background:#061321 url('../assets/arena/draft-stage-podium.webp') center center / cover no-repeat fixed !important}
+body.draft-hall-active::before{content:"";position:fixed;inset:0;background:#061321 url('../assets/arena/draft-stage-podium.webp') center center / cover no-repeat;pointer-events:none;z-index:0}
 body.draft-hall-active #arena-background{display:none}
 body.draft-hall-active #app{position:relative;z-index:1}
 body.draft-hall-active #app>header{background:#061522d9;border-bottom:1px solid #43deb64d;backdrop-filter:blur(8px)}
