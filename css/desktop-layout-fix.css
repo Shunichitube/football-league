@@ -105,15 +105,15 @@
     grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
     gap: 0.4rem !important;
     align-items: stretch !important;
-    margin: 0.55rem 0 !important;
+    margin: 0.45rem 0 !important;
   }
 
   main.screen-draft .candidate {
     min-width: 0;
-    padding: 0.52rem !important;
+    padding: 0.48rem !important;
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 0.32rem;
   }
 
   main.screen-draft .player-card,
@@ -125,7 +125,7 @@
     width: 100% !important;
     max-width: none !important;
     min-width: 0 !important;
-    min-height: 148px;
+    min-height: 136px;
     height: auto !important;
     padding: 0.5rem !important;
     overflow: hidden;
@@ -241,23 +241,45 @@
   }
 
   main.screen-draft .scout-comment {
-    min-height: 4.35em;
-    max-height: 4.35em;
+    min-height: 3.1em;
+    max-height: 3.1em;
     overflow: hidden;
     display: -webkit-box;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     font-size: 0.78rem;
     line-height: 1.45;
     margin: 0.1rem 0 0.15rem;
   }
 
-  main.screen-draft .candidate button {
-    width: 100%;
-    padding: 0.6rem 0.45rem !important;
-    margin: auto 0 0 !important;
-    font-size: 0.78rem !important;
+  main.screen-draft .draft-selected-badge {
+    top: 0.32rem;
+    right: 0.32rem;
+    padding: 0.16rem 0.42rem;
+    font-size: 0.62rem;
+  }
+
+  main.screen-draft .draft-action-dock {
+    grid-template-columns: minmax(92px,0.7fr) minmax(92px,0.7fr) minmax(132px,1fr) minmax(112px,0.78fr) minmax(112px,0.78fr);
+    gap: 0.55rem;
+    margin-top: 0.5rem;
+    padding: 0.58rem;
+  }
+
+  main.screen-draft .draft-action-dock button {
+    padding: 0.68rem 0.55rem !important;
+    margin: 0 !important;
+    font-size: 0.82rem !important;
     line-height: 1.1;
+  }
+
+  main.screen-draft .draft-selected-avatar {
+    min-height: 96px;
+  }
+
+  main.screen-draft .draft-selected-avatar img {
+    width: 74px;
+    height: 92px;
   }
 
   /* Auction: keep the phone-card ratio, do not stretch it across the desktop. */
