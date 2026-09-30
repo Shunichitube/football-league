@@ -1,6 +1,6 @@
-import { pixelTexture } from './arena-characters.js?v=0.22.8';
+import { pixelTexture, seatedBackTexture } from './arena-characters.js?v=20260930-master-1';
+import { playerAvatar } from './character-art.js?v=20260930-master-1';
 import { minimumAuctionBid } from './live-auction.js';
-const avatars=new Map();
 const venueSprites=new Map();
 function venueSprite(color,index,appearance='man'){
   const key=`${color}:${index}:${appearance}`;
@@ -9,16 +9,8 @@ function venueSprite(color,index,appearance='man'){
 }
 const backSprites=new Map();
 function auctionBackSprite(index){
-  if(backSprites.has(index))return backSprites.get(index);
-  const c=document.createElement('canvas');c.width=24;c.height=32;
-  const ctx=c.getContext('2d');ctx.imageSmoothingEnabled=false;
-  const block=(color,x,y,w,h)=>{ctx.fillStyle=color;ctx.fillRect(x,y,w,h)};
-  block('#090f19',7,2,10,11);block('#172335',8,3,8,9);
-  block(index%2?'#14273a':'#1b2a3a',5,12,14,18);
-  block('#273b4c',6,13,2,14);block('#111b2b',16,13,3,14);
-  block('#0b1422',3,17,3,13);block('#0b1422',18,17,3,13);
-  block('#0a1321',7,29,10,3);
-  const url=c.toDataURL();backSprites.set(index,url);return url;
+  if(!backSprites.has(index))backSprites.set(index,seatedBackTexture('#24364b',index).toDataURL());
+  return backSprites.get(index);
 }
 function auctionVenueCharacters(clubs){
   const colors=['#60a5fa','#fbbf24','#4ade80','#f472b6','#a78bfa','#e2e8f0'];
@@ -42,9 +34,7 @@ function auctionVenueCharacters(clubs){
   return `<div class="auction-crowd" aria-hidden="true">${audience}</div>${ribbon}${flags}<div class="auction-light-beam beam-left" aria-hidden="true"></div><div class="auction-light-beam beam-right" aria-hidden="true"></div><img class="auction-host" src="${venueSprite('#172e50',71)}" alt="" aria-hidden="true">${staff}<span class="auction-furniture-front" aria-hidden="true"></span><div class="auction-foreground" aria-hidden="true">${consoles}${operators}</div>`;
 }
 export function auctionAvatar(player){
-  const key=player.avatar?`avatar:${JSON.stringify(player.avatar)}`:player.avatarIndex??String(player.id).split('').reduce((h,c)=>(h*31+c.charCodeAt(0))>>>0,7);
-  if(!avatars.has(key))avatars.set(key,pixelTexture('#60a5fa',player.avatar||key%80).toDataURL());
-  return avatars.get(key);
+  return playerAvatar(player);
 }
 export function renderLiveAuction(s,club,card,escape,header){
   const a=s.auction,p=a.pool[a.i],lot=a.live;
