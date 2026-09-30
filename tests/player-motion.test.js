@@ -4,7 +4,8 @@ import {MOTIONS,motionFrame,drawMotion} from '../js/player-motion.js';
 test('motion cycles visit every frame and wrap to the first frame',()=>{
  for(const [name,motion] of Object.entries(MOTIONS)){
   assert.deepEqual(motion.frames.map((_,i)=>motionFrame(name,(i+.01)/motion.fps)),motion.frames);
-  assert.equal(motionFrame(name,motion.frames.length/motion.fps),motion.frames[0]);
+  assert.equal(motionFrame(name,motion.frames.length/motion.fps),motion.loop===false?motion.frames.at(-1):motion.frames[0]);
+  assert.equal(motionFrame(name,motion.frames.length/motion.fps,{loop:true}),motion.frames[0]);
  }
 });
 test('eight running frames alternate preserved key poses and new in-betweens',()=>{
@@ -20,4 +21,17 @@ test('left-facing animation mirrors the whole frame',()=>{
  const transforms=[];const ctx={canvas:{width:480,height:480},clearRect(){},save(){},restore(){},translate(...v){transforms.push(v);},scale(...v){transforms.push(v);},drawImage(){}};
  drawMotion(ctx,{base:{width:1774,height:887},run:{width:1254,height:1254}},'run',0,{direction:'left'});
  assert.deepEqual(transforms,[[480,0],[-1,1]]);
+});
+test('actions stop at the final pose and right-foot shooting is never mirrored',()=>{
+ const transforms=[],calls=[];
+ const ctx={canvas:{width:480,height:480},clearRect(){},save(){},restore(){},translate(...v){transforms.push(v);},scale(...v){transforms.push(v);},drawImage(...v){calls.push(v);}};
+ for(const motion of ['shoot','catch','dive']){
+  const sheet={width:1254,height:1254};
+  assert.equal(motionFrame(motion,10),3);
+  assert.equal(motionFrame(motion,-1),0);
+  drawMotion(ctx,{[motion]:sheet},motion,10,{direction:'left'});
+  assert.deepEqual(calls.at(-1).slice(1,5),[627,627,627,627]);
+  if(motion==='shoot')assert.deepEqual(transforms,[]);
+ }
+ assert.equal(transforms.length,4);
 });

@@ -1,14 +1,21 @@
 <!doctype html><html lang="ja"><meta charset="utf-8"><title>選手モーション確認</title>
-<style>body{margin:32px;background:#12202d;color:#e9f4f4;font:16px sans-serif}h1{font-size:24px}main{display:flex;gap:20px;flex-wrap:wrap}figure{margin:0;padding:16px;border:1px solid #4f807a;border-radius:12px;background:#203442;text-align:center}canvas{width:240px;height:240px;image-rendering:pixelated}button{padding:10px 18px;margin:0 8px 18px 0;color:#e9f4f4;background:#204b49;border:1px solid #6cc5b1;border-radius:6px;cursor:pointer}figcaption{margin:8px}p{color:#b9d3d1}</style>
-<h1>待機・走り・ドリブル</h1><p>コマごとに描いた走りの試作。1コマ送りや低速再生で踏み替えを確認できます。ドリブルのボールはキャラクターと別に描画しています。</p>
-<button id="pause">一時停止</button><button id="step">走りを1コマ進める</button><button id="speed">半分の速さ</button><button id="direction">左向きに切り替え</button><a style="color:#8de8c2" href="preview.html">正面の9通り</a><main></main>
+<style>body{margin:32px;background:#12202d;color:#e9f4f4;font:16px sans-serif}h1{font-size:24px}main{display:flex;gap:20px;flex-wrap:wrap}figure{margin:0;padding:16px;border:1px solid #4f807a;border-radius:12px;background:#203442;text-align:center}canvas{width:240px;height:240px;image-rendering:pixelated}button{padding:10px 18px;margin:0 8px 18px 0;color:#e9f4f4;background:#204b49;border:1px solid #6cc5b1;border-radius:6px;cursor:pointer}figcaption{margin:8px}p{color:#b9d3d1}figure button{font-size:13px;margin:8px 0 0}small{display:block;color:#b9d3d1}</style>
+<h1>選手・キーパーモーション</h1><p>待機・走り・ドリブルに、右足シュート・キャッチ・飛び込みを追加。各カードで1コマずつ確認できます。シュートは右足を保つため右向きで表示します。</p>
+<button id="pause">一時停止</button><button id="reset">最初から再生</button><button id="speed">半分の速さ</button><button id="direction">左向きに切り替え</button><a style="color:#8de8c2" href="preview.html">正面の9通り</a><main></main>
 <script type="module">
-import {MOTIONS,motionFrame,loadMotionAtlas,drawMotion} from '../../js/player-motion.js?v=six-v2';
-const atlas=await loadMotionAtlas();let paused=false,seconds=0,previous=null,direction='right',speed=1;
-const views=Object.entries(MOTIONS).map(([key,motion])=>{const figure=document.createElement('figure'),canvas=document.createElement('canvas'),caption=document.createElement('figcaption');canvas.width=480;canvas.height=480;caption.textContent=`${motion.label} · ${motion.frames.length}コマ`;figure.append(canvas,caption);document.querySelector('main').append(figure);return {key,caption,ctx:canvas.getContext('2d')};});
+import {MOTIONS,motionFrame,loadMotionAtlas,drawMotion} from '../../js/player-motion.js?v=shoot-keeper-gray-v1';
+const atlas=await loadMotionAtlas();let paused=false,previous=null,direction='right',speed=1;
+const views=Object.entries(MOTIONS).map(([key,motion])=>{
+ const figure=document.createElement('figure'),canvas=document.createElement('canvas'),caption=document.createElement('figcaption'),step=document.createElement('button');
+ canvas.width=480;canvas.height=480;step.textContent='1コマ進める';
+ const view={key,caption,ctx:canvas.getContext('2d'),seconds:0};
+ step.onclick=()=>{paused=true;document.querySelector('#pause').textContent='再生';view.seconds=(motionFrame(key,view.seconds)+1)%motion.frames.length/motion.fps;};
+ figure.append(canvas,caption,step);if(key==='shoot'){const note=document.createElement('small');note.textContent='右足・右向き';figure.append(note);}
+ document.querySelector('main').append(figure);return view;
+});
 document.querySelector('#pause').onclick=e=>{paused=!paused;e.target.textContent=paused?'再生':'一時停止';};
-document.querySelector('#step').onclick=()=>{paused=true;document.querySelector('#pause').textContent='再生';seconds=(Math.floor(seconds*MOTIONS.run.fps+1e-8)+1)/MOTIONS.run.fps;};
+document.querySelector('#reset').onclick=()=>{views.forEach(v=>v.seconds=0);paused=false;document.querySelector('#pause').textContent='一時停止';};
 document.querySelector('#speed').onclick=e=>{speed=speed===1?.5:1;e.target.textContent=speed===1?'半分の速さ':'通常の速さ';};
 document.querySelector('#direction').onclick=e=>{direction=direction==='right'?'left':'right';e.target.textContent=direction==='right'?'左向きに切り替え':'右向きに切り替え';};
-function tick(now){if(previous!==null&&!paused&&!document.hidden)seconds+=Math.min((now-previous)/1000,.1)*speed;previous=now;for(const {key,ctx,caption} of views){drawMotion(ctx,atlas,key,seconds,{direction,ball:true});caption.textContent=`${MOTIONS[key].label} · ${MOTIONS[key].frames.indexOf(motionFrame(key,seconds))+1} / ${MOTIONS[key].frames.length}コマ`;}requestAnimationFrame(tick);}requestAnimationFrame(tick);
+function tick(now){const dt=previous!==null&&!paused&&!document.hidden?Math.min((now-previous)/1000,.1)*speed:0;previous=now;for(const view of views){const {key,ctx,caption}=view,motion=MOTIONS[key];view.seconds+=dt;const cycle=motion.frames.length/motion.fps+(motion.loop===false?.7:0);if(!paused)view.seconds%=cycle;drawMotion(ctx,atlas,key,view.seconds,{direction,ball:true});caption.textContent=`${motion.label} · ${motionFrame(key,view.seconds)+1} / ${motion.frames.length}コマ`;}requestAnimationFrame(tick);}requestAnimationFrame(tick);
 </script></html>
