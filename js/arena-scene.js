@@ -1,4 +1,4 @@
-import { pixelTexture, seatedBackTexture, coachTexture } from './arena-characters.js';
+import { pixelTexture, seatedBackTexture, coachTexture } from './arena-characters.js?v=0.22.8';
 // Presentation only: no game, random-generator or storage imports.
 export const ARENA = Object.freeze({ width: 1672, height: 941 });
 export function arenaTransform(width, height) {
@@ -96,7 +96,7 @@ export async function mountArena(canvas){
   // Both keepers stand inside the court, clear of the projected goal mouths.
   const players=[[225,585],[460,598],[570,620],[725,687],[850,650],[1447,585],[1118,594],[967,624],[1235,698],[1058,752]];
   const nearFans=makeCanvas(48,32),nc=nearFans.getContext('2d');
-  nc.drawImage(fans[0],0,0);nc.drawImage(cheers[4],24,0);
+  nc.drawImage(fans[0],0,0,24,32);nc.drawImage(cheers[4],24,0,24,32);
   nc.globalCompositeOperation='source-in';nc.fillStyle='#050e22';nc.fillRect(0,0,48,32);
   const reduce=matchMedia('(prefers-reduced-motion: reduce)');
   let frame=0,last=0,clock=0,previous=0,paused=false,dead=false;
@@ -115,13 +115,15 @@ export async function mountArena(canvas){
     shadow(x,y,s);
     const bob=seated?0:Math.sin(t*5+i)*.8;
     const sprite=sprites[i%20],left=Math.round(x-12*s),top=Math.round(y-(seated?28:32)*s+bob);
-    if(seated||i===0||i===5){ctx.drawImage(sprite,0,0,24,seated?28:32,left,top,24*s,(seated?28:32)*s);}
+    if(seated||i===0||i===5){ctx.drawImage(sprite,left,top,24*s,(seated?28:32)*s);}
     else{
-      ctx.drawImage(sprite,0,0,24,24,left,top,24*s,24*s);
+      // Source dimensions follow the renderer; destination coordinates retain the scene layout.
+      const split=sprite.height*.75,half=sprite.width/2,legs=sprite.height-split;
+      ctx.drawImage(sprite,0,0,sprite.width,split,left,top,24*s,24*s);
       const kick=i===4&&t%18>=11&&t%18<11.6;
       const stride=Math.sin(t*5+i)*1.5*s;
-      ctx.drawImage(sprite,0,24,12,8,left-stride,top+24*s,12*s,8*s);
-      ctx.drawImage(sprite,12,24,12,8,left+12*s+(kick?6*s:stride),top+(kick?21:24)*s,12*s,8*s);
+      ctx.drawImage(sprite,0,split,half,legs,left-stride,top+24*s,12*s,8*s);
+      ctx.drawImage(sprite,half,split,half,legs,left+12*s+(kick?6*s:stride),top+(kick?21:24)*s,12*s,8*s);
     }
   }
   function text(value,x,y,size,color='#eaf9ff'){
