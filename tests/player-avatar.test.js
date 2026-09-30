@@ -20,6 +20,6 @@ test('changing hair and face only changes their own layers',()=>{
  const hair=render({hairStyle:2,face:0});
  const face=render({hairStyle:0,face:2});
  assert.deepEqual(normal[0],hair[0]);assert.deepEqual(normal[0],face[0]);
- assert.deepEqual(normal[1],hair[1]);assert.deepEqual(normal[2],face[2]);
- assert.notDeepEqual(normal[2],hair[2]);assert.notDeepEqual(normal[1],face[1]);
+ assert.deepEqual(normal.slice(1,-1),hair.slice(1,-1));assert.deepEqual(normal.at(-1),face.at(-1));
+ assert.notDeepEqual(normal.at(-1),hair.at(-1));assert.notDeepEqual(normal.slice(1,-1),face.slice(1,-1));
 });

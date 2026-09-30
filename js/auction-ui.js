@@ -1,4 +1,4 @@
-import { pixelTexture } from './arena-characters.js?v=modular-1';
+import { pixelTexture } from './arena-characters.js?v=modular-2';
 import { minimumAuctionBid } from './live-auction.js';
 const avatars=new Map();
 const venueSprites=new Map();

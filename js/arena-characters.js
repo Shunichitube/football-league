@@ -1,4 +1,4 @@
-import { playerAvatarTexture } from './player-avatar.js?v=1';
+import { playerAvatarTexture } from './player-avatar.js?v=2';
 
 // FOOTBALL LEAGUE character renderer v2
 // Unified cute pixel-art language: large head, no nose, simple eyes, strong silhouette.
