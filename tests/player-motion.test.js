@@ -8,13 +8,13 @@ test('motion cycles visit every frame and wrap to the first frame',()=>{
  }
 });
 test('eight running frames alternate preserved key poses and new in-betweens',()=>{
- const base={width:1774,height:887},run={width:1254,height:1254},inbetweens={width:1254,height:1254};
+ const base={width:1774,height:887},run={width:1254,height:1254},inbetweens={width:1254,height:1254},correctedSix={width:1254,height:1254};
  const calls=[];const ctx={canvas:{width:480,height:480},clearRect(){},save(){},restore(){},translate(){},scale(){},drawImage(...v){calls.push(v);}};
- for(let i=0;i<8;i++)drawMotion(ctx,{base,run,inbetweens},'run',(i+.01)/16);
+ for(let i=0;i<8;i++)drawMotion(ctx,{base,run,inbetweens,correctedSix},'run',(i+.01)/16);
  assert.equal(calls.length,8);
- calls.forEach((c,i)=>{assert.equal(c[0],i%2?inbetweens:run);const source=Math.floor(i/2);assert.deepEqual(c.slice(1,5),[(source%2)*627,Math.floor(source/2)*627,627,627]);});
- calls.length=0;drawMotion(ctx,{base,run,inbetweens},'idle',0);assert.equal(calls[0][0],base);
- calls.length=0;drawMotion(ctx,{base,run,inbetweens},'dribble',0);assert.equal(calls[0][0],run);
+ calls.forEach((c,i)=>{assert.equal(c[0],i===5?correctedSix:i%2?inbetweens:run);const source=Math.floor(i/2);assert.deepEqual(c.slice(1,5),[(source%2)*627,Math.floor(source/2)*627,627,627]);});
+ calls.length=0;drawMotion(ctx,{base,run,inbetweens,correctedSix},'idle',0);assert.equal(calls[0][0],base);
+ calls.length=0;drawMotion(ctx,{base,run,inbetweens,correctedSix},'dribble',0);assert.equal(calls[0][0],run);
 });
 test('left-facing animation mirrors the whole frame',()=>{
  const transforms=[];const ctx={canvas:{width:480,height:480},clearRect(){},save(){},restore(){},translate(...v){transforms.push(v);},scale(...v){transforms.push(v);},drawImage(){}};

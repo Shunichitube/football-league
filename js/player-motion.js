@@ -9,12 +9,13 @@ export function motionFrame(motion, seconds) {
 }
 export async function loadMotionAtlas() {
   const load = async path => { const image = new Image(); image.src = new URL(path, import.meta.url).href; await image.decode(); return image; };
-  const [base, run, inbetweens] = await Promise.all([
+  const [base, run, inbetweens, correctedSix] = await Promise.all([
     load('../assets/avatars/player-motion-v1.png'),
     load('../assets/avatars/player-run-v3.png'),
-    load('../assets/avatars/player-run-inbetweens-v1.png')
+    load('../assets/avatars/player-run-inbetweens-v1.png'),
+    load('../assets/avatars/player-run-frame-six-v2.png')
   ]);
-  return { base, run, inbetweens };
+  return { base, run, inbetweens, correctedSix };
 }
 export function drawMotion(ctx, atlas, motion, seconds, { direction = 'right', ball = false } = {}) {
   const index = motionFrame(motion, seconds);
@@ -22,7 +23,7 @@ export function drawMotion(ctx, atlas, motion, seconds, { direction = 'right', b
   const usesRun = motion === 'run' || motion === 'dribble';
   const isBetween = usesRun && index % 2 === 1;
   const sourceIndex = usesRun ? Math.floor(index / 2) : index;
-  const sheet = usesRun ? (isBetween ? atlas.inbetweens : atlas.run) : atlas.base;
+  const sheet = usesRun ? (index === 5 ? atlas.correctedSix : isBetween ? atlas.inbetweens : atlas.run) : atlas.base;
   const columns = usesRun ? 2 : 4;
   const cellWidth = sheet.width / columns, cellHeight = sheet.height / 2;
   ctx.clearRect(0, 0, width, height);
