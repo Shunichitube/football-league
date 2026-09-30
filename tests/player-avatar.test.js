@@ -1,6 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {avatarProfile,drawAvatar} from '../js/player-avatar.js';
+test('both eyes use the same complete shape and integer pixel positions',()=>{
+ const calls=[];
+ drawAvatar({clearRect(){},drawImage(...args){calls.push(args)}},{},{hairStyle:2,face:0});
+ const [left,right]=calls.slice(-2);
+ assert.deepEqual(left.slice(1,5),right.slice(1,5));
+ assert.deepEqual(left.slice(7),right.slice(7));
+ assert.ok(left.slice(5).every(Number.isInteger));
+ assert.ok(right.slice(5).every(Number.isInteger));
+});
 test('legacy avatars and all nine variants use one fixed body',()=>{
  const variants=new Set();
  for(let seed=0;seed<9;seed++){
@@ -20,6 +29,6 @@ test('changing hair and face only changes their own layers',()=>{
  const hair=render({hairStyle:2,face:0});
  const face=render({hairStyle:0,face:2});
  assert.deepEqual(normal[0],hair[0]);assert.deepEqual(normal[0],face[0]);
- assert.deepEqual(normal.slice(1,-1),hair.slice(1,-1));assert.deepEqual(normal.at(-1),face.at(-1));
- assert.notDeepEqual(normal.at(-1),hair.at(-1));assert.notDeepEqual(normal.slice(1,-1),face.slice(1,-1));
+ assert.deepEqual(normal.slice(-2),hair.slice(-2));assert.deepEqual(normal[2],face.at(-3));
+ assert.notDeepEqual(normal[2],hair[2]);assert.notDeepEqual(normal.slice(2,-2),face.slice(2,-2));
 });

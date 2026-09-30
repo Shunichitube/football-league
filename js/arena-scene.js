@@ -1,4 +1,4 @@
-import { pixelTexture, seatedBackTexture, coachTexture } from './arena-characters.js?v=modular-3';
+import { pixelTexture, seatedBackTexture, coachTexture } from './arena-characters.js?v=modular-4';
 // Presentation only: no game, random-generator or storage imports.
 export const ARENA = Object.freeze({ width: 1672, height: 941 });
 export function arenaTransform(width, height) {

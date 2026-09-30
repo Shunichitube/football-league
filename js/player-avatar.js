@@ -16,7 +16,8 @@ const BODY = [104, 341, 256, 210];
 const HEAD_WIDTH_SCALE = .88;
 const headX = x => 150 + (x - 150) * HEAD_WIDTH_SCALE;
 const HAIR = [[541,121,260,192], [973,119,272,201], [1414,94,280,213]];
-const EYES = [[174,703,26,46], [264,703,25,46]];
+// Share one complete eye shape so both sides rasterize identically.
+const EYE = [174,703,26,46];
 const BROWS = [null, [[595,670,46,27], [702,670,46,26]], [[1023,662,49,23], [1151,662,50,23]]];
 export function drawAvatar(ctx, atlas, value = 0) {
   const profile = avatarProfile(value);
@@ -27,12 +28,15 @@ export function drawAvatar(ctx, atlas, value = 0) {
   // Draw only the eyes and optional eyebrows: mouth pixels are never sampled.
   // Smaller eyes, closer together; identical eye positions across all faces.
   for (let side = 0; side < 2; side++) {
-    ctx.drawImage(atlas, ...EYES[side], headX(112 + side * 60), 176, 16 * HEAD_WIDTH_SCALE, 35);
     const brow = BROWS[profile.face]?.[side];
     if (brow) ctx.drawImage(atlas, ...brow, headX(105 + side * 60), 155, 30 * HEAD_WIDTH_SCALE, 16);
   }
   const hair = HAIR[profile.hairStyle];
   ctx.drawImage(atlas, ...hair, (300-hair[2]*HEAD_WIDTH_SCALE)/2, [26,24,0][profile.hairStyle], hair[2]*HEAD_WIDTH_SCALE, hair[3]);
+  // Keep both complete eye shapes visible where the fringe meets their top edge.
+  for (let side = 0; side < 2; side++) {
+    ctx.drawImage(atlas, ...EYE, Math.round(headX(112 + side * 60)), 176, Math.round(16 * HEAD_WIDTH_SCALE), 35);
+  }
 }
 
 let atlas;
