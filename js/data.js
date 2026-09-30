@@ -28,13 +28,11 @@ function avatarSeed(value) {
 
 function createAvatarProfile(id, position) {
   const seed = avatarSeed(`${id}:${position}`);
-  const rareHair = seed % 20 === 0;
-  const naturalHairCount = 9;
   return {
-    hairStyle: seed % 20,
-    hairColor: rareHair ? 9 + (Math.floor(seed / 20) % 3) : seed % naturalHairCount,
-    face: Math.floor(seed / 11) % 7,
-    skinTone: Math.floor(seed / 17) % 3
+    version: 2, body: 0,
+    hairStyle: seed % 3,
+    face: Math.floor(seed / 3) % 3,
+    hairColor: 0, skinTone: 0
   };
 }
 

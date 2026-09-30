@@ -1,0 +1,10 @@
+<!doctype html><html lang="ja"><meta charset="utf-8"><title>選手アバター · 9通り</title>
+<style>body{background:#12202d;color:#e9f4f4;font:16px sans-serif;margin:32px}h1{font-size:24px}main{display:grid;grid-template-columns:repeat(3,minmax(180px,260px));gap:18px}figure{margin:0;background:#203442;border:1px solid #43605a;border-radius:12px;text-align:center;padding:12px}canvas{width:150px;height:235px;image-rendering:pixelated}figcaption{padding:8px}</style>
+<h1>共通の体 × 髪型3種類 × 顔3種類</h1><p>同じ体に髪と顔を重ねた9通りです。</p><main></main>
+<script type="module">
+import {playerAvatarTexture,HAIR_STYLES,FACE_STYLES} from '../../js/player-avatar.js?v=1';
+for(let hairStyle=0;hairStyle<3;hairStyle++)for(let face=0;face<3;face++){
+ const figure=document.createElement('figure'),caption=document.createElement('figcaption');
+ figure.append(playerAvatarTexture({hairStyle,face}));caption.textContent=`${HAIR_STYLES[hairStyle]} / ${FACE_STYLES[face]}`;figure.append(caption);document.querySelector('main').append(figure);
+}
+</script></html>

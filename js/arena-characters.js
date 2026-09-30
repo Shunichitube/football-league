@@ -1,3 +1,5 @@
+import { playerAvatarTexture } from './player-avatar.js?v=1';
+
 // FOOTBALL LEAGUE character renderer v2
 // Unified cute pixel-art language: large head, no nose, simple eyes, strong silhouette.
 // Existing public function names are preserved so current UI callers keep working.
@@ -91,6 +93,11 @@ function hairThreeQuarter(r,d){
 }
 
 export function pixelTexture(kit,index,appearance='player'){
+  if (appearance === 'player') return playerAvatarTexture(index);
+  return supporterTexture(kit,index,appearance);
+}
+
+function supporterTexture(kit,index,appearance){
   const s=surface(),r=s.rect,d=data(index),kd=shadeKit(kit,.46),kl=shadeKit(kit,1,.25);
   // Big rounded face; intentionally NO nose.
   r(d.skinD,8,5,16,13);r(d.skin,9,5,14,12);r(d.skinD,7,10,2,4);r(d.skinD,23,10,2,4);
