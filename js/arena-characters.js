@@ -184,6 +184,101 @@ export function pixelTexture(kit,index,appearance='player'){
   return canvas;
 }
 
+
+// Side-facing player sprite for match / conveyor-court animation.
+// Reuses the same avatar seed, skin, hair and kit rules as pixelTexture().
+export function pixelSideTexture(kit,index,pose='run1',direction='right'){
+  const canvas=document.createElement('canvas'); canvas.width=24; canvas.height=32;
+  const ctx=canvas.getContext('2d'); ctx.imageSmoothingEnabled=false;
+  const pixels=Array.from({length:32},()=>Array(24).fill(null));
+  function rect(color,x,y,w,h){
+    for(let py=y;py<y+h;py++) for(let px=x;px<x+w;px++)
+      if(pixels[py]&&px>=0&&px<24) pixels[py][px]=color;
+  }
+  const avatar=typeof index==='object'&&index?index:null;
+  const numericIndex=(avatar?.seed ?? Number(index)) || 0;
+  const skinIndex=avatar?.skinTone ?? numericIndex;
+  const hairColorIndex=avatar?.hairColor ?? numericIndex;
+  const hairStyleIndex=avatar?.hairStyle ?? numericIndex;
+  const skin=['#efba87','#bf8159','#f4cea4'][skinIndex%3];
+  const skinShade=['#c88a61','#925a40','#d6a17c'][skinIndex%3];
+  const hair=['#35241c','#81502d','#d5a344','#191d29','#a7532d','#44302b','#e8e1cf','#6b7280','#c2410c','#2563eb','#16a34a','#9333ea'][hairColorIndex%12];
+  const hairLight=['#65412a','#af7540','#f3cc69','#41485a','#d38547','#77513a','#fff7df','#a1a8b3','#f97316','#60a5fa','#4ade80','#c084fc'][hairColorIndex%12];
+  const kitShade=shadeKit(kit,.48), kitLight=shadeKit(kit,1,.22);
+
+  // Profile head. The nose projects toward the running direction.
+  rect(skinShade,7,4,10,10); rect(skin,8,4,9,9);
+  rect(skin,17,8,2,3); rect(skinShade,18,10,1,1);
+  rect('#171b23',15,8,1,2);
+  rect('#3b2925',14,7,3,1);
+  rect(skinShade,12,12,5,2);
+
+  // Keep the player's hair identity, translated into a readable side silhouette.
+  const hs=hairStyleIndex%20;
+  rect(hair,7,2,10,4); rect(hair,6,5,4,7);
+  rect(hairLight,10,2,6,1);
+  if([2,9].includes(hs)){
+    rect(hair,8,0,2,3); rect(hair,12,1,2,2); rect(hair,16,2,2,2);
+  }else if(hs===3){
+    rect(hair,11,0,4,5); rect(hairLight,12,0,1,4);
+  }else if([4,12,13,16,19].includes(hs)){
+    rect(hair,5,5,3,10); rect(hair,7,12,4,3);
+  }else if(hs===15){
+    rect(hair,9,0,5,3); rect(hair,10,0,3,1);
+  }else if([6,18].includes(hs)){
+    rect(hair,7,2,10,3);
+  }else{
+    rect(hair,7,5,2,6);
+  }
+
+  // Neck and compact side-on football shirt.
+  rect(skinShade,10,14,5,2);
+  rect(kitShade,7,16,10,8); rect(kit,9,16,8,8);
+  rect(kitLight,10,16,2,7); rect('#edf4f5',11,16,4,1);
+
+  // Arms change with the pose to make running / passing / shooting readable.
+  const kick=pose==='kick'||pose==='pass';
+  const run2=pose==='run2';
+  if(kick){
+    rect(kitShade,6,17,4,3); rect(skinShade,4,19,4,2);
+    rect(kit,16,17,3,3); rect(skin,18,19,3,2);
+  }else if(run2){
+    rect(kitShade,6,17,4,3); rect(skinShade,4,15,3,5);
+    rect(kit,16,17,3,3); rect(skin,18,20,3,4);
+  }else{
+    rect(kitShade,6,17,4,3); rect(skinShade,4,20,4,2);
+    rect(kit,16,17,3,3); rect(skin,18,15,3,5);
+  }
+
+  // Shorts and legs. Two run frames deliberately swap the stride.
+  rect('#bbc7d2',8,24,9,4); rect('#f5f4eb',9,24,7,3);
+  if(kick){
+    // Plant leg + forward kicking leg.
+    rect(kitShade,9,27,3,4); rect('#27313e',8,30,5,2);
+    rect(kitShade,14,27,3,2); rect(kitShade,16,28,4,2); rect('#27313e',19,29,4,2);
+  }else if(run2){
+    rect(kitShade,9,27,3,3); rect(kitShade,7,29,4,2); rect('#27313e',5,30,6,2);
+    rect(kitShade,14,27,3,4); rect('#27313e',14,30,6,2);
+  }else{
+    rect(kitShade,9,27,3,4); rect('#27313e',7,30,6,2);
+    rect(kitShade,14,27,3,3); rect(kitShade,17,29,3,2); rect('#27313e',18,30,5,2);
+  }
+
+  for(let y=0;y<32;y++) for(let x=0;x<24;x++){
+    const fill=pixels[y][x];
+    const edge=!fill&&[[x-1,y],[x+1,y],[x,y-1],[x,y+1]].some(([nx,ny])=>pixels[ny]?.[nx]);
+    if(fill||edge){ctx.fillStyle=fill||'#111923';ctx.fillRect(x,y,1,1);}
+  }
+
+  if(direction==='left'){
+    const flipped=document.createElement('canvas'); flipped.width=24; flipped.height=32;
+    const fctx=flipped.getContext('2d'); fctx.imageSmoothingEnabled=false;
+    fctx.translate(24,0); fctx.scale(-1,1); fctx.drawImage(canvas,0,0);
+    return flipped;
+  }
+  return canvas;
+}
+
 export function seatedBackTexture(kit,index){
   const canvas=document.createElement('canvas'); canvas.width=24; canvas.height=32;
   const ctx=canvas.getContext('2d');
