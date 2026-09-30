@@ -1,4 +1,4 @@
-import { pixelTexture, pixelSideTexture, seatedBackTexture, coachTexture } from './arena-characters.js?v=20260930-master-1';
+import { pixelTexture, seatedBackTexture, coachTexture } from './arena-characters.js?v=0.22.8';
 // Presentation only: no game, random-generator or storage imports.
 export const ARENA = Object.freeze({ width: 1672, height: 941 });
 export function arenaTransform(width, height) {
@@ -66,7 +66,7 @@ export async function mountArena(canvas){
       for(let x=left+spacing/2;x<right-spacing/2;x+=spacing){
         const seed=count++,fan={x:x+(row%2)*2,y,size,seed};
         if(seed%29===0)moving.push(fan);
-        else cc.drawImage(fans[seed%80],Math.round(fan.x-16*size),Math.round(y-32*size),32*size,32*size);
+        else cc.drawImage(fans[seed%80],Math.round(fan.x-12*size),Math.round(y-32*size),24*size,32*size);
       }
     }
   }
@@ -80,28 +80,24 @@ export async function mountArena(canvas){
       if(side)x=ARENA.width-x;
       if(col>10&&row<3)continue;
       const seed=count++,size=.76;
-      cc.drawImage(fans[seed%80],x-16*size,y-32*size,32*size,32*size);
+      cc.drawImage(fans[seed%80],x-12*size,y-32*size,24*size,32*size);
     }
     for(let row=0;row<5;row++)for(let col=0;col<9;col++){
       const x=side?1672-col*13:col*13,y=244+row*10+col*2.3,seed=count++;
-      cc.drawImage(fans[seed%80],x-9,y-18,18,18);
+      cc.drawImage(fans[seed%80],x-6.75,y-18,13.5,18);
     }
   }
   canvas.dataset.spectators=String(count);
   const kits=['#4ade80','#64748b'];
-  const poses=['idle','run1','run2','run3','run4','dribble1','dribble2','pass','kick1','kick2'];
-  const sprites=Array.from({length:20},(_,i)=>Object.fromEntries(poses.map(pose=>[
-    pose,pixelSideTexture(kits[Math.floor(i/5)%2],i,pose,i>=5&&i<10?'left':'right')
-  ])));
+  const sprites=Array.from({length:20},(_,i)=>pixelTexture(kits[Math.floor(i/5)%2],i));
   const reserves=kits.map(kit=>Array.from({length:10},(_,i)=>seatedBackTexture(kit,i)));
   const coaches=[coachTexture(0),coachTexture(1)];
   const ballSprite=footballTexture();
   // Both keepers stand inside the court, clear of the projected goal mouths.
   const players=[[225,585],[460,598],[570,620],[725,687],[850,650],[1447,585],[1118,594],[967,624],[1235,698],[1058,752]];
-  const nearFans=makeCanvas(64,32),nc=nearFans.getContext('2d');
-  nc.imageSmoothingEnabled=false;
-  nc.drawImage(fans[0],0,0,32,32);nc.drawImage(cheers[4],32,0,32,32);
-  nc.globalCompositeOperation='source-in';nc.fillStyle='#050e22';nc.fillRect(0,0,64,32);
+  const nearFans=makeCanvas(48,32),nc=nearFans.getContext('2d');
+  nc.drawImage(fans[0],0,0,24,32);nc.drawImage(cheers[4],24,0,24,32);
+  nc.globalCompositeOperation='source-in';nc.fillStyle='#050e22';nc.fillRect(0,0,48,32);
   const reduce=matchMedia('(prefers-reduced-motion: reduce)');
   let frame=0,last=0,clock=0,previous=0,paused=false,dead=false;
   const W=ARENA.width,H=ARENA.height;
@@ -117,14 +113,18 @@ export async function mountArena(canvas){
   function shadow(x,y,s){ctx.fillStyle='#03152250';ctx.beginPath();ctx.ellipse(x,y,12*s,3*s,0,0,Math.PI*2);ctx.fill();}
   function actor(i,x,y,s,t,seated=false){
     shadow(x,y,s);
-    const cycle=t%18,step=Math.floor(t*9+i)%4;
-    let pose=seated||i===0||i===5?'idle':`run${step+1}`;
-    if(i===2&&cycle>=2&&cycle<5)pose=`dribble${step%2+1}`;
-    if((i===2&&cycle>=5&&cycle<5.6)||(i===3&&cycle>=8&&cycle<8.6))pose='pass';
-    if(i===4&&cycle>=10.6&&cycle<11.6)pose=cycle<11?'kick1':'kick2';
-    // Every animation frame is a whole newly drawn body, never sliced standing art.
-    const sprite=sprites[i%20][pose],size=38*s;
-    ctx.drawImage(sprite,Math.round(x-size/2),Math.round(y-size),size,size);
+    const bob=seated?0:Math.sin(t*5+i)*.8;
+    const sprite=sprites[i%20],left=Math.round(x-12*s),top=Math.round(y-(seated?28:32)*s+bob);
+    if(seated||i===0||i===5){ctx.drawImage(sprite,left,top,24*s,(seated?28:32)*s);}
+    else{
+      // Source dimensions follow the renderer; destination coordinates retain the scene layout.
+      const split=sprite.height*.75,half=sprite.width/2,legs=sprite.height-split;
+      ctx.drawImage(sprite,0,0,sprite.width,split,left,top,24*s,24*s);
+      const kick=i===4&&t%18>=11&&t%18<11.6;
+      const stride=Math.sin(t*5+i)*1.5*s;
+      ctx.drawImage(sprite,0,split,half,legs,left-stride,top+24*s,12*s,8*s);
+      ctx.drawImage(sprite,half,split,half,legs,left+12*s+(kick?6*s:stride),top+(kick?21:24)*s,12*s,8*s);
+    }
   }
   function text(value,x,y,size,color='#eaf9ff'){
     ctx.fillStyle=color;ctx.font=`900 ${size}px system-ui,sans-serif`;ctx.textAlign='center';ctx.fillText(value,x,y);
@@ -217,7 +217,7 @@ export async function mountArena(canvas){
     ctx.imageSmoothingEnabled=false;ctx.drawImage(crowd,0,0);
     for(const fan of moving){
       const hop=Math.max(0,Math.sin(t*3+fan.seed))*2;
-      ctx.drawImage((Math.sin(t*2+fan.seed)>0?cheers:fans)[fan.seed%80],fan.x-16*fan.size,fan.y-32*fan.size-hop,32*fan.size,32*fan.size);
+      ctx.drawImage((Math.sin(t*2+fan.seed)>0?cheers:fans)[fan.seed%80],fan.x-12*fan.size,fan.y-32*fan.size-hop,24*fan.size,32*fan.size);
       if(fan.seed%3===0)flag(fan.x,fan.y-10,t,fan.seed);
     }
     for(const x of [75,360,534,1121,1292,1590])flag(x,423,t,x);
@@ -243,7 +243,7 @@ export async function mountArena(canvas){
     for(let i=0;i<10;i++){
       for(let side=0;side<2;side++){
         const x=(side?1110:116)+i*48.5;
-        ctx.drawImage(reserves[side][i],x-22.4,796,44.8,44.8);
+        ctx.drawImage(reserves[side][i],x-16.8,796,33.6,44.8);
       }
     }
     // Chair backs occlude the seated bodies; roof supports occupy the local foreground.
@@ -251,16 +251,16 @@ export async function mountArena(canvas){
     ctx.drawImage(images['bench-front.png'],0,0,W,H);
     shelter(77,true);shelter(1084,true,true);
     equipment(0);equipment(1);
-    // New back-facing coaches beside both benches.
+    // Back-facing coaches, original tracksuits, cap and clipboard, beside both benches.
     for(let i=0;i<2;i++){
       const x=i?1040:634,y=852;
       shadow(x,y,1.35);
-      ctx.drawImage(coaches[i],x-21.6,y-43.2,43.2,43.2);
+      ctx.drawImage(coaches[i],x-16.2,y-43.2,32.4,43.2);
     }
     // Near supporters are a separate local foreground zone, in front of benches.
     for(let i=0;i<32;i++){
       const cheer=i%3!==0,scale=4.3+(i*7%5)*.26,x=i*55-30,y=982-Math.max(0,Math.sin(t*2+i))*5;
-      ctx.drawImage(nearFans,cheer?32:0,0,32,20,x,y-20*scale,32*scale,20*scale);
+      ctx.drawImage(nearFans,cheer?24:0,0,24,20,x,y-20*scale,24*scale,20*scale);
     }
     for(const x of [30,155,1510,1640]){ctx.save();ctx.translate(x,903);ctx.scale(2,2);flag(0,0,t,x);ctx.restore();}
     // Beams originate at the actual ceiling fixtures in the generated art.

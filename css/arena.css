@@ -498,8 +498,3 @@ body.auction-hall-active header{background:#051522e8}
   main.screen-squad .compare-direction.down{color:#ff6f6b;text-shadow:0 0 6px #ee554b80}
   main.screen-squad .compare-special{min-height:25px;font-size:clamp(11px,.69vw,14px)}
 }
-
-/* Unified master artwork: preserve square sprite geometry at every UI entry point. */
-.player-card-avatar{float:left;width:64px;height:64px;object-fit:contain;image-rendering:pixelated;margin:0 10px 4px 0}
-.squad-avatar img,.formation-token img,.compare-profile img,.auction-avatar img,.draft-stage-avatar img{object-fit:contain;image-rendering:pixelated}
-.auction-spectator,.auction-staff,.auction-host,.auction-operator{object-fit:contain;image-rendering:pixelated}
