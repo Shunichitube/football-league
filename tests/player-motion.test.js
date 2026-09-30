@@ -14,7 +14,7 @@ test('eight running frames alternate preserved key poses and new in-betweens',()
  assert.equal(calls.length,8);
  calls.forEach((c,i)=>{assert.equal(c[0],i%2?inbetweens:run);const source=Math.floor(i/2);assert.deepEqual(c.slice(1,5),[(source%2)*627,Math.floor(source/2)*627,627,627]);});
  calls.length=0;drawMotion(ctx,{base,run,inbetweens},'idle',0);assert.equal(calls[0][0],base);
- calls.length=0;drawMotion(ctx,{base,run,inbetweens},'dribble',0);assert.equal(calls[0][0],base);
+ calls.length=0;drawMotion(ctx,{base,run,inbetweens},'dribble',0);assert.equal(calls[0][0],run);
 });
 test('left-facing animation mirrors the whole frame',()=>{
  const transforms=[];const ctx={canvas:{width:480,height:480},clearRect(){},save(){},restore(){},translate(...v){transforms.push(v);},scale(...v){transforms.push(v);},drawImage(){}};

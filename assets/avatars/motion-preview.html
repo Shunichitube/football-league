@@ -3,7 +3,7 @@
 <h1>待機・走り・ドリブル</h1><p>コマごとに描いた走りの試作。1コマ送りや低速再生で踏み替えを確認できます。ドリブルのボールはキャラクターと別に描画しています。</p>
 <button id="pause">一時停止</button><button id="step">走りを1コマ進める</button><button id="speed">半分の速さ</button><button id="direction">左向きに切り替え</button><a style="color:#8de8c2" href="preview.html">正面の9通り</a><main></main>
 <script type="module">
-import {MOTIONS,motionFrame,loadMotionAtlas,drawMotion} from '../../js/player-motion.js?v=drawn-8';
+import {MOTIONS,motionFrame,loadMotionAtlas,drawMotion} from '../../js/player-motion.js?v=shared-8';
 const atlas=await loadMotionAtlas();let paused=false,seconds=0,previous=null,direction='right',speed=1;
 const views=Object.entries(MOTIONS).map(([key,motion])=>{const figure=document.createElement('figure'),canvas=document.createElement('canvas'),caption=document.createElement('figcaption');canvas.width=480;canvas.height=480;caption.textContent=`${motion.label} · ${motion.frames.length}コマ`;figure.append(canvas,caption);document.querySelector('main').append(figure);return {key,caption,ctx:canvas.getContext('2d')};});
 document.querySelector('#pause').onclick=e=>{paused=!paused;e.target.textContent=paused?'再生':'一時停止';};
