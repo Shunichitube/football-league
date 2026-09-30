@@ -1,6 +1,6 @@
 export const MOTIONS = {
   idle: { label: '待機', frames: [0, 1], fps: 2 },
-  run: { label: '走り', frames: [0, 1, 2, 3], fps: 8 },
+  run: { label: '走り', frames: [0, 1, 2, 3, 4, 5, 6, 7], fps: 16 },
   dribble: { label: 'ドリブル', frames: [6, 7], fps: 5 }
 };
 export function motionFrame(motion, seconds) {
@@ -9,16 +9,19 @@ export function motionFrame(motion, seconds) {
 }
 export async function loadMotionAtlas() {
   const load = async path => { const image = new Image(); image.src = new URL(path, import.meta.url).href; await image.decode(); return image; };
-  const [base, run] = await Promise.all([
+  const [base, run, inbetweens] = await Promise.all([
     load('../assets/avatars/player-motion-v1.png'),
-    load('../assets/avatars/player-run-v3.png')
+    load('../assets/avatars/player-run-v3.png'),
+    load('../assets/avatars/player-run-inbetweens-v1.png')
   ]);
-  return { base, run };
+  return { base, run, inbetweens };
 }
 export function drawMotion(ctx, atlas, motion, seconds, { direction = 'right', ball = false } = {}) {
   const index = motionFrame(motion, seconds);
   const width = ctx.canvas.width, height = ctx.canvas.height;
-  const sheet = motion === 'run' ? atlas.run : atlas.base;
+  const isBetween = motion === 'run' && index % 2 === 1;
+  const sourceIndex = motion === 'run' ? Math.floor(index / 2) : index;
+  const sheet = motion === 'run' ? (isBetween ? atlas.inbetweens : atlas.run) : atlas.base;
   const columns = motion === 'run' ? 2 : 4;
   const cellWidth = sheet.width / columns, cellHeight = sheet.height / 2;
   ctx.clearRect(0, 0, width, height);
@@ -28,10 +31,10 @@ export function drawMotion(ctx, atlas, motion, seconds, { direction = 'right', b
   const scale = Math.min(width / cellWidth, height / cellHeight) * (motion === 'run' ? .9 : 1);
   const w = cellWidth * scale, h = cellHeight * scale;
   // Align the independently drawn heads; retain the small airborne foot lift.
-  const offsets = motion === 'run' ? [[-50,0],[20,0],[-48,10],[21,11]][index] : [0,0];
+  const offsets = motion === 'run' ? (isBetween ? [[-50,-12],[7,-8],[-48,3],[5,3]] : [[-50,0],[20,0],[-48,10],[21,11]])[sourceIndex] : [0,0];
   const dx = (width-w)/2 + offsets[0] / 627 * w;
   const dy = (height-h)/2 + offsets[1] / 627 * h + (motion === 'run' ? height*.04 : 0);
-  ctx.drawImage(sheet, (index % columns) * cellWidth, Math.floor(index / columns) * cellHeight, cellWidth, cellHeight, dx, dy, w, h);
+  ctx.drawImage(sheet, (sourceIndex % columns) * cellWidth, Math.floor(sourceIndex / columns) * cellHeight, cellWidth, cellHeight, dx, dy, w, h);
   if (ball && motion === 'dribble') {
     const x = width * (.73 + Math.sin(seconds * Math.PI * 5) * .025), y = (height-h)/2 + h*.88;
     const r = h*.052;

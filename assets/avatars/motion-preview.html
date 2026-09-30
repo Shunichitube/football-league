@@ -3,11 +3,11 @@
 <h1>待機・走り・ドリブル</h1><p>コマごとに描いた走りの試作。1コマ送りや低速再生で踏み替えを確認できます。ドリブルのボールはキャラクターと別に描画しています。</p>
 <button id="pause">一時停止</button><button id="step">走りを1コマ進める</button><button id="speed">半分の速さ</button><button id="direction">左向きに切り替え</button><a style="color:#8de8c2" href="preview.html">正面の9通り</a><main></main>
 <script type="module">
-import {MOTIONS,motionFrame,loadMotionAtlas,drawMotion} from '../../js/player-motion.js?v=drawn-3';
+import {MOTIONS,motionFrame,loadMotionAtlas,drawMotion} from '../../js/player-motion.js?v=drawn-8';
 const atlas=await loadMotionAtlas();let paused=false,seconds=0,previous=null,direction='right',speed=1;
 const views=Object.entries(MOTIONS).map(([key,motion])=>{const figure=document.createElement('figure'),canvas=document.createElement('canvas'),caption=document.createElement('figcaption');canvas.width=480;canvas.height=480;caption.textContent=`${motion.label} · ${motion.frames.length}コマ`;figure.append(canvas,caption);document.querySelector('main').append(figure);return {key,caption,ctx:canvas.getContext('2d')};});
 document.querySelector('#pause').onclick=e=>{paused=!paused;e.target.textContent=paused?'再生':'一時停止';};
-document.querySelector('#step').onclick=()=>{paused=true;document.querySelector('#pause').textContent='再生';seconds=(Math.floor(seconds*8)+1)/8;};
+document.querySelector('#step').onclick=()=>{paused=true;document.querySelector('#pause').textContent='再生';seconds=(Math.floor(seconds*MOTIONS.run.fps+1e-8)+1)/MOTIONS.run.fps;};
 document.querySelector('#speed').onclick=e=>{speed=speed===1?.5:1;e.target.textContent=speed===1?'半分の速さ':'通常の速さ';};
 document.querySelector('#direction').onclick=e=>{direction=direction==='right'?'left':'right';e.target.textContent=direction==='right'?'左向きに切り替え':'右向きに切り替え';};
 function tick(now){if(previous!==null&&!paused&&!document.hidden)seconds+=Math.min((now-previous)/1000,.1)*speed;previous=now;for(const {key,ctx,caption} of views){drawMotion(ctx,atlas,key,seconds,{direction,ball:true});caption.textContent=`${MOTIONS[key].label} · ${MOTIONS[key].frames.indexOf(motionFrame(key,seconds))+1} / ${MOTIONS[key].frames.length}コマ`;}requestAnimationFrame(tick);}requestAnimationFrame(tick);
