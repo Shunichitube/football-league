@@ -506,7 +506,7 @@ body.season-results-hall-active .season-summary-grid b{color:#73f4c7;font-size:2
 body.season-results-hall-active .season-result-actions{position:sticky;bottom:-24px;background:#061a30f5;padding:12px 0;border-top:1px solid #53dbbc55;z-index:2;}
 @media(max-width:600px){body.season-results-hall-active #app>main.screen-season-results{margin:28px auto 25vh;padding:16px;max-height:62vh;}body.season-results-hall-active .season-result-actions{bottom:-16px;}}
 /* Unified season result dashboard, above the permanent ceremony stage. */
-body.season-results-hall-active #app>main.season-results-dashboard{position:relative;width:min(1200px,92vw);height:calc(100svh - 78px);max-height:none;overflow:visible;margin:0 auto;padding:0;background:transparent;border:0;box-shadow:none;}
+body.season-results-hall-active #app>main.season-results-dashboard{position:fixed;inset:var(--results-header-bottom,78px) 0 0;width:min(1200px,92vw);height:auto;max-height:none;overflow:hidden;margin:0 auto;padding:0;background:transparent;border:0;box-shadow:none;}
 .results-title{height:12vh;margin:0;display:flex;align-items:center;justify-content:center;gap:16px;color:#ffe298;text-shadow:0 3px 8px #000;font-size:clamp(25px,3vw,44px);}
 .results-title small{font-size:13px;color:#d1e7e4;}
 .results-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 10px;}
@@ -665,3 +665,5 @@ body:has(#app>main.phase-complete-screen){height:100svh;min-height:0;overflow:hi
 .match-detail-topbar .eyebrow{margin:0;}
 #app .match-detail-topbar .match-results-back{background:#ffe095;color:#132333;border:2px solid #fff0bd;font-size:16px;font-weight:900;padding:12px 22px;min-height:46px;margin:0;box-shadow:0 4px 14px #0006;}
 #app .match-detail-topbar .match-results-back:hover{background:#fff0bd;}
+
+body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
