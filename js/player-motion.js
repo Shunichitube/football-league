@@ -1,5 +1,5 @@
-import {loadAvatarAssets} from './avatar-rendering.js';
-import {appearanceMotionFrame} from './avatar-motion-parts.js';
+import {loadAvatarAssets} from './avatar-rendering.js?v=appearance-v12';
+import {appearanceMotionFrame} from './avatar-motion-parts.js?v=appearance-v12';
 export const MOTIONS = {
   idle: { label: '待機', frames: [0, 1], fps: 2 },
   run: { label: '走り', frames: [0, 1, 2, 3, 4, 5, 6, 7], fps: 16 },

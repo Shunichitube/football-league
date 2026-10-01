@@ -1,4 +1,4 @@
-import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js';
+import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js?v=appearance-v12';
 import { HAIR_PARTS } from './avatar-hair-parts.js';
 const rgb = hex => hex.slice(1).match(/../g).map(n => parseInt(n,16));
 export function recolorPixels(pixels, { skinTone = 0, kit, goalkeeper = false, recolorKit = true, hairColor, frontKeeperBody = false, partWidth = 256 } = {}) {
@@ -49,20 +49,32 @@ export function paintPart(ctx,assets,image,rect,dest,options) {
   if(surface)ctx.drawImage(surface,...dest);else ctx.drawImage(image,...rect,...dest);
 }
 export function drawHair(ctx,assets,profile,view,box) {
-  const cornrows=view==='front'&&profile.hairStyle===15&&assets.cornrows;
-  const image=cornrows||assets.hair;
-  const part=cornrows?[0,0,image.width,image.height]:HAIR_PARTS[profile.hairStyle][view];
+  const replacement=profile.hairStyle===5?assets['mohawk'+(view==='front'?'Front':'Quarter')]:profile.hairStyle===15?assets['shortfade'+(view==='front'?'Front':'Quarter')]:null;
+  const image=replacement||assets.hair;
+  const part=replacement?[0,0,image.width,image.height]:HAIR_PARTS[profile.hairStyle][view];
   const tall=[5,17].includes(profile.hairStyle);
   // Tall hair stays inside the canvas; reduce its height to raise the hairline.
   // Negative top offsets previously clamped to zero and had no effect.
-  const fit=view==='front'?({3:{scale:.83,x:0,y:7},4:{scale:.83,x:0,y:7},5:{scale:.81,x:-5,y:0,height:.86,shiftY:-4},8:{scale:.83,x:0,y:7},11:{scale:1.06,x:-8,y:-6},15:{scale:.98,x:-10,y:-8},16:{scale:1.06,x:-25,y:-14},17:{scale:1,x:0,y:0,height:.78}}[profile.hairStyle]||{}):{};
+  const fit=view==='front'?({3:{scale:.83,x:0,y:7},4:{scale:.83,x:0,y:7},5:{scale:1,x:0,y:0},8:{scale:.83,x:0,y:7},11:{scale:1.06,x:-8,y:-6},15:{scale:.90,x:0,y:5},16:{scale:1.06,x:-25,y:-14},17:{scale:1,x:0,y:0,height:.78}}[profile.hairStyle]||{}):{};
   const extra=([14,16,19].includes(profile.hairStyle)?1.08:1)*(view==='front'?1.04:1);
   const width=box[2]*extra*(fit.scale||1);
   const naturalHeight=width*part[3]/part[2];
   const height=(view==='quarter'?Math.min(naturalHeight,box[3]*(tall?.82:.74)):naturalHeight)*(fit.height||1);
   const left=box[0]+(box[2]-width)/2+(fit.x||0)*box[2]/230;
   const top=Math.max(0,box[1]-(tall?box[3]*.12:0)+(fit.y||0)*box[3]/220)+(fit.shiftY||0)*box[3]/220;
+  // Preserve the independently drawn ears underneath every hairstyle.
+  const earClip=typeof ctx.clip==='function';
+  if(earClip){
+    ctx.save();ctx.beginPath();ctx.rect(-10000,-10000,20000,20000);
+    if(view==='front'){
+      for(const center of [16,214]){ctx.moveTo(box[0]+(center+10)*box[2]/230,box[1]+164*box[3]/220);ctx.ellipse(box[0]+center*box[2]/230,box[1]+164*box[3]/220,10*box[2]/230,30*box[3]/220,0,0,Math.PI*2);}
+    }else{
+      ctx.moveTo(box[0]+box[2]*.32,box[1]+box[3]*.75);ctx.ellipse(box[0]+box[2]*.25,box[1]+box[3]*.75,box[2]*.07,box[3]*.11,0,0,Math.PI*2);
+    }
+    ctx.clip('evenodd');
+  }
   paintPart(ctx,assets,image,part,[left,top,width,height],{hairColor:profile.hairColor,recolorKit:false});
+  if(earClip)ctx.restore();
 }
 export function drawGlasses(ctx,eyes,{scale=1}={}) {
   ctx.save();ctx.strokeStyle='#252b30';ctx.lineWidth=Math.max(2.5,6*scale);ctx.lineJoin='round';ctx.lineCap='round';
@@ -93,8 +105,8 @@ let promise;
 export function loadAvatarAssets() {
   if(!promise)promise=(async()=>{
     const image=async path=>{const source=new Image();source.src=new URL(path,import.meta.url).href;await source.decode();return source;};
-    const [parts,hair,quarterHead,keeper,cornrows]=await Promise.all([image('../assets/avatars/player-parts-v1.png'),image('../assets/avatars/player-hair-v3.webp'),image('../assets/avatars/player-head-quarter-v3.webp'),image('../assets/avatars/keeper-catch-v1.png'),image('../assets/avatars/cornrows-front-v2.webp')]);
-    return {parts,hair,quarterHead,keeper,cornrows};
+    const [parts,hair,quarterHead,keeper,mohawkFront,mohawkQuarter,shortfadeFront,shortfadeQuarter]=await Promise.all([image('../assets/avatars/player-parts-v1.png'),image('../assets/avatars/player-hair-v3.webp'),image('../assets/avatars/player-head-quarter-v3.webp'),image('../assets/avatars/keeper-catch-v1.png'),image('../assets/avatars/mohawk-front-v1.webp'),image('../assets/avatars/mohawk-quarter-v1.webp'),image('../assets/avatars/shortfade-front-v1.webp'),image('../assets/avatars/shortfade-quarter-v1.webp')]);
+    return {parts,hair,quarterHead,keeper,mohawkFront,mohawkQuarter,shortfadeFront,shortfadeQuarter};
   })();
   return promise;
 }

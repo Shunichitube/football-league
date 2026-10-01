@@ -1,5 +1,5 @@
 // Appearance is deterministic and never consumes the match/league RNG.
-export const HAIR_STYLES = ['ショート', 'サイドパート', 'スパイキー', 'クルーカット', '坊主', 'モヒカン', 'センター分け', 'カーリー', 'フレンチクロップ', 'クイッフ', 'オールバック', 'ポンパドール', 'ボブ', 'ウェーブ', 'アフロ', 'コーンロウ', 'ポニーテール', 'お団子', 'アンダーカット', 'ロング'];
+export const HAIR_STYLES = ['ショート', 'サイドパート', 'スパイキー', 'クルーカット', '坊主', 'モヒカン', 'センター分け', 'カーリー', 'フレンチクロップ', 'クイッフ', 'オールバック', 'ポンパドール', 'ボブ', 'ウェーブ', 'アフロ', 'ベリーショート', 'ポニーテール', 'お団子', 'アンダーカット', 'ロング'];
 export const FACE_STYLES = ['ノーマル', 'きりっと', 'やさしい'];
 export const HAIR_COLORS = [{label:'茶',color:'#955326'},{label:'黒',color:'#26252b'},{label:'こげ茶',color:'#503425'},{label:'明るい茶',color:'#c1874c'},{label:'金',color:'#e4c268'},{label:'赤茶',color:'#a45232'},{label:'赤',color:'#bd3546'},{label:'青',color:'#3e65bb'},{label:'グレー',color:'#92949c'},{label:'白',color:'#e5e4df'}];
 export const SKIN_TONES = [{ label: '明るめ', color: '#ffbe89' }, { label: '中間', color: '#c68b62' }, { label: '濃いめ', color: '#8a543b' }];
