@@ -492,3 +492,16 @@ body.auction-hall-active header{background:#051522e8}
   main.screen-squad .compare-direction.down{color:#ff6f6b;text-shadow:0 0 6px #ee554b80}
   main.screen-squad .compare-special{min-height:25px;font-size:clamp(11px,.69vw,14px)}
 }
+
+/* Season-end ceremony: live result text above the selected background art. */
+body.season-results-hall-active{background:#051120;}
+body.season-results-hall-active::before{content:"";position:fixed;inset:0;background:#051120 url('../assets/arena/season-results-hall-v1.webp') center center/cover no-repeat;pointer-events:none;z-index:0;}
+body.season-results-hall-active #app{position:relative;z-index:1;}
+body.season-results-hall-active #app>header{background:#051522e8;border-bottom:1px solid #34e5af66;}
+body.season-results-hall-active #app>main.screen-season-results{width:min(1180px,94vw);margin:clamp(24px,16vh,160px) auto 25vh;padding:24px;background:#061a30ed;border:1px solid #53dbbc88;border-radius:16px;box-shadow:0 12px 42px #0008;max-height:56vh;overflow:auto;}
+body.season-results-hall-active .screen-season-results>h2{color:#fff1bc;font-size:clamp(24px,2.3vw,36px);}
+body.season-results-hall-active .season-summary-grid div,body.season-results-hall-active .season-match-row{background:#0a2039f5;border-color:#56849888;}
+body.season-results-hall-active .season-summary-grid span{font-size:14px;}
+body.season-results-hall-active .season-summary-grid b{color:#73f4c7;font-size:28px;}
+body.season-results-hall-active .season-result-actions{position:sticky;bottom:-24px;background:#061a30f5;padding:12px 0;border-top:1px solid #53dbbc55;z-index:2;}
+@media(max-width:600px){body.season-results-hall-active #app>main.screen-season-results{margin:28px auto 25vh;padding:16px;max-height:62vh;}body.season-results-hall-active .season-result-actions{bottom:-16px;}}
