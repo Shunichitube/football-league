@@ -1,5 +1,5 @@
-import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js?v=appearance-v24';
-import { HAIR_PARTS } from './avatar-hair-parts.js?v=appearance-v24';
+import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js?v=appearance-v25';
+import { HAIR_PARTS } from './avatar-hair-parts.js?v=appearance-v25';
 const rgb = hex => hex.slice(1).match(/../g).map(n => parseInt(n,16));
 export function recolorPixels(pixels, { skinTone = 0, kit, goalkeeper = false, recolorKit = true, hairColor, frontKeeperBody = false, partWidth = 256 } = {}) {
   const skin = rgb(SKIN_TONES[avatarProfile({skinTone}).skinTone].color), uniform = rgb(kitColor(kit, goalkeeper));
@@ -96,7 +96,7 @@ export function drawHair(ctx,assets,profile,view,box) {
 }
 // The same atlas eyebrows are used in portraits and motion faces.
 export const AVATAR_BROWS=[null,[[595,670,46,27],[702,670,46,26]],[[1023,662,49,23],[1151,662,50,23]]];
-const QUARTER_EYES=[[312,323,51,120],[453,297,51,120]];
+const QUARTER_EYES=[[316,332,44,102],[457,306,44,102]];
 const equalEyeHeads=new WeakMap();
 function equalEyeQuarterHead(assets){
   const original=assets.quarterHead;
@@ -106,24 +106,29 @@ function equalEyeQuarterHead(assets){
   const ctx=surface.getContext('2d');ctx.drawImage(original,0,0);
   const data=ctx.getImageData(0,0,surface.width,surface.height),pixels=data.data;
   const sx=surface.width/592,sy=surface.height/560;
-  // Replace only the near eye's dark pixels with surrounding cheek colour.
-  // Alpha, skin shadows, ears and the head silhouette remain untouched.
-  for(let y=Math.floor(322*sy);y<Math.ceil(432*sy);y++){
-    const left=(y*surface.width+Math.floor(309*sx))*4,right=(y*surface.width+Math.ceil(365*sx))*4;
-    for(let x=Math.floor(311*sx);x<Math.ceil(363*sx);x++){
-      const k=(y*surface.width+x)*4;
-      if(pixels[k+3]&&Math.max(pixels[k],pixels[k+1],pixels[k+2])<40){
-        const t=(x-309*sx)/(56*sx);
-        for(let c=0;c<3;c++)pixels[k+c]=Math.round(pixels[left+c]*(1-t)+pixels[right+c]*t);
+  const originalPixels=pixels.slice();
+  // Remove only the two eye colour masks. Preserve all alpha and surrounding skin.
+  for(const [bx,by,bw,bh,lx,rx]of [[309,320,57,114,304,369],[449,293,59,128,444,513]]){
+    for(let y=Math.floor(by*sy);y<Math.ceil((by+bh)*sy);y++){
+      const left=(y*surface.width+Math.floor(lx*sx))*4,right=(y*surface.width+Math.ceil(rx*sx))*4;
+      for(let x=Math.floor(bx*sx);x<Math.ceil((bx+bw)*sx);x++){
+        const k=(y*surface.width+x)*4;
+        if(pixels[k+3]){
+          const t=(x-lx*sx)/((rx-lx)*sx);
+          for(let c=0;c<3;c++)pixels[k+c]=Math.round(originalPixels[left+c]*(1-t)+originalPixels[right+c]*t);
+        }
       }
     }
   }
-  // Copy the far eye's colour mask into the near eye slot without changing alpha.
-  for(let y=0;y<Math.round(120*sy);y++)for(let x=0;x<Math.round(51*sx);x++){
-    const source=((Math.round(297*sy)+y)*surface.width+Math.round(453*sx)+x)*4;
-    const target=((Math.round(323*sy)+y)*surface.width+Math.round(312*sx)+x)*4;
-    if(Math.max(pixels[source],pixels[source+1],pixels[source+2])<40)
-      for(let c=0;c<3;c++)pixels[target+c]=pixels[source+c];
+  // Scale the same far-eye mask into both slots; retain the face's existing alpha.
+  for(const [ex,ey,ew,eh]of QUARTER_EYES){
+    const width=Math.round(ew*sx),height=Math.round(eh*sy);
+    for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+      const source=((Math.round(297*sy)+Math.floor(y*120*sy/height))*surface.width+Math.round(453*sx)+Math.floor(x*51*sx/width))*4;
+      const target=((Math.round(ey*sy)+y)*surface.width+Math.round(ex*sx)+x)*4;
+      if(Math.max(originalPixels[source],originalPixels[source+1],originalPixels[source+2])<40)
+        for(let c=0;c<3;c++)pixels[target+c]=originalPixels[source+c];
+    }
   }
   ctx.putImageData(data,0,0);
   equalEyeHeads.set(original,surface);return surface;
@@ -134,7 +139,7 @@ export function drawGlasses(ctx,eyes,{scale=1,quarter=false,temples}={}) {
   const lenses=eyes.map(([x,y,w,h],side)=>{
     if(!quarter)return [x-w*1.4+(side===0?-w*.2:w*.2),y-h*.24,w*3.8,h*1.38];
     const width=spacing*(side===0?.98:.86),center=x+w/2+(side===0?-w*.12:w*.12);
-    return [center-width/2,y-h*.22,width,h*1.22];
+    return [center-width/2,y-h*.22,width,h*1.17];
   });
   for(const [x,y,w,h] of lenses){
     ctx.beginPath();ctx.moveTo(x+w*.18,y);ctx.quadraticCurveTo(x+w*.5,y-h*.08,x+w*.82,y);
@@ -163,7 +168,13 @@ export function drawQuarterHead(ctx,assets,value,box) {
   const eyes=QUARTER_EYES.map(([ex,ey,ew,eh])=>[head[0]+head[2]*ex/592,head[1]+head[3]*ey/560,head[2]*ew/592,head[3]*eh/560]);
   eyes.forEach(([ex,ey,ew,eh],side)=>{
     const brow=AVATAR_BROWS[profile.face]?.[side];
-    if(brow&&assets.parts)ctx.drawImage(assets.parts,...brow,ex-ew*.48,ey-eh*.60,ew*1.89,eh*.457);
+    if(brow&&assets.parts){
+      const bx=ex-ew*.48,by=ey-eh*.60,bw=ew*1.89,bh=eh*.457;
+      if(profile.face===1){
+        ctx.save();ctx.translate(bx+bw/2,by+bh/2);ctx.rotate((side===0?-1:1)*Math.PI/15);
+        ctx.drawImage(assets.parts,...brow,-bw/2,-bh/2,bw,bh);ctx.restore();
+      }else ctx.drawImage(assets.parts,...brow,bx,by,bw,bh);
+    }
   });
   if(profile.glasses)drawGlasses(ctx,eyes,{scale:w/300,quarter:true,temples:[[x+w*.34,y+h*.66],[x+w*.89,y+h*.62]]});
 }
