@@ -94,6 +94,7 @@ export function processOffseason(club, training, rng, specialTraining = new Set(
   const results = [];
   for (const player of [...club.roster]) {
     const before = Object.fromEntries(Object.entries(player.stats).map(([key, value]) => [key, rankOf(value)]));
+    const beforeValues = {...player.stats};
     const gkBefore = player.stats.gk;
     const ageBefore = player.age;
     player.age++;
@@ -137,7 +138,7 @@ export function processOffseason(club, training, rng, specialTraining = new Set(
     const learnedAbility = player.specialAbility === null && rng.next() < abilityRate ? learnedAbilityFor(player, grew, rng) : null;
     if (learnedAbility) player.specialAbility = learnedAbility;
     const specialTrainingResult = specialTraining.has(player.id) ? applySpecialTraining(player, rng) : null;
-    const changes = skills(player).filter(key => before[key] !== rankOf(player.stats[key]) || grew.includes(key)).map(key => ({ key, from: before[key], to: rankOf(player.stats[key]), increased: grew.includes(key), awakened: awakeningKeys.includes(key) }));
+    const changes = skills(player).filter(key => beforeValues[key] !== player.stats[key]).map(key => ({ key, from: before[key], to: rankOf(player.stats[key]), fromValue: beforeValues[key], toValue: player.stats[key], increased: player.stats[key] > beforeValues[key], awakened: awakeningKeys.includes(key) }));
     results.push({ player, changes, retired: player.age >= 35, focus, awakeningKeys, learnedAbility, specialTrainingResult });
   }
   club.roster = club.roster.filter(p => p.age < 35);

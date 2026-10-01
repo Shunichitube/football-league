@@ -685,3 +685,9 @@ body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
 
 #app main.growth-modal{width:min(1600px,96vw)!important;}
 #app main.growth-modal .growth-result .squad-player{flex-shrink:0;}
+
+/* More legible formation avatars and precise growth segments. */
+@media(min-width:761px){main.screen-squad .formation-token img{width:clamp(60px,5vw,88px);height:clamp(64px,7.2vh,82px);}}
+#app .growth-result .rank-bar{position:relative;overflow:hidden;}
+#app .growth-result .growth-bar-gain{background:#ffe36e;box-shadow:0 0 5px #ffd43b;animation:growth-gain-pulse 1.2s ease-in-out infinite;}
+@media(prefers-reduced-motion:reduce){#app .growth-result .growth-bar-gain{animation:none;}}
