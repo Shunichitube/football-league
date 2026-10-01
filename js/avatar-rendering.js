@@ -1,11 +1,15 @@
-import { avatarProfile, SKIN_TONES, kitColor } from './avatar-profile.js';
+import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js';
 import { HAIR_PARTS } from './avatar-hair-parts.js';
 const rgb = hex => hex.slice(1).match(/../g).map(n => parseInt(n,16));
-export function recolorPixels(pixels, { skinTone = 0, kit, goalkeeper = false, recolorKit = true } = {}) {
+export function recolorPixels(pixels, { skinTone = 0, kit, goalkeeper = false, recolorKit = true, hairColor } = {}) {
   const skin = rgb(SKIN_TONES[avatarProfile({skinTone}).skinTone].color), uniform = rgb(kitColor(kit, goalkeeper));
   for (let i=0; i<pixels.length; i+=4) {
     if (!pixels[i+3]) continue;
     const [r,g,b] = [pixels[i],pixels[i+1],pixels[i+2]];
+    if(hairColor!==undefined){
+      if(r>30&&r>g*1.15&&g>b*1.1){const target=rgb(HAIR_COLORS[avatarProfile({hairColor}).hairColor].color),light=r/149;for(let c=0;c<3;c++)pixels[i+c]=Math.min(255,Math.round(target[c]*light));}
+      continue;
+    }
     if (recolorKit && b>35 && b>r*1.45 && b>g*1.08) {
       const light = b/255, white = Math.min(.5, r/b);
       for(let c=0;c<3;c++) pixels[i+c] = Math.round((uniform[c]*(1-white)+255*white)*light);
@@ -44,13 +48,23 @@ export function drawHair(ctx,assets,profile,view,box) {
   const height=view==='quarter'?Math.min(naturalHeight,box[3]*(tall?.82:.74)):naturalHeight;
   const left=box[0]+(box[2]-width)/2;
   const top=Math.max(0,box[1]-(tall?box[3]*.12:0));
-  ctx.drawImage(assets.hair,...part,left,top,width,height);
+  paintPart(ctx,assets,assets.hair,part,[left,top,width,height],{hairColor:profile.hairColor,recolorKit:false});
 }
 export function drawGlasses(ctx,eyes,{scale=1}={}) {
-  ctx.save();ctx.strokeStyle='#202631';ctx.lineWidth=Math.max(2,3*scale);ctx.lineJoin='miter';
-  const [left,right]=eyes;
-  for(const [x,y,w,h] of eyes)ctx.strokeRect(x-w*.6,y-h*.12,w*2.2,h*1.2);
-  ctx.beginPath();ctx.moveTo(left[0]+left[2]*1.6,left[1]+left[3]*.2);ctx.lineTo(right[0]-right[2]*.6,right[1]+right[3]*.2);ctx.stroke();ctx.restore();
+  ctx.save();ctx.strokeStyle='#252b30';ctx.lineWidth=Math.max(2.5,6*scale);ctx.lineJoin='round';ctx.lineCap='round';
+  const lenses=eyes.map(([x,y,w,h],side)=>[x-w*1.4+(side===0?-w*.2:w*.2),y-h*.24,w*3.8,h*1.38]);
+  for(const [x,y,w,h] of lenses){
+    ctx.beginPath();ctx.moveTo(x+w*.18,y);ctx.quadraticCurveTo(x+w*.5,y-h*.08,x+w*.82,y);
+    ctx.quadraticCurveTo(x+w,y,x+w*.98,y+h*.25);ctx.lineTo(x+w*.88,y+h*.78);
+    ctx.quadraticCurveTo(x+w*.84,y+h,x+w*.65,y+h);ctx.lineTo(x+w*.25,y+h);
+    ctx.quadraticCurveTo(x+w*.08,y+h,x+w*.04,y+h*.78);ctx.lineTo(x,y+h*.25);
+    ctx.quadraticCurveTo(x,y,x+w*.18,y);ctx.stroke();
+  }
+  const [left,right]=lenses;
+  ctx.beginPath();ctx.moveTo(left[0]+left[2]*.98,left[1]+left[3]*.25);
+  ctx.quadraticCurveTo((left[0]+left[2]+right[0])/2,(left[1]+right[1])/2+left[3]*.12,right[0],right[1]+right[3]*.25);ctx.stroke();
+  for(const [lens,side]of [[left,-1],[right,1]]){const [x,y,w,h]=lens,edge=side<0?x:x+w;ctx.beginPath();ctx.moveTo(edge,y+h*.23);ctx.lineTo(edge+side*w*.18,y+h*.12);ctx.stroke();}
+  ctx.restore();
 }
 export function drawQuarterHead(ctx,assets,value,box) {
   const profile=avatarProfile(value),[x,y,w,h]=box;
