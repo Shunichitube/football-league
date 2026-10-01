@@ -1,0 +1,134 @@
+{
+  "generator": "built-in image_gen",
+  "registration": {
+    "canvas": 300,
+    "head": [
+      39,
+      42,
+      234,
+      258
+    ]
+  },
+  "hairstyles": [
+    {
+      "id": 0,
+      "name": "ショート",
+      "asset": "motion-hair-01-v1.webp",
+      "prompt": "Use case: stylized-concept. Asset: pixel art game HAIR-ONLY overlay, newly drawn. The reference is a registration guide showing the bald motion head in right-facing three-quarter view. Draw short tidy layered hair with small pointed fringe. Only draw brown hair, no head, no skin, no eyes, no ears, no face, no body, no text. The reference head must be entirely absent in output, those regions transparent. Keep square canvas and EXACT registration: crown of skull at 14% from top, head spans x13% to91%, visible ear spans x18%-34% and y60%-82%. Hair must fit this exact skull, follow its three-quarter facing-right shape, cover crown fully without floating; scalp silhouette goes from x14%,y50% around top x43%,y14% to x88%,y47%. Do not center or zoom hair separately, keep canvas padding and reference alignment. Hairline above forehead; leave visible left ear opening clear, no side locks crossing ear or eye. Warm medium brown #955326, darker brown outlines and simple warm highlights; chunky stepped pixel edges matching reference, no smoothing, no gradients, no glossy 3D. Transparent background. One hairstyle only."
+    },
+    {
+      "id": 1,
+      "name": "サイドパート",
+      "asset": "motion-hair-02-v1.webp",
+      "prompt": "Use case: stylized-concept. Asset: pixel art game HAIR-ONLY overlay, newly drawn. The reference is a registration guide showing the bald motion head in right-facing three-quarter view. Draw neat side-part hairstyle swept across the forehead. Only draw brown hair, no head, no skin, no eyes, no ears, no face, no body, no text. The reference head must be entirely absent in output, those regions transparent. Keep square canvas and EXACT registration: crown of skull at 14% from top, head spans x13% to91%, visible ear spans x18%-34% and y60%-82%. Hair must fit this exact skull, follow its three-quarter facing-right shape, cover crown fully without floating; scalp silhouette goes from x14%,y50% around top x43%,y14% to x88%,y47%. Do not center or zoom hair separately, keep canvas padding and reference alignment. Hairline above forehead; leave visible left ear opening clear, no side locks crossing ear or eye. Warm medium brown #955326, darker brown outlines and simple warm highlights; chunky stepped pixel edges matching reference, no smoothing, no gradients, no glossy 3D. Transparent background. One hairstyle only."
+    },
+    {
+      "id": 2,
+      "name": "スパイキー",
+      "asset": "motion-hair-03-v1.webp",
+      "prompt": "Use case: stylized-concept. Asset: pixel art game HAIR-ONLY overlay, newly drawn. The reference is a registration guide showing the bald motion head in right-facing three-quarter view. Draw short sporty spiky hair with several distinct broad spikes. Only draw brown hair, no head, no skin, no eyes, no ears, no face, no body, no text. The reference head must be entirely absent in output, those regions transparent. Keep square canvas and EXACT registration: crown of skull at 14% from top, head spans x13% to91%, visible ear spans x18%-34% and y60%-82%. Hair must fit this exact skull, follow its three-quarter facing-right shape, cover crown fully without floating; scalp silhouette goes from x14%,y50% around top x43%,y14% to x88%,y47%. Do not center or zoom hair separately, keep canvas padding and reference alignment. Hairline above forehead; leave visible left ear opening clear, no side locks crossing ear or eye. Warm medium brown #955326, darker brown outlines and simple warm highlights; chunky stepped pixel edges matching reference, no smoothing, no gradients, no glossy 3D. Transparent background. One hairstyle only."
+    },
+    {
+      "id": 3,
+      "name": "クルーカット",
+      "asset": "motion-hair-04-v1.webp",
+      "prompt": "Use case: stylized-concept. Asset: pixel art game HAIR-ONLY overlay, newly drawn. The reference is a registration guide showing the bald motion head in right-facing three-quarter view. Draw close cropped crew cut with a slightly flat top. Only draw brown hair, no head, no skin, no eyes, no ears, no face, no body, no text. The reference head must be entirely absent in output, those regions transparent. Keep square canvas and EXACT registration: crown of skull at 14% from top, head spans x13% to91%, visible ear spans x18%-34% and y60%-82%. Hair must fit this exact skull, follow its three-quarter facing-right shape, cover crown fully without floating; scalp silhouette goes from x14%,y50% around top x43%,y14% to x88%,y47%. Do not center or zoom hair separately, keep canvas padding and reference alignment. Hairline above forehead; leave visible left ear opening clear, no side locks crossing ear or eye. Warm medium brown #955326, darker brown outlines and simple warm highlights; chunky stepped pixel edges matching reference, no smoothing, no gradients, no glossy 3D. Transparent background. One hairstyle only."
+    },
+    {
+      "id": 4,
+      "name": "坊主",
+      "asset": "motion-hair-05-v1.webp",
+      "prompt": "Use case: stylized-concept. Asset: pixel art game HAIR-ONLY overlay, newly drawn. The reference is a registration guide showing the bald motion head in right-facing three-quarter view. Draw very short brown buzz cut closely following skull silhouette. Only draw brown hair, no head, no skin, no eyes, no ears, no face, no body, no text. The reference head must be entirely absent in output, those regions transparent. Keep square canvas and EXACT registration: crown of skull at 14% from top, head spans x13% to91%, visible ear spans x18%-34% and y60%-82%. Hair must fit this exact skull, follow its three-quarter facing-right shape, cover crown fully without floating; scalp silhouette goes from x14%,y50% around top x43%,y14% to x88%,y47%. Do not center or zoom hair separately, keep canvas padding and reference alignment. Hairline above forehead; leave visible left ear opening clear, no side locks crossing ear or eye. Warm medium brown #955326, darker brown outlines and simple warm highlights; chunky stepped pixel edges matching reference, no smoothing, no gradients, no glossy 3D. Transparent background. One hairstyle only."
+    },
+    {
+      "id": 5,
+      "name": "モヒカン",
+      "asset": "motion-hair-06-v1.webp",
+      "prompt": "Use case: stylized-concept. Asset: pixel art game HAIR-ONLY overlay, newly drawn. The reference is a registration guide showing the bald motion head in right-facing three-quarter view. Draw mohawk with one central raised strip and very short dark brown side hair that covers skull crown naturally. Only draw brown hair, no head, no skin, no eyes, no ears, no face, no body, no text. The reference head must be entirely absent in output, those regions transparent. Keep square canvas and EXACT registration: crown of skull at 14% from top, head spans x13% to91%, visible ear spans x18%-34% and y60%-82%. Hair must fit this exact skull, follow its three-quarter facing-right shape, cover crown fully without floating; scalp silhouette goes from x14%,y50% around top x43%,y14% to x88%,y47%. Do not center or zoom hair separately, keep canvas padding and reference alignment. Hairline above forehead; leave visible left ear opening clear, no side locks crossing ear or eye. Warm medium brown #955326, darker brown outlines and simple warm highlights; chunky stepped pixel edges matching reference, no smoothing, no gradients, no glossy 3D. Transparent background. One hairstyle only."
+    },
+    {
+      "id": 6,
+      "name": "センター分け",
+      "asset": "motion-hair-07-v1.webp",
+      "prompt": "Use case: stylized-concept. Asset: pixel art game HAIR-ONLY overlay, newly drawn. The reference is a registration guide showing the bald motion head in right-facing three-quarter view. Draw center parted medium hair, two curved sections. Only draw brown hair, no head, no skin, no eyes, no ears, no face, no body, no text. The reference head must be entirely absent in output, those regions transparent. Keep square canvas and EXACT registration: crown of skull at 14% from top, head spans x13% to91%, visible ear spans x18%-34% and y60%-82%. Hair must fit this exact skull, follow its three-quarter facing-right shape, cover crown fully without floating; scalp silhouette goes from x14%,y50% around top x43%,y14% to x88%,y47%. Do not center or zoom hair separately, keep canvas padding and reference alignment. Hairline above forehead; leave visible left ear opening clear, no side locks crossing ear or eye. Warm medium brown #955326, darker brown outlines and simple warm highlights; chunky stepped pixel edges matching reference, no smoothing, no gradients, no glossy 3D. Transparent background. One hairstyle only."
+    },
+    {
+      "id": 7,
+      "name": "カーリー",
+      "asset": "motion-hair-08-v1.webp",
+      "prompt": "Use case: stylized-concept. Asset: pixel art game HAIR-ONLY overlay, newly drawn. The reference is a registration guide showing the bald motion head in right-facing three-quarter view. Draw short rounded curls. Only draw brown hair, no head, no skin, no eyes, no ears, no face, no body, no text. The reference head must be entirely absent in output, those regions transparent. Keep square canvas and EXACT registration: crown of skull at 14% from top, head spans x13% to91%, visible ear spans x18%-34% and y60%-82%. Hair must fit this exact skull, follow its three-quarter facing-right shape, cover crown fully without floating; scalp silhouette goes from x14%,y50% around top x43%,y14% to x88%,y47%. Do not center or zoom hair separately, keep canvas padding and reference alignment. Hairline above forehead; leave visible left ear opening clear, no side locks crossing ear or eye. Warm medium brown #955326, darker brown outlines and simple warm highlights; chunky stepped pixel edges matching reference, no smoothing, no gradients, no glossy 3D. Transparent background. One hairstyle only."
+    },
+    {
+      "id": 8,
+      "name": "フレンチクロップ",
+      "asset": "motion-hair-09-v1.webp",
+      "prompt": "Use case: stylized-concept. Asset: pixel art game HAIR-ONLY overlay, newly drawn. The reference is a registration guide showing the bald motion head in right-facing three-quarter view. Draw French crop short flat blunt fringe. Only draw brown hair, no head, no skin, no eyes, no ears, no face, no body, no text. The reference head must be entirely absent in output, those regions transparent. Keep square canvas and EXACT registration: crown of skull at 14% from top, head spans x13% to91%, visible ear spans x18%-34% and y60%-82%. Hair must fit this exact skull, follow its three-quarter facing-right shape, cover crown fully without floating; scalp silhouette goes from x14%,y50% around top x43%,y14% to x88%,y47%. Do not center or zoom hair separately, keep canvas padding and reference alignment. Hairline above forehead; leave visible left ear opening clear, no side locks crossing ear or eye. Warm medium brown #955326, darker brown outlines and simple warm highlights; chunky stepped pixel edges matching reference, no smoothing, no gradients, no glossy 3D. Transparent background. One hairstyle only."
+    },
+    {
+      "id": 9,
+      "name": "クイッフ",
+      "asset": "motion-hair-10-v1.webp",
+      "prompt": "Use case: stylized-concept. Asset: pixel art game HAIR-ONLY overlay, newly drawn. The reference is a registration guide showing the bald motion head in right-facing three-quarter view. Draw short sides and a modest upward curved quiff. Only draw brown hair, no head, no skin, no eyes, no ears, no face, no body, no text. The reference head must be entirely absent in output, those regions transparent. Keep square canvas and EXACT registration: crown of skull at 14% from top, head spans x13% to91%, visible ear spans x18%-34% and y60%-82%. Hair must fit this exact skull, follow its three-quarter facing-right shape, cover crown fully without floating; scalp silhouette goes from x14%,y50% around top x43%,y14% to x88%,y47%. Do not center or zoom hair separately, keep canvas padding and reference alignment. Hairline above forehead; leave visible left ear opening clear, no side locks crossing ear or eye. Warm medium brown #955326, darker brown outlines and simple warm highlights; chunky stepped pixel edges matching reference, no smoothing, no gradients, no glossy 3D. Transparent background. One hairstyle only."
+    },
+    {
+      "id": 10,
+      "name": "オールバック",
+      "asset": "motion-hair-11-v1.webp",
+      "prompt": "Use case: stylized-concept. Asset: pixel art game HAIR-ONLY overlay, newly drawn. The reference is a registration guide showing the bald motion head in right-facing three-quarter view. Draw slicked back smooth hair with short sides. Only draw brown hair, no head, no skin, no eyes, no ears, no face, no body, no text. The reference head must be entirely absent in output, those regions transparent. Keep square canvas and EXACT registration: crown of skull at 14% from top, head spans x13% to91%, visible ear spans x18%-34% and y60%-82%. Hair must fit this exact skull, follow its three-quarter facing-right shape, cover crown fully without floating; scalp silhouette goes from x14%,y50% around top x43%,y14% to x88%,y47%. Do not center or zoom hair separately, keep canvas padding and reference alignment. Hairline above forehead; leave visible left ear opening clear, no side locks crossing ear or eye. Warm medium brown #955326, darker brown outlines and simple warm highlights; chunky stepped pixel edges matching reference, no smoothing, no gradients, no glossy 3D. Transparent background. One hairstyle only."
+    },
+    {
+      "id": 11,
+      "name": "ポンパドール",
+      "asset": "motion-hair-12-v1.webp",
+      "prompt": "Use case: stylized-concept. Asset: pixel art game HAIR-ONLY overlay, newly drawn. The reference is a registration guide showing the bald motion head in right-facing three-quarter view. Draw voluminous rounded pompadour crest swept back. Only draw brown hair, no head, no skin, no eyes, no ears, no face, no body, no text. The reference head must be entirely absent in output, those regions transparent. Keep square canvas and EXACT registration: crown of skull at 14% from top, head spans x13% to91%, visible ear spans x18%-34% and y60%-82%. Hair must fit this exact skull, follow its three-quarter facing-right shape, cover crown fully without floating; scalp silhouette goes from x14%,y50% around top x43%,y14% to x88%,y47%. Do not center or zoom hair separately, keep canvas padding and reference alignment. Hairline above forehead; leave visible left ear opening clear, no side locks crossing ear or eye. Warm medium brown #955326, darker brown outlines and simple warm highlights; chunky stepped pixel edges matching reference, no smoothing, no gradients, no glossy 3D. Transparent background. One hairstyle only."
+    },
+    {
+      "id": 12,
+      "name": "ボブ",
+      "asset": "motion-hair-13-v1.webp",
+      "prompt": "Use case: stylized-concept. Asset: pixel art game HAIR-ONLY overlay, newly drawn. The reference is a registration guide showing the bald motion head in right-facing three-quarter view. Draw short chin length bob tucked behind visible left ear. Only draw brown hair, no head, no skin, no eyes, no ears, no face, no body, no text. The reference head must be entirely absent in output, those regions transparent. Keep square canvas and EXACT registration: crown of skull at 14% from top, head spans x13% to91%, visible ear spans x18%-34% and y60%-82%. Hair must fit this exact skull, follow its three-quarter facing-right shape, cover crown fully without floating; scalp silhouette goes from x14%,y50% around top x43%,y14% to x88%,y47%. Do not center or zoom hair separately, keep canvas padding and reference alignment. Hairline above forehead; leave visible left ear opening clear, no side locks crossing ear or eye. Warm medium brown #955326, darker brown outlines and simple warm highlights; chunky stepped pixel edges matching reference, no smoothing, no gradients, no glossy 3D. Transparent background. One hairstyle only."
+    },
+    {
+      "id": 13,
+      "name": "ウェーブ",
+      "asset": "motion-hair-14-v1.webp",
+      "prompt": "Use case: stylized-concept. Asset: pixel art game HAIR-ONLY overlay, newly drawn. The reference is a registration guide showing the bald motion head in right-facing three-quarter view. Draw medium loose wavy hair tucked behind ear. Only draw brown hair, no head, no skin, no eyes, no ears, no face, no body, no text. The reference head must be entirely absent in output, those regions transparent. Keep square canvas and EXACT registration: crown of skull at 14% from top, head spans x13% to91%, visible ear spans x18%-34% and y60%-82%. Hair must fit this exact skull, follow its three-quarter facing-right shape, cover crown fully without floating; scalp silhouette goes from x14%,y50% around top x43%,y14% to x88%,y47%. Do not center or zoom hair separately, keep canvas padding and reference alignment. Hairline above forehead; leave visible left ear opening clear, no side locks crossing ear or eye. Warm medium brown #955326, darker brown outlines and simple warm highlights; chunky stepped pixel edges matching reference, no smoothing, no gradients, no glossy 3D. Transparent background. One hairstyle only."
+    },
+    {
+      "id": 14,
+      "name": "アフロ",
+      "asset": "motion-hair-15-v1.webp",
+      "prompt": "Use case: stylized-concept. Asset: pixel art game HAIR-ONLY overlay, newly drawn. The reference is a registration guide showing the bald motion head in right-facing three-quarter view. Draw rounded compact afro with textured silhouette. Only draw brown hair, no head, no skin, no eyes, no ears, no face, no body, no text. The reference head must be entirely absent in output, those regions transparent. Keep square canvas and EXACT registration: crown of skull at 14% from top, head spans x13% to91%, visible ear spans x18%-34% and y60%-82%. Hair must fit this exact skull, follow its three-quarter facing-right shape, cover crown fully without floating; scalp silhouette goes from x14%,y50% around top x43%,y14% to x88%,y47%. Do not center or zoom hair separately, keep canvas padding and reference alignment. Hairline above forehead; leave visible left ear opening clear, no side locks crossing ear or eye. Warm medium brown #955326, darker brown outlines and simple warm highlights; chunky stepped pixel edges matching reference, no smoothing, no gradients, no glossy 3D. Transparent background. One hairstyle only."
+    },
+    {
+      "id": 15,
+      "name": "ベリーショート",
+      "asset": "motion-hair-16-v1.webp",
+      "prompt": "Use case: stylized-concept. Asset: pixel art game HAIR-ONLY overlay, newly drawn. The reference is a registration guide showing the bald motion head in right-facing three-quarter view. Draw very short textured fade hairstyle following skull, no braids. Only draw brown hair, no head, no skin, no eyes, no ears, no face, no body, no text. The reference head must be entirely absent in output, those regions transparent. Keep square canvas and EXACT registration: crown of skull at 14% from top, head spans x13% to91%, visible ear spans x18%-34% and y60%-82%. Hair must fit this exact skull, follow its three-quarter facing-right shape, cover crown fully without floating; scalp silhouette goes from x14%,y50% around top x43%,y14% to x88%,y47%. Do not center or zoom hair separately, keep canvas padding and reference alignment. Hairline above forehead; leave visible left ear opening clear, no side locks crossing ear or eye. Warm medium brown #955326, darker brown outlines and simple warm highlights; chunky stepped pixel edges matching reference, no smoothing, no gradients, no glossy 3D. Transparent background. One hairstyle only."
+    },
+    {
+      "id": 16,
+      "name": "ポニーテール",
+      "asset": "motion-hair-17-v1.webp",
+      "prompt": "Use case: stylized-concept. Asset: pixel art game HAIR-ONLY overlay, newly drawn. The reference is a registration guide showing the bald motion head in right-facing three-quarter view. Draw smooth tied-back hair with ponytail extending behind head toward left, visible ear clean. Only draw brown hair, no head, no skin, no eyes, no ears, no face, no body, no text. The reference head must be entirely absent in output, those regions transparent. Keep square canvas and EXACT registration: crown of skull at 14% from top, head spans x13% to91%, visible ear spans x18%-34% and y60%-82%. Hair must fit this exact skull, follow its three-quarter facing-right shape, cover crown fully without floating; scalp silhouette goes from x14%,y50% around top x43%,y14% to x88%,y47%. Do not center or zoom hair separately, keep canvas padding and reference alignment. Hairline above forehead; leave visible left ear opening clear, no side locks crossing ear or eye. Warm medium brown #955326, darker brown outlines and simple warm highlights; chunky stepped pixel edges matching reference, no smoothing, no gradients, no glossy 3D. Transparent background. One hairstyle only."
+    },
+    {
+      "id": 17,
+      "name": "お団子",
+      "asset": "motion-hair-18-v1.webp",
+      "prompt": "Use case: stylized-concept. Asset: pixel art game HAIR-ONLY overlay, newly drawn. The reference is a registration guide showing the bald motion head in right-facing three-quarter view. Draw neat hair tied into a small bun high at back upper-left, ear exposed. Only draw brown hair, no head, no skin, no eyes, no ears, no face, no body, no text. The reference head must be entirely absent in output, those regions transparent. Keep square canvas and EXACT registration: crown of skull at 14% from top, head spans x13% to91%, visible ear spans x18%-34% and y60%-82%. Hair must fit this exact skull, follow its three-quarter facing-right shape, cover crown fully without floating; scalp silhouette goes from x14%,y50% around top x43%,y14% to x88%,y47%. Do not center or zoom hair separately, keep canvas padding and reference alignment. Hairline above forehead; leave visible left ear opening clear, no side locks crossing ear or eye. Warm medium brown #955326, darker brown outlines and simple warm highlights; chunky stepped pixel edges matching reference, no smoothing, no gradients, no glossy 3D. Transparent background. One hairstyle only."
+    },
+    {
+      "id": 18,
+      "name": "アンダーカット",
+      "asset": "motion-hair-19-v1.webp",
+      "prompt": "Use case: stylized-concept. Asset: pixel art game HAIR-ONLY overlay, newly drawn. The reference is a registration guide showing the bald motion head in right-facing three-quarter view. Draw undercut with thick swept-over top and short sides. Only draw brown hair, no head, no skin, no eyes, no ears, no face, no body, no text. The reference head must be entirely absent in output, those regions transparent. Keep square canvas and EXACT registration: crown of skull at 14% from top, head spans x13% to91%, visible ear spans x18%-34% and y60%-82%. Hair must fit this exact skull, follow its three-quarter facing-right shape, cover crown fully without floating; scalp silhouette goes from x14%,y50% around top x43%,y14% to x88%,y47%. Do not center or zoom hair separately, keep canvas padding and reference alignment. Hairline above forehead; leave visible left ear opening clear, no side locks crossing ear or eye. Warm medium brown #955326, darker brown outlines and simple warm highlights; chunky stepped pixel edges matching reference, no smoothing, no gradients, no glossy 3D. Transparent background. One hairstyle only."
+    },
+    {
+      "id": 19,
+      "name": "ロング",
+      "asset": "motion-hair-20-v1.webp",
+      "prompt": "Use case: stylized-concept. Asset: pixel art game HAIR-ONLY overlay, newly drawn. The reference is a registration guide showing the bald motion head in right-facing three-quarter view. Draw long straight layered hair flowing down behind left ear, ear visible. Only draw brown hair, no head, no skin, no eyes, no ears, no face, no body, no text. The reference head must be entirely absent in output, those regions transparent. Keep square canvas and EXACT registration: crown of skull at 14% from top, head spans x13% to91%, visible ear spans x18%-34% and y60%-82%. Hair must fit this exact skull, follow its three-quarter facing-right shape, cover crown fully without floating; scalp silhouette goes from x14%,y50% around top x43%,y14% to x88%,y47%. Do not center or zoom hair separately, keep canvas padding and reference alignment. Hairline above forehead; leave visible left ear opening clear, no side locks crossing ear or eye. Warm medium brown #955326, darker brown outlines and simple warm highlights; chunky stepped pixel edges matching reference, no smoothing, no gradients, no glossy 3D. Transparent background. One hairstyle only."
+    }
+  ]
+}
