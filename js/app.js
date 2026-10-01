@@ -3,12 +3,12 @@ import { createInitialState } from './app-state.js';
 import { createAuctionClock } from './auction-clock.js';
 import { dialogs } from './dialogs.js';
 import { openLot, raiseBid, passLot, tickLot } from './live-auction.js?v=0.21.1';
-import { auctionAvatar, renderLiveAuction } from './auction-ui.js?v=contract-office-v1';
+import { auctionAvatar, renderLiveAuction } from './auction-ui.js?v=development-room-v1';
 import { applySeasonFinances, awards, clubAchievements, createLeague, finalizeSeason, recordDraftAcquisition, simulateRemainingSeason, standings as singleStandings, startNextSeason } from './league.js?v=0.17.29';
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=appearance-v21';
 import { createRandom } from './random.js';
 import { createAuctionPool, createDraftPool, resolveDraftActions } from './market.js?v=0.22.0';
-import { renderContractPlayerCard, configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=contract-office-v1';
+import { renderContractPlayerCard, configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=development-room-v1';
 import { decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=0.17.30';
 import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=0.17.2';
 import { RoomAdapter } from './room-adapter.js?v=0.20.0';
@@ -118,12 +118,12 @@ function offseasonEvents() {
 function development() {
     const c = me();
     const finance=s.financeSummary?.find(row=>row.clubId===c.id);
-    return `${head()}<main><p class="eyebrow">育成</p><h2>育成する2選手を選択</h2>${finance?`<p class="hint">年間基本資金 +${finance.base}pt${finance.prize?`・順位賞金 +${finance.prize}pt`:''}／持越し上限150pt → 現在${finance.after}pt</p>`:''}<p class="hint">${s.training?.size || 0}/2 選択中</p>${sortControl('development',s.developmentSort)}<section class="candidate-grid">${sortPlayers(c.roster,s.developmentSort).map(p => `<article class="candidate">${player(p)}<button data-train="${p.id}" class="${s.training?.has(p.id) ? '' : 'subtle'}">${s.training?.has(p.id) ? '選択済み' : '育成対象にする'}</button></article>`).join('')}</section><button data-stage4="confirm" ${s.training?.size === 2 ? '' : 'disabled'}>重点能力を選ぶ</button></main>`;
+    return `${head()}<main class="development-room"><p class="eyebrow">育成</p><h2>育成する2選手を選択</h2>${finance?`<p class="hint">年間基本資金 +${finance.base}pt${finance.prize?`・順位賞金 +${finance.prize}pt`:''}／持越し上限150pt → 現在${finance.after}pt</p>`:''}<p class="hint">${s.training?.size || 0}/2 選択中</p>${sortControl('development',s.developmentSort)}<section class="candidate-grid">${sortPlayers(c.roster,s.developmentSort).map(p => `<article class="candidate ${s.training?.has(p.id)?'training-selected':''}">${renderContractPlayerCard(p,c)}<button data-train="${p.id}" class="${s.training?.has(p.id) ? '' : 'subtle'}">${s.training?.has(p.id) ? '選択済み' : '育成対象にする'}</button></article>`).join('')}</section><button data-stage4="confirm" ${s.training?.size === 2 ? '' : 'disabled'}>重点能力を選ぶ</button></main>`;
 }
 
 function focus() {
     const picks = [...s.training.keys()]; const c = me();
-    return `${head()}<main><p class="eyebrow">育成</p><h2>重点能力を選択</h2>${picks.map(id => { const p=c.roster.find(x=>x.id===id); return `<section class="candidate">${player(p)}<label>重点育成<select data-focus="${id}">${trainingSkills(p).map(k=>`<option value="${k}" ${s.training.get(id)===k?'selected':''}>${STAT_LABELS[k]}</option>`).join('')}</select></label></section>`; }).join('')}<button data-stage4="grow">育成を実行</button></main>`;
+    return `${head()}<main class="development-room"><p class="eyebrow">育成</p><h2>重点能力を選択</h2>${picks.map(id => { const p=c.roster.find(x=>x.id===id); return `<section class="candidate">${renderContractPlayerCard(p,c)}<label>重点育成<select data-focus="${id}">${trainingSkills(p).map(k=>`<option value="${k}" ${s.training.get(id)===k?'selected':''}>${STAT_LABELS[k]}</option>`).join('')}</select></label></section>`; }).join('')}<button data-stage4="grow">育成を実行</button></main>`;
 }
 
 function growth() {

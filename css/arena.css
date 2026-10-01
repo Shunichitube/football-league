@@ -564,3 +564,22 @@ body.contract-office-active #app>header{background:#061a2ce8;}
 .contract-room .squad-abilities{display:flex;flex-direction:column;justify-content:center;gap:4px;margin:0;min-width:0;}.contract-room .squad-abilities>div{display:grid;grid-template-columns:58px minmax(0,1fr);align-items:center;background:#071421;padding:3px;}.contract-room .squad-abilities dt{font-size:12px;white-space:nowrap;}.contract-room .squad-abilities dd{display:grid;grid-template-columns:18px minmax(0,1fr);gap:5px;margin:0;font-size:13px;}.contract-room .rank-bar{width:100%;min-width:0;height:6px!important;}
 .contract-room .squad-special{grid-column:1/-1;border-top:1px solid #486171;padding-top:7px;font-size:13px;}.contract-room .squad-special span{margin-right:10px;color:#b8ccd5;}
 @media(max-width:550px){#app main.contract-room{padding:14px;}#app main.contract-room .squad-player{grid-template-columns:65px minmax(0,1fr);}.contract-room .squad-abilities{grid-column:1/-1;}.contract-room .squad-avatar img{width:60px;height:100px;}}
+
+#app main.development-room{width:min(1120px,94vw);margin:24px auto;padding:24px;background:#071b2deb;border:1px solid #79a79588;border-radius:16px;}
+#app main.development-room>.candidate{width:min(100%,520px);box-sizing:border-box;background:#0d2539ed;margin:12px 0;padding:14px;}
+#app main.development-room .squad-player{display:grid;grid-template-columns:80px minmax(110px,.85fr) minmax(160px,1.15fr);gap:10px;min-width:0;background:#0a1b2d;border:1px solid #507c87;border-radius:9px;padding:10px;}
+.development-room .squad-avatar{display:flex;align-items:center;justify-content:center;position:relative;}.development-room .squad-avatar img{width:76px;height:120px;object-fit:contain;}.development-room .squad-role-badge{display:none;}
+.development-room .squad-identity{display:flex;flex-direction:column;justify-content:center;gap:5px;font-size:13px;min-width:0;}.development-room .squad-identity .player-name{font-size:16px!important;white-space:normal!important;overflow-wrap:anywhere;}.development-room .squad-identity strong{color:#f5d986;}
+.development-room .squad-abilities{display:flex;flex-direction:column;justify-content:center;gap:4px;margin:0;min-width:0;}.development-room .squad-abilities>div{display:grid;grid-template-columns:58px minmax(0,1fr);align-items:center;background:#071421;padding:3px;}.development-room .squad-abilities dt{font-size:12px;white-space:nowrap;}.development-room .squad-abilities dd{display:grid;grid-template-columns:18px minmax(0,1fr);gap:5px;margin:0;font-size:13px;}.development-room .rank-bar{width:100%;min-width:0;height:6px!important;}
+.development-room .squad-special{grid-column:1/-1;border-top:1px solid #486171;padding-top:7px;font-size:13px;}.development-room .squad-special span{margin-right:10px;color:#b8ccd5;}
+@media(max-width:550px){#app main.development-room{padding:14px;}#app main.development-room .squad-player{grid-template-columns:65px minmax(0,1fr);}.development-room .squad-abilities{grid-column:1/-1;}.development-room .squad-avatar img{width:60px;height:100px;}}
+
+body.development-room-active{background:#071522;}
+body.development-room-active::before{content:"";position:fixed;inset:0;background:#071522 url('../assets/arena/development-room-v1.webp') center/cover no-repeat;z-index:0;pointer-events:none;}
+body.development-room-active #app{position:relative;z-index:1;}
+body.development-room-active #app>header{background:#061a2ce8;}
+#app main.development-room{width:min(1560px,94vw);}
+#app main.development-room>.candidate-grid{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,450px),1fr))!important;gap:14px;}
+#app main.development-room .candidate{min-width:0;background:#0d2539f5;padding:12px;}
+#app main.development-room .candidate.training-selected{border-color:#64efb1;box-shadow:0 0 0 2px #37d79d55;}
+#app main.development-room>.candidate{width:min(100%,520px);}
