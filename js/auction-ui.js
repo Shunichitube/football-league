@@ -51,7 +51,7 @@ export function auctionAvatar(player,clubColor){
 }
 export function renderLiveAuction(s,club,card,escape,header){
   const a=s.auction,p=a.pool[a.i],lot=a.live;
-  if(a.completed||!p)return `${header}<main class="auction-room"><section class="auction-monitor auction-complete"><h2>オークション完了</h2><p>全選手の競売が終了しました。</p><button data-a="toggleAuctionHistory" class="subtle">結果を見る</button><button data-a="squad">編成画面へ</button></section></main>`;
+  if(a.completed||!p)return `${header}<main class="auction-room phase-complete-screen"><section class="phase-complete-modal" role="dialog" aria-modal="true" aria-label="オークション完了"><h2>オークション完了</h2><p>全選手の競売が終了しました。</p><button data-a="toggleAuctionHistory" class="subtle">結果を見る</button><button data-a="squad">編成画面へ</button></section></main>`;
   const leader=s.league.clubs.find(c=>c.id===lot?.leader),closed=lot?.closed;
   const passDisabled=closed||lot?.passed.includes(club.id)||lot?.leader===club.id;
   const bidDisabled=passDisabled||club.roster.length>=12;
