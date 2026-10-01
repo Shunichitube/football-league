@@ -38,7 +38,7 @@ for (const entry of ['js/app.js','worker/index.js']) {
 }
 for (const path of paths.filter(path => path.includes(`${sep}js${sep}`) || path.includes(`${sep}worker${sep}`))) {
   const source = await readFile(path,'utf8');
-  if (!['arena-background.js','living-background.js','three-background.js'].some(name => path.endsWith(sep+name)) && /new\s+MutationObserver\s*\(/.test(source)) throw new Error(`DOM observer remains: ${relative(root,path)}`);
+  if (/new\s+MutationObserver\s*\(/.test(source)) throw new Error(`DOM observer remains: ${relative(root,path)}`);
   if (/room-(?:client|adapter)\.js$/.test(path) && /\b(?:document|innerHTML|querySelector)\b/.test(source)) throw new Error(`DOM dependency in Room layer: ${relative(root,path)}`);
 }
 console.log(`PASS: ${paths.length} JavaScript files parsed; ${cache.size} module instances linked; Room/DOM boundaries checked.`);

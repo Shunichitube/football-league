@@ -1,14 +1,16 @@
-// Decorative only. Club data flows one way from the current draft renderer.
+import { STAGE } from './stage-layout.js';
+// Decorative only; the current draft venue does not read game state or DOM data.
 export async function mountDraftHall(canvas){
   const ctx=canvas.getContext('2d',{alpha:false}),base=new Image();
   await new Promise((resolve,reject)=>{base.onload=resolve;base.onerror=reject;base.src=new URL('../assets/arena/draft-stage-podium.png',import.meta.url).href;});
   const reduce=matchMedia('(prefers-reduced-motion: reduce)');
   let frame=0,dead=false,last=0,time=0,previous=0;
   function draw(){
-    const scale=Math.max(innerWidth/1672,innerHeight/940),dx=(innerWidth-1672*scale)/2;
+    ctx.globalCompositeOperation='source-over';
+    const scale=Math.max(innerWidth/STAGE.width,innerHeight/STAGE.height),dx=(innerWidth-STAGE.width*scale)/2;
     const dpr=Math.min(devicePixelRatio||1,2);ctx.setTransform(dpr*scale,0,0,dpr*scale,dpr*dx,0);
-    ctx.drawImage(base,0,0,1672,940);ctx.imageSmoothingEnabled=false;
-    ctx.fillStyle='rgba(2,8,18,.28)';ctx.fillRect(0,0,1672,940);
+    ctx.drawImage(base,0,0,STAGE.width,STAGE.height);ctx.imageSmoothingEnabled=false;
+    ctx.fillStyle='rgba(2,8,18,.28)';ctx.fillRect(0,0,STAGE.width,STAGE.height);
     ctx.globalCompositeOperation='screen';
     for(const [i,x,y] of [[0,210,42],[1,520,34],[2,1152,34],[3,1464,42]]){
       const end=x+Math.sin(time*.22+i)*120;

@@ -1,3 +1,4 @@
+import { dialogs } from './dialogs.js';
 import {playerAppearance,kitColor} from './avatar-profile.js?v=appearance-v19';
 import { formatMatchEvents } from './match-log.js?v=0.17.31';
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.22.0';
@@ -39,16 +40,22 @@ function normalizePlayerName(value) {
   if (name.length > RENAME_LIMIT) return { error: `${RENAME_LIMIT}文字以内で入力してください。` };
   return { name };
 }
-function removeRenameModal() { document.querySelectorAll('.rename-modal-backdrop,.rename-modal-panel').forEach(node => node.remove()); }
+function removeRenameModal() {
+  dialogs.beforeRender();
+  document.querySelectorAll('.rename-modal-backdrop,.rename-modal-panel').forEach(node => node.remove());
+  dialogs.sync();
+}
 function showRenameModal(player) {
   removeRenameModal();
-  document.body.insertAdjacentHTML('beforeend', `<div class="rename-modal-backdrop overlay-backdrop" data-rename-cancel></div><section class="rename-modal-panel overlay-panel detail-panel" role="dialog" aria-modal="true" aria-label="名前変更">
-    <div class="overlay-heading"><div><p class="eyebrow">選手名変更</p><h2>${escapeHtml(player.name)}</h2></div><button type="button" data-rename-cancel class="subtle">閉じる</button></div>
+  dialogs.beforeRender();
+  document.body.insertAdjacentHTML('beforeend', `<div class="rename-modal-backdrop overlay-backdrop" data-rename-cancel></div><section data-ui-dialog="rename" class="rename-modal-panel overlay-panel detail-panel" role="dialog" aria-modal="true" aria-label="名前変更">
+    <div class="overlay-heading"><div><p class="eyebrow">選手名変更</p><h2>${escapeHtml(player.name)}</h2></div><button type="button" data-dialog-close data-rename-cancel class="subtle">閉じる</button></div>
     <label>新しい名前<input data-rename-input maxlength="${RENAME_LIMIT}" value="${escapeHtml(player.name)}" placeholder="10文字以内"></label>
     <p class="hint">1〜${RENAME_LIMIT}文字。空白だけ・改行は使えません。カードに入りきらない場合は「…」で省略表示します。</p>
     <p class="lineup-error" data-rename-error style="display:none"></p>
     <div class="season-result-actions"><button type="button" data-rename-submit="${escapeHtml(player.id)}">変更する</button><button type="button" data-rename-cancel class="subtle">キャンセル</button></div>
   </section>`);
+  dialogs.sync();
   const input = document.querySelector('[data-rename-input]');
   input?.focus();
   input?.select();
@@ -136,8 +143,8 @@ export function positionCounts(roster) {
 
 export function renderRosterPanel(club, options = {}) {
   const rosterSort = options.rosterSort || 'position';
-  return `<section class="overlay-panel roster-panel" role="dialog" aria-modal="true" aria-label="所属選手">
-    <div class="overlay-heading"><div><p class="eyebrow">${escapeHtml(club.name)}</p><h2>所属選手</h2></div><button type="button" data-stage10="close" class="subtle">閉じる</button></div>
+  return `<section data-app-overlay data-ui-dialog="roster" class="overlay-panel roster-panel" role="dialog" aria-modal="true" aria-label="所属選手">
+    <div class="overlay-heading"><div><p class="eyebrow">${escapeHtml(club.name)}</p><h2>所属選手</h2></div><button type="button" data-dialog-close data-stage10="close" class="subtle">閉じる</button></div>
     <div class="bench-heading roster-sort-heading"><div class="position-counts">${positionCounts(club.roster).map(row => `<span>${row.label} <b>${row.count}</b></span>`).join('')}</div><label>並び順<select data-player-sort="roster"><option value="position" ${rosterSort === 'position' ? 'selected' : ''}>ポジション順</option><option value="overall" ${rosterSort === 'overall' ? 'selected' : ''}>総合ランク順</option><option value="age" ${rosterSort === 'age' ? 'selected' : ''}>年齢順</option><option value="contract" ${rosterSort === 'contract' ? 'selected' : ''}>契約年数順</option></select></label></div>
     <div class="candidate-grid">${club.roster.map(player => renderPlayerCard(player, { allowRelease: Boolean(options.allowRelease), allowRename: Boolean(options.allowRename || options.allowRelease) })).join('')}</div>
   </section>`;
@@ -187,7 +194,7 @@ export function renderSquadComparison(club, selectedId, targetId = null) {
   }).join('')}</div><p class="compare-special">特能 <b>${escapeHtml(right?.specialAbility || '―')}</b></p></section></div>`;
 }
 
-export function renderLineupEditor(club, selectedPlayerId = null, message = '', messageIsError = false, benchSort = 'position') {
+export function renderLineupEditor(club, selectedPlayerId = null, message = '', messageIsError = false, benchSort = 'position', tactics = '') {
   const validation = validateLineup(club);
   const positionOrder = { GK: 0, DF: 1, MF: 2, FW: 3 };
   const rankOrder = { SS: 0, S: 1, A: 2, B: 3, C: 4, D: 5, E: 6, F: 7, G: 8 };
@@ -207,7 +214,7 @@ export function renderLineupEditor(club, selectedPlayerId = null, message = '', 
     <div class="formation-side"><div class="formation-board-title"><h3>フォーメーション</h3><span>5人のスタメン</span></div><div class="lineup-slots formation-pitch">${LINEUP_SLOTS.map((slot, index) => {
       const player = club.roster.find(candidate => candidate.id === club.lineup?.[index]);
       return `<button type="button" class="lineup-slot formation-token ${player && player.primaryPosition !== slot ? 'out-of-position' : ''} ${selectedPlayerId === player?.id ? 'selected-player' : ''}" data-lineup-slot="${index}" data-lineup-drag="${player ? escapeHtml(player.id) : ''}" ${player ? 'draggable="true"' : ''} aria-label="${slotLabel(slot,index)}：${player ? escapeHtml(player.name) : '空き枠'}">${player ? `${squadRoleBadge(player, club.lineup || [])}<img src="${squadAvatar(player, club.color)}" alt="" draggable="false"><strong>${escapeHtml(player.name)}</strong><span class="formation-details">総合 ${escapeHtml(displayPlayer(player).overallRank)} ・ ${escapeHtml(positionLabel(player.primaryPosition))}${player.primaryPosition !== slot ? ' ▼' : ''}</span>` : `<span class="formation-position">${slotLabel(slot,index)}</span><span class="formation-empty">＋ 配置</span>`}</button>`;
-    }).join('')}</div><section class="squad-tablet" aria-label="戦術と選手比較"><div class="squad-tablet-tactics"></div><div class="squad-compare"><h3>選手比較 <small>PLAYER COMPARE</small></h3><div class="squad-compare-content">${renderSquadComparison(club, selectedPlayerId)}</div></div></section></div>
+    }).join('')}</div><section class="squad-tablet" aria-label="戦術と選手比較"><div class="squad-tablet-tactics">${tactics}</div><div class="squad-compare"><h3>選手比較 <small>PLAYER COMPARE</small></h3><div class="squad-compare-content">${renderSquadComparison(club, selectedPlayerId)}</div></div></section></div>
     <div class="formation-cards"><div class="bench-heading"><h3>所属選手 <small>${club.roster.length}/12</small></h3><label>並び順<select data-bench-sort><option value="position" ${benchSort === 'position' ? 'selected' : ''}>ポジション順</option><option value="overall" ${benchSort === 'overall' ? 'selected' : ''}>総合ランク順</option><option value="age" ${benchSort === 'age' ? 'selected' : ''}>年齢順</option><option value="contract" ${benchSort === 'contract' ? 'selected' : ''}>契約年数順</option></select></label></div><div class="candidate-grid bench-grid">${roster.map(player => renderSquadCard(player, club.lineup || [], selectedPlayerId, club.color)).join('')}</div><div class="squad-season-action"><button data-a="season" ${validation.ok ? '' : 'disabled'}>シーズンをシミュレート ›</button></div></div>
   </section>`;
 }

@@ -1,19 +1,30 @@
+import { createInitialState } from './app-state.js';
+import { createAuctionClock } from './auction-clock.js';
+import { dialogs } from './dialogs.js';
 import { openLot, raiseBid, passLot, tickLot } from './live-auction.js?v=0.21.1';
-import { auctionAvatar, renderLiveAuction } from './auction-ui.js?v=appearance-v19';
+import { auctionAvatar, renderLiveAuction } from './auction-ui.js?v=appearance-v19-refactor';
 import { applySeasonFinances, awards, clubAchievements, createLeague, finalizeSeason, recordDraftAcquisition, simulateRemainingSeason, standings as singleStandings, startNextSeason } from './league.js?v=0.17.29';
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=appearance-v19';
 import { createRandom } from './random.js';
 import { createAuctionPool, createDraftPool, resolveDraftActions } from './market.js?v=0.22.0';
-import { configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=appearance-v19';
+import { configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=appearance-v19-refactor';
 import { decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=0.17.30';
 import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=0.17.2';
 import { RoomAdapter } from './room-adapter.js?v=0.20.0';
 import { classifyScreens } from './screen-classifier.js';
+import { createContractEvents, createSpecialTrainingOffers, renewalFee, trainingSkills } from './development.js?v=0.17.31';
+import { exportSave, importSave, loadSlot, saveSlot, slotInfo } from './storage.js?v=0.17.27';
 const clickHandlers=[];
 const onGameClick=(scope,handler)=>clickHandlers.push({scope,handler});
 let roomAdapter=null;
 const standings=league=>roomAdapter?.active?roomAdapter.standings(league,singleStandings):singleStandings(league);
-const app=document.querySelector('#app');let s={view:'title',league:null,draft:null,auction:null,match:null,round:0,note:'',rosterOpen:false,detailPlayerId:null,selectedLineupPlayerId:null,comparisonSourcePlayerId:null,selectedDraftPlayerId:null,lineupMessage:'',lineupError:false,seasonSimulation:null,benchSort:'position',rosterSort:'position',draftSort:'position',draftHistoryOpen:false,auctionHistoryOpen:false,developmentSort:'position',releaseSort:'position'};
+const app = document.querySelector('#app');
+let s = createInitialState();
+function returnToTitle() {
+  roomAdapter?.leave();
+  s = createInitialState();
+}
+
 const me=()=>s.mode==='room'?s.league.clubs.find(c=>c.id===s.league.humanClubId):s.league.clubs.find(c=>c.controllerType==='HUMAN')||s.league.clubs.find(c=>c.id===s.league.humanClubId);const player=(p,options)=>renderPlayerCard(p,options);const positionLabel=position=>POSITION_LABELS[position]||position;
 const POSITION_SORT_ORDER={GK:0,DF:1,MF:2,FW:3},RANK_SORT_ORDER={SS:0,S:1,A:2,B:3,C:4,D:5,E:6,F:7,G:8};
 function sortPlayers(players,mode='position'){return [...players].map((player,index)=>({player,index})).sort((a,b)=>{const pa=a.player,pb=b.player,pos=(POSITION_SORT_ORDER[pa.primaryPosition]??99)-(POSITION_SORT_ORDER[pb.primaryPosition]??99),rank=RANK_SORT_ORDER[displayPlayer(pa).overallRank]-RANK_SORT_ORDER[displayPlayer(pb).overallRank],age=pa.age-pb.age,contract=pa.contractYears-pb.contractYears,joined=a.index-b.index;if(mode==='overall')return rank||pos||age||contract||joined;if(mode==='age')return age||pos||rank||contract||joined;if(mode==='contract')return contract||pos||rank||age||joined;return pos||rank||age||contract||joined}).map(row=>row.player)}
@@ -26,16 +37,15 @@ function renderDraftHistory(d){const history=d?.history||[];if(!history.length)r
 function renderAuctionHistory(a){const history=a?.history||[];if(!history.length)return '<section class="draft-history"><div class="draft-history-heading"><h3>ここまでのオークション結果</h3><span>まだ結果はありません</span></div></section>';const humanId=me().id,rows=history.map((row,index)=>{const club=row.winnerClubId?s.league.clubs.find(candidate=>candidate.id===row.winnerClubId):null,shown=displayPlayer(row.player);return `<tr class="${row.winnerClubId===humanId?'you':''}"><td><b>${index+1}</b></td><td><strong>${e(row.player.name)}</strong></td><td>${e(positionLabel(row.player.primaryPosition))}</td><td>${row.player.age}歳</td><td><b class="draft-rank">${e(shown.overallRank)}</b></td><td>${club?`<i class="club-color-dot" style="--club:${e(club.color||'#64748b')}"></i>${e(club.name)}`:'<span class="hint">落札なし</span>'}</td><td>${club?`<b>${row.bid}pt</b>`:'—'}</td></tr>`}).join('');return `<section class="draft-history"><div class="draft-history-heading"><h3>ここまでのオークション結果</h3><span>${history.length}件</span></div><div class="draft-history-table-wrap"><table class="draft-history-table"><thead><tr><th>#</th><th>選手</th><th>POS</th><th>年齢</th><th>総合</th><th>落札クラブ</th><th>落札額</th></tr></thead><tbody>${rows}</tbody></table></div></section>`}
 function renderDraftAvatar(selected){return `<div class="draft-stage-avatar" aria-live="polite">${selected?`<img src="${auctionAvatar(selected)}" alt="${e(selected.name)}のアバター">`:'<p class="hint">カードを選択</p>'}</div>`}
 function draft(){let d=s.draft,c=me();if(d.completed)return `${head()}<main><section class="hero"><p>ドラフト完了</p><h2>全4巡の指名が終了しました</h2><p class="hint">指名結果を確認してからオークションへ進めます。</p><button data-a="toggleDraftHistory" class="subtle">指名結果を見る</button><button data-a="toAuction">オークションへ</button></section></main>`;let canPick=d.pendingClubIds.includes(c.id),simultaneous=d.mode==='SIMULTANEOUS',pool=sortPlayers(d.pool,s.draftSort),selected=pool.find(p=>p.id===s.selectedDraftPlayerId)||pool[0];if(selected&&s.selectedDraftPlayerId!==selected.id)s.selectedDraftPlayerId=selected.id;return `${head()}<main><p class="eyebrow">シーズン${s.league.season} ドラフト・第${d.round}/4巡</p><div class="screen-heading"><h2>${simultaneous?'完全同時指名':'前年順位順指名'}</h2></div><p class="hint">${simultaneous?'6クラブが同時に指名し、重複時だけ抽選します。外れたクラブは再指名します。':'前年順位に基づく指名順で、1クラブずつ指名します。'}${e(s.note)}</p><p>資金 <b>${c.funds}pt</b>・登録 ${c.roster.length}/12人・指名料 <b>5pt</b></p>${renderDraftAvatar(selected)}${sortControl('draft',s.draftSort)}<section class="candidate-grid draft-card-grid">${pool.map(p=>{const active=selected?.id===p.id;return `<article class="candidate draft-choice-card ${active?'is-selected':''}" data-draft-select="${e(p.id)}" tabindex="0" aria-pressed="${active?'true':'false'}">${active?'<span class="draft-selected-badge">選択中</span>':''}${player(p,{specialHover:true})}<p class="scout-comment"><b>スカウト：</b>${e(p.scoutComment)}</p></article>`}).join('')}</section><section class="draft-action-dock"><button data-p="${selected?e(selected.id):''}" data-draft-confirm ${canPick&&selected?'':'disabled'}>決定</button><button data-a="skipDraft" class="subtle" ${canPick?'':'disabled'}>辞退</button><button data-a="toggleDraftHistory" class="subtle">ドラフト結果</button><button data-stage10="roster" class="subtle">所属一覧</button></section></main>`}
-function auction(){if(!s.auction.completed&&!s.auction.live&&s.mode!=='room')openLot(s.auction,s.league.clubs,s.league.seed);return renderLiveAuction(s,me(),player,e,head());}
+function auction(){return renderLiveAuction(s,me(),player,e,head());}
 function table(){let humanId=me().id,rows=standings(s.league).map(r=>`<tr class="${r.club.id===humanId?'you':''}"><td>${r.rank}</td><td><i class="club-color-dot" style="--club:${e(r.club.color)}"></i>${e(r.club.name)}</td><td>${r.played}</td><td>${r.wins}</td><td>${r.draws}</td><td>${r.losses}</td><td>${r.goalsFor}</td><td>${r.goalsAgainst}</td><td>${r.goalDifference}</td><td>${r.points}</td></tr>`).join('');return `${head()}<main><h2>順位表</h2><div class="table-wrap"><table><thead><tr><th>順位</th><th>クラブ</th><th>試合</th><th>勝</th><th>分</th><th>敗</th><th>得点</th><th>失点</th><th>得失</th><th>勝点</th></tr></thead><tbody>${rows}</tbody></table></div><button data-nav="home" class="subtle">戻る</button></main>`}
-function home(){let c=me(),lineup=validateLineup(c),remaining=Math.max(0,11-s.league.currentRound);if(s.league.completed)return `${head()}<main><section class="hero"><p>全10節・リーグ全30試合終了</p><h2>シーズン${s.league.season}終了</h2><button data-nav="seasonResults">シーズン結果を見る</button><button data-nav="stats" class="subtle">個人成績を見る</button></section></main>`;return `${head()}<main><section class="hero" style="--club:${c.color}"><p>残り${remaining}節</p><h2>編成と戦術を決めてシーズンを開始</h2>${lineup.ok?'<button data-a="season">シーズンをシミュレート</button>':`<p class="lineup-error">${e(lineup.error)}</p><button data-nav="squad">編成を確認する</button>`}</section><nav><button data-nav="squad">編成</button><button data-nav="table">順位表</button><button data-nav="stats">個人成績</button></nav></main>`}
-function squad(){let c=me();return `${head()}<main style="--club:${e(c.color)}"><div class="squad-heading-row"><div class="squad-heading-copy"><h2>編成</h2></div><div class="squad-actions"><button data-nav="home" class="subtle">戻る</button></div></div>${renderLineupEditor(c,s.selectedLineupPlayerId,s.lineupMessage,s.lineupError,s.benchSort)}</main>`}
+function home(){let c=me(),lineup=validateLineup(c),remaining=Math.max(0,11-s.league.currentRound);if(s.league.completed)return `${head()}<main><section class="hero"><p>全10節・リーグ全30試合終了</p><h2>シーズン${s.league.season}終了</h2><button data-nav="seasonResults">シーズン結果を見る</button><button data-nav="stats" class="subtle">個人成績を見る</button></section>${renderCompletedSeasonActions()}${renderSeasonAwards()}</main>`;return `${head()}<main><section class="hero" style="--club:${c.color}"><p>残り${remaining}節</p><h2>編成と戦術を決めてシーズンを開始</h2>${lineup.ok?'<button data-a="season">シーズンをシミュレート</button>':`<p class="lineup-error">${e(lineup.error)}</p><button data-nav="squad">編成を確認する</button>`}</section><nav><button data-nav="squad">編成</button><button data-nav="table">順位表</button><button data-nav="stats">個人成績</button></nav></main>`}
+function squad(){let c=me();return `${head()}<main style="--club:${e(c.color)}"><div class="squad-heading-row"><div class="squad-heading-copy"><h2>編成</h2></div><div class="squad-actions"><button data-nav="home" class="subtle">戻る</button></div></div>${renderLineupEditor(c,s.selectedLineupPlayerId,s.lineupMessage,s.lineupError,s.benchSort,renderTactics())}</main>`}
 function stats(){const c=me();return `${head()}<main><p class="eyebrow">シーズン${s.league.season}</p><h2>所属選手の個人成績</h2>${renderSeasonPlayerStats(c)}<button data-nav="${s.league.completed?'seasonResults':'home'}" class="subtle">戻る</button></main>`}
 function seasonResults(){const c=me(),row=standings(s.league).find(result=>result.club.id===c.id),matches=s.league.seasonResults||[];return `${head()}<main><p class="eyebrow">シーズン${s.league.season} 結果</p><h2>最終順位 ${row.rank}位</h2><section class="season-summary-grid"><div><span>勝点</span><b>${row.points}</b></div><div><span>勝</span><b>${row.wins}</b></div><div><span>分</span><b>${row.draws}</b></div><div><span>敗</span><b>${row.losses}</b></div><div><span>得点</span><b>${row.goalsFor}</b></div><div><span>失点</span><b>${row.goalsAgainst}</b></div><div><span>得失点差</span><b>${row.goalDifference}</b></div></section><h2>全10試合</h2>${renderSeasonMatchList(matches,c.id)}<div class="season-result-actions"><button data-nav="stats">シーズン個人成績</button>${s.mode==='room'&&roomAdapter.room.phase==='season-result'?'<button data-stage4="offseason">結果確認完了</button>':''}<button data-nav="table" class="subtle">最終順位表</button><button data-nav="home" class="subtle">ホームへ戻る</button></div></main>`}
 function matchDetail(){return `${head()}${renderMatchDetail(s.match)}`}
-function render(){app.innerHTML=s.view==='title'?title():s.view==='setup'?setup():s.view==='draft'?draft():s.view==='auction'?auction():s.view==='table'?table():s.view==='stats'?stats():s.view==='squad'?squad():s.view==='seasonResults'?seasonResults():s.view==='matchDetail'?matchDetail():home()}
 function draftEligibleIds(){let humanId=me().id;return s.league.clubs.filter(club=>club.funds>=5&&club.roster.length<12&&(!s.draft?.humanDeclined||club.id!==humanId)).map(club=>club.id)}
-function startAuction(){const season=s.league.season;s.draftHistoryOpen=false;s.auctionHistoryOpen=false;s.league.clubs.forEach(club=>delete club.reserveAuctionSlot);s.auction={pool:createAuctionPool(s.league.seed,season,s.league.releasedPlayers),i:0,rng:createRandom(`${s.league.seed}:season:${season}:auction`),history:[],completed:false};s.view='auction';s.note=`シーズン${season}ドラフト終了。競売を開始します。`}
+function startAuction(){const season=s.league.season;s.draftHistoryOpen=false;s.auctionHistoryOpen=false;s.league.clubs.forEach(club=>delete club.reserveAuctionSlot);s.auction={pool:createAuctionPool(s.league.seed,season,s.league.releasedPlayers),i:0,rng:createRandom(`${s.league.seed}:season:${season}:auction`),history:[],completed:false};openLot(s.auction,s.league.clubs,s.league.seed);s.view='auction';s.note=`シーズン${season}ドラフト終了。競売を開始します。`}
 function draftMode(round){return s.league.season===1||round===1?'SIMULTANEOUS':'ORDERED'}
 function orderedDraftIds(round){const ranks=s.league.previousStandings||standings(s.league).map(row=>({clubId:row.club.id,rank:row.rank})),descending=round===2||round===4;return [...ranks].sort((a,b)=>descending?b.rank-a.rank:a.rank-b.rank).map(row=>row.clubId).filter(id=>draftEligibleIds().includes(id))}
 function prepareDraftRound(d){d.mode=draftMode(d.round);if(d.mode==='SIMULTANEOUS'){d.pendingClubIds=draftEligibleIds();return}d.order=orderedDraftIds(d.round);d.orderIndex=0;d.pendingClubIds=d.order.length?[d.order[0]]:[]}
@@ -48,13 +58,16 @@ function bid(amount){if(amount===0)passLot(s.auction,me().id);else raiseBid(s.au
 function refreshAuctionState(){
   const room=app.querySelector('main.auction-room');
   if(!room)return render();
+  dialogs.beforeRender();
   const fresh=new DOMParser().parseFromString(auction(),'text/html');
   for(const selector of ['.auction-price','.auction-leader','.auction-live p','.auction-controls','.auction-desks']){
     const old=room.querySelector(selector),next=fresh.querySelector(selector);
     if(old&&next&&old.outerHTML!==next.outerHTML)old.replaceWith(next);
   }
+  dialogs.sync();
+  updateRoomStatus();
 }
-setInterval(()=>{
+function updateAuction() {
   if(s.view!=='auction'||!s.auction||s.auction.completed)return;
   const a=s.auction,now=Date.now();
   if(s.mode!=='room'){
@@ -73,11 +86,11 @@ setInterval(()=>{
   }
   const clock=document.querySelector('[data-auction-time]');
   if(clock){const remaining=a.live?.closed?0:Math.max(0,Math.ceil(((a.live?.endAt||now)-now-(s.mode==='room'?(roomAdapter.clockOffset||0):0))/1000));clock.textContent=`0:${String(remaining).padStart(2,'0')}`;clock.classList.toggle('urgent',remaining<=5);}
-},200);
-onGameClick('app',ev=>{let draftSelect=ev.target.closest('[data-draft-select]')?.dataset.draftSelect,a=ev.target.closest('[data-a]')?.dataset.a,n=ev.target.closest('[data-nav]')?.dataset.nav,p=ev.target.closest('[data-p]')?.dataset.p,m=ev.target.closest('[data-season-match]')?.dataset.seasonMatch;if(draftSelect){s.selectedDraftPlayerId=draftSelect;return render()}if(m!==undefined){s.match=s.league.seasonResults[Number(m)];s.view='matchDetail';return render()}if(n){s.view=n;if(n!=='squad'){s.selectedLineupPlayerId=null;s.lineupMessage='';s.lineupError=false}return render()}if(p){let x=s.draft.pool.find(q=>q.id===p);if(x&&me().funds>=5&&me().roster.length<12)pickDraft(x);return render()}if(a==='toggleDraftHistory'){s.draftHistoryOpen=true;return render()}if(a==='toggleAuctionHistory'){s.auctionHistoryOpen=true;return render()}if(a==='toAuction'){startAuction();return render()}if(a==='setup'||a==='title'){s.view=a;return render()}if(a==='start'){let name=document.querySelector('#name').value.trim();if(!name)return alert('クラブ名を入力してください。');let seed=document.querySelector('#seed').value.trim()||String(Date.now());s.league=createLeague({name,color:document.querySelector('#color').value,seed});s.offseasonComplete=false;beginDraft();return render()}if(a==='skipDraft'){s.selectedDraftPlayerId=null;s.draft.humanDeclined=true;if(s.draft.mode==='ORDERED')nextOrderedPick(s.draft);else s.draft.pendingClubIds=s.draft.pendingClubIds.filter(id=>id!==me().id);runCpuDraft();return render()}if(a==='bid'||a==='pass'){let n=a==='pass'?0:Number(document.querySelector('#bid').value);if(n<0||n>me().funds)return alert('入札額を確認してください。');bid(n);return render()}if(a==='squad'){s.view='squad';return render()}if(a==='season'){let lineup=validateLineup(me());if(!lineup.ok)return alert(lineup.error);s.seasonSimulation=simulateRemainingSeason(s.league);if(s.league.season===10)finalizeSeason(s.league);s.view='seasonResults';return render()}});
+}
+const auctionClock=createAuctionClock(updateAuction);
+onGameClick('app',ev=>{let draftSelect=ev.target.closest('[data-draft-select]')?.dataset.draftSelect,a=ev.target.closest('[data-a]')?.dataset.a,n=ev.target.closest('[data-nav]')?.dataset.nav,p=ev.target.closest('[data-p]')?.dataset.p,m=ev.target.closest('[data-season-match]')?.dataset.seasonMatch;if(draftSelect){s.selectedDraftPlayerId=draftSelect;return render()}if(m!==undefined){s.match=s.league.seasonResults[Number(m)];s.view='matchDetail';return render()}if(n){s.view=n;if(n!=='squad'){s.selectedLineupPlayerId=null;s.lineupMessage='';s.lineupError=false}return render()}if(p){let x=s.draft.pool.find(q=>q.id===p);if(x&&me().funds>=5&&me().roster.length<12)pickDraft(x);return render()}if(a==='toggleDraftHistory'){s.draftHistoryOpen=true;return render()}if(a==='toggleAuctionHistory'){s.auctionHistoryOpen=true;return render()}if(a==='toAuction'){startAuction();return render()}if(a==='setup'||a==='title'){if(a==='title')returnToTitle();else s.view=a;return render()}if(a==='start'){let name=document.querySelector('#name').value.trim();if(!name)return alert('クラブ名を入力してください。');let seed=document.querySelector('#seed').value.trim()||String(Date.now());s.league=createLeague({name,color:document.querySelector('#color').value,seed});s.offseasonComplete=false;beginDraft();return render()}if(a==='skipDraft'){s.selectedDraftPlayerId=null;s.draft.humanDeclined=true;if(s.draft.mode==='ORDERED')nextOrderedPick(s.draft);else s.draft.pendingClubIds=s.draft.pendingClubIds.filter(id=>id!==me().id);runCpuDraft();return render()}if(a==='bid'||a==='pass'){let n=a==='pass'?0:Number(document.querySelector('#bid').value);if(n<0||n>me().funds)return alert('入札額を確認してください。');bid(n);return render()}if(a==='squad'){s.view='squad';return render()}if(a==='season'){let lineup=validateLineup(me());if(!lineup.ok)return alert(lineup.error);s.seasonSimulation=simulateRemainingSeason(s.league);if(s.league.season===10)finalizeSeason(s.league);s.view='seasonResults';return render()}});
 
 // Stage 4 off-season screens are layered onto the existing season flow.
-import { createContractEvents, createSpecialTrainingOffers, renewalFee, trainingSkills } from './development.js?v=0.17.31';
 const rankScore = { SS: 9, S: 8, A: 7, B: 6, C: 5, D: 4, E: 3, F: 2, G: 1 };
 const marketRelease = (league, club, player) => { club.roster=club.roster.filter(candidate=>candidate.id!==player.id); club.lineup=club.lineup.filter(id=>id!==player.id); if(!player.isInitial){league.releasedPlayers ||= []; if(!league.releasedPlayers.some(candidate=>candidate.id===player.id)) league.releasedPlayers.push(player);} };
 const wouldBreakTeam = (club, player) => club.roster.length <= 5 || (player.primaryPosition === 'GK' && club.roster.filter(candidate=>candidate.primaryPosition==='GK').length <= 1);
@@ -94,36 +107,35 @@ function runCpuOffseasonEvents(eventsByClub, offersByClub){
     if(accepted.size) s.cpuSpecialTraining.set(club.id,accepted);
   }
 }
-const stage4BaseRender = render;
-function stage4Render() {
-  if (s.view === 'offseasonEvents') {
+function offseasonEvents() {
     const c=me();
     const due=c.roster.filter(p=>p.contractYears<=0), pending=due.length+s.retentionEvents.length+s.specialOffers.length;
-    app.innerHTML = `${head()}<main><p class="eyebrow">オフシーズンイベント</p><div class="screen-heading"><h2>契約・要求・特別特訓</h2><button data-stage10="roster" class="subtle">所属選手を見る</button></div><p class="hint">このフェーズ終了後、育成フェーズへ進みます。特別特訓の結果は成長結果で表示されます。</p><h3>年数契約</h3>${due.length?due.map(p=>`<article class="candidate">${player(p)}<p>更新費 <b>${renewalFee(p)}pt</b></p><button data-renew="${p.id}" ${c.funds>=renewalFee(p)?'':'disabled'}>契約更新</button><button data-release="${p.id}" class="subtle">更新しない</button></article>`).join(''):'<p class="hint">契約満了者はいません。</p>'}<h3>不満・先発ボーナス要求</h3>${s.retentionEvents.length?s.retentionEvents.map(event=>{const p=c.roster.find(player=>player.id===event.playerId);return p?`<article class="candidate">${player(p)}<p>${event.starter?'先発ボーナス要求':'不満による要求'}：<b>${event.cost}pt</b></p><button data-retention-pay="${p.id}" ${c.funds>=event.cost?'':'disabled'}>支払う</button><button data-retention-release="${p.id}" class="subtle">支払わない</button></article>`:''}).join(''):'<p class="hint">今回の追加要求はありません。</p>'}<h3>若手の特別特訓</h3>${s.specialOffers.length?s.specialOffers.map(offer=>{const p=c.roster.find(player=>player.id===offer.playerId);return p?`<article class="candidate">${player(p)}<p>特別特訓費用：<b>${offer.cost}pt</b></p><button data-special-pay="${p.id}" ${c.funds>=offer.cost?'':'disabled'}>実行する</button><button data-special-skip="${p.id}" class="subtle">見送る</button></article>`:''}).join(''):'<p class="hint">今回の特別特訓候補はありません。</p>'}<button data-stage4="eventsDone" ${pending?'disabled':''}>育成フェーズへ進む</button></main>`; return;
-  }
-  if (s.view === 'development') {
+    return `${head()}<main><p class="eyebrow">オフシーズンイベント</p><div class="screen-heading"><h2>契約・要求・特別特訓</h2><button data-stage10="roster" class="subtle">所属選手を見る</button></div><p class="hint">このフェーズ終了後、育成フェーズへ進みます。特別特訓の結果は成長結果で表示されます。</p><h3>年数契約</h3>${due.length?due.map(p=>`<article class="candidate">${player(p)}<p>更新費 <b>${renewalFee(p)}pt</b></p><button data-renew="${p.id}" ${c.funds>=renewalFee(p)?'':'disabled'}>契約更新</button><button data-release="${p.id}" class="subtle">更新しない</button></article>`).join(''):'<p class="hint">契約満了者はいません。</p>'}<h3>不満・先発ボーナス要求</h3>${s.retentionEvents.length?s.retentionEvents.map(event=>{const p=c.roster.find(player=>player.id===event.playerId);return p?`<article class="candidate">${player(p)}<p>${event.starter?'先発ボーナス要求':'不満による要求'}：<b>${event.cost}pt</b></p><button data-retention-pay="${p.id}" ${c.funds>=event.cost?'':'disabled'}>支払う</button><button data-retention-release="${p.id}" class="subtle">支払わない</button></article>`:''}).join(''):'<p class="hint">今回の追加要求はありません。</p>'}<h3>若手の特別特訓</h3>${s.specialOffers.length?s.specialOffers.map(offer=>{const p=c.roster.find(player=>player.id===offer.playerId);return p?`<article class="candidate">${player(p)}<p>特別特訓費用：<b>${offer.cost}pt</b></p><button data-special-pay="${p.id}" ${c.funds>=offer.cost?'':'disabled'}>実行する</button><button data-special-skip="${p.id}" class="subtle">見送る</button></article>`:''}).join(''):'<p class="hint">今回の特別特訓候補はありません。</p>'}<button data-stage4="eventsDone" ${pending?'disabled':''}>育成フェーズへ進む</button></main>`;
+}
+
+function development() {
     const c = me();
     const finance=s.financeSummary?.find(row=>row.clubId===c.id);
-    app.innerHTML = `${head()}<main><p class="eyebrow">育成</p><h2>育成する2選手を選択</h2>${finance?`<p class="hint">年間基本資金 +${finance.base}pt${finance.prize?`・順位賞金 +${finance.prize}pt`:''}／持越し上限150pt → 現在${finance.after}pt</p>`:''}<p class="hint">${s.training?.size || 0}/2 選択中</p>${sortControl('development',s.developmentSort)}<section class="candidate-grid">${sortPlayers(c.roster,s.developmentSort).map(p => `<article class="candidate">${player(p)}<button data-train="${p.id}" class="${s.training?.has(p.id) ? '' : 'subtle'}">${s.training?.has(p.id) ? '選択済み' : '育成対象にする'}</button></article>`).join('')}</section><button data-stage4="confirm" ${s.training?.size === 2 ? '' : 'disabled'}>重点能力を選ぶ</button></main>`; return;
-  }
-  if (s.view === 'focus') {
+    return `${head()}<main><p class="eyebrow">育成</p><h2>育成する2選手を選択</h2>${finance?`<p class="hint">年間基本資金 +${finance.base}pt${finance.prize?`・順位賞金 +${finance.prize}pt`:''}／持越し上限150pt → 現在${finance.after}pt</p>`:''}<p class="hint">${s.training?.size || 0}/2 選択中</p>${sortControl('development',s.developmentSort)}<section class="candidate-grid">${sortPlayers(c.roster,s.developmentSort).map(p => `<article class="candidate">${player(p)}<button data-train="${p.id}" class="${s.training?.has(p.id) ? '' : 'subtle'}">${s.training?.has(p.id) ? '選択済み' : '育成対象にする'}</button></article>`).join('')}</section><button data-stage4="confirm" ${s.training?.size === 2 ? '' : 'disabled'}>重点能力を選ぶ</button></main>`;
+}
+
+function focus() {
     const picks = [...s.training.keys()]; const c = me();
-    app.innerHTML = `${head()}<main><p class="eyebrow">育成</p><h2>重点能力を選択</h2>${picks.map(id => { const p=c.roster.find(x=>x.id===id); return `<section class="candidate">${player(p)}<label>重点育成<select data-focus="${id}">${trainingSkills(p).map(k=>`<option value="${k}" ${s.training.get(id)===k?'selected':''}>${STAT_LABELS[k]}</option>`).join('')}</select></label></section>`; }).join('')}<button data-stage4="grow">育成を実行</button></main>`; return;
-  }
-  if (s.view === 'growth') {
+    return `${head()}<main><p class="eyebrow">育成</p><h2>重点能力を選択</h2>${picks.map(id => { const p=c.roster.find(x=>x.id===id); return `<section class="candidate">${player(p)}<label>重点育成<select data-focus="${id}">${trainingSkills(p).map(k=>`<option value="${k}" ${s.training.get(id)===k?'selected':''}>${STAT_LABELS[k]}</option>`).join('')}</select></label></section>`; }).join('')}<button data-stage4="grow">育成を実行</button></main>`;
+}
+
+function growth() {
     const priority = x => x.specialTrainingResult ? 0 : x.focus ? 1 : x.awakeningKeys?.length ? 2 : 3;
     const resultsById = new Map(s.growth.map(x => [x.player.id, x]));
     const growthResults = sortPlayers(s.growth.map(x => x.player), s.developmentSort).map(p => resultsById.get(p.id)).sort((a,b) => priority(a)-priority(b));
-    app.innerHTML = `${head()}<main><p class="eyebrow">成長結果</p><h2>育成・特別特訓の結果</h2><p class="hint">${s.mode==='room'?'全クラブの育成・成長・衰退・加齢を完了しました。':'CPU5クラブも育成・成長・衰退・加齢を完了しました。'}</p><section class="candidate-grid">${growthResults.map(x => `<article class="candidate growth-result ${x.specialTrainingResult ? `growth-special-${x.specialTrainingResult.steps}` : x.focus ? 'growth-focus' : x.awakeningKeys?.length ? 'growth-awakened' : ''}"><div class="growth-labels">${x.specialTrainingResult ? '<span>若手育成イベント</span>' : ''}${x.focus ? `<span>重点育成：${e(STAT_LABELS[x.focus] || x.focus)}</span>` : ''}${x.awakeningKeys?.length ? '<span>覚醒</span>' : ''}</div>${renderPlayerCard(x.player, { growthChanges: x.changes })}<p>年齢 ${x.player.age - 1} → ${x.player.age}</p>${x.awakeningKeys?.length ? `<p><b>覚醒！</b></p>` : ''}${x.specialTrainingResult?`<p><b>特別特訓：</b>${x.specialTrainingResult.label}</p>`:''}<p>${x.retired ? '35歳で引退' : x.changes.map(c=>`${STAT_LABELS[c.key]} ${c.from === c.to && c.increased ? `${c.from} ↑` : `${c.from} → ${c.to}`}`).join('<br>') || 'ランク変化なし'}</p>${x.learnedAbility ? `<p><b>特殊能力を習得！</b><br>★ ${x.learnedAbility}</p>` : ''}</article>`).join('')}</section><button data-stage4="releasePhase">放出フェイズへ進む</button></main>`; return;
-  }
-  if (s.view === 'release') {
-    const c=me();
-    app.innerHTML = `${head()}<main><p class="eyebrow">選手整理</p><h2>放出フェイズ</h2><p class="hint">市場開始前にロスターを整理できます。登録選手は最低5人、GKは最低1人必要です。各選手カードの放出ボタンから放出できます。</p>${sortControl('release',s.releaseSort)}<section class="candidate-grid">${sortPlayers(c.roster,s.releaseSort).map(p => renderPlayerCard(p, { allowRelease: true })).join('')}</section><button data-stage4="releaseDone">選手整理を終了してドラフトへ進む</button></main>`; return;
-  }
-  stage4BaseRender();
-  if (s.view === 'home' && s.league?.completed && !s.offseasonComplete) app.querySelector('main')?.insertAdjacentHTML('beforeend', s.league.season === 10 ? '<button data-stage6="history">10シーズンの歴史</button><button data-a="title" class="subtle">ホーム画面に戻る</button>' : '<button data-stage4="offseason">オフシーズンへ進む</button>');
+    return `${head()}<main><p class="eyebrow">成長結果</p><h2>育成・特別特訓の結果</h2><p class="hint">${s.mode==='room'?'全クラブの育成・成長・衰退・加齢を完了しました。':'CPU5クラブも育成・成長・衰退・加齢を完了しました。'}</p><section class="candidate-grid">${growthResults.map(x => `<article class="candidate growth-result ${x.specialTrainingResult ? `growth-special-${x.specialTrainingResult.steps}` : x.focus ? 'growth-focus' : x.awakeningKeys?.length ? 'growth-awakened' : ''}"><div class="growth-labels">${x.specialTrainingResult ? '<span>若手育成イベント</span>' : ''}${x.focus ? `<span>重点育成：${e(STAT_LABELS[x.focus] || x.focus)}</span>` : ''}${x.awakeningKeys?.length ? '<span>覚醒</span>' : ''}</div>${renderPlayerCard(x.player, { growthChanges: x.changes })}<p>年齢 ${x.player.age - 1} → ${x.player.age}</p>${x.awakeningKeys?.length ? `<p><b>覚醒！</b></p>` : ''}${x.specialTrainingResult?`<p><b>特別特訓：</b>${x.specialTrainingResult.label}</p>`:''}<p>${x.retired ? '35歳で引退' : x.changes.map(c=>`${STAT_LABELS[c.key]} ${c.from === c.to && c.increased ? `${c.from} ↑` : `${c.from} → ${c.to}`}`).join('<br>') || 'ランク変化なし'}</p>${x.learnedAbility ? `<p><b>特殊能力を習得！</b><br>★ ${x.learnedAbility}</p>` : ''}</article>`).join('')}</section><button data-stage4="releasePhase">放出フェイズへ進む</button></main>`;
 }
-render = stage4Render;
+
+function release() {
+    const c=me();
+    return `${head()}<main><p class="eyebrow">選手整理</p><h2>放出フェイズ</h2><p class="hint">市場開始前にロスターを整理できます。登録選手は最低5人、GKは最低1人必要です。各選手カードの放出ボタンから放出できます。</p>${sortControl('release',s.releaseSort)}<section class="candidate-grid">${sortPlayers(c.roster,s.releaseSort).map(p => renderPlayerCard(p, { allowRelease: true })).join('')}</section><button data-stage4="releaseDone">選手整理を終了してドラフトへ進む</button></main>`;
+}
+
 onGameClick('app', ev => {
   const action = ev.target.closest('[data-stage4]')?.dataset.stage4;
   const trainingId = ev.target.closest('[data-train]')?.dataset.train;
@@ -149,23 +161,17 @@ onGameClick('app', ev => {
 });
 
 // Stage 5 adds visible tactic selection without exposing internal values.
-const stage5BaseRender = render;
-function stage5Render() {
-  stage5BaseRender();
-  if (s.view === 'squad') {
+function renderTactics() {
     const c = me();
     const labels={BALANCED:'バランス',POSSESSION:'ポゼッション',DRIBBLE:'ドリブル',COUNTER:'カウンター'};
     const descriptions={BALANCED:'通常再開はPASS 50%・DRIBBLE 50%。攻撃全般 +2。守備成功後はCOUNTER 10%。',POSSESSION:'通常再開はPASS 80%・DRIBBLE 20%。PASS攻撃 +4。守備成功後はCOUNTER 10%。',DRIBBLE:'通常再開はPASS 20%・DRIBBLE 80%。DRIBBLE攻撃 +4。守備成功後はCOUNTER 10%。',COUNTER:'通常再開はPASS 50%・DRIBBLE 50%。COUNTER攻撃・守備・速攻発動判定 +4。守備成功後はCOUNTER 30%。'};
     // All figures below are the existing tactic probabilities and modifiers; this is presentation only.
     const tendency={BALANCED:{pass:50,dribble:50,counter:10,bonus:'攻撃全般 +2'},POSSESSION:{pass:80,dribble:20,counter:10,bonus:'PASS攻撃 +4'},DRIBBLE:{pass:20,dribble:80,counter:10,bonus:'DRIBBLE攻撃 +4'},COUNTER:{pass:50,dribble:50,counter:30,bonus:'COUNTER攻撃・守備・速攻発動判定 +4'}}[c.tactic] || {pass:50,dribble:50,counter:10,bonus:'攻撃全般 +2'};
     const gauge=(label,value)=>`<div class="tactic-gauge"><span>${label}</span><i role="meter" aria-label="${label}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${value}" style="--meter:${value}%"><b></b></i><strong>${value}%</strong></div>`;
-    app.querySelector('.squad-tablet-tactics')?.insertAdjacentHTML('beforeend', `<section class="match-card tactic-panel"><h3>戦術 <small>TACTICS</small></h3><div class="tactic-row">${Object.keys(labels).map(t => `<button data-tactic="${t}" class="${c.tactic===t ? 'active' : 'subtle'}" title="${descriptions[t]}">${labels[t]}</button>`).join('')}</div><div class="tactic-tendencies">${gauge('パス傾向',tendency.pass)}${gauge('ドリブル傾向',tendency.dribble)}${gauge('守備後カウンター',tendency.counter)}</div><p class="tactic-bonus"><span>戦術効果</span><b>${tendency.bonus}</b></p></section>`);
-  }
+    return `<section class="match-card tactic-panel"><h3>戦術 <small>TACTICS</small></h3><div class="tactic-row">${Object.keys(labels).map(t => `<button data-tactic="${t}" class="${c.tactic===t ? 'active' : 'subtle'}" title="${descriptions[t]}">${labels[t]}</button>`).join('')}</div><div class="tactic-tendencies">${gauge('パス傾向',tendency.pass)}${gauge('ドリブル傾向',tendency.dribble)}${gauge('守備後カウンター',tendency.counter)}</div><p class="tactic-bonus"><span>戦術効果</span><b>${tendency.bonus}</b></p></section>`;
 }
-render = stage5Render;
 onGameClick('app', ev => { const tactic = ev.target.closest('[data-tactic]')?.dataset.tactic; if (tactic) { applyClubAction(me(),{type:ACTION_TYPES.SET_TACTIC,clubId:me().id,tactic}); render(); } });
 
-const stage6BaseRender = render;
 function rankLabelFromOverall(value){return value>=91?'SS':value>=86?'S':value>=81?'A':value>=76?'B':value>=71?'C':value>=66?'D':value>=61?'E':value>=56?'F':'G'}
 function clubCareerValue(record,clubId,key){return record?.clubCareer?.[clubId]?.[key]||0}
 function renderRankHistoryChart(league){
@@ -185,11 +191,22 @@ function renderClubAchievements(league,club){
   const peak=a.highestPeak,peakOverall=peak?.peakOverallByClub?.[club.id],draft=a.draftMasterpiece;
   return `<section class="club-achievements" style="--club:${e(club.color||'#64748b')}"><div class="history-section-heading"><div><p class="eyebrow">YOUR CLUB</p><h2>${e(club.name)} 10年間の実績</h2></div></div><section class="achievement-grid">${stat('リーグ優勝',a.championships,'回')}${stat('最高順位',a.bestRank,'位')}${stat('通算勝利',a.totalWins,'勝')}${stat('通算得点',a.totalGoals,'点')}${stat('最大連勝',a.maxWinStreak,'連勝')}${stat('MVP輩出',a.mvpCount,'回')}${stat('Best 5選出人数',a.best5Players,'人')}${stat('得点王',a.topScorerCount,'回')}</section><section class="history-record-grid">${playerRecord('最多出場選手',a.mostAppearances,'appearances','試合')}${playerRecord('クラブ最多得点',a.mostGoals,'goals','得点')}${playerRecord('クラブ最多アシスト',a.mostAssists,'assists','アシスト')}<article class="history-record"><span>最長在籍選手</span><strong>${a.longestTenure?e(a.longestTenure.name):'—'}</strong><small>${a.longestTenure?`${a.longestTenure.clubSeasons?.[club.id]||0}シーズン`:'記録なし'}</small></article><article class="history-record"><span>最高到達ランク</span><strong>${peak&&peakOverall!=null?`${rankLabelFromOverall(peakOverall)}・${e(peak.name)}`:'—'}</strong><small>${peakOverall!=null?'クラブ在籍中の最高ランク':'記録なし'}</small></article><article class="history-record draft-masterpiece"><span>ドラフト最高傑作</span><strong>${draft?e(draft.name):'—'}</strong><small>${draft?`${draft.initialRank} → ${draft.peakRank}・S${draft.season}指名`:'記録なし'}</small></article></section></section>`;
 }
-function stage6Render(){stage6BaseRender();if(s.view==='home'&&s.league?.completed){const a=awards(s.league);app.querySelector('main')?.insertAdjacentHTML('beforeend',`<section class="season-awards"><p class="eyebrow">シーズン${s.league.season} 表彰</p><h2>最優秀選手 / ベスト5</h2><div class="candidate-grid">${a.mvp?'<article class="award-card mvp">'+player(a.mvp.p)+'<p class="award-club"><i class="club-color-dot" style="--club:'+e(a.mvp.c.color)+'"></i>'+e(a.mvp.c.name)+'</p><span class="mvp-badge">MVP</span></article>':'<p>該当者なし</p>'}${a.best5.map(x=>'<article class="award-card">'+player(x.p)+'<p class="award-club"><i class="club-color-dot" style="--club:'+e(x.c.color)+'"></i>'+e(x.c.name)+'</p></article>').join('')}</div>${s.league.season===10?'<button data-stage6="history" class="subtle">10シーズンの歴史</button>':'<p class="hint">オフシーズン処理後に次年度市場へ進みます。</p>'}</section>`);}if(s.view==='history'){const club=me();app.innerHTML=`${head()}<main class="history-page"><p class="eyebrow">10 SEASONS COMPLETE</p><h1>クラブ10年間の歩み</h1>${renderClubAchievements(s.league,club)}${renderRankHistoryChart(s.league)}<details class="season-history-details"><summary>シーズン別の記録を見る</summary>${s.league.history.map(h=>`<section class="candidate"><b><i class="club-color-dot" style="--club:${e(h.championColor||'#64748b')}"></i>シーズン${h.season}・優勝 ${e(h.champion)}</b><p>最優秀選手 ${e(h.mvp||'—')}</p><p>得点王 ${(h.topScorers||[]).map(row=>`${e(row.name)} ${row.goals}得点`).join(' ／ ')||'—'}</p><p>最終順位 ${h.table.map(row=>`${row.rank}位 ${e(row.club)}`).join(' ／ ')}</p><p>Best5 ${h.best5.map(row=>typeof row==='string'?e(row):`${positionLabel(row.position)} ${e(row.name)}`).join(' ／ ')||'—'}</p></section>`).join('')}</details><div class="history-actions"><button data-nav="home" class="subtle">シーズン結果に戻る</button><button data-a="title" class="subtle">ホーム画面に戻る</button></div></main>`;}}
-render=stage6Render;
+function renderSeasonAwards() {
+  const a = awards(s.league);
+  return `<section class="season-awards"><p class="eyebrow">シーズン${s.league.season} 表彰</p><h2>最優秀選手 / ベスト5</h2><div class="candidate-grid">${a.mvp?'<article class="award-card mvp">'+player(a.mvp.p)+'<p class="award-club"><i class="club-color-dot" style="--club:'+e(a.mvp.c.color)+'"></i>'+e(a.mvp.c.name)+'</p><span class="mvp-badge">MVP</span></article>':'<p>該当者なし</p>'}${a.best5.map(x=>'<article class="award-card">'+player(x.p)+'<p class="award-club"><i class="club-color-dot" style="--club:'+e(x.c.color)+'"></i>'+e(x.c.name)+'</p></article>').join('')}</div>${s.league.season===10?'<button data-stage6="history" class="subtle">10シーズンの歴史</button>':'<p class="hint">オフシーズン処理後に次年度市場へ進みます。</p>'}</section>`;
+}
+function history() {
+  const club = me();
+  return `${head()}<main class="history-page"><p class="eyebrow">10 SEASONS COMPLETE</p><h1>クラブ10年間の歩み</h1>${renderClubAchievements(s.league,club)}${renderRankHistoryChart(s.league)}<details class="season-history-details"><summary>シーズン別の記録を見る</summary>${s.league.history.map(h=>`<section class="candidate"><b><i class="club-color-dot" style="--club:${e(h.championColor||'#64748b')}"></i>シーズン${h.season}・優勝 ${e(h.champion)}</b><p>最優秀選手 ${e(h.mvp||'—')}</p><p>得点王 ${(h.topScorers||[]).map(row=>`${e(row.name)} ${row.goals}得点`).join(' ／ ')||'—'}</p><p>最終順位 ${h.table.map(row=>`${row.rank}位 ${e(row.club)}`).join(' ／ ')}</p><p>Best5 ${h.best5.map(row=>typeof row==='string'?e(row):`${positionLabel(row.position)} ${e(row.name)}`).join(' ／ ')||'—'}</p></section>`).join('')}</details><div class="history-actions"><button data-nav="home" class="subtle">シーズン結果に戻る</button><button data-a="title" class="subtle">ホーム画面に戻る</button></div></main>`;
+}
+function renderCompletedSeasonActions() {
+  if (s.offseasonComplete) return '';
+  return s.league.season === 10
+    ? '<button data-a="title" class="subtle">ホーム画面に戻る</button>'
+    : '<button data-stage4="offseason">オフシーズンへ進む</button>';
+}
 onGameClick('app',ev=>{const x=ev.target.closest('[data-stage6]')?.dataset.stage6;if(x==='history'){s.view='history';render()}});
 
-import { exportSave, importSave, loadSlot, saveSlot, slotInfo } from './storage.js?v=0.17.27';
 
 // Stage 14 lets the human controller submit the same SET_LINEUP action used by CPU controllers.
 function placeLineupPlayer(playerId, slotIndex) {
@@ -310,49 +327,26 @@ app.addEventListener('dragend', () => {
 
 // Stage 10 keeps all public player information in one rank-only card and adds
 // in-place roster and player-detail panels to market screens.
-const stage10BaseRender = render;
-function stage10Players() {
-  const lists = [
-    ...(s.league?.clubs || []).map(club => club.roster),
-    s.draft?.pool || [],
-    s.auction?.pool || [],
-    s.match?.result?.playerResults?.map(row => row.player) || []
-  ];
-  return [...new Map(lists.flat().map(player => [player.id, player])).values()];
-}
-function stage10Render() {
-  document.querySelectorAll('.overlay-backdrop,.overlay-panel').forEach(node=>node.remove());
-  stage10BaseRender();
+function renderRosterDialog() {
   if (!s.league || !s.rosterOpen) return;
-  const rosterClub={...me(),roster:sortPlayers(me().roster,s.rosterSort)};document.body.insertAdjacentHTML('beforeend', `<div class="overlay-backdrop" data-stage10="close"></div>${renderRosterPanel(rosterClub, { allowRelease: Boolean(s.league.releasePhaseOpen), rosterSort: s.rosterSort })}`);
+  const rosterClub={...me(),roster:sortPlayers(me().roster,s.rosterSort)};document.body.insertAdjacentHTML('beforeend', `<div data-app-overlay class="overlay-backdrop" data-stage10="close"></div>${renderRosterPanel(rosterClub, { allowRelease: Boolean(s.league.releasePhaseOpen), rosterSort: s.rosterSort })}`);
 }
-render = stage10Render;
-const draftHistoryBaseRender = render;
-function draftHistoryRender(){
-  draftHistoryBaseRender();
-  document.querySelectorAll('[data-draft-history-modal]').forEach(node=>node.remove());
+function renderDraftHistoryDialog(){
   if(!s.draftHistoryOpen || s.view!=='draft' || !s.draft) return;
-  document.body.insertAdjacentHTML('beforeend', `<div class="overlay-backdrop" data-draft-history-modal="close"></div><section class="overlay-panel detail-panel" data-draft-history-modal="panel" role="dialog" aria-modal="true" aria-label="ドラフト指名結果"><div class="overlay-heading"><div><p class="eyebrow">ドラフト</p><h2>指名結果</h2></div><button type="button" data-draft-history-modal="close" class="subtle">閉じる</button></div>${renderDraftHistory(s.draft)}</section>`);
+  document.body.insertAdjacentHTML('beforeend', `<div data-app-overlay class="overlay-backdrop" data-draft-history-modal="close"></div><section data-app-overlay data-ui-dialog="draft-history" class="overlay-panel detail-panel" data-draft-history-modal="panel" role="dialog" aria-modal="true" aria-label="ドラフト指名結果"><div class="overlay-heading"><div><p class="eyebrow">ドラフト</p><h2>指名結果</h2></div><button type="button" data-dialog-close data-draft-history-modal="close" class="subtle">閉じる</button></div>${renderDraftHistory(s.draft)}</section>`);
 }
-render = draftHistoryRender;
-const auctionHistoryBaseRender = render;
-function auctionHistoryRender(){
-  auctionHistoryBaseRender();
-  document.querySelectorAll('[data-auction-history-modal]').forEach(node=>node.remove());
+function renderAuctionHistoryDialog(){
   if(!s.auctionHistoryOpen || s.view!=='auction' || !s.auction) return;
-  document.body.insertAdjacentHTML('beforeend', `<div class="overlay-backdrop" data-auction-history-modal="close"></div><section class="overlay-panel detail-panel" data-auction-history-modal="panel" role="dialog" aria-modal="true" aria-label="オークション結果"><div class="overlay-heading"><div><p class="eyebrow">オークション</p><h2>落札結果</h2></div><button type="button" data-auction-history-modal="close" class="subtle">閉じる</button></div>${renderAuctionHistory(s.auction)}</section>`);
+  document.body.insertAdjacentHTML('beforeend', `<div data-app-overlay class="overlay-backdrop" data-auction-history-modal="close"></div><section data-app-overlay data-ui-dialog="auction-history" class="overlay-panel detail-panel" data-auction-history-modal="panel" role="dialog" aria-modal="true" aria-label="オークション結果"><div class="overlay-heading"><div><p class="eyebrow">オークション</p><h2>落札結果</h2></div><button type="button" data-dialog-close data-auction-history-modal="close" class="subtle">閉じる</button></div>${renderAuctionHistory(s.auction)}</section>`);
 }
-render = auctionHistoryRender;
 onGameClick('document', event => {
   const action = event.target.closest('[data-stage10]')?.dataset.stage10;
-  if (action==='roster') { s.rosterOpen=true; s.detailPlayerId=null; render(); }
-  if (action==='release') { const playerId=event.target.closest('[data-release-player]')?.dataset.releasePlayer; if(playerId){const result=applyClubAction(me(),{type:ACTION_TYPES.RELEASE_PLAYER,clubId:me().id,playerId},s.league);if(!result.ok){s.releaseMessage=result.error;render();return}selectBestLineup(me());s.releaseMessage='';s.rosterOpen=s.view !== 'release';s.detailPlayerId=null;render();} }
-  if (action==='close') { s.rosterOpen=false; s.detailPlayerId=null; document.querySelectorAll('.overlay-backdrop,.overlay-panel').forEach(node=>node.remove()); }
+  if (action==='roster') { s.rosterOpen=true;  render(); }
+  if (action==='release') { const playerId=event.target.closest('[data-release-player]')?.dataset.releasePlayer; if(playerId){const result=applyClubAction(me(),{type:ACTION_TYPES.RELEASE_PLAYER,clubId:me().id,playerId},s.league);if(!result.ok){s.releaseMessage=result.error;render();return}selectBestLineup(me());s.releaseMessage='';s.rosterOpen=s.view !== 'release';render();} }
+  if (action==='close') { s.rosterOpen=false;  render(); }
 });
-document.addEventListener('keydown', event => { if(event.key==='Escape'&&s.rosterOpen){s.rosterOpen=false;s.detailPlayerId=null;render();} });
 
 // Stage 19 consolidates save controls and limits saves to JSON-safe phases.
-const stage19BaseRender = render;
 const unsafeSaveViews = new Set(['draft', 'auction', 'development', 'focus']);
 const saveSourceView = () => s.view === 'savePanel' ? s.saveReturnView : s.view;
 const saveAllowed = () => s.mode !== 'room' && Boolean(s.league) && !unsafeSaveViews.has(saveSourceView());
@@ -362,28 +356,18 @@ function slotRows(loadOnly = false) {
     return `<section class="candidate save-slot"><h3>スロット${slot}</h3>${info ? info.incompatible ? '<p class="lineup-error">旧セーブデータ（読込不可）</p>' : `<p>${e(info.clubName)}・シーズン${info.season}${info.completed?' 終了':''}</p><p class="hint">${info.savedAt ? e(new Date(info.savedAt).toLocaleString('ja-JP')) : ''}</p>` : '<p class="hint">データなし</p>'}${!loadOnly ? `<button data-stage19="save" data-save-slot="${slot}" ${saveAllowed() ? '' : 'disabled'}>保存</button>` : ''}<button data-stage19="load" data-load-slot="${slot}" class="subtle" ${info && !info.incompatible ? '' : 'disabled'}>ロード</button></section>`;
   }).join('');
 }
-function stage19Render() {
-  if (s.view === 'loadTitle') {
-    app.innerHTML = `<main class="setup"><p class="eyebrow">続きから</p><h2>セーブデータをロード</h2><section class="candidate-grid">${slotRows(true)}</section><button data-stage19="backTitle" class="subtle">タイトルへ戻る</button></main>`;
-    return;
-  }
-  if (s.view === 'savePanel') {
-    app.innerHTML = `${head()}<main><p class="eyebrow">セーブ / ロード</p><h2>セーブデータ</h2>${saveAllowed() ? '<p class="hint">現在の画面は保存できます。</p>' : '<p class="lineup-error">この画面ではセーブできません。フェイズ完了後に保存してください。</p>'}<section class="candidate-grid">${slotRows()}</section><div class="season-result-actions"><button data-stage19="export" class="subtle">セーブデータ書き出し</button><button data-stage19="import" class="subtle">セーブデータ読み込み</button><button data-stage19="closeSave" class="subtle">戻る</button></div></main>`;
-    return;
-  }
-  stage19BaseRender();
-  if (s.league && s.mode !== 'room') {
-    const header = app.querySelector('header');
-    header?.insertAdjacentHTML('beforeend', '<span><button data-stage19="savePanel" class="subtle">セーブ / ロード</button></span>');
-  }
+function loadTitle() {
+  return `<main class="setup"><p class="eyebrow">続きから</p><h2>セーブデータをロード</h2><section class="candidate-grid">${slotRows(true)}</section><button data-stage19="backTitle" class="subtle">タイトルへ戻る</button></main>`;
 }
-render = stage19Render;
+function savePanel() {
+  return `${head()}<main><p class="eyebrow">セーブ / ロード</p><h2>セーブデータ</h2>${saveAllowed() ? '<p class="hint">現在の画面は保存できます。</p>' : '<p class="lineup-error">この画面ではセーブできません。フェイズ完了後に保存してください。</p>'}<section class="candidate-grid">${slotRows()}</section><div class="season-result-actions"><button data-stage19="export" class="subtle">セーブデータ書き出し</button><button data-stage19="import" class="subtle">セーブデータ読み込み</button><button data-stage19="closeSave" class="subtle">戻る</button></div></main>`;
+}
 onGameClick('document', event => {
   const action = event.target.closest('[data-stage19]')?.dataset.stage19;
   if (!action) return;
   try {
     if (action === 'loadTitle') { s.view='loadTitle'; return render(); }
-    if (action === 'backTitle') { s.view='title'; return render(); }
+    if (action === 'backTitle') { returnToTitle(); return render(); }
     if (action === 'savePanel') { s.saveReturnView=s.view; s.view='savePanel'; return render(); }
     if (action === 'closeSave') { s.view=s.saveReturnView||'home'; return render(); }
     if (action === 'save') { if (!saveAllowed()) throw new Error('この画面ではセーブできません。フェイズ完了後に保存してください。'); saveSlot(Number(event.target.closest('[data-save-slot]')?.dataset.saveSlot),s); return render(); }
@@ -407,16 +391,10 @@ onGameClick('document', event => {
   const action = event.target.closest('[data-draft-history-modal]')?.dataset.draftHistoryModal;
   if(action==='close'){ s.draftHistoryOpen=false; render(); }
 });
-document.addEventListener('keydown', event => {
-  if(event.key==='Escape' && s.draftHistoryOpen){ s.draftHistoryOpen=false; render(); }
-});
 
 onGameClick('document', event => {
   const action = event.target.closest('[data-auction-history-modal]')?.dataset.auctionHistoryModal;
   if(action==='close'){ s.auctionHistoryOpen=false; render(); }
-});
-document.addEventListener('keydown', event => {
-  if(event.key==='Escape' && s.auctionHistoryOpen){ s.auctionHistoryOpen=false; render(); }
 });
 
 // One event boundary. Both modes use the renderers and local editing handlers above.
@@ -471,41 +449,50 @@ function updateRoomStatus() {
   });
   if(phase==='auction-complete')document.querySelectorAll('[data-a="squad"]').forEach(node=>{node.disabled=roomAdapter.locked;});
 }
-const sharedRender=render;
-render=function renderApplication(){
-  if(s.view==='roomEntry')app.innerHTML=roomEntry();
-  else if(s.view==='roomLobby')app.innerHTML=roomLobby();
-  else sharedRender();
-  classifyScreens(s.view);
-  if(s.view==='draft'||s.view==='auction'){
-    app.dataset.draftClubs=JSON.stringify(s.league.clubs.map(c=>({name:c.name,color:c.color})));
-  }else delete app.dataset.draftClubs;
-  updateRoomStatus();
+const screens = Object.freeze({
+  title, setup, draft, auction, table, stats, squad, seasonResults, matchDetail, home,
+  offseasonEvents, development, focus, growth, release, history, loadTitle, savePanel,
+  roomEntry, roomLobby
+});
+function renderEntryDialog() {
   const popupNames={setup:'クラブを作成',loadTitle:'続きから',roomEntry:'マルチプレイ',roomLobby:'ロビー'};
   if(popupNames[s.view]){
     const content=document.createElement('section');
+    content.dataset.uiDialog='entry';
     content.className='arena-popup';content.setAttribute('role','dialog');
     content.setAttribute('aria-modal','true');content.setAttribute('aria-label',popupNames[s.view]);
     while(app.firstChild)content.append(app.firstChild);
     const close=document.createElement('button');close.className='arena-popup-close subtle';
+    close.dataset.dialogClose='';
     close.type='button';close.textContent='×';close.setAttribute('aria-label','ホームに戻る');
     if(s.view==='roomEntry'||s.view==='roomLobby'){close.dataset.room='leave';close.disabled=roomAdapter.status.busy;}else close.dataset.a='title';
     content.prepend(close);
-    app.innerHTML=title();app.firstElementChild.inert=true;app.firstElementChild.setAttribute('aria-hidden','true');
+    app.innerHTML=title();
     const overlay=document.createElement('div');overlay.className='arena-popup-overlay';overlay.append(content);app.append(overlay);
-    (content.querySelector('input:not([type="color"])')||close).focus({preventScroll:true});
   }
-};
-document.addEventListener('keydown',event=>{
-  const panel=app.querySelector('.arena-popup');if(!panel)return;
-  if(event.key==='Escape'){event.preventDefault();panel.querySelector('.arena-popup-close').click();}
-  if(event.key==='Tab'){
-    const items=[...panel.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),a[href]')].filter(el=>!el.hidden&&el.getClientRects().length);
-    const first=items[0],last=items.at(-1);
-    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
-    else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
+}
+let renderedView = null;
+function render() {
+  dialogs.beforeRender();
+  if (renderedView !== s.view) document.querySelectorAll('.rename-modal-backdrop,.rename-modal-panel').forEach(node => node.remove());
+  document.querySelectorAll('[data-app-overlay]').forEach(node => node.remove());
+  app.innerHTML = (screens[s.view] || home)();
+  if (s.league && s.mode !== 'room' && !['loadTitle', 'savePanel'].includes(s.view)) {
+    app.querySelector('header')?.insertAdjacentHTML('beforeend', '<span><button data-stage19="savePanel" class="subtle">セーブ / ロード</button></span>');
   }
-});
+  classifyScreens(s.view);
+  updateRoomStatus();
+  renderEntryDialog();
+  renderRosterDialog();
+  renderDraftHistoryDialog();
+  renderAuctionHistoryDialog();
+  // Keep an in-progress name editor above rebuilt panels during Room updates.
+  document.querySelectorAll('.rename-modal-backdrop,.rename-modal-panel').forEach(node => document.body.append(node));
+  dialogs.sync();
+  auctionClock.sync(s.view === 'auction' && !!s.auction && !s.auction.completed);
+  renderedView = s.view;
+  document.dispatchEvent(new CustomEvent('football-league:view-rendered'));
+}
 roomAdapter=new RoomAdapter(()=>s,next=>{s=next;},()=>render(),()=>updateRoomStatus());
 function reportRoomError(error){ roomAdapter.status.error=error.message; updateRoomStatus(); }
 function sendRoom(promise){Promise.resolve(promise).catch(reportRoomError);}
@@ -520,16 +507,14 @@ function roomClick(event){
     if(roomAction==='start')sendRoom(roomAdapter.client.mutate('start'));
     if(roomAction==='leave'){
       if(roomAdapter.status.busy)return true;
-      roomAdapter.leave();
-      s={view:'title',league:null,note:'',benchSort:'position',rosterSort:'position',draftSort:'position',developmentSort:'position',releaseSort:'position'};
-      document.querySelectorAll('.overlay-backdrop,.overlay-panel').forEach(node=>node.remove());
+      returnToTitle();
       render();
     }
     return true;
   }
   if(s.mode!=='room')return false;
   const a=target.closest('[data-a]')?.dataset.a, step=target.closest('[data-stage4]')?.dataset.stage4;
-  if(a==='title'){roomAdapter.leave();s={view:'title',league:null,note:''};render();return true;}
+  if(a==='title'){returnToTitle();render();return true;}
   if(target.closest('[data-stage19]'))return true;
   const workKeys={renew:'renew',release:'contractRelease',retentionPay:'retentionPay',retentionRelease:'retentionRelease',specialPay:'specialPay',specialSkip:'specialSkip',releasePlayer:'release'};
   for(const [key,type] of Object.entries(workKeys)){

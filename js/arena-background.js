@@ -1,4 +1,4 @@
-import { mountDraftHall } from './draft-hall.js?v=1.1.0';
+import { mountDraftHall } from './draft-hall.js?v=1.1.1-refactor';
 import { mountArena } from './arena-scene.js?v=appearance-v19';
 
 // A screen lifetime owns every animation/listener. Navigation destroys it.
@@ -10,6 +10,7 @@ function sync(){
   if(title===current)return;
   current=title;generation++;const token=generation;
   dispose?.();dispose=null;
+  document.body.classList.remove('arena-fallback');
   document.querySelector('#arena-background')?.remove();
   document.body.classList.toggle('arena-active',title==='title');
   document.body.classList.toggle('draft-hall-active',title==='draft');
@@ -24,5 +25,5 @@ function sync(){
     console.error('Arena art could not load; game controls remain available.',error);
   });
 }
-new MutationObserver(sync).observe(app,{childList:true});sync();
+document.addEventListener('football-league:view-rendered',sync);sync();
 addEventListener('resize',sync);

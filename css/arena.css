@@ -155,13 +155,7 @@ body.auction-hall-active header{background:#051522e8}
   .auction-scene .auction-price small{font-size:12px}
   .auction-scene .auction-leader{padding:4px;font-size:clamp(9px,.72vw,14px)}
   .auction-scene .auction-desks{position:absolute;z-index:5;inset:0;display:block;pointer-events:none}
-  .auction-scene .auction-desks article{position:absolute;top:54.8%;width:6.3%;height:5.5%;padding:2px;display:flex;flex-direction:column;justify-content:center;border-width:1px;border-top-width:3px;background:#05172bf8;box-shadow:none;overflow:hidden}
-  .auction-scene .auction-desks article:nth-child(1){left:19%}
-  .auction-scene .auction-desks article:nth-child(2){left:27%}
-  .auction-scene .auction-desks article:nth-child(3){left:35%}
-  .auction-scene .auction-desks article:nth-child(4){left:59%}
-  .auction-scene .auction-desks article:nth-child(5){left:67%}
-  .auction-scene .auction-desks article:nth-child(6){left:75%}
+  .auction-scene .auction-desks article{position:absolute;left:var(--auction-seat);top:54.8%;width:6.3%;height:5.5%;padding:2px;display:flex;flex-direction:column;justify-content:center;border-width:1px;border-top-width:3px;background:#05172bf8;box-shadow:none;overflow:hidden}
   .auction-scene .auction-desks b{font-size:clamp(7px,.58vw,11px);line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .auction-scene .auction-desks strong{font-size:clamp(11px,1vw,19px);margin:3px 0 0;line-height:1}
   .auction-scene .auction-desks article.leading{box-shadow:0 0 14px var(--club)}
