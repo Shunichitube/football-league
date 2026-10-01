@@ -691,3 +691,7 @@ body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
 #app .growth-result .rank-bar{position:relative;overflow:hidden;}
 #app .growth-result .growth-bar-gain{background:#ffe36e;box-shadow:0 0 5px #ffd43b;animation:growth-gain-pulse 1.2s ease-in-out infinite;}
 @media(prefers-reduced-motion:reduce){#app .growth-result .growth-bar-gain{animation:none;}}
+
+.ability-direction{display:inline-block;font-size:11px;line-height:1;margin-left:3px;font-style:normal;}.ability-direction.up{color:#6effac;}.ability-direction.down{color:#ff7676;}.ability-direction.same{color:#c1ccd5;}
+#app .growth-result .squad-abilities dd{grid-template-columns:30px minmax(0,1fr);}
+#app .growth-result .squad-abilities dd>span{white-space:nowrap;}
