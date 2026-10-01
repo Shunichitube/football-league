@@ -53,8 +53,8 @@ export function drawHair(ctx,assets,profile,view,box) {
   const image=replacement||assets.hair;
   const part=replacement?[0,0,image.width,image.height]:HAIR_PARTS[profile.hairStyle][view];
   if(view==='front'&&profile.hairStyle===5&&replacement){
-    // Registered square overlay uses the same 300px frame as the standing head.
-    paintPart(ctx,assets,image,part,[box[0]-35*box[2]/230,box[1]-20*box[3]/220,300*box[2]/230,300*box[3]/220],{hairColor:profile.hairColor,recolorKit:false});
+    // Stretch upward by 12% around the 150px temple anchor; keep width and ear alignment.
+    paintPart(ctx,assets,image,part,[box[0]-35*box[2]/230,box[1]-38*box[3]/220,300*box[2]/230,336*box[3]/220],{hairColor:profile.hairColor,recolorKit:false});
     return;
   }
   const tall=[5,17].includes(profile.hairStyle);
