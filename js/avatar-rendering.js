@@ -1,5 +1,5 @@
-import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js?v=appearance-v21';
-import { HAIR_PARTS } from './avatar-hair-parts.js?v=appearance-v21';
+import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js?v=appearance-v22';
+import { HAIR_PARTS } from './avatar-hair-parts.js?v=appearance-v22';
 const rgb = hex => hex.slice(1).match(/../g).map(n => parseInt(n,16));
 export function recolorPixels(pixels, { skinTone = 0, kit, goalkeeper = false, recolorKit = true, hairColor, frontKeeperBody = false, partWidth = 256 } = {}) {
   const skin = rgb(SKIN_TONES[avatarProfile({skinTone}).skinTone].color), uniform = rgb(kitColor(kit, goalkeeper));
@@ -50,6 +50,7 @@ export function paintPart(ctx,assets,image,rect,dest,options) {
 }
 // Registration of the newly drawn motion overlays to the supplied 300px head.
 export const MOTION_HAIR_OFFSETS=[-10,-10,-10,-10,-10,-12,-10,-10,-10,-10,-10,-10,-10,-12,-10,-10,-10,-10,-10,-10];
+export const MOTION_HAIR_REGISTERED=[3,5,12];
 export const MOTION_HAIR_SCALE={x:1.10,y:1.08,anchorX:210,anchorY:180};
 export function drawHair(ctx,assets,profile,view,box) {
   if(view==='quarter'&&assets.quarterHair?.[profile.hairStyle]){
@@ -57,7 +58,7 @@ export function drawHair(ctx,assets,profile,view,box) {
     // Newly drawn overlays retain the same square registration as the motion head.
     const [x,y,w,h]=box,offset=assets.quarterHairOffsets?.[profile.hairStyle]||0;
     const fit=MOTION_HAIR_SCALE;
-    const dest=[x+fit.anchorX*(1-fit.x)*w/300,y+(fit.anchorY*(1-fit.y)+offset+4)*h/300,w*fit.x,h*fit.y];
+    const dest=assets.quarterHairRegistered?.includes(profile.hairStyle)?box:[x+fit.anchorX*(1-fit.x)*w/300,y+(fit.anchorY*(1-fit.y)+offset+4)*h/300,w*fit.x,h*fit.y];
     paintPart(ctx,assets,image,[0,0,image.width,image.height],dest,{hairColor:profile.hairColor,recolorKit:false});
     return;
   }
@@ -128,8 +129,8 @@ export function loadAvatarAssets() {
   if(!promise)promise=(async()=>{
     const image=async path=>{const source=new Image();source.src=new URL(path,import.meta.url).href;await source.decode();return source;};
     const [parts,hair,quarterHead,keeper,mohawkFront,mohawkQuarter,shortfadeFront,shortfadeQuarter]=await Promise.all([image('../assets/avatars/player-parts-v1.png'),image('../assets/avatars/player-hair-v3.webp'),image('../assets/avatars/player-head-quarter-v3.webp'),image('../assets/avatars/keeper-catch-v1.png'),image('../assets/avatars/mohawk-front-v3.webp'),image('../assets/avatars/mohawk-quarter-v1.webp'),image('../assets/avatars/shortfade-front-v1.webp'),image('../assets/avatars/shortfade-quarter-v1.webp')]);
-    const quarterHair=await Promise.all(Array.from({length:20},(_,i)=>image('../assets/avatars/motion-hair-'+String(i+1).padStart(2,'0')+'-v2.webp')));
-    return {parts,hair,quarterHead,keeper,mohawkFront,mohawkQuarter,shortfadeFront,shortfadeQuarter,quarterHair,quarterHairOffsets:MOTION_HAIR_OFFSETS};
+    const quarterHair=await Promise.all(Array.from({length:20},(_,i)=>image('../assets/avatars/motion-hair-'+String(i+1).padStart(2,'0')+(MOTION_HAIR_REGISTERED.includes(i)?'-v3.webp':'-v2.webp'))));
+    return {parts,hair,quarterHead,keeper,mohawkFront,mohawkQuarter,shortfadeFront,shortfadeQuarter,quarterHair,quarterHairRegistered:MOTION_HAIR_REGISTERED,quarterHairOffsets:MOTION_HAIR_OFFSETS};
   })();
   return promise;
 }
