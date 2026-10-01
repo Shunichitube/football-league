@@ -1,5 +1,5 @@
-import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js?v=appearance-v22';
-import { HAIR_PARTS } from './avatar-hair-parts.js?v=appearance-v22';
+import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js?v=appearance-v23';
+import { HAIR_PARTS } from './avatar-hair-parts.js?v=appearance-v23';
 const rgb = hex => hex.slice(1).match(/../g).map(n => parseInt(n,16));
 export function recolorPixels(pixels, { skinTone = 0, kit, goalkeeper = false, recolorKit = true, hairColor, frontKeeperBody = false, partWidth = 256 } = {}) {
   const skin = rgb(SKIN_TONES[avatarProfile({skinTone}).skinTone].color), uniform = rgb(kitColor(kit, goalkeeper));
@@ -50,7 +50,7 @@ export function paintPart(ctx,assets,image,rect,dest,options) {
 }
 // Registration of the newly drawn motion overlays to the supplied 300px head.
 export const MOTION_HAIR_OFFSETS=[-10,-10,-10,-10,-10,-12,-10,-10,-10,-10,-10,-10,-10,-12,-10,-10,-10,-10,-10,-10];
-export const MOTION_HAIR_REGISTERED=[3,5,12];
+export const MOTION_HAIR_REGISTERED=[0,3,4,5,6,12];
 export const MOTION_HAIR_SCALE={x:1.10,y:1.08,anchorX:210,anchorY:180};
 export function drawHair(ctx,assets,profile,view,box) {
   if(view==='quarter'&&assets.quarterHair?.[profile.hairStyle]){

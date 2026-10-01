@@ -1,5 +1,5 @@
-import {avatarProfile,kitColor} from './avatar-profile.js?v=appearance-v22';
-import {createSurface,recolorPixels,drawQuarterHead} from './avatar-rendering.js?v=appearance-v22';
+import {avatarProfile,kitColor} from './avatar-profile.js?v=appearance-v23';
+import {createSurface,recolorPixels,drawQuarterHead} from './avatar-rendering.js?v=appearance-v23';
 // Head rectangles are registered to the approved body drawings, in source-cell pixels.
 const HEAD_BOXES={
  base:[[126,51,229,213],[126,51,229,213]],
