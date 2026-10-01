@@ -610,3 +610,18 @@ body:has(.training-results-visible) #app{position:relative;z-index:1001;}
 #app main.release-office>.candidate-grid{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,350px),1fr))!important;gap:14px;}
 .season-move-overlay{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;background:linear-gradient(#06142433,#06142444),url('../assets/arena/contract-office-v1.webp') center/cover no-repeat;}
 .season-move-overlay p{padding:24px 40px;background:#061b2ced;border:1px solid #c9b578;border-radius:14px;color:#ffebbb;font-size:clamp(22px,3vw,40px);text-align:center;box-shadow:0 10px 50px #0008;}
+
+/* PC roster phases: four columns and three rows in the available viewport. */
+@media(min-width:1000px){
+ #app main.development-room:not(.focus-room),#app main.release-office{width:96vw!important;max-width:1900px;height:calc(100svh - 100px)!important;max-height:none;margin:10px auto!important;padding:12px!important;box-sizing:border-box;display:grid!important;grid-template-rows:auto minmax(0,1fr) auto;gap:10px;overflow:hidden;}
+ #app main.growth-modal{position:fixed;inset:3vh auto auto 50%;height:94vh!important;max-height:94vh!important;margin:0!important;}
+ .phase-topbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;min-width:0;}
+ .phase-topbar>.eyebrow{display:none;}.phase-topbar>h2{margin:0;font-size:22px;}.phase-topbar>.hint{margin:0;font-size:13px;}.phase-topbar>.phase-sort-heading{margin:0 0 0 auto!important;padding:0!important;display:flex!important;}.phase-topbar .phase-sort-heading>span{display:none;}.phase-topbar label{display:flex;align-items:center;gap:8px;margin:0;font-size:13px;}.phase-topbar select{width:auto;padding:6px;margin:0;}
+ #app main.development-room:not(.focus-room)>.candidate-grid,#app main.growth-modal>.candidate-grid,#app main.release-office>.candidate-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-template-rows:repeat(3,minmax(0,1fr))!important;gap:8px!important;min-height:0;overflow:auto;margin:0!important;align-content:stretch;}
+ #app main.development-room:not(.focus-room) .candidate,#app main.release-office .candidate-grid>.player-card{padding:7px!important;margin:0!important;min-height:0;overflow:auto;}
+ #app main.development-room:not(.focus-room) .candidate{display:flex!important;flex-direction:column;gap:4px;}
+ #app main.development-room:not(.focus-room) .squad-player{grid-template-columns:60px minmax(85px,.85fr) minmax(0,1.15fr);padding:6px;gap:6px;flex:1;min-height:0;}
+ .development-room:not(.focus-room) .squad-avatar img{width:56px;height:92px;}.development-room:not(.focus-room) .squad-identity{font-size:12px;gap:3px;}.development-room:not(.focus-room) .squad-identity .player-name{font-size:14px!important;}.development-room:not(.focus-room) .squad-abilities{gap:2px;}.development-room:not(.focus-room) .squad-abilities>div{grid-template-columns:48px minmax(0,1fr);padding:1px 2px;}.development-room:not(.focus-room) .squad-abilities dt{font-size:11px;}.development-room:not(.focus-room) .squad-special{padding-top:3px;font-size:12px;}
+ #app main.development-room:not(.focus-room) .candidate>button,#app main.development-room:not(.focus-room)>button,#app main.release-office>button{padding:6px 12px;min-height:30px;font-size:13px;margin:0;justify-self:center;align-self:flex-start;}
+ #app main.growth-modal .growth-result>p{font-size:12px;line-height:1.35;margin:0;}.growth-modal .growth-labels{margin:0;font-size:11px;}.growth-modal .growth-result .squad-player{flex:0 0 auto!important;}.growth-modal .growth-result{overflow:auto;}
+}
