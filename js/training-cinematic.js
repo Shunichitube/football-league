@@ -8,11 +8,14 @@ export async function playTrainingCinematic(club,previousScreen){
  const layer=document.createElement('div');layer.className='training-cinematic';
  const source=document.createElement('div');source.className='training-source';source.append(previousScreen);
  const scene=document.createElement('div');scene.className='training-practice';
- scene.innerHTML='<h2>トレーニング中</h2><div class="training-drills"></div>';
- const drills=scene.querySelector('.training-drills');
+ scene.innerHTML='<h2>トレーニング中</h2><canvas class="training-field" width="1672" height="941"></canvas>';
+ const court=scene.querySelector('canvas'),ctx=court.getContext('2d');
+ const backdrop=new Image();backdrop.src=new URL('../assets/arena/home-arena-v2.webp',import.meta.url).href;
  const field=club.roster.filter(p=>p.primaryPosition!=='GK'),keeper=club.roster.find(p=>p.primaryPosition==='GK');
  const entries=[['run','走り込み',field[0]||club.roster[0]],['dribble','ドリブル',field[1]||field[0]||club.roster[0]],['shoot','シュート',field[2]||field[0]||club.roster[0]],['catch','キーパー練習',keeper||club.roster[0]]];
- const sprites=entries.map(([motion,label,p])=>{const box=document.createElement('section');box.className='training-drill';const heading=document.createElement('h3');heading.textContent=label;const canvas=document.createElement('canvas');canvas.width=300;canvas.height=300;box.append(heading,canvas);drills.append(box);return {motion,p,canvas};});
+ const sprites=entries.map(([motion,label,p])=>{const canvas=document.createElement('canvas');canvas.width=300;canvas.height=300;return {motion,label,p,canvas};});
+ const extra=field.slice(3,7).map((p,i)=>({motion:'run',label:'',p,canvas:Object.assign(document.createElement('canvas'),{width:300,height:300}),lane:i}));
+ sprites.push(...extra);
  const shade=document.createElement('div');shade.className='training-shade';layer.append(source,scene,shade);document.body.append(layer);
  document.body.classList.add('training-results-pending');
  let frame=0,atlas=null,finished=false;
@@ -29,7 +32,32 @@ const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
   source.remove();scene.classList.add('is-visible');
   await Promise.race([loading,wait(2000)]);
   const start=performance.now();
-  const paint=now=>{const t=(now-start)/1000;for(const x of sprites)if(atlas&&x.p){let motion=x.motion;if(motion==='catch')motion=Math.floor(t/1.25)%2?'dive':'catch';drawMotion(x.canvas.getContext('2d'),atlas,motion,t,{loop:true,ball:motion==='dribble',appearance:playerAppearance(x.p),kit:club.color,goalkeeper:x.motion==='catch'});x.canvas.style.transform=!reduce&&x.motion==='run'?`translateX(${Math.sin(t*2)*25}px)`:'none';}frame=requestAnimationFrame(paint);};frame=requestAnimationFrame(paint);
+  const paint=now=>{
+   const t=reduce?0:(now-start)/1000;
+   ctx.clearRect(0,0,1672,941);
+   if(backdrop.complete&&backdrop.naturalWidth)ctx.drawImage(backdrop,0,0,1672,941);
+   const cycle=t%5,shot=cycle>=2&&cycle<3.2,saving=cycle>=2.8&&cycle<3.5;
+   const actors=sprites.map((x,i)=>{
+    let px,py,motion=x.motion,direction='right',clock=t;
+    if(i===0){const u=(t%8)/4;px=350+Math.min(u,2-u)*420;py=710;direction=u<1?'right':'left';}
+    else if(i===1){const u=(t%10)/5;px=440+Math.min(u,2-u)*450;py=620;direction=u<1?'right':'left';}
+    else if(i===2){px=1110;py=560;motion=shot?'shoot':'idle';clock=cycle-2;}
+    else if(i===3){px=1447;py=555;motion=saving?'catch':'idle';clock=cycle-2.8;direction='left';}
+    else {const u=((t+x.lane*1.2)%8)/4;px=350+Math.min(u,2-u)*420;py=750+x.lane*24;direction=u<1?'right':'left';}
+    return {...x,px,py,motion,direction,clock};
+   }).sort((a,b)=>a.py-b.py);
+   for(const x of actors)if(x.p){
+    if(atlas)drawMotion(x.canvas.getContext('2d'),atlas,x.motion,x.clock,{direction:x.direction,loop:!['shoot','catch'].includes(x.motion),ball:false,appearance:playerAppearance(x.p),kit:club.color,goalkeeper:x.p.primaryPosition==='GK'});
+    ctx.fillStyle='#03152255';ctx.beginPath();ctx.ellipse(x.px,x.py,18,5,0,0,Math.PI*2);ctx.fill();
+    ctx.drawImage(x.canvas,x.px-36,x.py-72,72,72);
+    if(x.label){ctx.font='bold 16px sans-serif';ctx.textAlign='center';ctx.fillStyle='#071b2ddd';ctx.fillRect(x.px-62,x.py+8,124,25);ctx.fillStyle='#fff';ctx.fillText(x.label,x.px,x.py+26);}
+   }
+   const dribbler=actors.find(x=>x.label==='ドリブル');
+   const balls=[[dribbler.px+(dribbler.direction==='right'?25:-25),dribbler.py-3]];
+   if(!saving){const progress=Math.max(0,Math.min(1,(cycle-2.5)/.45));balls.push([1135+312*progress,557]);}
+   for(const [x,y] of balls){ctx.fillStyle='white';ctx.strokeStyle='#182b3d';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,7,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle='#182b3d';ctx.fillRect(x-2,y-2,4,4);}
+   frame=requestAnimationFrame(paint);
+  };frame=requestAnimationFrame(paint);
   await fade(false);await wait(5000);
   document.body.classList.remove('training-results-pending');
   layer.classList.add('training-results-visible');finished=true;

@@ -625,3 +625,8 @@ body:has(.training-results-visible) #app{position:relative;z-index:1001;}
  #app main.development-room:not(.focus-room) .candidate>button,#app main.development-room:not(.focus-room)>button,#app main.release-office>button{padding:6px 12px;min-height:30px;font-size:13px;margin:0;justify-self:center;align-self:flex-start;}
  #app main.growth-modal .growth-result>p{font-size:12px;line-height:1.35;margin:0;}.growth-modal .growth-labels{margin:0;font-size:11px;}.growth-modal .growth-result .squad-player{flex:0 0 auto!important;}.growth-modal .growth-result{overflow:auto;}
 }
+
+/* Shared court coordinates keep practice players on the floor. */
+.training-practice{background:#071321;overflow:hidden;}
+.training-practice .training-field{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.training-practice>h2{position:absolute;top:7vh;z-index:1;padding:10px 28px;background:#071b2dcc;border-radius:12px;}

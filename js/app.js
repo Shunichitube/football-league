@@ -1,4 +1,4 @@
-import { playTrainingCinematic } from './training-cinematic.js?v=2';
+import { playTrainingCinematic } from './training-cinematic.js?v=3';
 import { renderSeasonResults } from './season-results-ui.js?v=3';
 import { createInitialState } from './app-state.js';
 import { createAuctionClock } from './auction-clock.js';
@@ -136,7 +136,7 @@ function growth() {
 
 function release() {
     const c=me();
-    return `${head()}<main class="release-office"><div class="phase-topbar"><p class="eyebrow">選手整理</p><h2>放出フェイズ</h2><p class="hint">市場開始前にロスターを整理できます。登録選手は最低5人、GKは最低1人必要です。各選手カードの放出ボタンから放出できます。</p>${sortControl('release',s.releaseSort)}</div><section class="candidate-grid">${sortPlayers(c.roster,s.releaseSort).map(p => renderPlayerCard(p, { allowRelease: true })).join('')}</section><button data-stage4="releaseDone">選手整理を終了してドラフトへ進む</button></main>`;
+    return `${head()}<main class="release-office"><div class="phase-topbar"><p class="eyebrow">選手整理</p><h2>放出フェイズ</h2><p class="hint">市場開始前にロスターを整理できます。登録選手は最低5人、GKは最低1人必要です。各選手カードの放出ボタンから放出できます。</p>${sortControl('release',s.releaseSort)}</div><section class="candidate-grid">${sortPlayers(c.roster,s.releaseSort).map(p => `<article class="candidate">${renderContractPlayerCard(p,c)}<button type="button" data-stage10="release" data-release-player="${e(p.id)}" class="subtle release-button">この選手を放出</button></article>`).join('')}</section><button data-stage4="releaseDone">選手整理を終了してドラフトへ進む</button></main>`;
 }
 
 onGameClick('app', ev => {
