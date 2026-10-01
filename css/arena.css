@@ -505,3 +505,28 @@ body.season-results-hall-active .season-summary-grid span{font-size:14px;}
 body.season-results-hall-active .season-summary-grid b{color:#73f4c7;font-size:28px;}
 body.season-results-hall-active .season-result-actions{position:sticky;bottom:-24px;background:#061a30f5;padding:12px 0;border-top:1px solid #53dbbc55;z-index:2;}
 @media(max-width:600px){body.season-results-hall-active #app>main.screen-season-results{margin:28px auto 25vh;padding:16px;max-height:62vh;}body.season-results-hall-active .season-result-actions{bottom:-16px;}}
+/* Unified season result dashboard, above the permanent ceremony stage. */
+body.season-results-hall-active #app>main.season-results-dashboard{position:relative;width:min(1200px,92vw);height:calc(100svh - 78px);max-height:none;overflow:visible;margin:0 auto;padding:0;background:transparent;border:0;box-shadow:none;}
+.results-title{height:12vh;margin:0;display:flex;align-items:center;justify-content:center;gap:16px;color:#ffe298;text-shadow:0 3px 8px #000;font-size:clamp(25px,3vw,44px);}
+.results-title small{font-size:13px;color:#d1e7e4;}
+.results-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 10px;}
+#app .results-tabs button{margin:0;border:1px solid #699baf;background:#071c32f2;color:#fff;font-size:18px;padding:10px;border-radius:7px;}
+#app .results-tabs .is-active{background:linear-gradient(120deg,#f6d779,#c69734);color:#172137;border-color:#fff0b1;}
+.results-content{height:43vh;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;}
+.results-overview{display:grid;grid-template-columns:.9fr 1.2fr;gap:16px;height:100%;}
+.results-panel{padding:16px 20px;background:#061a30f5;border:2px solid #bdab6b;border-radius:12px;min-width:0;}
+.results-panel h2{margin:0 0 12px;font-size:24px;color:#ffe4a5;}
+.results-club{text-align:center;display:flex;flex-direction:column;justify-content:center;}
+.results-rank{color:#f4f8ff;font-size:28px;line-height:1.05;}
+.results-rank strong{font-size:clamp(50px,7vw,92px);padding:0 8px;}
+.results-points{font-size:22px;color:#ffe099;margin:8px 0;}.results-points b{font-size:38px;}
+.results-record{font-size:22px;margin:8px 0;padding-bottom:10px;border-bottom:1px solid #b0b295;}
+.results-goals{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;color:#ccdae7;}.results-goals b{display:block;font-size:28px;color:#fff;}
+.results-table table{font-size:16px;width:100%;}.results-table td,.results-table th{padding:10px 7px;}.results-table tr.you{background:#08785c99;}
+.results-award-info{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}.results-award-info article{background:#102e46;padding:12px;border-radius:8px;}.results-award-info strong,.results-award-info small{display:block;}.results-award-info strong{font-size:21px;margin:5px 0;}.results-award-info span{color:#ffe099;}
+.results-podium-players{position:fixed;bottom:10vh;left:50%;transform:translateX(-50%);width:min(760px,58vw);display:grid;grid-template-columns:repeat(5,1fr);align-items:end;pointer-events:none;z-index:2;}
+.results-winner{text-align:center;min-width:0;}.results-winner img{display:block;width:auto;height:clamp(85px,15vh,160px);max-width:100%;object-fit:contain;margin:0 auto;filter:drop-shadow(0 4px 4px #0009);}.results-winner.is-mvp img{height:clamp(100px,17vh,180px);}
+.results-winner-name{background:#061a30e8;border:1px solid #77bfa4;border-radius:6px;padding:4px;color:#fff;margin-bottom:3px;}.results-winner-name strong,.results-winner-name small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.results-winner-name strong{font-size:14px;}.results-winner-name small{font-size:10px;}.results-winner-name span{font-size:11px;color:#ffe099;}.is-mvp .results-winner-name{border-color:#ffda68;}
+.results-dock{position:fixed;bottom:12px;left:2vw;right:2vw;display:flex;align-items:center;justify-content:space-between;z-index:3;gap:12px;}.results-dock button{font-size:17px;background:#072338ed;border:1px solid #d5c484;min-height:46px;}.results-dock>div button{background:#087756;}
+@media(max-width:760px){body.season-results-hall-active #app>main.season-results-dashboard{width:96vw;}.results-title{height:9vh;font-size:26px;}.results-title small{display:none;}#app .results-tabs button{font-size:14px;padding:10px 2px;}.results-overview{grid-template-columns:1fr;height:auto;}.results-content{height:48vh;}.results-panel{padding:12px;}.results-podium-players{width:90vw;bottom:11vh;}.results-winner img{height:11vh;}.results-winner.is-mvp img{height:13vh;}.results-winner-name strong{font-size:10px;}.results-winner-name small{display:none;}.results-award-info{grid-template-columns:1fr 1fr;}.results-dock button{font-size:13px;}}
+@media(max-height:600px) and (min-width:761px){.results-title{height:9vh;font-size:24px;}.results-content{height:40vh;}.results-panel{padding:10px;}.results-panel h2{font-size:18px;margin-bottom:6px;}.results-table td,.results-table th{padding:4px;}.results-rank strong{font-size:48px;}.results-points b{font-size:26px;}.results-record{font-size:16px;margin:4px;}.results-goals b{font-size:22px;}.results-winner-name small{display:none;}}
