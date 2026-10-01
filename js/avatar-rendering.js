@@ -1,4 +1,4 @@
-import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js?v=appearance-v14';
+import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js?v=appearance-v13';
 import { HAIR_PARTS } from './avatar-hair-parts.js';
 const rgb = hex => hex.slice(1).match(/../g).map(n => parseInt(n,16));
 export function recolorPixels(pixels, { skinTone = 0, kit, goalkeeper = false, recolorKit = true, hairColor, frontKeeperBody = false, partWidth = 256 } = {}) {
@@ -52,6 +52,11 @@ export function drawHair(ctx,assets,profile,view,box) {
   const replacement=profile.hairStyle===5?assets['mohawk'+(view==='front'?'Front':'Quarter')]:profile.hairStyle===15?assets['shortfade'+(view==='front'?'Front':'Quarter')]:null;
   const image=replacement||assets.hair;
   const part=replacement?[0,0,image.width,image.height]:HAIR_PARTS[profile.hairStyle][view];
+  if(view==='front'&&profile.hairStyle===5&&replacement){
+    // Registered square overlay uses the same 300px frame as the standing head.
+    paintPart(ctx,assets,image,part,[box[0]-35*box[2]/230,box[1]-20*box[3]/220,300*box[2]/230,300*box[3]/220],{hairColor:profile.hairColor,recolorKit:false});
+    return;
+  }
   const tall=[5,17].includes(profile.hairStyle);
   // Tall hair stays inside the canvas; reduce its height to raise the hairline.
   // Negative top offsets previously clamped to zero and had no effect.
@@ -62,13 +67,6 @@ export function drawHair(ctx,assets,profile,view,box) {
   const height=(view==='quarter'?Math.min(naturalHeight,box[3]*(tall?.82:.74)):naturalHeight)*(fit.height||1);
   const left=box[0]+(box[2]-width)/2+(fit.x||0)*box[2]/230;
   const top=Math.max(0,box[1]-(tall?box[3]*.12:0)+(fit.y||0)*box[3]/220)+(fit.shiftY||0)*box[3]/220;
-  // Close-cropped scalp follows the exact head silhouette beneath the mohawk.
-  // The transparent gaps around its central spike must not reveal bare crown pixels.
-  if(view==='front'&&profile.hairStyle===5&&(assets.parts||assets).width){
-    paintPart(ctx,assets,assets.parts||assets,[104,121,256,90],
-      [box[0]+box[2]*.0103,box[1]+box[3]/22,box[2]*.9795,box[3]*90/220],
-      {hairColor:profile.hairColor,recolorKit:false});
-  }
   // Preserve the independently drawn ears underneath every hairstyle.
   const earClip=typeof ctx.clip==='function';
   if(earClip){
@@ -112,7 +110,7 @@ let promise;
 export function loadAvatarAssets() {
   if(!promise)promise=(async()=>{
     const image=async path=>{const source=new Image();source.src=new URL(path,import.meta.url).href;await source.decode();return source;};
-    const [parts,hair,quarterHead,keeper,mohawkFront,mohawkQuarter,shortfadeFront,shortfadeQuarter]=await Promise.all([image('../assets/avatars/player-parts-v1.png'),image('../assets/avatars/player-hair-v3.webp'),image('../assets/avatars/player-head-quarter-v3.webp'),image('../assets/avatars/keeper-catch-v1.png'),image('../assets/avatars/mohawk-front-v2.webp'),image('../assets/avatars/mohawk-quarter-v1.webp'),image('../assets/avatars/shortfade-front-v1.webp'),image('../assets/avatars/shortfade-quarter-v1.webp')]);
+    const [parts,hair,quarterHead,keeper,mohawkFront,mohawkQuarter,shortfadeFront,shortfadeQuarter]=await Promise.all([image('../assets/avatars/player-parts-v1.png'),image('../assets/avatars/player-hair-v3.webp'),image('../assets/avatars/player-head-quarter-v3.webp'),image('../assets/avatars/keeper-catch-v1.png'),image('../assets/avatars/mohawk-front-v3.webp'),image('../assets/avatars/mohawk-quarter-v1.webp'),image('../assets/avatars/shortfade-front-v1.webp'),image('../assets/avatars/shortfade-quarter-v1.webp')]);
     return {parts,hair,quarterHead,keeper,mohawkFront,mohawkQuarter,shortfadeFront,shortfadeQuarter};
   })();
   return promise;
