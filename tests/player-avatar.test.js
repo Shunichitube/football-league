@@ -40,3 +40,9 @@ test('keeper standing portrait uses the same front body source as field players'
  const draw=goalkeeper=>{const calls=[];drawAvatar({clearRect(){},drawImage(...v){calls.push(v)}},{parts:{},keeper:{}},{hairStyle:0},{goalkeeper});return calls[0];};
  assert.deepEqual(draw(true),draw(false));
 });
+
+test('near-red ear and neck shadows from the source atlas follow dark skin',()=>{
+ const source=new Uint8ClampedArray([43,3,1,252,54,7,3,252,48,2,0,252]);
+ const dark=recolorPixels(source.slice(),{skinTone:2,recolorKit:false});
+ for(let i=0;i<source.length;i+=4){assert.ok(dark[i]<source[i]);assert.equal(dark[i+3],source[i+3]);}
+});

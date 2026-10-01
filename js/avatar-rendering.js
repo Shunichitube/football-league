@@ -7,7 +7,8 @@ export function recolorPixels(pixels, { skinTone = 0, kit, goalkeeper = false, r
     if (!pixels[i+3]) continue;
     const [r,g,b] = [pixels[i],pixels[i+1],pixels[i+2]];
     const px=(i/4)%partWidth,py=Math.floor(i/4/partWidth);
-    const isSkin=r>40&&g>15&&b>6&&r>g*1.12&&g>b*1.13&&g/r>.35&&b/r>.09;
+    // Source ear/neck shadows include near-red pixels with almost no green or blue.
+    const isSkin=r>30&&r>g*1.12&&g>=b&&r>b*1.25;
     if(frontKeeperBody&&isSkin&&py>30&&py<115&&(px<72||px>184)){
       const shade=Math.min(1,r/255);pixels[i]=Math.round(240*shade);pixels[i+1]=Math.round(245*shade);pixels[i+2]=Math.round(255*shade);continue;
     }
@@ -48,18 +49,20 @@ export function paintPart(ctx,assets,image,rect,dest,options) {
   if(surface)ctx.drawImage(surface,...dest);else ctx.drawImage(image,...rect,...dest);
 }
 export function drawHair(ctx,assets,profile,view,box) {
-  const part=HAIR_PARTS[profile.hairStyle][view];
+  const cornrows=view==='front'&&profile.hairStyle===15&&assets.cornrows;
+  const image=cornrows||assets.hair;
+  const part=cornrows?[0,0,image.width,image.height]:HAIR_PARTS[profile.hairStyle][view];
   const tall=[5,17].includes(profile.hairStyle);
   // Tall hair stays inside the canvas; reduce its height to raise the hairline.
   // Negative top offsets previously clamped to zero and had no effect.
-  const fit=view==='front'?({3:{scale:.83,x:0,y:0},4:{scale:.83,x:0,y:0},5:{scale:.70,x:0,y:0,height:.96},8:{scale:.83,x:0,y:0},11:{scale:1.06,x:-8,y:0},15:{scale:1.06,x:-8,y:-8},16:{scale:1.06,x:-18,y:-14},17:{scale:1,x:0,y:0,height:.78}}[profile.hairStyle]||{}):{};
+  const fit=view==='front'?({3:{scale:.83,x:0,y:7},4:{scale:.83,x:0,y:7},5:{scale:.76,x:0,y:0,height:.96},8:{scale:.83,x:0,y:7},11:{scale:1.06,x:-8,y:-6},15:{scale:1.06,x:-8,y:-8},16:{scale:1.06,x:-25,y:-14},17:{scale:1,x:0,y:0,height:.78}}[profile.hairStyle]||{}):{};
   const extra=([14,16,19].includes(profile.hairStyle)?1.08:1)*(view==='front'?1.04:1);
   const width=box[2]*extra*(fit.scale||1);
   const naturalHeight=width*part[3]/part[2];
   const height=(view==='quarter'?Math.min(naturalHeight,box[3]*(tall?.82:.74)):naturalHeight)*(fit.height||1);
   const left=box[0]+(box[2]-width)/2+(fit.x||0)*box[2]/230;
   const top=Math.max(0,box[1]-(tall?box[3]*.12:0)+(fit.y||0)*box[3]/220);
-  paintPart(ctx,assets,assets.hair,part,[left,top,width,height],{hairColor:profile.hairColor,recolorKit:false});
+  paintPart(ctx,assets,image,part,[left,top,width,height],{hairColor:profile.hairColor,recolorKit:false});
 }
 export function drawGlasses(ctx,eyes,{scale=1}={}) {
   ctx.save();ctx.strokeStyle='#252b30';ctx.lineWidth=Math.max(2.5,6*scale);ctx.lineJoin='round';ctx.lineCap='round';
@@ -90,8 +93,8 @@ let promise;
 export function loadAvatarAssets() {
   if(!promise)promise=(async()=>{
     const image=async path=>{const source=new Image();source.src=new URL(path,import.meta.url).href;await source.decode();return source;};
-    const [parts,hair,quarterHead,keeper]=await Promise.all([image('../assets/avatars/player-parts-v1.png'),image('../assets/avatars/player-hair-v3.webp'),image('../assets/avatars/player-head-quarter-v3.webp'),image('../assets/avatars/keeper-catch-v1.png')]);
-    return {parts,hair,quarterHead,keeper};
+    const [parts,hair,quarterHead,keeper,cornrows]=await Promise.all([image('../assets/avatars/player-parts-v1.png'),image('../assets/avatars/player-hair-v3.webp'),image('../assets/avatars/player-head-quarter-v3.webp'),image('../assets/avatars/keeper-catch-v1.png'),image('../assets/avatars/cornrows-front-v2.webp')]);
+    return {parts,hair,quarterHead,keeper,cornrows};
   })();
   return promise;
 }
