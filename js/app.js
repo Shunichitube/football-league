@@ -1,5 +1,5 @@
 import { playTrainingCinematic } from './training-cinematic.js?v=2';
-import { renderSeasonResults } from './season-results-ui.js?v=2';
+import { renderSeasonResults } from './season-results-ui.js?v=3';
 import { createInitialState } from './app-state.js';
 import { createAuctionClock } from './auction-clock.js';
 import { dialogs } from './dialogs.js';
