@@ -1,8 +1,9 @@
+import {playerAppearance,kitColor} from './avatar-profile.js';
 import { formatMatchEvents } from './match-log.js?v=0.17.31';
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.22.0';
 import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.17.2';
 import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.17.2';
-import { pixelTexture } from './arena-characters.js?v=modular-4';
+import { pixelTexture } from './arena-characters.js?v=appearance-v3';
 
 export const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
 
@@ -143,21 +144,22 @@ export function renderRosterPanel(club, options = {}) {
 }
 
 const squadAvatars = new Map();
-function squadAvatar(player) {
-  const key = player.avatar ? `avatar:${JSON.stringify(player.avatar)}` : player.avatarIndex ?? String(player.id).split('').reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 7) % 80;
+function squadAvatar(player, clubColor) {
+  const appearance = playerAppearance(player), goalkeeper = player.primaryPosition === 'GK';
+  const color = kitColor(clubColor, goalkeeper), key = JSON.stringify([appearance, color, goalkeeper]);
   if (typeof document === 'undefined') return '';
-  if (!squadAvatars.has(key)) squadAvatars.set(key, pixelTexture('#60a5fa', player.avatar || key % 80).toDataURL());
+  if (!squadAvatars.has(key)) squadAvatars.set(key, pixelTexture(color, appearance, 'player', {goalkeeper}).toDataURL());
   return squadAvatars.get(key);
 }
 
-function renderSquadCard(player, lineup, selectedId) {
+function renderSquadCard(player, lineup, selectedId, clubColor) {
   playerRefs.set(player.id, player);
   const display = displayPlayer(player);
   const slot = lineup.indexOf(player.id);
   const status = slot < 0 ? '控え' : `先発 ${slotLabel(LINEUP_SLOTS[slot], slot).replace(' ', '')}`;
   const abilities = publicAbilities(player);
   return `<article class="squad-player ${slot < 0 ? 'reserve' : 'starter'} ${selectedId === player.id ? 'selected-player' : ''}" data-compare-player="${escapeHtml(player.id)}" data-lineup-drag="${escapeHtml(player.id)}" draggable="true" tabindex="0" aria-label="${escapeHtml(player.name)}、${escapeHtml(status)}、総合${escapeHtml(display.overallRank)}">
-    <div class="squad-avatar" draggable="true" data-lineup-drag="${escapeHtml(player.id)}" aria-hidden="true">${squadRoleBadge(player, lineup)}<img src="${squadAvatar(player)}" alt="" draggable="false"></div>
+    <div class="squad-avatar" draggable="true" data-lineup-drag="${escapeHtml(player.id)}" aria-hidden="true">${squadRoleBadge(player, lineup)}<img src="${squadAvatar(player, clubColor)}" alt="" draggable="false"></div>
     <div class="squad-identity"><b class="player-name" data-player-name="${escapeHtml(player.id)}" title="${escapeHtml(player.name)}">${escapeHtml(player.name)}</b><strong>総合 ${escapeHtml(display.overallRank)}</strong><span>${escapeHtml(positionLabel(player.primaryPosition))} ・ ${display.age}歳</span><span>契約 ${display.contractYears}年</span><div class="squad-card-actions"><button type="button" data-lineup-player="${escapeHtml(player.id)}" class="subtle">${selectedId === player.id ? '選択中' : '選択'}</button><button type="button" data-rename-player="${escapeHtml(player.id)}" class="subtle" aria-label="${escapeHtml(player.name)}の名前変更">改名</button></div></div>
     <dl class="squad-abilities">${abilities.map(ability => `<div><dt>${escapeHtml(ability.label)}</dt><dd>${escapeHtml(ability.rank)}<i class="rank-bar rank-${escapeHtml(ability.rank)}"><b></b></i></dd></div>`).join('')}</dl>
     <div class="squad-special" title="${escapeHtml(display.specialAbility ? SPECIAL_ABILITY_DESCRIPTIONS[display.specialAbility] || '' : '')}"><span>特能</span><b>${escapeHtml(display.specialAbility || '―')}</b></div>
@@ -177,7 +179,7 @@ export function renderSquadComparison(club, selectedId, targetId = null) {
   const order = ['G','F','E','D','C','B','A','S','SS'];
   const left = displayPlayer(source), right = target ? displayPlayer(target) : null;
   const abilities = publicAbilities(source);
-  const profile = player => player ? `<div class="compare-profile">${squadRoleBadge(player, club.lineup || [])}<img src="${squadAvatar(player)}" alt=""><div><strong>${escapeHtml(player.name)}</strong><span>総合 ${escapeHtml(displayPlayer(player).overallRank)} ・ ${escapeHtml(positionLabel(player.primaryPosition))}</span><small>${player.age}歳 ・ 契約${player.contractYears}年</small></div></div>` : '<div class="compare-profile compare-placeholder">所属選手にホバーまたは選択</div>';
+  const profile = player => player ? `<div class="compare-profile">${squadRoleBadge(player, club.lineup || [])}<img src="${squadAvatar(player, club.color)}" alt=""><div><strong>${escapeHtml(player.name)}</strong><span>総合 ${escapeHtml(displayPlayer(player).overallRank)} ・ ${escapeHtml(positionLabel(player.primaryPosition))}</span><small>${player.age}歳 ・ 契約${player.contractYears}年</small></div></div>` : '<div class="compare-profile compare-placeholder">所属選手にホバーまたは選択</div>';
   return `<div class="compare-duel"><section class="compare-person">${profile(source)}<div class="compare-ability-list">${abilities.map(ability => `<div><span>${escapeHtml(ability.label)}</span><b>${escapeHtml(ability.rank)}</b><i class="rank-bar rank-${escapeHtml(ability.rank)}"><b></b></i></div>`).join('')}</div><p class="compare-special">特能 <b>${escapeHtml(left.specialAbility || '―')}</b></p></section><span class="compare-vs">VS</span><section class="compare-person">${profile(target)}<div class="compare-ability-list">${abilities.map(ability => {
     const rank = right?.ranks[ability.key];
     const change = rank ? Math.sign(order.indexOf(rank) - order.indexOf(ability.rank)) : 0;
@@ -204,9 +206,9 @@ export function renderLineupEditor(club, selectedPlayerId = null, message = '', 
     <div class="lineup-status ${messageIsError || !validation.ok ? 'error' : validation.warnings.length ? 'warning' : 'valid'}" role="status" ${status ? '' : 'hidden'}><b>${escapeHtml(status)}</b><span class="formation-drop-status" aria-live="polite"></span></div>
     <div class="formation-side"><div class="formation-board-title"><h3>フォーメーション</h3><span>5人のスタメン</span></div><div class="lineup-slots formation-pitch">${LINEUP_SLOTS.map((slot, index) => {
       const player = club.roster.find(candidate => candidate.id === club.lineup?.[index]);
-      return `<button type="button" class="lineup-slot formation-token ${player && player.primaryPosition !== slot ? 'out-of-position' : ''} ${selectedPlayerId === player?.id ? 'selected-player' : ''}" data-lineup-slot="${index}" data-lineup-drag="${player ? escapeHtml(player.id) : ''}" ${player ? 'draggable="true"' : ''} aria-label="${slotLabel(slot,index)}：${player ? escapeHtml(player.name) : '空き枠'}">${player ? `${squadRoleBadge(player, club.lineup || [])}<img src="${squadAvatar(player)}" alt="" draggable="false"><strong>${escapeHtml(player.name)}</strong><span class="formation-details">総合 ${escapeHtml(displayPlayer(player).overallRank)} ・ ${escapeHtml(positionLabel(player.primaryPosition))}${player.primaryPosition !== slot ? ' ▼' : ''}</span>` : `<span class="formation-position">${slotLabel(slot,index)}</span><span class="formation-empty">＋ 配置</span>`}</button>`;
+      return `<button type="button" class="lineup-slot formation-token ${player && player.primaryPosition !== slot ? 'out-of-position' : ''} ${selectedPlayerId === player?.id ? 'selected-player' : ''}" data-lineup-slot="${index}" data-lineup-drag="${player ? escapeHtml(player.id) : ''}" ${player ? 'draggable="true"' : ''} aria-label="${slotLabel(slot,index)}：${player ? escapeHtml(player.name) : '空き枠'}">${player ? `${squadRoleBadge(player, club.lineup || [])}<img src="${squadAvatar(player, club.color)}" alt="" draggable="false"><strong>${escapeHtml(player.name)}</strong><span class="formation-details">総合 ${escapeHtml(displayPlayer(player).overallRank)} ・ ${escapeHtml(positionLabel(player.primaryPosition))}${player.primaryPosition !== slot ? ' ▼' : ''}</span>` : `<span class="formation-position">${slotLabel(slot,index)}</span><span class="formation-empty">＋ 配置</span>`}</button>`;
     }).join('')}</div><section class="squad-tablet" aria-label="戦術と選手比較"><div class="squad-tablet-tactics"></div><div class="squad-compare"><h3>選手比較 <small>PLAYER COMPARE</small></h3><div class="squad-compare-content">${renderSquadComparison(club, selectedPlayerId)}</div></div></section></div>
-    <div class="formation-cards"><div class="bench-heading"><h3>所属選手 <small>${club.roster.length}/12</small></h3><label>並び順<select data-bench-sort><option value="position" ${benchSort === 'position' ? 'selected' : ''}>ポジション順</option><option value="overall" ${benchSort === 'overall' ? 'selected' : ''}>総合ランク順</option><option value="age" ${benchSort === 'age' ? 'selected' : ''}>年齢順</option><option value="contract" ${benchSort === 'contract' ? 'selected' : ''}>契約年数順</option></select></label></div><div class="candidate-grid bench-grid">${roster.map(player => renderSquadCard(player, club.lineup || [], selectedPlayerId)).join('')}</div><div class="squad-season-action"><button data-a="season" ${validation.ok ? '' : 'disabled'}>シーズンをシミュレート ›</button></div></div>
+    <div class="formation-cards"><div class="bench-heading"><h3>所属選手 <small>${club.roster.length}/12</small></h3><label>並び順<select data-bench-sort><option value="position" ${benchSort === 'position' ? 'selected' : ''}>ポジション順</option><option value="overall" ${benchSort === 'overall' ? 'selected' : ''}>総合ランク順</option><option value="age" ${benchSort === 'age' ? 'selected' : ''}>年齢順</option><option value="contract" ${benchSort === 'contract' ? 'selected' : ''}>契約年数順</option></select></label></div><div class="candidate-grid bench-grid">${roster.map(player => renderSquadCard(player, club.lineup || [], selectedPlayerId, club.color)).join('')}</div><div class="squad-season-action"><button data-a="season" ${validation.ok ? '' : 'disabled'}>シーズンをシミュレート ›</button></div></div>
   </section>`;
 }
 

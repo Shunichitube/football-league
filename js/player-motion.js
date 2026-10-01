@@ -1,3 +1,5 @@
+import {loadAvatarAssets} from './avatar-rendering.js';
+import {appearanceMotionFrame} from './avatar-motion-parts.js';
 export const MOTIONS = {
   idle: { label: '待機', frames: [0, 1], fps: 2 },
   run: { label: '走り', frames: [0, 1, 2, 3, 4, 5, 6, 7], fps: 16 },
@@ -13,18 +15,19 @@ export function motionFrame(motion, seconds, { loop } = {}) {
 }
 export async function loadMotionAtlas() {
   const load = async path => { const image = new Image(); image.src = new URL(path, import.meta.url).href; await image.decode(); return image; };
-  const [base, run, inbetweens, correctedSix, shoot, catchSheet, dive] = await Promise.all([
+  const [base, run, inbetweens, correctedSix, shoot, catchSheet, dive, avatar] = await Promise.all([
     load('../assets/avatars/player-motion-v1.png'),
     load('../assets/avatars/player-run-v3.png'),
     load('../assets/avatars/player-run-inbetweens-v1.png'),
     load('../assets/avatars/player-run-frame-six-v2.png'),
     load('../assets/avatars/player-shoot-v1.png'),
     load('../assets/avatars/keeper-catch-v1.png'),
-    load('../assets/avatars/keeper-dive-v1.png')
+    load('../assets/avatars/keeper-dive-v1.png'),
+    loadAvatarAssets()
   ]);
-  return { base, run, inbetweens, correctedSix, shoot, catch: catchSheet, dive };
+  return { base, run, inbetweens, correctedSix, shoot, catch: catchSheet, dive, avatar };
 }
-export function drawMotion(ctx, atlas, motion, seconds, { direction = 'right', ball = false, loop } = {}) {
+export function drawMotion(ctx, atlas, motion, seconds, { direction = 'right', ball = false, loop, appearance, kit, goalkeeper = false } = {}) {
   const index = motionFrame(motion, seconds, { loop });
   const width = ctx.canvas.width, height = ctx.canvas.height;
   const usesRun = motion === 'run' || motion === 'dribble';
@@ -49,7 +52,9 @@ export function drawMotion(ctx, atlas, motion, seconds, { direction = 'right', b
   const offsets = usesRun ? (isBetween ? [[-50,-12],[7,-8],[-48,3],[5,3]] : [[-50,0],[20,0],[-48,10],[21,11]])[sourceIndex] : actionOffsets[motion]?.[index] || [0,0];
   const dx = (width-w)/2 + offsets[0] / 627 * w;
   const dy = (height-h)/2 + offsets[1] / 627 * h + (usesRun ? height*.04 : 0);
-  ctx.drawImage(sheet, (sourceIndex % columns) * cellWidth, Math.floor(sourceIndex / columns) * cellHeight, cellWidth, cellHeight, dx, dy, w, h);
+  const personalized = appearance !== undefined ? appearanceMotionFrame(atlas, sheet, sourceIndex, columns, appearance, {kit, goalkeeper}) : null;
+  if(personalized)ctx.drawImage(personalized,0,0,personalized.width,personalized.height,dx,dy,w,h);
+  else ctx.drawImage(sheet, (sourceIndex % columns) * cellWidth, Math.floor(sourceIndex / columns) * cellHeight, cellWidth, cellHeight, dx, dy, w, h);
   if (ball && motion === 'dribble') {
     const x = width * (.82 + Math.sin(seconds * Math.PI * 5) * .025), y = dy + h*.9;
     const r = h*.052;

@@ -1,54 +1,29 @@
-// One shared body; hair and face are composited without regenerating the player.
-export const HAIR_STYLES = ['ショート', 'サイドパート', 'スパイキー'];
-export const FACE_STYLES = ['ノーマル', 'きりっと', 'やさしい'];
-export const AVATAR_SIZE = { width: 300, height: 470 };
-const variant = value => Number.isFinite(Number(value)) ? ((Math.trunc(Number(value)) % 3) + 3) % 3 : 0;
-export function avatarProfile(value = 0) {
-  const profile = value && typeof value === 'object' ? value : null;
-  const seed = Number(profile?.seed ?? value) || 0;
-  return { version: 2, body: 0, hairStyle: variant(profile?.hairStyle ?? seed), face: variant(profile?.face ?? Math.floor(seed / 3)), hairColor: 0, skinTone: 0 };
+// Shared body, separately registered hairstyle/face/accessory layers.
+import {avatarProfile,kitColor} from './avatar-profile.js';
+import {drawHair,drawGlasses,paintPart,loadAvatarAssets} from './avatar-rendering.js';
+export {avatarProfile,HAIR_STYLES,FACE_STYLES,SKIN_TONES} from './avatar-profile.js';
+export const AVATAR_SIZE={width:300,height:470};
+const HEAD=[104,121,256,220],BODY=[104,341,256,210];
+const headX=x=>150+(x-150)*.88;
+const EYE=[174,703,26,46];
+const BROWS=[null,[[595,670,46,27],[702,670,46,26]],[[1023,662,49,23],[1151,662,50,23]]];
+export function drawAvatar(ctx,assets,value=0,{kit,goalkeeper=false}={}) {
+ const profile=avatarProfile(value),parts=assets.parts||assets;
+ ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,300,470);
+ const options={skinTone:profile.skinTone,kit:kitColor(kit,goalkeeper),goalkeeper};
+ if(goalkeeper&&assets.keeper)paintPart(ctx,assets,assets.keeper,[125,296,405,292],[12,250,276,199],{...options,recolorKit:false});
+ else paintPart(ctx,assets,parts,BODY,[22,250,256,210],options);
+ paintPart(ctx,assets,parts,HEAD,[headX(22),30,256*.88,220],{...options,recolorKit:false});
+ if(assets.hair)drawHair(ctx,assets,profile,'front',[35,20,230,220]);
+ const eyes=[];
+ for(let side=0;side<2;side++){
+  const brow=BROWS[profile.face]?.[side];if(brow)ctx.drawImage(parts,...brow,headX(105+side*60),155,30*.88,16);
+  const dest=[Math.round(headX(112+side*60)),176,Math.round(16*.88),35];eyes.push(dest);ctx.drawImage(parts,...EYE,...dest);
+ }
+ if(profile.glasses)drawGlasses(ctx,eyes);
 }
-
-// Source regions are measured independently: generated parts need not be on a grid.
-// Destination coordinates register every part to the same head and feet.
-const HEAD = [104, 121, 256, 220];
-const BODY = [104, 341, 256, 210];
-const HEAD_WIDTH_SCALE = .88;
-const headX = x => 150 + (x - 150) * HEAD_WIDTH_SCALE;
-const HAIR = [[541,121,260,192], [973,119,272,201], [1414,94,280,213]];
-// Share one complete eye shape so both sides rasterize identically.
-const EYE = [174,703,26,46];
-const BROWS = [null, [[595,670,46,27], [702,670,46,26]], [[1023,662,49,23], [1151,662,50,23]]];
-export function drawAvatar(ctx, atlas, value = 0) {
-  const profile = avatarProfile(value);
-  ctx.imageSmoothingEnabled = false;
-  ctx.clearRect(0, 0, AVATAR_SIZE.width, AVATAR_SIZE.height);
-  ctx.drawImage(atlas, ...BODY, 22, 250, 256, 210);
-  ctx.drawImage(atlas, ...HEAD, headX(22), 30, 256 * HEAD_WIDTH_SCALE, 220);
-  // Draw only the eyes and optional eyebrows: mouth pixels are never sampled.
-  // Smaller eyes, closer together; identical eye positions across all faces.
-  for (let side = 0; side < 2; side++) {
-    const brow = BROWS[profile.face]?.[side];
-    if (brow) ctx.drawImage(atlas, ...brow, headX(105 + side * 60), 155, 30 * HEAD_WIDTH_SCALE, 16);
-  }
-  const hair = HAIR[profile.hairStyle];
-  ctx.drawImage(atlas, ...hair, (300-hair[2]*HEAD_WIDTH_SCALE)/2, [26,24,0][profile.hairStyle], hair[2]*HEAD_WIDTH_SCALE, hair[3]);
-  // Keep both complete eye shapes visible where the fringe meets their top edge.
-  for (let side = 0; side < 2; side++) {
-    ctx.drawImage(atlas, ...EYE, Math.round(headX(112 + side * 60)), 176, Math.round(16 * HEAD_WIDTH_SCALE), 35);
-  }
-}
-
-let atlas;
-if (typeof document !== 'undefined' && typeof Image !== 'undefined') {
-  atlas = new Image();
-  atlas.src = new URL('../assets/avatars/player-parts-v1.png', import.meta.url).href;
-  await atlas.decode();
-}
-export function playerAvatarTexture(value) {
-  const canvas = document.createElement('canvas');
-  canvas.width = AVATAR_SIZE.width;
-  canvas.height = AVATAR_SIZE.height;
-  drawAvatar(canvas.getContext('2d'), atlas, value);
-  return canvas;
+let assets;
+if(typeof document!=='undefined'&&typeof Image!=='undefined')assets=await loadAvatarAssets();
+export function playerAvatarTexture(value,options={}) {
+ const canvas=document.createElement('canvas');canvas.width=300;canvas.height=470;drawAvatar(canvas.getContext('2d'),assets,value,options);return canvas;
 }

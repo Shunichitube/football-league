@@ -1,4 +1,5 @@
 import { rankOf } from './config.js';
+import { createPlayerAppearance } from './avatar-profile.js';
 
 export const FIELD_STAT_KEYS = ['shoot', 'speed', 'defense', 'dribble', 'pass'];
 export const FIELD_PLAYER_STAT_KEYS = [...FIELD_STAT_KEYS, 'stamina'];
@@ -22,18 +23,8 @@ const OVERALL_WEIGHTS = {
   GK: { gk: .70, defense: .10, speed: .10, pass: .10 }
 };
 
-function avatarSeed(value) {
-  return String(value).split('').reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 7);
-}
-
 function createAvatarProfile(id, position) {
-  const seed = avatarSeed(`${id}:${position}`);
-  return {
-    version: 2, body: 0,
-    hairStyle: seed % 3,
-    face: Math.floor(seed / 3) % 3,
-    hairColor: 0, skinTone: 0
-  };
+  return createPlayerAppearance(id, position);
 }
 
 function weightedGrowthFocus(rng) {
