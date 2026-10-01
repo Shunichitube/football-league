@@ -3,8 +3,8 @@
 <h1>選手・キーパーモーション</h1><p>待機・走り・ドリブルに、右足シュート・キャッチ・飛び込みを追加。各カードで1コマずつ確認できます。シュートは右足を保つため右向きで表示します。</p>
 <button id="pause">一時停止</button><button id="reset">最初から再生</button><button id="speed">半分の速さ</button><button id="direction">左向きに切り替え</button><a style="color:#8de8c2" href="preview.html">髪型20種の一覧</a><section class="appearance-controls"><label>髪型<select id="hair"></select></label><label>顔<select id="face"></select></label><label>肌色<select id="skin"></select></label><label><input id="glasses" type="checkbox">眼鏡</label><label>クラブカラー<input id="kit" type="color" value="#2065db"></label><span>GKはグレー固定</span></section><main></main>
 <script type="module">
-import {MOTIONS,motionFrame,loadMotionAtlas,drawMotion} from '../../js/player-motion.js?v=appearance-v19';
-import {HAIR_STYLES,FACE_STYLES,SKIN_TONES} from '../../js/avatar-profile.js?v=appearance-v19';
+import {MOTIONS,motionFrame,loadMotionAtlas,drawMotion} from '../../js/player-motion.js?v=appearance-v20';
+import {HAIR_STYLES,FACE_STYLES,SKIN_TONES} from '../../js/avatar-profile.js?v=appearance-v20';
 const hair=document.querySelector('#hair'),face=document.querySelector('#face'),skin=document.querySelector('#skin'),glasses=document.querySelector('#glasses'),kit=document.querySelector('#kit');
 HAIR_STYLES.forEach((name,i)=>hair.add(new Option(name,i)));FACE_STYLES.forEach((name,i)=>face.add(new Option(name,i)));SKIN_TONES.forEach((tone,i)=>skin.add(new Option(tone.label,i)));hair.value='2';
 const atlas=await loadMotionAtlas();let paused=false,previous=null,direction='right',speed=1;

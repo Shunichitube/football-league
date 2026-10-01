@@ -1,10 +1,10 @@
 import { dialogs } from './dialogs.js';
-import {playerAppearance,kitColor} from './avatar-profile.js?v=appearance-v19';
+import {playerAppearance,kitColor} from './avatar-profile.js?v=appearance-v20';
 import { formatMatchEvents } from './match-log.js?v=0.17.31';
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.22.0';
 import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.17.2';
 import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.17.2';
-import { pixelTexture } from './arena-characters.js?v=appearance-v19';
+import { pixelTexture } from './arena-characters.js?v=appearance-v20';
 
 export const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
 

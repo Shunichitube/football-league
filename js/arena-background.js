@@ -1,5 +1,5 @@
 import { mountDraftHall } from './draft-hall.js?v=1.1.1-refactor';
-import { mountArena } from './arena-scene.js?v=appearance-v19';
+import { mountArena } from './arena-scene.js?v=appearance-v20';
 
 // A screen lifetime owns every animation/listener. Navigation destroys it.
 const app=document.querySelector('#app');
