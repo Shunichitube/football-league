@@ -50,12 +50,14 @@ export function paintPart(ctx,assets,image,rect,dest,options) {
 export function drawHair(ctx,assets,profile,view,box) {
   const part=HAIR_PARTS[profile.hairStyle][view];
   const tall=[5,17].includes(profile.hairStyle);
+  // Register these front hairstyles to the approved face without moving the head.
+  const fit=view==='front'?({3:{scale:.9,x:0,y:0},4:{scale:.9,x:0,y:0},5:{scale:.78,x:0,y:-12},8:{scale:.9,x:0,y:0},15:{scale:1,x:0,y:-8},16:{scale:1,x:-10,y:-14},17:{scale:1,x:0,y:-14,height:.9}}[profile.hairStyle]||{}):{};
   const extra=([14,16,19].includes(profile.hairStyle)?1.08:1)*(view==='front'?1.04:1);
-  const width=box[2]*extra;
+  const width=box[2]*extra*(fit.scale||1);
   const naturalHeight=width*part[3]/part[2];
-  const height=view==='quarter'?Math.min(naturalHeight,box[3]*(tall?.82:.74)):naturalHeight;
-  const left=box[0]+(box[2]-width)/2;
-  const top=Math.max(0,box[1]-(tall?box[3]*.12:0));
+  const height=(view==='quarter'?Math.min(naturalHeight,box[3]*(tall?.82:.74)):naturalHeight)*(fit.height||1);
+  const left=box[0]+(box[2]-width)/2+(fit.x||0)*box[2]/230;
+  const top=Math.max(0,box[1]-(tall?box[3]*.12:0)+(fit.y||0)*box[3]/220);
   paintPart(ctx,assets,assets.hair,part,[left,top,width,height],{hairColor:profile.hairColor,recolorKit:false});
 }
 export function drawGlasses(ctx,eyes,{scale=1}={}) {
