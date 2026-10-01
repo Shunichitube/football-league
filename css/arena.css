@@ -658,7 +658,8 @@ body:has(.training-results-visible) #app{position:relative;z-index:1001;}
 
 /* Completed auctions have no live scene, so retain the venue behind the dialog. */
 body.auction-hall-active:has(main.phase-complete-screen)::before{display:block;}
-#app main.auction-room.phase-complete-screen{min-height:0;}
+#app>main.auction-room.phase-complete-screen{position:fixed;inset:0;width:100%;height:100svh;min-height:0;margin:0;box-sizing:border-box;}
+body:has(#app>main.phase-complete-screen){height:100svh;min-height:0;overflow:hidden;}
 
 .match-detail-topbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px;}
 .match-detail-topbar .eyebrow{margin:0;}
