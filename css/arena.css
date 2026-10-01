@@ -551,3 +551,16 @@ body.season-results-hall-active #app>main.season-results-dashboard{position:rela
 #app main.match-detail .ability-grid dt{white-space:nowrap;}
 #app main.match-detail .ability-grid dd{min-width:0;}
 @media(max-width:540px){#app main.match-detail .match-player-result{grid-template-columns:minmax(0,1fr);}.match-player-avatar{grid-column:1;grid-row:1;}#app main.match-detail .match-player-result>.player-card{grid-column:1;grid-row:2;grid-template-columns:minmax(105px,.85fr) minmax(140px,1.15fr)!important;}.match-player-avatar img{height:110px;width:72px;}}
+
+body.contract-office-active{background:#071522;}
+body.contract-office-active::before{content:"";position:fixed;inset:0;background:#071522 url('../assets/arena/contract-office-v1.webp') center/cover no-repeat;z-index:0;pointer-events:none;}
+body.contract-office-active #app{position:relative;z-index:1;}
+body.contract-office-active #app>header{background:#061a2ce8;}
+#app main.contract-room{width:min(1120px,94vw);margin:24px auto;padding:24px;background:#071b2deb;border:1px solid #79a79588;border-radius:16px;}
+#app main.contract-room>.candidate{width:min(100%,520px);box-sizing:border-box;background:#0d2539ed;margin:12px 0;padding:14px;}
+#app main.contract-room .squad-player{display:grid;grid-template-columns:80px minmax(110px,.85fr) minmax(160px,1.15fr);gap:10px;min-width:0;background:#0a1b2d;border:1px solid #507c87;border-radius:9px;padding:10px;}
+.contract-room .squad-avatar{display:flex;align-items:center;justify-content:center;position:relative;}.contract-room .squad-avatar img{width:76px;height:120px;object-fit:contain;}.contract-room .squad-role-badge{display:none;}
+.contract-room .squad-identity{display:flex;flex-direction:column;justify-content:center;gap:5px;font-size:13px;min-width:0;}.contract-room .squad-identity .player-name{font-size:16px!important;white-space:normal!important;overflow-wrap:anywhere;}.contract-room .squad-identity strong{color:#f5d986;}
+.contract-room .squad-abilities{display:flex;flex-direction:column;justify-content:center;gap:4px;margin:0;min-width:0;}.contract-room .squad-abilities>div{display:grid;grid-template-columns:58px minmax(0,1fr);align-items:center;background:#071421;padding:3px;}.contract-room .squad-abilities dt{font-size:12px;white-space:nowrap;}.contract-room .squad-abilities dd{display:grid;grid-template-columns:18px minmax(0,1fr);gap:5px;margin:0;font-size:13px;}.contract-room .rank-bar{width:100%;min-width:0;height:6px!important;}
+.contract-room .squad-special{grid-column:1/-1;border-top:1px solid #486171;padding-top:7px;font-size:13px;}.contract-room .squad-special span{margin-right:10px;color:#b8ccd5;}
+@media(max-width:550px){#app main.contract-room{padding:14px;}#app main.contract-room .squad-player{grid-template-columns:65px minmax(0,1fr);}.contract-room .squad-abilities{grid-column:1/-1;}.contract-room .squad-avatar img{width:60px;height:100px;}}

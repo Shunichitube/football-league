@@ -279,3 +279,10 @@ export function renderSeasonPlayerStats(club) {
     return `<article class="candidate">${renderPlayerCard(player)}<p>出場 ${player.season.appearances}・得点 ${player.season.goals}・アシスト ${player.season.assists}</p><p>平均評価 ${average}・シュート ${player.season.shots}・攻撃貢献 ${player.season.attackContributions}</p><p>守備成功 ${player.season.defensiveStops}・セーブ ${player.season.saves}</p></article>`;
   }).join('')}</section>`;
 }
+
+export function renderContractPlayerCard(player,club){
+ return renderSquadCard(player,club.lineup||[],null,club.color)
+  .replace(/<div class="squad-card-actions">[\s\S]*?<\/div>/,'')
+  .replace(/ data-(?:compare-player|lineup-drag)="[^"]*"/g,'')
+  .replace(/draggable="true"/g,'draggable="false"');
+}
