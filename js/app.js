@@ -1,10 +1,10 @@
 import { openLot, raiseBid, passLot, tickLot } from './live-auction.js?v=0.21.1';
-import { auctionAvatar, renderLiveAuction } from './auction-ui.js?v=appearance-v9';
+import { auctionAvatar, renderLiveAuction } from './auction-ui.js?v=appearance-v10';
 import { applySeasonFinances, awards, clubAchievements, createLeague, finalizeSeason, recordDraftAcquisition, simulateRemainingSeason, standings as singleStandings, startNextSeason } from './league.js?v=0.17.29';
-import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=appearance-v9';
+import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=appearance-v10';
 import { createRandom } from './random.js';
 import { createAuctionPool, createDraftPool, resolveDraftActions } from './market.js?v=0.22.0';
-import { configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=appearance-v9';
+import { configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=appearance-v10';
 import { decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=0.17.30';
 import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=0.17.2';
 import { RoomAdapter } from './room-adapter.js?v=0.20.0';

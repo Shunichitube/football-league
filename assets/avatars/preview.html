@@ -3,7 +3,7 @@
 <h1>髪型20種 × 髪色10色 × 肌色3色 × 眼鏡</h1><p>顔3種類も組み合わせられます。クラブカラーでユニフォームを変更できます。キーパーはグレー固定です。</p><p><a href="motion-preview.html">同じ見た目で動作を確認する</a></p>
 <section><label>髪色<select id="hairColor"></select></label><label>肌色<select id="skin"></select></label><label>顔<select id="face"></select></label><label><input id="glasses" type="checkbox">眼鏡</label><label>クラブカラー<input id="kit" type="color" value="#2065db"></label><label><input id="keeper" type="checkbox">キーパー</label></section><main></main>
 <script type="module">
-import {playerAvatarTexture,HAIR_STYLES,FACE_STYLES,SKIN_TONES,HAIR_COLORS} from '../../js/player-avatar.js?v=appearance-v9';
+import {playerAvatarTexture,HAIR_STYLES,FACE_STYLES,SKIN_TONES,HAIR_COLORS} from '../../js/player-avatar.js?v=appearance-v10';
 const hairColor=document.querySelector('#hairColor');HAIR_COLORS.forEach((tone,i)=>hairColor.add(new Option(tone.label,i)));
 const skin=document.querySelector('#skin'),face=document.querySelector('#face'),glasses=document.querySelector('#glasses'),kit=document.querySelector('#kit'),keeper=document.querySelector('#keeper');
 SKIN_TONES.forEach((tone,i)=>skin.add(new Option(tone.label,i)));FACE_STYLES.forEach((name,i)=>face.add(new Option(name,i)));
