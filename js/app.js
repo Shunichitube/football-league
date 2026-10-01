@@ -1,4 +1,4 @@
-import { playTrainingCinematic } from './training-cinematic.js?v=4';
+import { playTrainingCinematic } from './training-cinematic.js?v=5';
 import { renderSeasonResults } from './season-results-ui.js?v=3';
 import { createInitialState } from './app-state.js';
 import { createAuctionClock } from './auction-clock.js';
