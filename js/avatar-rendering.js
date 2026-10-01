@@ -1,5 +1,5 @@
-import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js?v=appearance-v20';
-import { HAIR_PARTS } from './avatar-hair-parts.js?v=appearance-v20';
+import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js?v=appearance-v21';
+import { HAIR_PARTS } from './avatar-hair-parts.js?v=appearance-v21';
 const rgb = hex => hex.slice(1).match(/../g).map(n => parseInt(n,16));
 export function recolorPixels(pixels, { skinTone = 0, kit, goalkeeper = false, recolorKit = true, hairColor, frontKeeperBody = false, partWidth = 256 } = {}) {
   const skin = rgb(SKIN_TONES[avatarProfile({skinTone}).skinTone].color), uniform = rgb(kitColor(kit, goalkeeper));
@@ -50,12 +50,15 @@ export function paintPart(ctx,assets,image,rect,dest,options) {
 }
 // Registration of the newly drawn motion overlays to the supplied 300px head.
 export const MOTION_HAIR_OFFSETS=[-10,-10,-10,-10,-10,-12,-10,-10,-10,-10,-10,-10,-10,-12,-10,-10,-10,-10,-10,-10];
+export const MOTION_HAIR_SCALE={x:1.10,y:1.08,anchorX:210,anchorY:180};
 export function drawHair(ctx,assets,profile,view,box) {
   if(view==='quarter'&&assets.quarterHair?.[profile.hairStyle]){
     const image=assets.quarterHair[profile.hairStyle];
     // Newly drawn overlays retain the same square registration as the motion head.
     const [x,y,w,h]=box,offset=assets.quarterHairOffsets?.[profile.hairStyle]||0;
-    paintPart(ctx,assets,image,[0,0,image.width,image.height],[x,y+offset*h/300,w,h],{hairColor:profile.hairColor,recolorKit:false});
+    const fit=MOTION_HAIR_SCALE;
+    const dest=[x+fit.anchorX*(1-fit.x)*w/300,y+(fit.anchorY*(1-fit.y)+offset+4)*h/300,w*fit.x,h*fit.y];
+    paintPart(ctx,assets,image,[0,0,image.width,image.height],dest,{hairColor:profile.hairColor,recolorKit:false});
     return;
   }
   const replacement=profile.hairStyle===5?assets['mohawk'+(view==='front'?'Front':'Quarter')]:profile.hairStyle===15?assets['shortfade'+(view==='front'?'Front':'Quarter')]:null;
