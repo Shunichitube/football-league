@@ -51,7 +51,7 @@ export function drawHair(ctx,assets,profile,view,box) {
   const part=HAIR_PARTS[profile.hairStyle][view];
   const tall=[5,17].includes(profile.hairStyle);
   // Register these front hairstyles to the approved face without moving the head.
-  const fit=view==='front'?({3:{scale:.9,x:0,y:0},4:{scale:.9,x:0,y:0},5:{scale:.78,x:0,y:-12},8:{scale:.9,x:0,y:0},15:{scale:1,x:0,y:-8},16:{scale:1,x:-10,y:-14},17:{scale:1,x:0,y:-14,height:.9}}[profile.hairStyle]||{}):{};
+  const fit=view==='front'?({3:{scale:.83,x:0,y:0},4:{scale:.83,x:0,y:0},5:{scale:.70,x:0,y:-20},8:{scale:.83,x:0,y:0},11:{scale:1.06,x:-8,y:0},15:{scale:1.06,x:-8,y:-8},16:{scale:1.06,x:-18,y:-14},17:{scale:1,x:0,y:-24,height:.82}}[profile.hairStyle]||{}):{};
   const extra=([14,16,19].includes(profile.hairStyle)?1.08:1)*(view==='front'?1.04:1);
   const width=box[2]*extra*(fit.scale||1);
   const naturalHeight=width*part[3]/part[2];

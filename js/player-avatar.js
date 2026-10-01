@@ -1,6 +1,6 @@
 // Shared body, separately registered hairstyle/face/accessory layers.
 import {avatarProfile,kitColor} from './avatar-profile.js';
-import {drawHair,drawGlasses,paintPart,loadAvatarAssets} from './avatar-rendering.js?v=hair-fit-v6';
+import {drawHair,drawGlasses,paintPart,loadAvatarAssets} from './avatar-rendering.js?v=hair-fit-v7';
 export {avatarProfile,HAIR_STYLES,HAIR_COLORS,FACE_STYLES,SKIN_TONES} from './avatar-profile.js';
 export const AVATAR_SIZE={width:300,height:470};
 const HEAD=[104,121,256,220],BODY=[104,341,256,210];
