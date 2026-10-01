@@ -595,3 +595,13 @@ body.development-room-active #app>header{background:#061a2ce8;}
 .training-shade{position:absolute;inset:0;background:#000;opacity:0;transition:opacity .5s ease;}.training-shade.is-dark{opacity:1;}
 @media(max-width:700px){.focus-card-grid{grid-template-columns:minmax(0,520px);}.training-drills{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:0;}.training-drill canvas{max-width:150px;}.training-practice>h2{font-size:25px;}}
 @media(prefers-reduced-motion:reduce){.training-shade{transition:none;}}
+
+/* Results remain a modal above the running practice scene. */
+body:has(#app>.growth-modal){background:#071522 url('../assets/arena/home-arena-v2.webp') center/cover fixed;}
+#app main.growth-modal{position:fixed;inset:7vh auto auto 50%;transform:translateX(-50%);width:min(1480px,94vw)!important;max-height:86vh;overflow:auto;margin:0!important;padding:24px;background:#071b2df5;border:1px solid #75bda5;border-radius:16px;box-shadow:0 0 0 100vmax #020b1866,0 20px 70px #0008;z-index:1002;}
+body.training-results-pending #app main.growth-modal{visibility:hidden;pointer-events:none;}
+.training-results-visible{pointer-events:none;}
+#app main.growth-modal>.candidate-grid{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,450px),1fr))!important;gap:14px;}
+#app main.growth-modal .growth-result>p{font-size:14px;line-height:1.5;}.growth-modal .growth-labels{margin-bottom:8px;}
+#app main.growth-modal>button[data-stage4]{position:sticky;bottom:0;box-shadow:0 0 15px #061a30;}
+body:has(.training-results-visible) #app{position:relative;z-index:1001;}

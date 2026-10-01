@@ -14,7 +14,12 @@ export async function playTrainingCinematic(club,previousScreen){
  const entries=[['run','走り込み',field[0]||club.roster[0]],['dribble','ドリブル',field[1]||field[0]||club.roster[0]],['shoot','シュート',field[2]||field[0]||club.roster[0]],['catch','キーパー練習',keeper||club.roster[0]]];
  const sprites=entries.map(([motion,label,p])=>{const box=document.createElement('section');box.className='training-drill';const heading=document.createElement('h3');heading.textContent=label;const canvas=document.createElement('canvas');canvas.width=300;canvas.height=300;box.append(heading,canvas);drills.append(box);return {motion,p,canvas};});
  const shade=document.createElement('div');shade.className='training-shade';layer.append(source,scene,shade);document.body.append(layer);
- let frame=0,atlas=null;const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+ document.body.classList.add('training-results-pending');
+ let frame=0,atlas=null,finished=false;
+ const cleanup=()=>{cancelAnimationFrame(frame);layer.remove();active=false;document.body.classList.remove('training-results-pending');document.removeEventListener('football-league:view-rendered',onRender);};
+ const onRender=()=>{if(!document.querySelector('#app > .growth-modal'))cleanup();};
+ document.addEventListener('football-league:view-rendered',onRender);
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
  const loading=loadMotionAtlas().then(value=>{atlas=value;}).catch(()=>{});
  // Draw existing standing avatars immediately while the motion sheets load.
  for(const x of sprites)if(x.p)x.canvas.getContext('2d').drawImage(playerAvatarTexture(playerAppearance(x.p),{kit:club.color,goalkeeper:x.motion==='catch'}),55,0,190,300);
@@ -25,6 +30,8 @@ export async function playTrainingCinematic(club,previousScreen){
   await Promise.race([loading,wait(2000)]);
   const start=performance.now();
   const paint=now=>{const t=(now-start)/1000;for(const x of sprites)if(atlas&&x.p){let motion=x.motion;if(motion==='catch')motion=Math.floor(t/1.25)%2?'dive':'catch';drawMotion(x.canvas.getContext('2d'),atlas,motion,t,{loop:true,ball:motion==='dribble',appearance:playerAppearance(x.p),kit:club.color,goalkeeper:x.motion==='catch'});x.canvas.style.transform=!reduce&&x.motion==='run'?`translateX(${Math.sin(t*2)*25}px)`:'none';}frame=requestAnimationFrame(paint);};frame=requestAnimationFrame(paint);
-  await fade(false);await wait(5000);await fade(true);cancelAnimationFrame(frame);scene.remove();await fade(false);
- }finally{cancelAnimationFrame(frame);layer.remove();active=false;}
+  await fade(false);await wait(5000);
+  document.body.classList.remove('training-results-pending');
+  layer.classList.add('training-results-visible');finished=true;
+ }finally{if(!finished)cleanup();}
 }
