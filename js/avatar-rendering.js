@@ -1,11 +1,19 @@
 import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js';
 import { HAIR_PARTS } from './avatar-hair-parts.js';
 const rgb = hex => hex.slice(1).match(/../g).map(n => parseInt(n,16));
-export function recolorPixels(pixels, { skinTone = 0, kit, goalkeeper = false, recolorKit = true, hairColor } = {}) {
+export function recolorPixels(pixels, { skinTone = 0, kit, goalkeeper = false, recolorKit = true, hairColor, frontKeeperBody = false, partWidth = 256 } = {}) {
   const skin = rgb(SKIN_TONES[avatarProfile({skinTone}).skinTone].color), uniform = rgb(kitColor(kit, goalkeeper));
   for (let i=0; i<pixels.length; i+=4) {
     if (!pixels[i+3]) continue;
     const [r,g,b] = [pixels[i],pixels[i+1],pixels[i+2]];
+    const px=(i/4)%partWidth,py=Math.floor(i/4/partWidth);
+    const isSkin=r>40&&g>15&&b>6&&r>g*1.12&&g>b*1.13&&g/r>.35&&b/r>.09;
+    if(frontKeeperBody&&isSkin&&py>30&&py<115&&(px<72||px>184)){
+      const shade=Math.min(1,r/255);pixels[i]=Math.round(240*shade);pixels[i+1]=Math.round(245*shade);pixels[i+2]=Math.round(255*shade);continue;
+    }
+    if(frontKeeperBody&&py>90&&py<148&&px>60&&px<196&&r>110&&g>110&&b>110&&Math.max(r,g,b)-Math.min(r,g,b)<75){
+      const shade=Math.max(r,g,b)/255;pixels[i]=Math.round(43*shade);pixels[i+1]=Math.round(47*shade);pixels[i+2]=Math.round(54*shade);continue;
+    }
     if(hairColor!==undefined){
       if(r>30&&r>g*1.15&&g>b*1.1){const target=rgb(HAIR_COLORS[avatarProfile({hairColor}).hairColor].color),light=r/149;for(let c=0;c<3;c++)pixels[i+c]=Math.min(255,Math.round(target[c]*light));}
       continue;
@@ -13,7 +21,7 @@ export function recolorPixels(pixels, { skinTone = 0, kit, goalkeeper = false, r
     if (recolorKit && b>35 && b>r*1.45 && b>g*1.08) {
       const light = b/255, white = Math.min(.5, r/b);
       for(let c=0;c<3;c++) pixels[i+c] = Math.round((uniform[c]*(1-white)+255*white)*light);
-    } else if (r>105 && g>55 && b>25 && r>g*1.12 && g>b*1.13 && g/r>.47 && b/r>.20) {
+    } else if (isSkin) {
       pixels[i]=Math.min(255,Math.round(r*skin[0]/255));
       pixels[i+1]=Math.min(255,Math.round(g*skin[1]/190));
       pixels[i+2]=Math.min(255,Math.round(b*skin[2]/137));
@@ -42,7 +50,7 @@ export function paintPart(ctx,assets,image,rect,dest,options) {
 export function drawHair(ctx,assets,profile,view,box) {
   const part=HAIR_PARTS[profile.hairStyle][view];
   const tall=[5,17].includes(profile.hairStyle);
-  const extra=[14,16,19].includes(profile.hairStyle)?1.08:1;
+  const extra=([14,16,19].includes(profile.hairStyle)?1.08:1)*(view==='front'?1.04:1);
   const width=box[2]*extra;
   const naturalHeight=width*part[3]/part[2];
   const height=view==='quarter'?Math.min(naturalHeight,box[3]*(tall?.82:.74)):naturalHeight;

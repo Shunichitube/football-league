@@ -15,7 +15,7 @@ test('saved and generated appearances are stable without changing legacy player 
  const before=structuredClone(player);assert.deepEqual(playerAppearance(player),playerAppearance(player));assert.deepEqual(player,before);
  const expanded=new Set();for(let i=0;i<300;i++){const p=createPlayerAppearance(i,'MF');expanded.add(p.hairStyle);assert.deepEqual(p,createPlayerAppearance(i,'MF'));}
  assert.equal(expanded.size,20);
- const fixed={version:3,hairStyle:19,face:2,skinTone:2,glasses:true};assert.deepEqual(playerAppearance({...player,avatar:fixed}),avatarProfile(fixed));
+ const fixed={version:4,hairColor:7,hairStyle:19,face:2,skinTone:2,glasses:true};assert.deepEqual(playerAppearance({...player,avatar:fixed}),avatarProfile(fixed));
 });
 test('both complete eyes keep integer positions and the common body is unchanged by hair',()=>{
  const render=hairStyle=>{const calls=[];drawAvatar({clearRect(){},drawImage(...v){calls.push(v)}},{parts:{},hair:{}},{hairStyle,face:0});return calls;};
@@ -28,4 +28,15 @@ test('palette changes affect uniform and skin, preserve white details and alpha,
  assert.ok(red[0]>red[1]);assert.ok(green[1]>green[0]);assert.ok(green[4]<red[4]);assert.deepEqual(red.slice(8),source.slice(8));
  assert.deepEqual(recolorPixels(source.slice(),{kit:'#ff0000',goalkeeper:true}),recolorPixels(source.slice(),{kit:'#00ff00',goalkeeper:true}));
  assert.equal(kitColor('#f00'),'#ff0000');assert.equal(kitColor('bad'),'#1655e8');assert.equal(kitColor('#f00',true),'#777b80');
+});
+
+test('dark skin recolors the orange shadow pixels as well as highlights',()=>{
+ const source=new Uint8ClampedArray([95,42,16,255,180,95,48,255,255,190,137,255,20,12,8,255]);
+ const tinted=recolorPixels(source.slice(),{skinTone:2,recolorKit:false});
+ for(const offset of [0,4,8]){assert.ok(tinted[offset]<source[offset]);assert.ok(tinted[offset+1]<source[offset+1]);}
+ assert.deepEqual(tinted.slice(12),source.slice(12));
+});
+test('keeper standing portrait uses the same front body source as field players',()=>{
+ const draw=goalkeeper=>{const calls=[];drawAvatar({clearRect(){},drawImage(...v){calls.push(v)}},{parts:{},keeper:{}},{hairStyle:0},{goalkeeper});return calls[0];};
+ assert.deepEqual(draw(true),draw(false));
 });

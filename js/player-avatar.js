@@ -11,8 +11,7 @@ export function drawAvatar(ctx,assets,value=0,{kit,goalkeeper=false}={}) {
  const profile=avatarProfile(value),parts=assets.parts||assets;
  ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,300,470);
  const options={skinTone:profile.skinTone,kit:kitColor(kit,goalkeeper),goalkeeper};
- if(goalkeeper&&assets.keeper)paintPart(ctx,assets,assets.keeper,[125,296,405,292],[12,250,276,199],{...options,recolorKit:false});
- else paintPart(ctx,assets,parts,BODY,[22,250,256,210],options);
+ paintPart(ctx,assets,parts,BODY,[22,250,256,210],{...options,frontKeeperBody:goalkeeper,partWidth:BODY[2]});
  paintPart(ctx,assets,parts,HEAD,[headX(22),30,256*.88,220],{...options,recolorKit:false});
  if(assets.hair)drawHair(ctx,assets,profile,'front',[35,20,230,220]);
  const eyes=[];
