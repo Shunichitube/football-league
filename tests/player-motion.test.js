@@ -35,3 +35,16 @@ test('actions stop at the final pose and right-foot shooting is never mirrored',
  }
  assert.equal(transforms.length,4);
 });
+
+import {eraseOriginalHead} from '../js/avatar-motion-parts.js';
+test('head removal preserves shirt, glove and raised arm inside the head bounds',()=>{
+ const width=60,height=60,pixels=new Uint8ClampedArray(width*height*4);
+ const put=(x,y,color)=>pixels.set([...color,255],(y*width+x)*4);
+ for(let y=2;y<30;y++)for(let x=10;x<40;x++)put(x,y,[149,83,38]);
+ for(let y=42;y<55;y++)for(let x=20;x<40;x++)put(x,y,[15,55,230]);
+ for(let y=43;y<53;y++)for(let x=5;x<15;x++)put(x,y,[240,240,245]);
+ for(let y=43;y<53;y++)for(let x=40;x<50;x++)put(x,y,[253,177,117]);
+ const original=pixels.slice();eraseOriginalHead(pixels,width,height,[0,0,60,50]);
+ assert.equal(pixels[(10*width+20)*4+3],0);
+ for(const[x,y]of [[25,44],[10,44],[44,44],[25,54]])assert.deepEqual(pixels.slice((y*width+x)*4,(y*width+x)*4+4),original.slice((y*width+x)*4,(y*width+x)*4+4));
+});

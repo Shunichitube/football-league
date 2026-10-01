@@ -1,5 +1,5 @@
-import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js?v=appearance-v13';
-import { HAIR_PARTS } from './avatar-hair-parts.js';
+import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js?v=appearance-v17';
+import { HAIR_PARTS } from './avatar-hair-parts.js?v=appearance-v17';
 const rgb = hex => hex.slice(1).match(/../g).map(n => parseInt(n,16));
 export function recolorPixels(pixels, { skinTone = 0, kit, goalkeeper = false, recolorKit = true, hairColor, frontKeeperBody = false, partWidth = 256 } = {}) {
   const skin = rgb(SKIN_TONES[avatarProfile({skinTone}).skinTone].color), uniform = rgb(kitColor(kit, goalkeeper));
@@ -48,6 +48,17 @@ export function paintPart(ctx,assets,image,rect,dest,options) {
   const surface=tintedPart(assets,image,rect,options);
   if(surface)ctx.drawImage(surface,...dest);else ctx.drawImage(image,...rect,...dest);
 }
+// Per-style registration to the diagonal head, in the same 230 x 220 reference box.
+export const QUARTER_HAIR_FITS = [
+ {scale:.90,x:4,y:8},{scale:.91,x:4,y:6},{scale:.93,x:4,y:0},
+ {scale:.84,x:4,y:10},{scale:.84,x:4,y:13},{scale:.87,x:4,y:-8},
+ {scale:.90,x:4,y:8},{scale:.95,x:4,y:4},{scale:.85,x:4,y:12},
+ {scale:.91,x:4,y:5},{scale:.90,x:4,y:7},{scale:.90,x:4,y:5},
+ {scale:.92,x:4,y:0},{scale:.93,x:4,y:0},{scale:.94,x:4,y:0},
+ {scale:.86,x:4,y:10},{scale:.93,x:-2,y:0,height:.90},
+ {scale:.92,x:4,y:-18,height:.94},{scale:.90,x:4,y:5},
+ {scale:.90,x:4,y:0,height:.90}
+];
 export function drawHair(ctx,assets,profile,view,box) {
   const replacement=profile.hairStyle===5?assets['mohawk'+(view==='front'?'Front':'Quarter')]:profile.hairStyle===15?assets['shortfade'+(view==='front'?'Front':'Quarter')]:null;
   const image=replacement||assets.hair;
@@ -60,15 +71,15 @@ export function drawHair(ctx,assets,profile,view,box) {
   const tall=[5,17].includes(profile.hairStyle);
   // Tall hair stays inside the canvas; reduce its height to raise the hairline.
   // Negative top offsets previously clamped to zero and had no effect.
-  const fit=view==='front'?({3:{scale:.83,x:0,y:7},4:{scale:.83,x:0,y:7},5:{scale:.90,x:0,y:4,height:1.0444},8:{scale:.83,x:0,y:7},11:{scale:1.06,x:-8,y:-6},15:{scale:.85,x:0,y:5,height:1.0588},16:{scale:1.06,x:-25,y:-14},17:{scale:1,x:0,y:0,height:.78}}[profile.hairStyle]||{}):{};
+  const fit=view==='front'?({3:{scale:.83,x:0,y:7},4:{scale:.83,x:0,y:7},5:{scale:.90,x:0,y:4,height:1.0444},8:{scale:.83,x:0,y:7},11:{scale:1.06,x:-8,y:-6},15:{scale:.85,x:0,y:5,height:1.0588},16:{scale:1.06,x:-25,y:-14},17:{scale:1,x:0,y:0,height:.78}}[profile.hairStyle]||{}):QUARTER_HAIR_FITS[profile.hairStyle];
   const extra=([14,16,19].includes(profile.hairStyle)?1.08:1)*(view==='front'?1.04:1);
   const width=box[2]*extra*(fit.scale||1);
   const naturalHeight=width*part[3]/part[2];
   const height=(view==='quarter'?Math.min(naturalHeight,box[3]*(tall?.82:.74)):naturalHeight)*(fit.height||1);
   const left=box[0]+(box[2]-width)/2+(fit.x||0)*box[2]/230;
-  const top=Math.max(0,box[1]-(tall?box[3]*.12:0)+(fit.y||0)*box[3]/220)+(fit.shiftY||0)*box[3]/220;
+  const top=view==='quarter'?box[1]+fit.y*box[3]/220:Math.max(0,box[1]-(tall?box[3]*.12:0)+(fit.y||0)*box[3]/220)+(fit.shiftY||0)*box[3]/220;
   // Preserve the independently drawn ears underneath every hairstyle.
-  const earClip=typeof ctx.clip==='function';
+  const earClip=view==='front'&&typeof ctx.clip==='function';
   if(earClip){
     ctx.save();ctx.beginPath();ctx.rect(-10000,-10000,20000,20000);
     if(view==='front'){
@@ -100,8 +111,22 @@ export function drawGlasses(ctx,eyes,{scale=1}={}) {
 export function drawQuarterHead(ctx,assets,value,box) {
   const profile=avatarProfile(value),[x,y,w,h]=box;
   const head=[x+w*.13,y+h*.14,w*.78,h*.86];
-  paintPart(ctx,assets,assets.quarterHead,[0,0,assets.quarterHead.width,assets.quarterHead.height],head,{skinTone:profile.skinTone,recolorKit:false});
-  drawHair(ctx,assets,profile,'quarter',[x+w*.01,y+h*.01,w*.98,h]);
+  const hairBox=[x+w*.01,y+h*.01,w*.98,h];
+  const headRect=[0,0,assets.quarterHead.width,assets.quarterHead.height];
+  const headOptions={skinTone:profile.skinTone,recolorKit:false};
+  // Rear locks sit behind the skull and neck, not across the cheek.
+  drawHair(ctx,assets,profile,'quarter',hairBox);
+  paintPart(ctx,assets,assets.quarterHead,headRect,head,headOptions);
+  ctx.save();ctx.beginPath();
+  ctx.moveTo(x-w,y-h);ctx.lineTo(x+w*2,y-h);ctx.lineTo(x+w*2,y+h*2);
+  ctx.lineTo(head[0]+head[2]*.32,y+h*2);ctx.lineTo(head[0]+head[2]*.32,head[1]+head[3]*.55);
+  ctx.lineTo(x-w,head[1]+head[3]*.55);ctx.closePath();ctx.clip();
+  drawHair(ctx,assets,profile,'quarter',hairBox);ctx.restore();
+  // Restore the actual ear pixels from the supplied head, including its outline.
+  ctx.save();ctx.beginPath();
+  const ear=[[.055,.565],[.18,.565],[.28,.655],[.285,.83],[.12,.83],[.035,.70]];
+  ear.forEach(([ex,ey],i)=>ctx[i?'lineTo':'moveTo'](head[0]+head[2]*ex,head[1]+head[3]*ey));ctx.closePath();ctx.clip();
+  paintPart(ctx,assets,assets.quarterHead,headRect,head,headOptions);ctx.restore();
   const eyes=[[head[0]+head[2]*.55,head[1]+head[3]*.58,head[2]*.087,head[3]*.19],[head[0]+head[2]*.785,head[1]+head[3]*.545,head[2]*.087,head[3]*.19]];
   if(profile.face){ctx.save();ctx.strokeStyle='#38231d';ctx.lineWidth=w*.013;eyes.forEach(([ex,ey,ew],side)=>{ctx.beginPath();ctx.moveTo(ex-ew*.15,ey-h*.035+(profile.face===1&&side===0?-h*.02:0));ctx.lineTo(ex+ew*1.2,ey-h*.035+(profile.face===1&&side===1?-h*.02:0));ctx.stroke();});ctx.restore();}
   if(profile.glasses)drawGlasses(ctx,eyes,{scale:w/300});
