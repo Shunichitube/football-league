@@ -605,3 +605,8 @@ body.training-results-pending #app main.growth-modal{visibility:hidden;pointer-e
 #app main.growth-modal .growth-result>p{font-size:14px;line-height:1.5;}.growth-modal .growth-labels{margin-bottom:8px;}
 #app main.growth-modal>button[data-stage4]{position:sticky;bottom:0;box-shadow:0 0 15px #061a30;}
 body:has(.training-results-visible) #app{position:relative;z-index:1001;}
+
+#app main.release-office{width:min(1500px,94vw);margin:24px auto;padding:24px;background:#071b2ded;border:1px solid #79a79588;border-radius:16px;}
+#app main.release-office>.candidate-grid{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,350px),1fr))!important;gap:14px;}
+.season-move-overlay{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;background:linear-gradient(#06142433,#06142444),url('../assets/arena/contract-office-v1.webp') center/cover no-repeat;}
+.season-move-overlay p{padding:24px 40px;background:#061b2ced;border:1px solid #c9b578;border-radius:14px;color:#ffebbb;font-size:clamp(22px,3vw,40px);text-align:center;box-shadow:0 10px 50px #0008;}

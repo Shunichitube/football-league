@@ -5,7 +5,7 @@ import { mountArena } from './arena-scene.js?v=home-arena-v2';
 const app=document.querySelector('#app');
 let current=null,dispose=null,generation=0;
 function sync(){
-  const title=app.querySelector(':scope > .arena-title')?'title':app.querySelector(':scope > main.screen-draft')?'draft':app.querySelector(':scope > main.auction-room')?'auction':app.querySelector(':scope > main.screen-season-results')?'season-results':app.querySelector(':scope > main.contract-room')?'contract':app.querySelector(':scope > main.development-room')?'development':null;
+  const title=app.querySelector(':scope > .arena-title')?'title':app.querySelector(':scope > main.screen-draft')?'draft':app.querySelector(':scope > main.auction-room')?'auction':app.querySelector(':scope > main.screen-season-results')?'season-results':app.querySelector(':scope > main.contract-room, :scope > main.release-office')?'contract':app.querySelector(':scope > main.development-room')?'development':null;
   if(title==='auction')document.body.style.setProperty('--auction-header-bottom',`${Math.max(0,app.querySelector(':scope > header')?.getBoundingClientRect().bottom||0)}px`);
   if(title===current)return;
   current=title;generation++;const token=generation;

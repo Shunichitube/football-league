@@ -136,7 +136,7 @@ function growth() {
 
 function release() {
     const c=me();
-    return `${head()}<main><p class="eyebrow">選手整理</p><h2>放出フェイズ</h2><p class="hint">市場開始前にロスターを整理できます。登録選手は最低5人、GKは最低1人必要です。各選手カードの放出ボタンから放出できます。</p>${sortControl('release',s.releaseSort)}<section class="candidate-grid">${sortPlayers(c.roster,s.releaseSort).map(p => renderPlayerCard(p, { allowRelease: true })).join('')}</section><button data-stage4="releaseDone">選手整理を終了してドラフトへ進む</button></main>`;
+    return `${head()}<main class="release-office"><p class="eyebrow">選手整理</p><h2>放出フェイズ</h2><p class="hint">市場開始前にロスターを整理できます。登録選手は最低5人、GKは最低1人必要です。各選手カードの放出ボタンから放出できます。</p>${sortControl('release',s.releaseSort)}<section class="candidate-grid">${sortPlayers(c.roster,s.releaseSort).map(p => renderPlayerCard(p, { allowRelease: true })).join('')}</section><button data-stage4="releaseDone">選手整理を終了してドラフトへ進む</button></main>`;
 }
 
 onGameClick('app', ev => {
@@ -476,6 +476,7 @@ function renderEntryDialog() {
 }
 let renderedView = null;
 function render() {
+  const seasonTransition=s.view==='draft'&&renderedView==='release';
   const trainingTransition=s.view==='growth'&&['focus','development'].includes(renderedView);
   const previousScreen=trainingTransition?app.cloneNode(true):null;
   if(s.league?.completed&&['home','stats','table'].includes(s.view)){
@@ -502,6 +503,11 @@ function render() {
   renderedView = s.view;
   document.dispatchEvent(new CustomEvent('football-league:view-rendered'));
   if(trainingTransition)void playTrainingCinematic(me(),previousScreen);
+  if(seasonTransition){
+    const transition=document.createElement('div');transition.className='season-move-overlay';transition.setAttribute('role','status');
+    const message=document.createElement('p');message.textContent=`${s.league.season}シーズン目に移ります・・・`;transition.append(message);document.body.append(transition);
+    setTimeout(()=>transition.remove(),3000);
+  }
 }
 roomAdapter=new RoomAdapter(()=>s,next=>{s=next;},()=>render(),()=>updateRoomStatus());
 function reportRoomError(error){ roomAdapter.status.error=error.message; updateRoomStatus(); }
