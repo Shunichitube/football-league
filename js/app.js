@@ -1,3 +1,4 @@
+import { playTrainingCinematic } from './training-cinematic.js?v=1';
 import { renderSeasonResults } from './season-results-ui.js?v=2';
 import { createInitialState } from './app-state.js';
 import { createAuctionClock } from './auction-clock.js';
@@ -123,7 +124,7 @@ function development() {
 
 function focus() {
     const picks = [...s.training.keys()]; const c = me();
-    return `${head()}<main class="development-room"><p class="eyebrow">育成</p><h2>重点能力を選択</h2>${picks.map(id => { const p=c.roster.find(x=>x.id===id); return `<section class="candidate">${renderContractPlayerCard(p,c)}<label>重点育成<select data-focus="${id}">${trainingSkills(p).map(k=>`<option value="${k}" ${s.training.get(id)===k?'selected':''}>${STAT_LABELS[k]}</option>`).join('')}</select></label></section>`; }).join('')}<button data-stage4="grow">育成を実行</button></main>`;
+    return `${head()}<main class="development-room focus-room"><p class="eyebrow">育成</p><h2>重点能力を選択</h2><div class="focus-card-grid">${picks.map(id => { const p=c.roster.find(x=>x.id===id); return `<section class="candidate">${renderContractPlayerCard(p,c)}<label>重点育成<select data-focus="${id}">${trainingSkills(p).map(k=>`<option value="${k}" ${s.training.get(id)===k?'selected':''}>${STAT_LABELS[k]}</option>`).join('')}</select></label></section>`; }).join('')}</div><div class="focus-action"><button data-stage4="grow">育成を実行</button></div></main>`;
 }
 
 function growth() {
@@ -475,6 +476,8 @@ function renderEntryDialog() {
 }
 let renderedView = null;
 function render() {
+  const trainingTransition=s.view==='growth'&&['focus','development'].includes(renderedView);
+  const previousScreen=trainingTransition?app.cloneNode(true):null;
   if(s.league?.completed&&['home','stats','table'].includes(s.view)){
     if(s.view==='stats')s.resultTab='stats';else if(s.view==='table')s.resultTab='summary';
     s.view='seasonResults';
@@ -498,6 +501,7 @@ function render() {
   auctionClock.sync(s.view === 'auction' && !!s.auction && !s.auction.completed);
   renderedView = s.view;
   document.dispatchEvent(new CustomEvent('football-league:view-rendered'));
+  if(trainingTransition)void playTrainingCinematic(me(),previousScreen);
 }
 roomAdapter=new RoomAdapter(()=>s,next=>{s=next;},()=>render(),()=>updateRoomStatus());
 function reportRoomError(error){ roomAdapter.status.error=error.message; updateRoomStatus(); }
