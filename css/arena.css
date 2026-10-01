@@ -530,3 +530,24 @@ body.season-results-hall-active #app>main.season-results-dashboard{position:rela
 .results-dock{position:fixed;bottom:12px;left:2vw;right:2vw;display:flex;align-items:center;justify-content:space-between;z-index:3;gap:12px;}.results-dock button{font-size:17px;background:#072338ed;border:1px solid #d5c484;min-height:46px;}.results-dock>div button{background:#087756;}
 @media(max-width:760px){body.season-results-hall-active #app>main.season-results-dashboard{width:96vw;}.results-title{height:9vh;font-size:26px;}.results-title small{display:none;}#app .results-tabs button{font-size:14px;padding:10px 2px;}.results-overview{grid-template-columns:1fr;height:auto;}.results-content{height:48vh;}.results-panel{padding:12px;}.results-podium-players{width:90vw;bottom:11vh;}.results-winner img{height:11vh;}.results-winner.is-mvp img{height:13vh;}.results-winner-name strong{font-size:10px;}.results-winner-name small{display:none;}.results-award-info{grid-template-columns:1fr 1fr;}.results-dock button{font-size:13px;}}
 @media(max-height:600px) and (min-width:761px){.results-title{height:9vh;font-size:24px;}.results-content{height:40vh;}.results-panel{padding:10px;}.results-panel h2{font-size:18px;margin-bottom:6px;}.results-table td,.results-table th{padding:4px;}.results-rank strong{font-size:48px;}.results-points b{font-size:26px;}.results-record{font-size:16px;margin:4px;}.results-goals b{font-size:22px;}.results-winner-name small{display:none;}}
+
+/* Award stage spacing and decorative confetti. */
+.results-podium-players{width:min(1100px,66vw);}
+.results-winner:not(.is-mvp){transform:translateY(2.4vh);}
+.results-confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:4;}
+.results-confetti i{position:absolute;top:-20px;left:var(--x);width:7px;height:11px;background:var(--color);opacity:.8;animation:results-confetti-fall var(--duration) var(--delay) linear infinite;}
+@keyframes results-confetti-fall{0%{transform:translate3d(0,-30px,0) rotate(0deg);}100%{transform:translate3d(var(--drift),110vh,0) rotate(650deg);}}
+@media(prefers-reduced-motion:reduce){.results-confetti{display:none;}}
+@media(max-width:760px){.results-podium-players{width:94vw;}.results-winner:not(.is-mvp){transform:translateY(1.8vh);}}
+/* Match detail cards reserve independent space for stats and avatar. */
+#app main.match-detail .match-team-results>.candidate-grid{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,430px),1fr))!important;gap:16px;}
+#app main.match-detail .match-player-result{display:grid!important;grid-template-columns:minmax(0,1fr) 90px;gap:8px 14px;min-width:0;padding:16px;}
+#app main.match-detail .match-player-result>.player-card{grid-column:1;grid-row:1;grid-template-columns:minmax(120px,.85fr) minmax(150px,1.15fr)!important;--pc-card-name:16px;--pc-card-rank:15px;--pc-card-small:13px;margin:0;min-width:0;}
+.match-player-avatar{grid-column:2;grid-row:1;display:flex;align-items:center;justify-content:center;}
+.match-player-avatar img{width:90px;height:142px;object-fit:contain;}
+#app main.match-detail .match-player-result>p{grid-column:1/-1;font-size:14px;line-height:1.6;margin:0;overflow-wrap:anywhere;}
+#app main.match-detail .player-name{white-space:normal!important;overflow-wrap:anywhere;font-size:16px!important;}
+#app main.match-detail .ability-grid{font-size:13px!important;}
+#app main.match-detail .ability-grid dt{white-space:nowrap;}
+#app main.match-detail .ability-grid dd{min-width:0;}
+@media(max-width:540px){#app main.match-detail .match-player-result{grid-template-columns:minmax(0,1fr);}.match-player-avatar{grid-column:1;grid-row:1;}#app main.match-detail .match-player-result>.player-card{grid-column:1;grid-row:2;grid-template-columns:minmax(105px,.85fr) minmax(140px,1.15fr)!important;}.match-player-avatar img{height:110px;width:72px;}}
