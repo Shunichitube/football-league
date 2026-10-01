@@ -1,4 +1,4 @@
-import { playTrainingCinematic } from './training-cinematic.js?v=3';
+import { playTrainingCinematic } from './training-cinematic.js?v=4';
 import { renderSeasonResults } from './season-results-ui.js?v=3';
 import { createInitialState } from './app-state.js';
 import { createAuctionClock } from './auction-clock.js';
@@ -119,7 +119,7 @@ function offseasonEvents() {
 function development() {
     const c = me();
     const finance=s.financeSummary?.find(row=>row.clubId===c.id);
-    return `${head()}<main class="development-room"><div class="phase-topbar"><p class="eyebrow">育成</p><h2>育成する2選手を選択</h2>${finance?`<p class="hint">年間基本資金 +${finance.base}pt${finance.prize?`・順位賞金 +${finance.prize}pt`:''}／持越し上限150pt → 現在${finance.after}pt</p>`:''}<p class="hint">${s.training?.size || 0}/2 選択中</p>${sortControl('development',s.developmentSort)}</div><section class="candidate-grid">${sortPlayers(c.roster,s.developmentSort).map(p => `<article class="candidate ${s.training?.has(p.id)?'training-selected':''}">${renderContractPlayerCard(p,c)}<button data-train="${p.id}" class="${s.training?.has(p.id) ? '' : 'subtle'}">${s.training?.has(p.id) ? '選択済み' : '育成対象にする'}</button></article>`).join('')}</section><button data-stage4="confirm" ${s.training?.size === 2 ? '' : 'disabled'}>重点能力を選ぶ</button></main>`;
+    return `${head()}<main class="development-room"><div class="phase-topbar"><p class="eyebrow">育成</p><h2>育成する2選手を選択</h2>${finance?`<p class="hint">年間基本資金 +${finance.base}pt${finance.prize?`・順位賞金 +${finance.prize}pt`:''}／持越し上限150pt → 現在${finance.after}pt</p>`:''}<p class="hint">${s.training?.size || 0}/2 選択中</p>${sortControl('development',s.developmentSort)}</div><section class="candidate-grid">${sortPlayers(c.roster,s.developmentSort).map(p => `<article class="candidate training-choice ${s.training?.has(p.id)?'training-selected':''}" data-training-card="${e(p.id)}" tabindex="0" role="button" aria-pressed="${s.training?.has(p.id)?'true':'false'}">${renderContractPlayerCard(p,c)}<button data-train="${p.id}" class="${s.training?.has(p.id) ? '' : 'subtle'}">${s.training?.has(p.id) ? '選択済み' : '育成対象にする'}</button></article>`).join('')}</section><button data-stage4="confirm" ${s.training?.size === 2 ? '' : 'disabled'}>重点能力を選ぶ</button></main>`;
 }
 
 function focus() {
@@ -131,7 +131,7 @@ function growth() {
     const priority = x => x.specialTrainingResult ? 0 : x.focus ? 1 : x.awakeningKeys?.length ? 2 : 3;
     const resultsById = new Map(s.growth.map(x => [x.player.id, x]));
     const growthResults = sortPlayers(s.growth.map(x => x.player), s.developmentSort).map(p => resultsById.get(p.id)).sort((a,b) => priority(a)-priority(b));
-    return `${head()}<main class="development-room growth-modal" role="dialog" aria-modal="true" aria-label="育成結果"><div class="phase-topbar"><p class="eyebrow">成長結果</p><h2>育成・特別特訓の結果</h2><p class="hint">${s.mode==='room'?'全クラブの育成・成長・衰退・加齢を完了しました。':'CPU5クラブも育成・成長・衰退・加齢を完了しました。'}</p></div><section class="candidate-grid">${growthResults.map(x => `<article class="candidate growth-result ${x.specialTrainingResult ? `growth-special-${x.specialTrainingResult.steps}` : x.focus ? 'growth-focus' : x.awakeningKeys?.length ? 'growth-awakened' : ''}"><div class="growth-labels">${x.specialTrainingResult ? '<span>若手育成イベント</span>' : ''}${x.focus ? `<span>重点育成：${e(STAT_LABELS[x.focus] || x.focus)}</span>` : ''}${x.awakeningKeys?.length ? '<span>覚醒</span>' : ''}</div>${renderContractPlayerCard(x.player,me())}<p>年齢 ${x.player.age - 1} → ${x.player.age}</p>${x.awakeningKeys?.length ? `<p><b>覚醒！</b></p>` : ''}${x.specialTrainingResult?`<p><b>特別特訓：</b>${x.specialTrainingResult.label}</p>`:''}<p>${x.retired ? '35歳で引退' : x.changes.map(c=>`${STAT_LABELS[c.key]} ${c.from === c.to && c.increased ? `${c.from} ↑` : `${c.from} → ${c.to}`}`).join(' ／ ') || 'ランク変化なし'}</p>${x.learnedAbility ? `<p><b>特殊能力を習得！</b><br>★ ${x.learnedAbility}</p>` : ''}</article>`).join('')}</section><button data-stage4="releasePhase">放出フェイズへ進む</button></main>`;
+    return `${head()}<main class="development-room growth-modal" role="dialog" aria-modal="true" aria-label="育成結果"><div class="phase-topbar"><p class="eyebrow">成長結果</p><h2>育成・特別特訓の結果</h2><p class="hint">${s.mode==='room'?'全クラブの育成・成長・衰退・加齢を完了しました。':'CPU5クラブも育成・成長・衰退・加齢を完了しました。'}</p></div><section class="candidate-grid">${growthResults.map(x => `<article class="candidate growth-result ${x.specialTrainingResult ? `growth-special-${x.specialTrainingResult.steps}` : x.focus ? 'growth-focus' : x.awakeningKeys?.length ? 'growth-awakened' : ''}"><div class="growth-labels" aria-label="育成内容">${x.specialTrainingResult ? '<span>若手育成イベント</span>' : ''}${x.focus ? `<span>重点育成：${e(STAT_LABELS[x.focus] || x.focus)}</span>` : ''}${x.awakeningKeys?.length ? '<span>覚醒</span>' : ''}</div>${renderContractPlayerCard(x.player,me())}<p>年齢 ${x.player.age - 1} → ${x.player.age}</p>${x.awakeningKeys?.length ? `<p><b>覚醒！</b></p>` : ''}${x.specialTrainingResult?`<p><b>特別特訓：</b>${x.specialTrainingResult.label}</p>`:''}<p>${x.retired ? '35歳で引退' : x.changes.map(c=>`${STAT_LABELS[c.key]} ${c.from === c.to && c.increased ? `${c.from} ↑` : `${c.from} → ${c.to}`}`).join(' ／ ') || 'ランク変化なし'}</p>${x.learnedAbility ? `<p><b>特殊能力を習得！</b><br>★ ${x.learnedAbility}</p>` : ''}</article>`).join('')}</section><button data-stage4="releasePhase">放出フェイズへ進む</button></main>`;
 }
 
 function release() {
@@ -141,7 +141,7 @@ function release() {
 
 onGameClick('app', ev => {
   const action = ev.target.closest('[data-stage4]')?.dataset.stage4;
-  const trainingId = ev.target.closest('[data-train]')?.dataset.train;
+  const trainingId = ev.target.closest('[data-train]')?.dataset.train || ev.target.closest('[data-training-card]')?.dataset.trainingCard;
   const renewId = ev.target.closest('[data-renew]')?.dataset.renew;
   const releaseId = ev.target.closest('[data-release]')?.dataset.release;
   const retentionPay = ev.target.closest('[data-retention-pay]')?.dataset.retentionPay;
@@ -334,6 +334,12 @@ function renderRosterDialog() {
   if (!s.league || !s.rosterOpen) return;
   const rosterClub={...me(),roster:sortPlayers(me().roster,s.rosterSort)};document.body.insertAdjacentHTML('beforeend', `<div data-app-overlay class="overlay-backdrop" data-stage10="close"></div>${renderRosterPanel(rosterClub, { allowRelease: Boolean(s.league.releasePhaseOpen), rosterSort: s.rosterSort })}`);
 }
+function renderReleaseConfirmation(){
+ if(!s.league||!s.pendingReleaseId)return;
+ const p=me()?.roster.find(player=>player.id===s.pendingReleaseId);
+ if(!p)return;
+ document.body.insertAdjacentHTML('beforeend',`<div data-app-overlay class="overlay-backdrop" data-release-cancel></div><section data-app-overlay data-ui-dialog="release-confirm" class="release-confirm-dialog" role="dialog" aria-modal="true" aria-label="選手の放出確認"><h2>本当に放出しますか？</h2><div class="release-confirm-card">${renderContractPlayerCard(p,me())}</div><p>この選手がクラブから離れます。</p><div class="release-confirm-actions"><button type="button" data-release-cancel data-dialog-close class="subtle">キャンセル</button><button type="button" data-stage10="release" data-release-player="${e(p.id)}" data-release-confirmed>放出する</button></div></section>`);
+}
 function renderDraftHistoryDialog(){
   if(!s.draftHistoryOpen || s.view!=='draft' || !s.draft) return;
   document.body.insertAdjacentHTML('beforeend', `<div data-app-overlay class="overlay-backdrop" data-draft-history-modal="close"></div><section data-app-overlay data-ui-dialog="draft-history" class="overlay-panel detail-panel" data-draft-history-modal="panel" role="dialog" aria-modal="true" aria-label="ドラフト指名結果"><div class="overlay-heading"><div><p class="eyebrow">ドラフト</p><h2>指名結果</h2></div><button type="button" data-dialog-close data-draft-history-modal="close" class="subtle">閉じる</button></div>${renderDraftHistory(s.draft)}</section>`);
@@ -433,7 +439,7 @@ function updateRoomStatus() {
 
     ['[data-lineup-player],[data-lineup-slot],[data-tactic]',['team-setup']],
     ['[data-renew],[data-release],[data-retention-pay],[data-retention-release],[data-special-pay],[data-special-skip]',['offseason-events']],
-    ['[data-train],[data-focus],[data-stage4="confirm"],[data-stage4="grow"]',['development']],
+    ['[data-training-card],[data-train],[data-focus],[data-stage4="confirm"],[data-stage4="grow"]',['development']],
     ['[data-release-player],[data-rename-player]',['release']],
     ['[data-stage4="eventsDone"]',['offseason-events']],
     ['[data-stage4="releasePhase"]',['growth-result']],
@@ -494,6 +500,7 @@ function render() {
   updateRoomStatus();
   renderEntryDialog();
   renderRosterDialog();
+  renderReleaseConfirmation();
   renderDraftHistoryDialog();
   renderAuctionHistoryDialog();
   // Keep an in-progress name editor above rebuilt panels during Room updates.
@@ -555,10 +562,13 @@ function roomClick(event){
     return true;
   }
   if(target.closest('[data-lineup-player],[data-lineup-slot],[data-tactic]') && (roomAdapter.locked||roomAdapter.room.phase!=='team-setup'))return true;
-  if(target.closest('[data-train],[data-stage4="confirm"]') && (roomAdapter.locked||roomAdapter.room.phase!=='development'))return true;
+  if(target.closest('[data-training-card],[data-train],[data-stage4="confirm"]') && (roomAdapter.locked||roomAdapter.room.phase!=='development'))return true;
   if(target.closest('[data-nav]')?.dataset.nav==='squad'&&!['team-setup','season-ready'].includes(roomAdapter.room.phase))return true;
   return false;
 }
+document.addEventListener('keydown',event=>{
+ if(event.target.matches('[data-training-card]')&&['Enter',' '].includes(event.key)){event.preventDefault();event.target.click();}
+});
 document.addEventListener('click',event=>{
   try{
     if(event.target.closest('button:disabled'))return;
@@ -568,6 +578,10 @@ document.addEventListener('click',event=>{
       else{bid(livePass?0:Number(liveBid.dataset.liveBid));refreshAuctionState();}
       return;
     }
+    if(event.target.closest('[data-release-cancel]')){s.pendingReleaseId=null;render();return;}
+    const releaseButton=event.target.closest('[data-stage10="release"][data-release-player]');
+    if(releaseButton&&!releaseButton.hasAttribute('data-release-confirmed')){s.pendingReleaseId=releaseButton.dataset.releasePlayer;render();return;}
+    if(releaseButton)s.pendingReleaseId=null;
     if(roomClick(event))return;
     for(const {scope,handler} of clickHandlers)if(scope==='document'||app.contains(event.target))handler(event);
     if(s.mode==='room')roomAdapter.remember();

@@ -667,3 +667,18 @@ body:has(#app>main.phase-complete-screen){height:100svh;min-height:0;overflow:hi
 #app .match-detail-topbar .match-results-back:hover{background:#fff0bd;}
 
 body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
+
+/* Larger controls and stable result label slots. */
+#app main:is(.development-room,.release-office) .candidate>button,#app main:is(.development-room,.release-office)>button,#app .focus-action>button{font-size:16px!important;min-height:42px!important;padding:9px 18px!important;}
+#app main:is(.development-room,.release-office) .candidate>button{width:100%;align-self:stretch;}
+#app main:is(.development-room,.release-office)>button{min-width:260px;}
+#app .training-choice{cursor:pointer;transition:border-color .15s,box-shadow .15s;}
+#app .training-choice:hover,#app .training-choice:focus-visible{border-color:#7be8bd;outline:2px solid #7be8bd;outline-offset:-2px;}
+#app .training-choice.training-selected{background:#123f38;border:2px solid #6effb4;box-shadow:inset 0 0 0 2px #4cecab55,0 0 15px #4cecab44;}
+#app .growth-modal .growth-labels{box-sizing:border-box;min-height:28px;flex:0 0 28px;display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:0;}
+#app .growth-modal .growth-labels span{padding:3px 6px;background:#265346;border:1px solid #72ba99;border-radius:4px;}
+.release-confirm-dialog{position:fixed;inset:50% auto auto 50%;transform:translate(-50%,-50%);width:min(560px,94vw);max-height:90svh;overflow:auto;padding:24px;background:#0c2336;border:1px solid #97bdae;border-radius:16px;z-index:52;box-shadow:0 20px 70px #000a;text-align:center;}
+.release-confirm-dialog h2{margin:0 0 18px;}.release-confirm-actions{display:flex;justify-content:center;gap:12px;}.release-confirm-actions button{font-size:17px;min-height:46px;padding:12px 20px;}.release-confirm-actions [data-release-confirmed]{background:#ef8e78;color:#271711;}
+.release-confirm-card .squad-player{display:grid;grid-template-columns:80px minmax(0,1fr) minmax(0,1.2fr);gap:8px;text-align:left;background:#102d3f;padding:12px;border:1px solid #597e83;border-radius:10px;}
+.release-confirm-card .squad-avatar{display:flex;align-items:center;justify-content:center;}.release-confirm-card .squad-avatar img{width:76px;height:120px;object-fit:contain;}.release-confirm-card .squad-role-badge{display:none;}.release-confirm-card .squad-identity{display:flex;flex-direction:column;justify-content:center;gap:5px;font-size:14px;}.release-confirm-card .squad-abilities{margin:0;display:flex;flex-direction:column;gap:4px;}.release-confirm-card .squad-abilities>div{display:grid;grid-template-columns:55px minmax(0,1fr);font-size:12px;}.release-confirm-card .squad-abilities dd{display:grid;grid-template-columns:18px minmax(0,1fr);align-items:center;gap:4px;margin:0;}.release-confirm-card .rank-bar{min-width:0;}.release-confirm-card .squad-special{grid-column:1/-1;border-top:1px solid #597e83;padding-top:6px;}
+@media(min-width:1000px){#app main.development-room:not(.focus-room) .squad-player,#app main.release-office .squad-player{height:clamp(115px,calc((100svh - 305px)/3),180px);}#app main.growth-modal .growth-result .squad-player{height:140px;}}
