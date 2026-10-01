@@ -1,5 +1,5 @@
-import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js?v=appearance-v18';
-import { HAIR_PARTS } from './avatar-hair-parts.js?v=appearance-v18';
+import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js?v=appearance-v19';
+import { HAIR_PARTS } from './avatar-hair-parts.js?v=appearance-v19';
 const rgb = hex => hex.slice(1).match(/../g).map(n => parseInt(n,16));
 export function recolorPixels(pixels, { skinTone = 0, kit, goalkeeper = false, recolorKit = true, hairColor, frontKeeperBody = false, partWidth = 256 } = {}) {
   const skin = rgb(SKIN_TONES[avatarProfile({skinTone}).skinTone].color), uniform = rgb(kitColor(kit, goalkeeper));
@@ -109,19 +109,10 @@ export function drawQuarterHead(ctx,assets,value,box) {
   const hairBox=assets.quarterHair?box:[x+w*.01,y+h*.01,w*.98,h];
   const headRect=[0,0,assets.quarterHead.width,assets.quarterHead.height];
   const headOptions={skinTone:profile.skinTone,recolorKit:false};
-  // Rear locks sit behind the skull and neck, not across the cheek.
-  drawHair(ctx,assets,profile,'quarter',hairBox);
+  // New motion hair assets already contain transparent ear and face openings.
+  // Paint their alpha directly; legacy polygon clips cut away the new side locks.
   paintPart(ctx,assets,assets.quarterHead,headRect,head,headOptions);
-  ctx.save();ctx.beginPath();
-  ctx.moveTo(x-w,y-h);ctx.lineTo(x+w*2,y-h);ctx.lineTo(x+w*2,y+h*2);
-  ctx.lineTo(head[0]+head[2]*.32,y+h*2);ctx.lineTo(head[0]+head[2]*.32,head[1]+head[3]*.55);
-  ctx.lineTo(x-w,head[1]+head[3]*.55);ctx.closePath();ctx.clip();
-  drawHair(ctx,assets,profile,'quarter',hairBox);ctx.restore();
-  // Restore the actual ear pixels from the supplied head, including its outline.
-  ctx.save();ctx.beginPath();
-  const ear=[[.055,.565],[.18,.565],[.28,.655],[.285,.83],[.12,.83],[.035,.70]];
-  ear.forEach(([ex,ey],i)=>ctx[i?'lineTo':'moveTo'](head[0]+head[2]*ex,head[1]+head[3]*ey));ctx.closePath();ctx.clip();
-  paintPart(ctx,assets,assets.quarterHead,headRect,head,headOptions);ctx.restore();
+  drawHair(ctx,assets,profile,'quarter',hairBox);
   const eyes=[[head[0]+head[2]*.55,head[1]+head[3]*.58,head[2]*.087,head[3]*.19],[head[0]+head[2]*.785,head[1]+head[3]*.545,head[2]*.087,head[3]*.19]];
   if(profile.face){ctx.save();ctx.strokeStyle='#38231d';ctx.lineWidth=w*.013;eyes.forEach(([ex,ey,ew],side)=>{ctx.beginPath();ctx.moveTo(ex-ew*.15,ey-h*.035+(profile.face===1&&side===0?-h*.02:0));ctx.lineTo(ex+ew*1.2,ey-h*.035+(profile.face===1&&side===1?-h*.02:0));ctx.stroke();});ctx.restore();}
   if(profile.glasses)drawGlasses(ctx,eyes,{scale:w/300});
