@@ -14,7 +14,7 @@ body.arena-active #app{position:relative;z-index:1;min-height:100svh}
 #app .arena-title button:hover{transform:translateY(-2px);box-shadow:0 5px 22px #19ee9450}
 #app .arena-title button:focus-visible{outline:3px solid #fff;outline-offset:4px}
 #app .arena-title .arena-motion{position:fixed;top:calc(100svh - var(--arena-y,0px) - 250px * var(--arena-scale,1) - 52px);width:auto;min-height:32px;padding:5px 12px;font-size:11px;font-weight:500;color:#d0e0ea;background:#071421b8;border:1px solid #b0d4e52e;border-radius:20px}
-body.arena-fallback.arena-active{background:#071421 url('../assets/arena/arena-base.webp') center/cover}
+body.arena-fallback.arena-active{background:#071421 url('../assets/arena/home-arena-v2.webp') center/cover}
 @media(max-width:600px){
   #app>main.arena-title{top:29svh;width:92vw}
   #app .arena-title h1{font-size:clamp(43px,11.9vw,68px);margin-bottom:24px}
