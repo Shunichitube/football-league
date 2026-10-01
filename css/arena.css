@@ -652,3 +652,7 @@ body:has(.training-results-visible) #app{position:relative;z-index:1001;}
 #app .phase-complete-modal p{margin:0 0 20px;line-height:1.6;}
 #app .phase-complete-modal button{margin:6px;min-width:150px;padding:12px 20px;}
 @media(max-width:560px){#app .phase-complete-modal{padding:28px 18px;}#app .phase-complete-modal h2{font-size:22px;}#app .phase-complete-modal button{width:100%;margin:6px 0;}}
+
+/* Completed auctions have no live scene, so retain the venue behind the dialog. */
+body.auction-hall-active:has(main.phase-complete-screen)::before{display:block;}
+#app main.auction-room.phase-complete-screen{min-height:0;}
