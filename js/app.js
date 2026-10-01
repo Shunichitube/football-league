@@ -6,7 +6,7 @@ import { dialogs } from './dialogs.js';
 import { openLot, raiseBid, passLot, tickLot } from './live-auction.js?v=0.21.1';
 import { auctionAvatar, renderLiveAuction } from './auction-ui.js?v=complete-modal-v1-development-room-v1';
 import { applySeasonFinances, awards, clubAchievements, createLeague, finalizeSeason, recordDraftAcquisition, simulateRemainingSeason, standings as singleStandings, startNextSeason } from './league.js?v=0.17.29';
-import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=appearance-v23';
+import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=appearance-v24';
 import { createRandom } from './random.js';
 import { createAuctionPool, createDraftPool, resolveDraftActions } from './market.js?v=0.22.0';
 import { renderContractPlayerCard, configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=rank-arrows-v1';

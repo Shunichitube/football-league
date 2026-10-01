@@ -1,5 +1,5 @@
-import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js?v=appearance-v23';
-import { HAIR_PARTS } from './avatar-hair-parts.js?v=appearance-v23';
+import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js?v=appearance-v24';
+import { HAIR_PARTS } from './avatar-hair-parts.js?v=appearance-v24';
 const rgb = hex => hex.slice(1).match(/../g).map(n => parseInt(n,16));
 export function recolorPixels(pixels, { skinTone = 0, kit, goalkeeper = false, recolorKit = true, hairColor, frontKeeperBody = false, partWidth = 256 } = {}) {
   const skin = rgb(SKIN_TONES[avatarProfile({skinTone}).skinTone].color), uniform = rgb(kitColor(kit, goalkeeper));
@@ -94,9 +94,48 @@ export function drawHair(ctx,assets,profile,view,box) {
   paintPart(ctx,assets,image,part,[left,top,width,height],{hairColor:profile.hairColor,recolorKit:false});
   if(earClip)ctx.restore();
 }
-export function drawGlasses(ctx,eyes,{scale=1}={}) {
+// The same atlas eyebrows are used in portraits and motion faces.
+export const AVATAR_BROWS=[null,[[595,670,46,27],[702,670,46,26]],[[1023,662,49,23],[1151,662,50,23]]];
+const QUARTER_EYES=[[312,323,51,120],[453,297,51,120]];
+const equalEyeHeads=new WeakMap();
+function equalEyeQuarterHead(assets){
+  const original=assets.quarterHead;
+  if(equalEyeHeads.has(original))return equalEyeHeads.get(original);
+  const surface=createSurface(assets,original.width,original.height);
+  if(!surface)return original;
+  const ctx=surface.getContext('2d');ctx.drawImage(original,0,0);
+  const data=ctx.getImageData(0,0,surface.width,surface.height),pixels=data.data;
+  const sx=surface.width/592,sy=surface.height/560;
+  // Replace only the near eye's dark pixels with surrounding cheek colour.
+  // Alpha, skin shadows, ears and the head silhouette remain untouched.
+  for(let y=Math.floor(322*sy);y<Math.ceil(432*sy);y++){
+    const left=(y*surface.width+Math.floor(309*sx))*4,right=(y*surface.width+Math.ceil(365*sx))*4;
+    for(let x=Math.floor(311*sx);x<Math.ceil(363*sx);x++){
+      const k=(y*surface.width+x)*4;
+      if(pixels[k+3]&&Math.max(pixels[k],pixels[k+1],pixels[k+2])<40){
+        const t=(x-309*sx)/(56*sx);
+        for(let c=0;c<3;c++)pixels[k+c]=Math.round(pixels[left+c]*(1-t)+pixels[right+c]*t);
+      }
+    }
+  }
+  // Copy the far eye's colour mask into the near eye slot without changing alpha.
+  for(let y=0;y<Math.round(120*sy);y++)for(let x=0;x<Math.round(51*sx);x++){
+    const source=((Math.round(297*sy)+y)*surface.width+Math.round(453*sx)+x)*4;
+    const target=((Math.round(323*sy)+y)*surface.width+Math.round(312*sx)+x)*4;
+    if(Math.max(pixels[source],pixels[source+1],pixels[source+2])<40)
+      for(let c=0;c<3;c++)pixels[target+c]=pixels[source+c];
+  }
+  ctx.putImageData(data,0,0);
+  equalEyeHeads.set(original,surface);return surface;
+}
+export function drawGlasses(ctx,eyes,{scale=1,quarter=false,temples}={}) {
   ctx.save();ctx.strokeStyle='#252b30';ctx.lineWidth=Math.max(2.5,6*scale);ctx.lineJoin='round';ctx.lineCap='round';
-  const lenses=eyes.map(([x,y,w,h],side)=>[x-w*1.4+(side===0?-w*.2:w*.2),y-h*.24,w*3.8,h*1.38]);
+  const spacing=eyes[1][0]+eyes[1][2]/2-eyes[0][0]-eyes[0][2]/2;
+  const lenses=eyes.map(([x,y,w,h],side)=>{
+    if(!quarter)return [x-w*1.4+(side===0?-w*.2:w*.2),y-h*.24,w*3.8,h*1.38];
+    const width=spacing*(side===0?.98:.86),center=x+w/2+(side===0?-w*.12:w*.12);
+    return [center-width/2,y-h*.22,width,h*1.22];
+  });
   for(const [x,y,w,h] of lenses){
     ctx.beginPath();ctx.moveTo(x+w*.18,y);ctx.quadraticCurveTo(x+w*.5,y-h*.08,x+w*.82,y);
     ctx.quadraticCurveTo(x+w,y,x+w*.98,y+h*.25);ctx.lineTo(x+w*.88,y+h*.78);
@@ -107,22 +146,26 @@ export function drawGlasses(ctx,eyes,{scale=1}={}) {
   const [left,right]=lenses;
   ctx.beginPath();ctx.moveTo(left[0]+left[2]*.98,left[1]+left[3]*.25);
   ctx.quadraticCurveTo((left[0]+left[2]+right[0])/2,(left[1]+right[1])/2+left[3]*.12,right[0],right[1]+right[3]*.25);ctx.stroke();
-  for(const [lens,side]of [[left,-1],[right,1]]){const [x,y,w,h]=lens,edge=side<0?x:x+w;ctx.beginPath();ctx.moveTo(edge,y+h*.23);ctx.lineTo(edge+side*w*.18,y+h*.12);ctx.stroke();}
+  for(const [lens,side]of [[left,-1],[right,1]]){const [x,y,w,h]=lens,edge=side<0?x:x+w;ctx.beginPath();ctx.moveTo(edge,y+h*.23);const temple=temples?.[side<0?0:1];ctx.lineTo(...(temple||[edge+side*w*.18,y+h*.12]));ctx.stroke();}
   ctx.restore();
 }
 export function drawQuarterHead(ctx,assets,value,box) {
   const profile=avatarProfile(value),[x,y,w,h]=box;
   const head=[x+w*.13,y+h*.14,w*.78,h*.86];
   const hairBox=assets.quarterHair?box:[x+w*.01,y+h*.01,w*.98,h];
-  const headRect=[0,0,assets.quarterHead.width,assets.quarterHead.height];
+  const headImage=equalEyeQuarterHead(assets);
+  const headRect=[0,0,headImage.width,headImage.height];
   const headOptions={skinTone:profile.skinTone,recolorKit:false};
   // New motion hair assets already contain transparent ear and face openings.
   // Paint their alpha directly; legacy polygon clips cut away the new side locks.
-  paintPart(ctx,assets,assets.quarterHead,headRect,head,headOptions);
+  paintPart(ctx,assets,headImage,headRect,head,headOptions);
   drawHair(ctx,assets,profile,'quarter',hairBox);
-  const eyes=[[head[0]+head[2]*.55,head[1]+head[3]*.58,head[2]*.087,head[3]*.19],[head[0]+head[2]*.785,head[1]+head[3]*.545,head[2]*.087,head[3]*.19]];
-  if(profile.face){ctx.save();ctx.strokeStyle='#38231d';ctx.lineWidth=w*.013;eyes.forEach(([ex,ey,ew],side)=>{ctx.beginPath();ctx.moveTo(ex-ew*.15,ey-h*.035+(profile.face===1&&side===0?-h*.02:0));ctx.lineTo(ex+ew*1.2,ey-h*.035+(profile.face===1&&side===1?-h*.02:0));ctx.stroke();});ctx.restore();}
-  if(profile.glasses)drawGlasses(ctx,eyes,{scale:w/300});
+  const eyes=QUARTER_EYES.map(([ex,ey,ew,eh])=>[head[0]+head[2]*ex/592,head[1]+head[3]*ey/560,head[2]*ew/592,head[3]*eh/560]);
+  eyes.forEach(([ex,ey,ew,eh],side)=>{
+    const brow=AVATAR_BROWS[profile.face]?.[side];
+    if(brow&&assets.parts)ctx.drawImage(assets.parts,...brow,ex-ew*.48,ey-eh*.60,ew*1.89,eh*.457);
+  });
+  if(profile.glasses)drawGlasses(ctx,eyes,{scale:w/300,quarter:true,temples:[[x+w*.34,y+h*.66],[x+w*.89,y+h*.62]]});
 }
 let promise;
 export function loadAvatarAssets() {
