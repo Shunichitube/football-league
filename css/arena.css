@@ -695,3 +695,67 @@ body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
 .ability-direction{display:inline-block;font-size:11px;line-height:1;margin-left:3px;font-style:normal;}.ability-direction.up{color:#6effac;}.ability-direction.down{color:#ff7676;}.ability-direction.same{color:#c1ccd5;}
 #app .growth-result .squad-abilities dd{grid-template-columns:30px minmax(0,1fr);}
 #app .growth-result .squad-abilities dd>span{white-space:nowrap;}
+
+/* Fill the roster slots and keep special ability descriptions visible. */
+@media (min-width:761px) {
+  main.screen-squad .formation-cards .bench-grid {
+    align-items:stretch;
+    justify-items:stretch;
+    grid-template-rows:repeat(4,minmax(200px,1fr));
+    grid-auto-rows:minmax(200px,1fr);
+    gap:8px!important;
+    overflow-y:auto;
+    padding:2px;
+  }
+  main.screen-squad .formation-cards .squad-player {
+    width:100%;
+    height:100%;
+    min-height:200px;
+    grid-template-rows:minmax(130px,1fr) auto;
+    padding:10px 11px 8px;
+    gap:6px 8px;
+    overflow-y:auto;
+  }
+  main.screen-squad .formation-cards .squad-avatar img {
+    width:clamp(70px,5.1vw,110px);
+  }
+  main.screen-squad .formation-cards .squad-identity {
+    font-size:clamp(13px,.85vw,18px);
+    gap:5px;
+  }
+  main.screen-squad .formation-cards .squad-identity .player-name {
+    font-size:clamp(16px,1.1vw,22px)!important;
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }
+  main.screen-squad .formation-cards .squad-identity strong {
+    font-size:clamp(14px,.9vw,18px);
+  }
+  main.screen-squad .formation-cards .squad-abilities dt,
+  main.screen-squad .formation-cards .squad-abilities dd {
+    font-size:clamp(12px,.8vw,16px);
+  }
+  main.screen-squad .formation-cards .squad-special {
+    display:grid;
+    grid-template-columns:auto minmax(0,1fr);
+    align-content:start;
+    gap:3px 8px;
+    padding:6px 7px;
+    font-size:clamp(13px,.85vw,17px);
+    line-height:1.35;
+  }
+  main.screen-squad .formation-cards .squad-special b {
+    white-space:normal;
+    overflow:visible;
+    overflow-wrap:anywhere;
+  }
+  main.screen-squad .formation-cards .squad-special-description {
+    grid-column:1/-1;
+    margin:0;
+    font-size:clamp(12px,.78vw,16px);
+    line-height:1.45;
+    white-space:normal;
+    overflow-wrap:anywhere;
+    color:#d3e4e8;
+  }
+}
