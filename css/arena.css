@@ -1148,39 +1148,3 @@ body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
   padding:24px 40px;margin:12px;border-radius:16px;
  }
 }
-
-/* Personal records use the squad-card arrangement: profile, four rows, special. */
-@media(min-width:761px) {
- body.season-results-hall-active #app>main.season-results-dashboard.is-stats {padding-bottom:32vh;}
- #app .season-results-dashboard.is-stats .season-stat-card {
-  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);
-  grid-template-rows:auto auto;align-content:start;align-items:center;gap:8px 12px;
- }
- #app .season-results-dashboard.is-stats .season-stat-profile {
-  grid-column:1;grid-row:1;grid-template-columns:clamp(60px,4.7vw,90px) minmax(0,1fr);
-  gap:8px;
- }
- #app .season-results-dashboard.is-stats .season-stat-profile img {height:clamp(90px,9vh,140px);}
- #app .season-results-dashboard.is-stats .season-stat-metrics {
-  grid-column:2;grid-row:1;grid-template-columns:repeat(2,minmax(0,1fr));
-  grid-template-rows:repeat(4,auto);gap:5px;
- }
- #app .season-results-dashboard.is-stats .season-stat-metrics>div {
-  display:flex;align-items:center;justify-content:space-between;gap:5px;padding:5px 7px;
- }
- #app .season-results-dashboard.is-stats .season-stat-metrics dt {
-  font-size:clamp(11px,.8vw,16px);white-space:normal;
- }
- #app .season-results-dashboard.is-stats .season-stat-metrics dd {font-size:clamp(15px,1.1vw,21px);}
- #app .season-results-dashboard.is-stats .season-stat-special {
-  grid-column:1/-1;grid-row:2;border-top:1px solid #5c8e9866;padding-top:6px;
-  font-size:clamp(12px,.85vw,17px);
- }
- #app .season-results-dashboard.is-stats .results-podium-players {bottom:10vh;}
- #app .season-results-dashboard.is-stats .results-winner img {height:clamp(85px,15vh,160px);}
- #app .season-results-dashboard.is-stats .results-winner.is-mvp img {height:clamp(100px,17vh,180px);}
- #app .season-results-dashboard.is-stats .results-winner.is-mvp .mvp-joy-avatar {
-  height:clamp(117px,20vh,211px);max-height:none;
- }
- #app .season-results-dashboard.is-stats .results-winner:not(.is-mvp) {transform:translateY(2.4vh);}
-}
