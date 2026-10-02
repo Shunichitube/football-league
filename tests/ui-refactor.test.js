@@ -73,7 +73,7 @@ async function screenHarness() {
   const document = { querySelector: () => app, addEventListener() {}, querySelectorAll: () => [] };
   source = source.replace(/^import .+;\r?\n/gm, '').replace(/render\(\);\s*$/, '');
   return runInNewContext(source + '\n({ screens, setState: value => s=value, getState: () => s, setRoom: room => roomAdapter.client.room=room, startAuction, returnToTitle })', {
-    ...bindings, createGameExperience: () => ({reset() {}, syncGrowth() {}}), document, addEventListener() {}, configureRename() {}, dialogs: null
+    ...bindings, createBgmController: () => ({sync() {},dispose() {}}), createGameExperience: () => ({reset() {}, syncGrowth() {}}), document, addEventListener() {}, configureRename() {}, dialogs: null
   });
 }
 
