@@ -95,12 +95,16 @@ export function drawHair(ctx,assets,profile,view,box) {
   paintPart(ctx,assets,image,part,[left,top,width,height],{hairColor:profile.hairColor,recolorKit:false});
   if(earClip)ctx.restore();
 }
+export function motionHairBox(assets,profile,box){
+ const [x,y,w,h]=box,offset=assets.quarterHairOffsets?.[profile.hairStyle]||0,fit=MOTION_HAIR_SCALE;
+ const dest=assets.quarterHairRegistered?.includes(profile.hairStyle)?box:[x+fit.anchorX*(1-fit.x)*w/300,y+(fit.anchorY*(1-fit.y)+offset+4)*h/300,w*fit.x,h*fit.y];
+ const a=assets.motionHairAdjustment||{x:0,y:0,scale:1};
+ return [dest[0]+a.x+dest[2]*(1-a.scale)/2,dest[1]+a.y+dest[3]*(1-a.scale)/2,dest[2]*a.scale,dest[3]*a.scale];
+}
 export function drawMotionHair(ctx,assets,profile,box){
  const image=assets.quarterHair?.[profile.hairStyle];
  if(!image)throw new Error('Motion hair layer is missing');
- const [x,y,w,h]=box,offset=assets.quarterHairOffsets?.[profile.hairStyle]||0,fit=MOTION_HAIR_SCALE;
- const dest=assets.quarterHairRegistered?.includes(profile.hairStyle)?box:[x+fit.anchorX*(1-fit.x)*w/300,y+(fit.anchorY*(1-fit.y)+offset+4)*h/300,w*fit.x,h*fit.y];
- paintPart(ctx,assets,image,[0,0,image.width,image.height],dest,{hairColor:profile.hairColor,recolorKit:false});
+ paintPart(ctx,assets,image,[0,0,image.width,image.height],motionHairBox(assets,profile,box),{hairColor:profile.hairColor,recolorKit:false});
 }
 export function drawFrontMotionHair(ctx,assets,profile){
  const box=[35,20,230,220],replacement=profile.hairStyle===5?assets.mohawkFront:profile.hairStyle===15?assets.shortfadeFront:null;

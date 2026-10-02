@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>走りの髪位置調整</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#132330;color:#edf4f8;font:16px system-ui,sans-serif}header{padding:20px 28px;border-bottom:1px solid #42616e}h1{margin:0 0 8px;font-size:25px}a{color:#9ae4ca}p{margin:8px 0;color:#b9cdd9}.toolbar{position:sticky;top:0;z-index:2;background:#172c3a;padding:16px 28px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;border-bottom:1px solid #42616e}label{display:flex;align-items:center;gap:8px}select,button{font:inherit;padding:9px 12px;background:#263e4e;color:white;border:1px solid #718e9e;border-radius:6px}button{cursor:pointer}button.primary{background:#197157}input[type=range]{width:130px}#status{min-height:24px;padding:12px 28px;color:#9ae4ca}#views{display:grid;grid-template-columns:repeat(2,max-content);gap:20px;padding:0 28px 28px;overflow:auto}figure{margin:0;background:#263d4d;border:2px solid #496271;border-radius:8px;padding:12px}figure.selected{border-color:#89efc6}figcaption{margin-bottom:8px}canvas{width:var(--size,340px);height:var(--size,340px);display:block;image-rendering:pixelated;touch-action:none;cursor:grab;background-color:#d9e1e8;background-image:linear-gradient(45deg,#c4ced8 25%,transparent 25%),linear-gradient(-45deg,#c4ced8 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#c4ced8 75%),linear-gradient(-45deg,transparent 75%,#c4ced8 75%);background-size:24px 24px;background-position:0 0,0 12px,12px -12px,-12px 0}#import{display:none}.hint{padding:0 28px 12px}@media(max-width:760px){#views{grid-template-columns:max-content}}
+</style>
+<header><h1>走りの髪位置調整</h1><a href="motion-preview.html">モーション確認へ戻る</a><p>髪をドラッグして移動。枠の四隅のハンドルをドラッグして、縦横比を保ったまま拡大・縮小できます。</p></header>
+<section class="toolbar">
+<label>髪型<select id="hair"></select></label>
+<label><input type="checkbox" id="together" checked>4コマまとめて調整</label>
+<label>表示倍率<input id="zoom" type="range" min="260" max="620" value="340"><output id="zoom-label">100%</output></label>
+<label><input id="face" type="checkbox" checked>顔を表示</label>
+<label><input id="bounds" type="checkbox" checked>調整枠</label>
+<button id="undo">元に戻す</button><button id="reset">この髪型を初期位置へ</button><button id="save" class="primary">保存</button>
+<button id="export">設定を書き出す</button><button id="import-button">設定を読み込む</button><input type="file" id="import" accept="application/json,.json">
+</section><p class="hint">1コマだけ調整する場合は「4コマまとめて調整」を外し、そのコマの髪を動かしてください。保存すると、このブラウザの走り・ドリブルに反映されます。</p>
+<div id="status" role="status" aria-live="polite">素材を読み込み中…</div><main id="views"></main>
+<script type="module" src="../../js/hair-adjust-editor.js?v=1"></script>
+</html>
