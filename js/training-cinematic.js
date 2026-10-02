@@ -1,4 +1,5 @@
-import {loadMotionAtlas,drawMotion} from './player-motion.js?v=motion-cleanup-v2';
+import {footballTexture} from './arena-scene.js?v=shared-ball-v1';
+import {loadMotionAtlas,drawMotion} from './player-motion.js?v=body-alpha-v3';
 import {playerAppearance} from './avatar-profile.js?v=rare-v2';
 import {playerAvatarTexture} from './player-avatar.js?v=rare-v2';
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -23,6 +24,7 @@ export async function playTrainingCinematic(club,previousScreen){
  if(partners.length===2)partners.forEach((p,side)=>sprites.push({motion:'idle',label:'',p,passSide:side,canvas:Object.assign(document.createElement('canvas'),{width:300,height:300})}));
  const shade=document.createElement('div');shade.className='training-shade';layer.append(source,scene,shade);document.body.append(layer);
  document.body.classList.add('training-results-pending');
+ const ballSprite=footballTexture();
  let frame=0,atlas=null,finished=false;
  const cleanup=()=>{cancelAnimationFrame(frame);layer.remove();active=false;document.body.classList.remove('training-results-pending');document.removeEventListener('football-league:view-rendered',onRender);};
  const onRender=()=>{if(!document.querySelector('#app > .growth-modal'))cleanup();};
@@ -61,7 +63,8 @@ const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
    const balls=actors.filter(x=>x.motion==='dribble').map(x=>[x.px+(x.direction==='right'?25:-25),x.py-3]);
    if(partners.length===2){const beat=t%2,progress=Math.max(0,Math.min(1,(beat-.25)/1.1)),rightward=t%4<2;balls.push([rightward?1065+260*progress:1325-260*progress,742]);}
    if(!saving){const progress=Math.max(0,Math.min(1,(cycle-2.5)/.45));balls.push([1135+435*progress,557]);}
-   for(const [x,y] of balls){ctx.fillStyle='white';ctx.strokeStyle='#182b3d';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,7,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle='#182b3d';ctx.fillRect(x-2,y-2,4,4);}
+   ctx.imageSmoothingEnabled=false;
+   for(const [x,y] of balls)ctx.drawImage(ballSprite,Math.round(x-7),Math.round(y-7),14,14);
    frame=requestAnimationFrame(paint);
   };frame=requestAnimationFrame(paint);
   await fade(false);await wait(5000);
