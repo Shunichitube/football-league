@@ -889,3 +889,80 @@ body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
  .season-results-dashboard .season-stat-metrics dt {font-size:8px;}
  .season-results-dashboard .season-stat-metrics dd {font-size:12px;}
 }
+
+/* Special ability text is inline on all cards except the draft hover cards. */
+#app .special-ability-visible {display:block;min-width:0;}
+#app .special-ability-visible>span {display:block;font-weight:850;color:#ffe08a;white-space:normal;overflow-wrap:anywhere;}
+#app .special-ability-visible>p,
+#app .squad-special-description {
+ display:block;position:static;inset:auto;width:auto;max-width:none;
+ margin:4px 0 0;padding:0;border:0;background:transparent;box-shadow:none;
+ color:#d3e4e8;font-size:clamp(12px,.8vw,17px);line-height:1.45;
+ white-space:normal;overflow:visible;overflow-wrap:anywhere;
+ opacity:1;visibility:visible;pointer-events:auto;
+}
+#app main:not(.screen-draft) .player-special-row {overflow:visible;}
+#app main:not(.screen-draft) .special-ability-visible {font-size:clamp(13px,.9vw,18px)!important;white-space:normal;overflow:visible;}
+#app main:not(.screen-draft) .squad-special {
+ display:grid;grid-template-columns:auto minmax(0,1fr);align-content:start;gap:3px 8px;
+ height:auto;min-height:0;white-space:normal;
+}
+#app main:not(.screen-draft) .squad-special b {white-space:normal;overflow:visible;overflow-wrap:anywhere;}
+#app .squad-special-description {grid-column:1/-1;}
+#app .compare-special {flex-wrap:wrap;white-space:normal;}
+#app .compare-special-description {flex-basis:100%;color:#d3e4e8;line-height:1.4;white-space:normal;font-weight:400;}
+#app .season-stat-special-description {display:block;color:#d3e4e8;font-size:inherit;line-height:1.35;margin-top:2px;white-space:normal;}
+@media(min-width:761px) {
+ #app main.release-office {
+  width:94vw!important;max-width:none;max-height:calc(100svh - 100px);
+  padding:18px!important;
+ }
+ #app main.release-office>.candidate-grid {gap:10px!important;}
+ #app main:is(.development-room,.release-office) .squad-player {
+  grid-template-rows:minmax(135px,1fr) auto!important;
+  height:auto;min-height:230px;padding:12px 13px 9px;
+  overflow:visible;
+ }
+ #app main.release-office .squad-player {
+  height:clamp(230px,calc((100svh - 310px)/3),360px);
+ }
+ #app main:is(.development-room,.release-office) .squad-avatar img {width:clamp(75px,5.5vw,112px);height:150px;}
+ #app main:is(.development-room,.release-office) .squad-identity {gap:5px;font-size:clamp(14px,1vw,20px);}
+ #app main:is(.development-room,.release-office) .squad-identity .player-name {font-size:clamp(18px,1.3vw,26px)!important;white-space:normal;overflow-wrap:anywhere;}
+ #app main:is(.development-room,.release-office) .squad-abilities {gap:5px;}
+ #app main:is(.development-room,.release-office) .squad-abilities dt,
+ #app main:is(.development-room,.release-office) .squad-abilities dd {font-size:clamp(13px,.9vw,18px);}
+ #app main:is(.development-room,.release-office) .squad-abilities>div {padding:3px 4px;}
+ #app main:is(.development-room,.release-office) .squad-special {font-size:clamp(14px,.95vw,19px);padding-top:6px;align-self:start;}
+ #app main.release-office .phase-topbar>h2 {font-size:clamp(24px,1.7vw,34px);}
+ #app main.release-office .phase-topbar>.hint {font-size:clamp(13px,.95vw,18px);}
+ #app main.release-office .phase-topbar label,
+ #app main.release-office .phase-topbar select {font-size:clamp(14px,1vw,20px);}
+ #app main.release-office .candidate>button,
+ #app main.release-office>button {font-size:clamp(16px,1.1vw,22px)!important;min-height:48px!important;}
+ .auction-scene .auction-monitor {left:32%;top:24%;width:36%;height:25.5%;}
+ #app .auction-scene .auction-player {justify-content:flex-start;overflow:auto;}
+ #app .auction-scene .auction-player .player-card {
+  flex:1;min-height:0;padding:12px!important;gap:10px!important;
+  grid-template-columns:minmax(0,38fr) minmax(0,62fr)!important;
+  grid-template-rows:minmax(0,1fr) auto;overflow:visible;
+ }
+ #app .auction-scene .auction-player .player-name {font-size:clamp(20px,1.45vw,28px)!important;white-space:normal;overflow-wrap:anywhere;}
+ #app .auction-scene .auction-player .overall-rank {font-size:clamp(18px,1.15vw,24px)!important;}
+ #app .auction-scene .auction-player .player-meta,
+ #app .auction-scene .auction-player .growth-expectation,
+ #app .auction-scene .auction-player .position-badge {font-size:clamp(15px,1vw,21px)!important;line-height:1.25!important;}
+ #app .auction-scene .auction-player .ability-grid {gap:5px!important;}
+ #app .auction-scene .auction-player .ability-grid div {grid-template-columns:4.3rem minmax(0,1fr)!important;padding:4px 5px!important;}
+ #app .auction-scene .auction-player .ability-grid dt,
+ #app .auction-scene .auction-player .ability-grid dd {font-size:clamp(14px,.95vw,20px)!important;}
+ #app .auction-scene .auction-player .rank-bar {height:7px!important;}
+ #app .auction-scene .auction-player .scout-comment {
+  font-size:clamp(14px,.9vw,18px);line-height:1.45;margin:7px 0 0;
+  max-height:none;overflow:visible;flex:none;
+ }
+ #app main.contract-room .squad-player,
+ #app main.growth-modal .squad-player,
+ #app .release-confirm-card .squad-player {grid-template-rows:minmax(135px,1fr) auto!important;height:auto!important;min-height:230px;}
+ #app main.screen-squad .squad-compare {overflow:auto;}
+}
