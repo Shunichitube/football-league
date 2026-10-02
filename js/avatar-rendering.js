@@ -1,5 +1,5 @@
-import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js?v=appearance-v25';
-import { HAIR_PARTS } from './avatar-hair-parts.js?v=appearance-v25';
+import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js?v=appearance-v26';
+import { HAIR_PARTS } from './avatar-hair-parts.js?v=appearance-v26';
 const rgb = hex => hex.slice(1).match(/../g).map(n => parseInt(n,16));
 export function recolorPixels(pixels, { skinTone = 0, kit, goalkeeper = false, recolorKit = true, hairColor, frontKeeperBody = false, partWidth = 256 } = {}) {
   const skin = rgb(SKIN_TONES[avatarProfile({skinTone}).skinTone].color), uniform = rgb(kitColor(kit, goalkeeper));
@@ -133,14 +133,38 @@ function equalEyeQuarterHead(assets){
   ctx.putImageData(data,0,0);
   equalEyeHeads.set(original,surface);return surface;
 }
-export function drawGlasses(ctx,eyes,{scale=1,quarter=false,temples}={}) {
-  ctx.save();ctx.strokeStyle='#252b30';ctx.lineWidth=Math.max(2.5,6*scale);ctx.lineJoin='round';ctx.lineCap='round';
+function glassesRim(ctx,x,y,w,h){
+  ctx.moveTo(x+w*.14,y);ctx.lineTo(x+w*.82,y-h*.025);
+  ctx.quadraticCurveTo(x+w,y-h*.025,x+w,y+h*.13);
+  ctx.lineTo(x+w*.93,y+h*.85);ctx.quadraticCurveTo(x+w*.91,y+h,x+w*.76,y+h);
+  ctx.lineTo(x+w*.20,y+h);ctx.quadraticCurveTo(x+w*.06,y+h,x+w*.04,y+h*.85);
+  ctx.lineTo(x,y+h*.15);ctx.quadraticCurveTo(x,y,x+w*.14,y);ctx.closePath();
+}
+function drawQuarterGlasses(ctx,eyes,scale,temples){
   const spacing=eyes[1][0]+eyes[1][2]/2-eyes[0][0]-eyes[0][2]/2;
+  const border=4.5*scale;
   const lenses=eyes.map(([x,y,w,h],side)=>{
-    if(!quarter)return [x-w*1.4+(side===0?-w*.2:w*.2),y-h*.24,w*3.8,h*1.38];
-    const width=spacing*(side===0?.98:.86),center=x+w/2+(side===0?-w*.12:w*.12);
-    return [center-width/2,y-h*.22,width,h*1.17];
+    const width=spacing*(side===0?1.12:1.00),center=x+w/2+(side===0?-7:7)*scale;
+    return [center-width/2,y-5*scale,width,h+10*scale];
   });
+  ctx.save();ctx.strokeStyle='#252b30';ctx.fillStyle='#252b30';ctx.lineWidth=5*scale;ctx.lineCap='round';
+  // Arms and bridge sit behind the two independently hollow frame rims.
+  lenses.forEach(([x,y,w,h],side)=>{
+    const edge=side===0?x:x+w,temple=temples?.[side];
+    if(temple){ctx.beginPath();ctx.moveTo(...temple);ctx.lineTo(edge,y+h*.22);ctx.stroke();}
+  });
+  const [near,far]=lenses;
+  ctx.beginPath();ctx.moveTo(near[0]+near[2],near[1]+near[3]*.20);
+  ctx.quadraticCurveTo((near[0]+near[2]+far[0])/2,(near[1]+far[1])/2,far[0],far[1]+far[3]*.20);ctx.stroke();
+  for(const [x,y,w,h]of lenses){
+    ctx.beginPath();glassesRim(ctx,x,y,w,h);glassesRim(ctx,x+border,y+border,w-border*2,h-border*2);ctx.fill('evenodd');
+  }
+  ctx.restore();
+}
+export function drawGlasses(ctx,eyes,{scale=1,quarter=false,temples}={}) {
+  if(quarter){drawQuarterGlasses(ctx,eyes,scale,temples);return;}
+  ctx.save();ctx.strokeStyle='#252b30';ctx.lineWidth=Math.max(2.5,6*scale);ctx.lineJoin='round';ctx.lineCap='round';
+  const lenses=eyes.map(([x,y,w,h],side)=>[x-w*1.4+(side===0?-w*.2:w*.2),y-h*.24,w*3.8,h*1.38]);
   for(const [x,y,w,h] of lenses){
     ctx.beginPath();ctx.moveTo(x+w*.18,y);ctx.quadraticCurveTo(x+w*.5,y-h*.08,x+w*.82,y);
     ctx.quadraticCurveTo(x+w,y,x+w*.98,y+h*.25);ctx.lineTo(x+w*.88,y+h*.78);
@@ -172,7 +196,8 @@ export function drawQuarterHead(ctx,assets,value,box) {
       const bx=ex-ew*.48,by=ey-eh*.60,bw=ew*1.89,bh=eh*.457;
       if(profile.face===1){
         ctx.save();ctx.translate(bx+bw/2,by+bh/2);ctx.rotate((side===0?-1:1)*Math.PI/15);
-        ctx.drawImage(assets.parts,...brow,-bw/2,-bh/2,bw,bh);ctx.restore();
+        ctx.scale(side===0?1:-1,1);
+        ctx.drawImage(assets.parts,...AVATAR_BROWS[1][0],-bw/2,-bh/2,bw,bh);ctx.restore();
       }else ctx.drawImage(assets.parts,...brow,bx,by,bw,bh);
     }
   });

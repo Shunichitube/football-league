@@ -1,5 +1,5 @@
-import {playerAppearance,kitColor} from './avatar-profile.js?v=appearance-v25';
-import { pixelTexture } from './arena-characters.js?v=appearance-v25';
+import {playerAppearance,kitColor} from './avatar-profile.js?v=appearance-v26';
+import { pixelTexture } from './arena-characters.js?v=appearance-v26';
 import { minimumAuctionBid } from './live-auction.js';
 import { STAGE, AUCTION_SEATS } from './stage-layout.js';
 const avatars=new Map();
