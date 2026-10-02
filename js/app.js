@@ -1,4 +1,4 @@
-import { playSeasonFinale } from './season-finale.js?v=conveyor-v2';
+import { playSeasonFinale } from './season-finale.js?v=conveyor-v3';
 import { rareKind, rareAgeLabel } from './rare-characters.js';
 import { playTrainingCinematic } from './training-cinematic.js?v=6';
 import { renderSeasonResults } from './season-results-ui.js?v=3';

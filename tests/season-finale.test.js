@@ -1,6 +1,29 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {finaleKind,finaleFrame,podiumPositions,conveyorMatches,conveyorFrame} from '../js/season-finale.js';
+import {finaleKind,finaleFrame,podiumPositions,conveyorMatches,conveyorFrame,conveyorCast,conveyorBlocking} from '../js/season-finale.js';
+
+test('central and foreground reserve follow the actual FW, MF1 and MF2 lineup',()=>{
+ const roster=['GK','DF','MF','MF','FW'].map((primaryPosition,id)=>({id,primaryPosition}));
+ assert.deepEqual(conveyorCast({roster,lineup:[0,1,3,2,4]}).map(p=>p.id),[4,3,2]);
+ const matches=['loss','loss','loss','win'].map(outcome=>({outcome}));
+ const first=conveyorBlocking(matches,0);
+ assert.equal(first.central.motion,'idle');assert.equal(first.reserve.motion,'idle');
+ assert.ok(first.reserve.y>first.central.y);assert.equal(first.central.role,0);
+ const stolen=conveyorBlocking(matches,.95);
+ assert.equal(stolen.departed.motion,'idle');assert.ok(stolen.departed.x<480);
+ assert.equal(stolen.central.role,1);assert.equal(stolen.central.motion,'idle');
+ const kick=conveyorBlocking(matches,1.2);assert.equal(kick.rival.motion,'shoot');
+ const pickup=conveyorBlocking(matches,1.65);
+ assert.equal(pickup.central.role,1);assert.equal(pickup.central.motion,'dribble');
+ assert.equal(pickup.replacement.role,2);assert.equal(pickup.replacement.motion,'idle');
+ const next=conveyorBlocking(matches,2.4);
+ assert.equal(next.central.role,1);assert.equal(next.reserve.role,2);
+ assert.equal(next.waiting[0].role,0);assert.ok(next.waiting[0].x<stolen.departed.x);
+ assert.deepEqual([0,2.4,4.8,7.2].map(t=>conveyorBlocking(matches,t+.01).central.role%3),[0,1,2,0]);
+ const win=conveyorBlocking([{outcome:'win'}],.9);
+ assert.ok(win.central.y<first.central.y);assert.equal(win.central.motion,'dribble');
+ assert.equal(conveyorBlocking([{outcome:'win'}],.2).central.motion,'idle');
+});
 
 test('conveyor selects ten owned snapshots from multiplayer fixtures without modifying results',()=>{
  const snapshots=Array.from({length:10},(_,i)=>[

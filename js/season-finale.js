@@ -24,6 +24,57 @@ export function conveyorFrame(matches,time){
  const index=Math.min(matches.length-1,Math.floor(Math.max(0,time)/CONVEYOR_MATCH_SECONDS));
  return {done:false,duration,index,match:matches[index],local:Math.max(0,time)-index*CONVEYOR_MATCH_SECONDS};
 }
+export function conveyorCast(club){
+ const byId=id=>club.roster.find(p=>p.id===id),lineup=club.lineup||[];
+ const midfielders=club.roster.filter(p=>p.primaryPosition==='MF');
+ const candidates=[byId(lineup[4])||club.roster.find(p=>p.primaryPosition==='FW'),byId(lineup[2])||midfielders[0],byId(lineup[3])||midfielders[1],...club.roster.filter(p=>p.primaryPosition!=='GK')];
+ return candidates.filter((p,i)=>p&&candidates.findIndex(q=>q?.id===p.id)===i).slice(0,3);
+}
+const smooth=q=>{q=Math.max(0,Math.min(1,q));return q*q*(3-2*q);};
+const mix=(a,b,q)=>a+(b-a)*q;
+export function conveyorBlocking(matches,time){
+ const frame=conveyorFrame(matches,time);if(frame.done)return frame;
+ const {index,match,local:t}=frame;
+ const losses=matches.slice(0,index).filter(m=>m.outcome==='loss').length;
+ const central={role:losses,x:480,y:420,motion:'idle',seconds:0,direction:'right'};
+ const reserve={role:losses+1,x:650,y:525,motion:'idle',seconds:0,direction:'right'};
+ const rival={x:mix(740,480,smooth((t-.3)/.55)),y:420,motion:t<.3?'idle':'run',seconds:t-.3,direction:'left'};
+ let ball={x:530,y:395},departed=null,replacement=null;
+ if(match.outcome==='win'){
+  central.x=480+45*smooth((t-.55)/.3)-45*smooth((t-1.55)/.85);
+  central.y=420-75*smooth((t-.55)/.3)+75*smooth((t-1.55)/.85);
+  central.motion=t<.55?'idle':'dribble';central.seconds=Math.max(0,t-.55);
+  rival.x=t>.85?480-(t-.85)*350:rival.x;
+  ball={x:central.x+50+(t>.55?Math.sin(t*16)*6:0),y:central.y-25};
+ }else if(match.outcome==='loss'&&t>=.85){
+  // The old carrier is stationary relative to the belt, never running away.
+  departed={...central,x:480-(t-.85)*150,motion:'idle',seconds:0};
+  rival.x=t<1?mix(480,560,smooth((t-.85)/.15)):560;
+  rival.motion=t<1?'dribble':t<1.5?'shoot':'run';rival.seconds=t<1?t-.85:t<1.5?t-1:t-1.5;rival.direction='right';
+  if(t>=1.5)rival.x=560+(t-1.5)*400;
+  const flight=smooth((t-1.15)/.3);
+  ball={x:t<1.15?rival.x+50:mix(610,700,flight),y:mix(395,500,flight)-Math.sin(flight*Math.PI)*35};
+  if(t>=1.45){
+   const pickup=smooth((t-1.45)/.35);
+   central.role=losses+1;central.x=mix(650,480,pickup);central.y=mix(525,420,pickup);
+   central.motion='dribble';central.seconds=t-1.45;ball={x:central.x+50,y:central.y-25};
+   replacement={...reserve,role:losses+2,x:650+(CONVEYOR_MATCH_SECONDS-t)*150};
+  }else{central.x=reserve.x;central.y=reserve.y;central.role=reserve.role;}
+ }else if(match.outcome==='draw'){
+  central.motion=t>=.6&&t<1.1?'shoot':t>=1.7?'dribble':'idle';central.seconds=t>=1.7?t-1.7:Math.max(0,t-.6);
+  rival.x=t>.85?480-(t-.85)*350:rival.x;
+  const outward=smooth((t-.75)/.4),back=smooth((t-1.25)/.45),q=outward*(1-back);
+  ball={x:mix(530,700,q),y:mix(395,500,q)};
+ }
+ // Earlier losers remain on the moving belt across fixture boundaries.
+ let pastRole=0;
+ const waiting=matches.slice(0,index).flatMap((m,i)=>{
+  if(m.outcome!=='loss')return [];
+  const role=pastRole++,x=480-(time-(i*CONVEYOR_MATCH_SECONDS+.85))*150;
+  return x>-140?[{role,x,y:420,motion:'idle',seconds:0,direction:'right'}]:[];
+ });
+ return {...frame,central,reserve,rival,ball,departed,replacement,waiting,losses};
+}
 export function podiumPositions(count){
  const n=Math.min(12,Math.max(0,count)),gap=105;
  return Array.from({length:n},(_,i)=>({x:836+(i-(n-1)/2)*gap,y:700}));
@@ -56,9 +107,10 @@ function football(ctx,x,y,r,spin=0){
   ctx.beginPath();for(let i=0;i<5;i++){const a=i*Math.PI*2/5;const px=(cx+Math.cos(a)*size)*r,py=(cy+Math.sin(a)*size)*r;i?ctx.lineTo(px,py):ctx.moveTo(px,py);}ctx.closePath();ctx.fill();
  }ctx.restore();
 }
-export function createFinalePainter(data,club,rank,keeper,clubs=[]){
+export function createFinalePainter(data,club,rank,keeper,clubs=[],fixtures=[]){
  const {atlas,ground,home,goal,bulge}=data;
- const roster=club.roster.slice(0,12),scorer=roster.find(p=>p.primaryPosition==='FW')||roster.find(p=>p.primaryPosition!=='GK')||roster[0];
+ const roster=club.roster.slice(0,12),cast=conveyorCast(club);
+ let scorer=cast[fixtures.filter(m=>m.outcome==='loss').length%cast.length]||roster[0];
  const sprite=document.createElement('canvas');sprite.width=400;sprite.height=400;
  const actor=(ctx,motion,t,x,y,height,p=scorer,gk=false,kit=club.color,direction='right')=>{
   drawMotion(sprite.getContext('2d'),atlas,motion,t,{appearance:playerAppearance(p||{id:'finale-keeper',primaryPosition:'GK'}),kit,goalkeeper:gk,loop:['idle','run','dribble'].includes(motion),direction});
@@ -71,7 +123,7 @@ export function createFinalePainter(data,club,rank,keeper,clubs=[]){
  const portraits=roster.map(p=>{const im=document.createElement('canvas');im.width=300;im.height=470;drawAvatar(im.getContext('2d'),atlas.avatar,playerAppearance(p),{kit:club.color,goalkeeper:p.primaryPosition==='GK'});return im;});
  return {
   conveyor(ctx,time,matches){
-   const frame=conveyorFrame(matches,time),{match,local:t,index,duration}=frame;
+   const frame=conveyorBlocking(matches,time),{match,local:t,index,duration}=frame;
    if(frame.done)return frame;
    // Use the home ground at the same crop/scale as the existing shot.
    // Whole tiles slide left; the last tile eases to the original crop exactly.
@@ -88,24 +140,20 @@ export function createFinalePainter(data,club,rank,keeper,clubs=[]){
     ctx.drawImage(home,500,410,672,315,0,0,960,540);ctx.restore();
    }
    const opponent=clubs.find(c=>c.id===match.opponent?.id),rival=opponent?.roster.find(p=>p.primaryPosition!=='GK')||opponent?.roster[0];
-   const mate=roster.find(p=>p.id!==scorer?.id&&p.primaryPosition!=='GK')||scorer;
-   const progress=t/CONVEYOR_MATCH_SECONDS,retreat=match.outcome==='loss'&&t>1.25;
-   const runnerX=340+(match.outcome==='win'?Math.sin(progress*Math.PI)*65:retreat?-Math.sin((t-1.25)/1.15*Math.PI)*60:0);
-   const kick=match.outcome==='draw'&&t>=.65&&t<1.1;
-   actor(ctx,kick?'shoot':retreat?'run':'dribble',kick?t-.65:time,runnerX,455,240);
-   if(!handoff){
-    const rivalX=850-progress*850;
-    actor(ctx,retreat?'dribble':'run',time,rivalX,415,190,rival,rival?.primaryPosition==='GK',opponent?.color||match.opponent?.color||'#b64c64','left');
-    actor(ctx,'run',time+.2,560,365,175,mate,mate?.primaryPosition==='GK');
-   }else{
-    ctx.save();ctx.globalAlpha=1-ease(handoff);
-    actor(ctx,'run',time,220-handoff*200,415,190,rival,false,opponent?.color||'#b64c64','left');
-    actor(ctx,'run',time+.2,560,365,175,mate,mate?.primaryPosition==='GK');ctx.restore();
-   }
-   let ballX=runnerX+80+Math.sin(time*16)*8,ballY=430;
-   if(match.outcome==='draw'&&t>.7){const pass=Math.min(1,(t-.7)/.55);ballX=420+pass*185;ballY=430-pass*75;if(t>1.25){const back=Math.min(1,(t-1.25)/.55);ballX=605-back*185;ballY=355+back*75;}}
-   if(retreat){const steal=Math.min(1,(t-1.25)/.45);ballX=420-steal*260;if(t>1.8)ballX=160+Math.min(1,(t-1.8)/.6)*260;}
-   if(handoff){const blend=ease(handoff);ballX+=(420-ballX)*blend;ballY+=(430-ballY)*blend;}
+   const member=role=>cast[role%cast.length]||scorer;
+   scorer=member(matches.filter(m=>m.outcome==='loss').length);
+   const drawRole=(pose,height=200)=>actor(ctx,pose.motion,pose.seconds,pose.x,pose.y,height,member(pose.role),member(pose.role)?.primaryPosition==='GK',club.color,pose.direction);
+   const enemy=frame.rival;
+   const blend=ease(handoff),lead={...frame.central,x:mix(frame.central.x,340,blend),y:mix(frame.central.y,455,blend)};
+   const people=[...frame.waiting.map(pose=>({pose})),...(frame.departed?[{pose:frame.departed}]:[]),{pose:enemy,enemy:true},{pose:lead,lead:true},...(!frame.departed?[{pose:frame.reserve,height:210}]:frame.replacement?[{pose:frame.replacement,height:210}]:[])];
+   // Draw the upper lane first, leaving the reserve in the foreground.
+   people.sort((a,b)=>a.pose.y-b.pose.y).forEach(row=>{
+    ctx.save();ctx.globalAlpha=row.lead?1:1-blend;
+    if(row.enemy)actor(ctx,enemy.motion,enemy.seconds,enemy.x,enemy.y,200,rival,rival?.primaryPosition==='GK',opponent?.color||match.opponent?.color||'#b64c64',enemy.direction);
+    else drawRole(row.pose,row.lead?mix(200,240,blend):row.height||200);
+    ctx.restore();
+   });
+   let ballX=mix(frame.ball.x,420,blend),ballY=mix(frame.ball.y,430,blend);
    football(ctx,ballX,ballY,12,time*12);
    // The final running pose dissolves into the first existing kick pose.
    if(handoff){ctx.save();ctx.globalAlpha=ease(handoff);this.cinematic(ctx,0);ctx.restore();}
@@ -222,7 +270,7 @@ export function playSeasonFinale({app,club,rank,keeper,matches=[],clubs=[],onDon
  });
  addEventListener('resize',resize,{passive:true});document.addEventListener('visibilitychange',visibility);resize();
  Promise.race([loadResources(),new Promise((_,reject)=>{loadTimer=setTimeout(()=>reject(new Error('Finale assets timed out')),20000);})]).then(data=>{
-  if(dead)return;painter=createFinalePainter(data,club,rank,keeper,clubs);status.remove();
+  if(dead)return;painter=createFinalePainter(data,club,rank,keeper,clubs,fixtures);status.remove();
   if(reduced){stage='cinematic';clock=finaleKind(rank)==='goal'?5.1:4.4;}
   paint();if(!reduced)raf=requestAnimationFrame(tick);
  }).catch(error=>{
