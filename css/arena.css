@@ -1184,3 +1184,37 @@ body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
  }
  #app .season-results-dashboard.is-stats .results-winner:not(.is-mvp) {transform:translateY(2.4vh);}
 }
+
+/* The roster modal uses the same portrait, identity and ability card layout. */
+@media(min-width:761px) {
+ #app .roster-panel {
+  width:96vw;max-width:none;inset:3vh 2vw;margin:0;padding:22px;
+ }
+ #app .roster-panel>.candidate-grid {
+  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  grid-auto-rows:auto;gap:12px;align-items:stretch;
+ }
+ #app .roster-panel .squad-player {
+  display:grid;grid-template-columns:minmax(0,22fr) minmax(0,33fr) minmax(0,45fr);
+  grid-template-rows:auto auto;gap:8px;min-width:0;height:auto;min-height:250px;
+  padding:12px;border:1px solid #5c8e98;border-radius:12px;
+  background:linear-gradient(140deg,#142f3bf5,#0b2030fa);box-sizing:border-box;
+ }
+ #app .roster-panel .squad-avatar {grid-column:1;grid-row:1;display:flex;align-items:center;justify-content:center;min-width:0;}
+ #app .roster-panel .squad-avatar img {width:100%;height:150px;object-fit:contain;image-rendering:pixelated;}
+ #app .roster-panel .squad-role-badge {display:none;}
+ #app .roster-panel .squad-identity {grid-column:2;grid-row:1;display:flex;flex-direction:column;justify-content:center;min-width:0;gap:5px;font-size:clamp(14px,1vw,20px);}
+ #app .roster-panel .squad-identity .player-name {font-size:clamp(18px,1.3vw,26px);white-space:normal;overflow-wrap:anywhere;}
+ #app .roster-panel .squad-identity>strong {color:#ffe298;}
+ #app .roster-panel .squad-abilities {grid-column:3;grid-row:1;display:grid;gap:5px;min-width:0;margin:0;align-content:center;}
+ #app .roster-panel .squad-abilities>div {display:grid;grid-template-columns:minmax(0,42fr) minmax(0,58fr);align-items:center;min-width:0;gap:5px;padding:4px;background:#061928c9;}
+ #app .roster-panel .squad-abilities dt,#app .roster-panel .squad-abilities dd {font-size:clamp(13px,.9vw,18px);}
+ #app .roster-panel .squad-abilities dt {white-space:normal;}
+ #app .roster-panel .squad-special {grid-column:1/-1;grid-row:2;border-top:1px solid #5c8e9866;padding-top:7px;font-size:clamp(14px,1vw,20px);}
+ #app .roster-panel .squad-special>span {color:#b8d5da;margin-right:7px;}
+ #app .roster-panel .squad-special>b {color:#ffe298;}
+ #app .roster-panel .roster-card-actions {display:flex;flex-wrap:wrap;gap:5px;}
+ #app .roster-panel .roster-card-actions button {font-size:14px!important;padding:7px 9px!important;margin:0!important;}
+ #app .roster-panel .overlay-heading h2 {font-size:28px;}
+ #app .roster-panel .overlay-heading>button {font-size:20px;padding:12px 24px;}
+}
