@@ -1374,3 +1374,11 @@ body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
  }
  #app .season-results-dashboard.is-stats .season-stat-special-description {margin-top:1px;line-height:1.2;}
 }
+
+/* Show only the lost portion in red, including declines within one rank. */
+#app .growth-result .growth-bar-loss {
+ position:absolute;top:0;height:100%;background:#ff555c;
+ box-shadow:0 0 5px #ff555c;animation:growth-loss-pulse 1.2s ease-in-out infinite;
+}
+@keyframes growth-loss-pulse {0%,100%{opacity:1;}50%{opacity:.15;}}
+@media(prefers-reduced-motion:reduce) {#app .growth-result .growth-bar-loss {animation:none;}}
