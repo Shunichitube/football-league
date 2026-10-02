@@ -759,3 +759,133 @@ body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
     color:#d3e4e8;
   }
 }
+
+/* Two result tabs use the full desktop width, above the award podium. */
+@media (min-width:761px) {
+  body.season-results-hall-active #app>main.season-results-dashboard {
+    width:96vw;
+    display:grid;
+    grid-template-rows:8vh auto minmax(0,1fr);
+    padding:0 0 32vh;
+  }
+  .season-results-dashboard .results-title { height:auto;font-size:clamp(26px,2.5vw,42px); }
+  .season-results-dashboard .results-tabs {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    width:min(600px,70vw);
+    justify-self:center;
+    margin:0 0 8px;
+  }
+  #app .season-results-dashboard .results-tabs button {
+    font-size:clamp(14px,1vw,19px);padding:8px 14px;
+  }
+  .season-results-dashboard .results-content {
+    height:100%;min-height:0;overflow:hidden;scrollbar-gutter:auto;
+  }
+  .results-season-grid {
+    display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.15fr) minmax(0,1fr);
+    gap:12px;height:100%;min-height:0;
+  }
+  .results-standing-column {
+    display:grid;grid-template-rows:auto minmax(0,1fr);gap:9px;min-height:0;
+  }
+  .results-season-grid .results-panel {
+    padding:12px 14px;min-height:0;overflow:auto;
+  }
+  .results-season-grid h2,.results-stats-panel h2 {
+    font-size:clamp(17px,1.3vw,24px);margin:0 0 8px;
+  }
+  .results-season-grid h2 small {font-size:.7em;color:#c6ddd9;}
+  .results-club-compact>div {display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px;}
+  .results-club-compact strong {font-size:clamp(20px,1.8vw,32px);color:#ffe298;}
+  .results-club-compact b {font-size:clamp(15px,1.2vw,22px);color:#7bf4c3;}
+  .results-club-compact span,.results-club-compact p {font-size:clamp(12px,.95vw,17px);}
+  .results-club-compact p {margin:5px 0 0;color:#c7dce5;}
+  .results-season-grid .table-wrap {overflow:auto;}
+  .results-season-grid table {min-width:0;font-size:clamp(12px,.95vw,17px);}
+  .results-season-grid td,.results-season-grid th {padding:clamp(5px,.7vh,10px) 5px;}
+  .results-matches {display:flex;flex-direction:column;}
+  .results-matches .season-match-list {
+    flex:1;min-height:0;display:grid;grid-template-rows:repeat(10,minmax(0,1fr));
+    gap:4px;margin:0;
+  }
+  #app .results-matches .season-match-row {
+    margin:0;padding:4px 9px;gap:8px;min-height:0;border-radius:6px;
+    grid-template-columns:minmax(0,.65fr) auto minmax(0,1fr);
+    font-size:clamp(11px,.82vw,16px);
+  }
+  .results-matches .season-match-row>span {min-width:0;overflow-wrap:anywhere;}
+  .results-matches .season-match-row small {font-size:.75em;margin-top:0;}
+  .results-matches .season-match-row .result-mark {font-size:clamp(14px,1.05vw,20px);}
+  .results-awards-column {min-height:0;}
+  .results-awards-column>.results-panel {height:100%;display:flex;flex-direction:column;}
+  .results-season-grid .results-award-info {
+    flex:1;min-height:0;display:grid;grid-template-columns:1fr;
+    grid-template-rows:repeat(5,minmax(0,1fr));gap:5px;
+  }
+  .results-season-grid .results-award-info article {
+    display:grid;grid-template-columns:auto minmax(0,1fr);align-content:center;
+    gap:2px 9px;padding:6px 9px;min-width:0;
+  }
+  .results-season-grid .results-award-info strong {font-size:clamp(14px,1.05vw,20px);margin:0;}
+  .results-season-grid .results-award-info small {grid-column:2;font-size:clamp(10px,.75vw,14px);}
+  .results-season-grid .results-award-info span {font-size:clamp(11px,.8vw,15px);}
+  .results-season-grid .results-award-info p {grid-column:1/-1;margin:0;font-size:clamp(11px,.8vw,15px);}
+  .season-results-dashboard .results-stats-panel {
+    height:100%;display:flex;flex-direction:column;min-height:0;padding:10px 12px;
+    overflow:hidden;
+  }
+  .season-results-dashboard .season-player-stats {
+    flex:1;min-height:0;display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    grid-template-rows:repeat(3,minmax(0,1fr));gap:8px!important;margin:0;
+    overflow:auto;
+  }
+}
+.season-stat-card {
+  display:flex;flex-direction:column;justify-content:space-between;gap:7px;
+  min-width:0;min-height:0;padding:8px 10px;border:1px solid #5c8e98;
+  border-radius:10px;background:linear-gradient(140deg,#142f3bf5,#0b2030fa);
+}
+.season-stat-profile {display:grid;grid-template-columns:clamp(64px,5vw,100px) minmax(0,1fr);gap:10px;min-height:0;}
+.season-stat-profile img {width:100%;height:clamp(70px,8.5vh,130px);object-fit:contain;image-rendering:pixelated;align-self:center;}
+.season-stat-profile>div {display:flex;flex-direction:column;justify-content:center;gap:3px;min-width:0;}
+.season-stat-name {font-size:clamp(14px,1.1vw,22px);overflow-wrap:anywhere;line-height:1.15;color:#f2fcff;}
+.season-stat-profile b {color:#f5d986;font-size:clamp(12px,.85vw,17px);}
+.season-stat-profile span,.season-stat-profile small {font-size:clamp(11px,.8vw,15px);color:#cfdfdf;}
+.season-stat-special {margin:0;color:#8ee5bb;font-size:clamp(10px,.75vw,14px);line-height:1.25;overflow-wrap:anywhere;}
+.season-stat-metrics {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin:0;}
+.season-stat-metrics>div {text-align:center;min-width:0;padding:3px;background:#061928c9;border-radius:5px;}
+.season-stat-metrics dt {font-size:clamp(9px,.67vw,13px);color:#b8d5da;white-space:nowrap;}
+.season-stat-metrics dd {font-size:clamp(13px,1vw,19px);font-weight:850;color:#f5fbff;margin:0;line-height:1.2;}
+@media (max-width:760px) {
+ .results-tabs {grid-template-columns:repeat(2,1fr);}
+ .results-season-grid {display:grid;gap:10px;}
+ .results-standing-column {display:grid;gap:10px;}
+ .season-player-stats {grid-template-columns:repeat(2,minmax(0,1fr));}
+ .season-stat-profile {grid-template-columns:56px minmax(0,1fr);}
+}
+
+@media (min-width:761px) {
+  body.season-results-hall-active #app>main.season-results-dashboard.is-stats {padding-bottom:22vh;}
+  .season-results-dashboard.is-stats .results-podium-players {bottom:7vh;}
+  .season-results-dashboard.is-stats .results-winner img {height:clamp(60px,10vh,120px);}
+  .season-results-dashboard.is-stats .results-winner.is-mvp img {height:clamp(75px,12vh,140px);}
+  .season-results-dashboard.is-stats .results-winner:not(.is-mvp) {transform:none;}
+}
+
+@media (min-width:761px) and (max-height:900px) {
+ .season-results-dashboard .results-stats-panel {padding:7px 9px;}
+ .season-results-dashboard .season-stat-card {padding:5px 7px;gap:4px;}
+ .season-results-dashboard .season-stat-profile {grid-template-columns:58px minmax(0,1fr);gap:6px;}
+ .season-results-dashboard .season-stat-profile img {height:58px;}
+ .season-results-dashboard .season-stat-profile>div {gap:1px;line-height:1.1;}
+ .season-results-dashboard .season-stat-name {font-size:13px;}
+ .season-results-dashboard .season-stat-profile b {font-size:11px;}
+ .season-results-dashboard .season-stat-profile span,
+ .season-results-dashboard .season-stat-profile small,
+ .season-results-dashboard .season-stat-special {font-size:10px;}
+ .season-results-dashboard .season-stat-metrics {gap:3px;}
+ .season-results-dashboard .season-stat-metrics>div {padding:1px 2px;}
+ .season-results-dashboard .season-stat-metrics dt {font-size:8px;}
+ .season-results-dashboard .season-stat-metrics dd {font-size:12px;}
+}
