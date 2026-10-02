@@ -3,7 +3,7 @@ import { dialogs } from './dialogs.js';
 import {playerAppearance,kitColor} from './avatar-profile.js?v=appearance-v29';
 import { formatMatchEvents } from './match-log.js?v=appearance-v29';
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.22.0';
-import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=egg-secret-v1';
+import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=robot-descriptions-v1';
 import { LINEUP_SLOTS, validateLineup } from './rules.js?v=appearance-v29';
 import { pixelTexture } from './arena-characters.js?v=appearance-v29';
 
