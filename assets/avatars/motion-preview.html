@@ -1,17 +1,17 @@
 <!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>選手モーション確認</title>
 <style>body{margin:32px;background:#12202d;color:#e9f4f4;font:16px sans-serif}h1{font-size:24px}main{display:flex;gap:20px;flex-wrap:wrap}figure{margin:0;padding:16px;border:1px solid #4f807a;border-radius:12px;background:#203442;text-align:center}canvas{width:240px;height:240px;image-rendering:pixelated}button{padding:10px 18px;margin:0 8px 18px 0;color:#e9f4f4;background:#204b49;border:1px solid #6cc5b1;border-radius:6px;cursor:pointer}figcaption{margin:8px}p{color:#b9d3d1}figure button{font-size:13px;margin:8px 0 0}small{display:block;color:#b9d3d1}.appearance-controls{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:18px 0 24px}label{display:flex;gap:8px;align-items:center}select{background:#203442;color:#e9f4f4;padding:8px;border:1px solid #638980;border-radius:5px}</style>
-<h1>選手・キーパーモーション</h1><p>待機・走り・ドリブル・右足シュート・キャッチ・飛び込み・喜ぶ差分を表示。各カードで1コマずつ確認できます。シュートは右足を保つため右向きで表示します。</p>
+<h1>選手・キーパーモーション</h1><p>走り素材 v3：再描画した4コマ＋髪型20種の位置調整。</p><p>待機・走り・ドリブル・右足シュート・キャッチ・飛び込み・喜ぶ差分を表示。各カードで1コマずつ確認できます。シュートは右足を保つため右向きで表示します。</p>
 <button id="pause">一時停止</button><button id="reset">最初から再生</button><button id="speed">半分の速さ</button><button id="direction">左向きに切り替え</button><a style="color:#8de8c2" href="preview.html">髪型20種の一覧</a>　<a style="color:#8de8c2" href="rare-preview.html">レアキャラ一覧・喜び差分</a><section class="appearance-controls"><label>キャラクター<select id="character"><option value="">通常選手</option></select></label><label>髪型<select id="hair"></select></label><label>顔<select id="face"></select></label><label>肌色<select id="skin"></select></label><label><input id="glasses" type="checkbox">眼鏡</label><label>クラブカラー<input id="kit" type="color" value="#2065db"></label><label><input id="base-only" type="checkbox">ベース素材だけ表示</label><span>GKはグレー固定</span></section><main></main>
 <script type="module">
-import {MOTIONS,motionFrame,loadMotionAtlas,drawMotion} from '../../js/player-motion.js?v=modular-motion-v1';
-import {celebrationTexture,drawCelebration} from '../../js/avatar-celebration.js?v=modular-motion-v1';
+import {MOTIONS,motionFrame,loadMotionAtlas,drawMotion} from '../../js/player-motion.js?v=redrawn-run-v1';
+import {celebrationTexture,drawCelebration} from '../../js/avatar-celebration.js?v=modular-motion-v2';
 import {HAIR_STYLES,FACE_STYLES,SKIN_TONES} from '../../js/avatar-profile.js?v=rare-motion-preview-v1';
 import {RARE_CHARACTERS} from '../../js/rare-characters.js';
 const character=document.querySelector('#character');
 Object.entries(RARE_CHARACTERS).forEach(([kind,entry])=>character.add(new Option(entry.name,kind)));
 const hair=document.querySelector('#hair'),face=document.querySelector('#face'),skin=document.querySelector('#skin'),glasses=document.querySelector('#glasses'),kit=document.querySelector('#kit');
 HAIR_STYLES.forEach((name,i)=>hair.add(new Option(name,i)));FACE_STYLES.forEach((name,i)=>face.add(new Option(name,i)));SKIN_TONES.forEach((tone,i)=>skin.add(new Option(tone.label,i)));hair.value='2';
-character.onchange=()=>{const rare=Boolean(character.value);[hair,face,skin,glasses,kit].forEach(control=>control.disabled=rare);if(rare)glasses.checked=false;};
+character.onchange=()=>{const rare=Boolean(character.value);[hair,face,skin,glasses,kit,document.querySelector('#base-only')].forEach(control=>control.disabled=rare);if(rare){glasses.checked=false;document.querySelector('#base-only').checked=false;}};
 const atlas=await loadMotionAtlas();
 const previewMotions={...MOTIONS,celebrate:{label:'喜ぶ',frames:[0,1,2,3],fps:3}};
 const previewFrame=(key,seconds)=>key==='celebrate'?Math.floor(Math.max(0,seconds)*previewMotions.celebrate.fps)%4:motionFrame(key,seconds);
