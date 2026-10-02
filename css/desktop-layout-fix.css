@@ -858,3 +858,36 @@
     line-height: 1.25;
   }
 }
+
+/* Draft: avatar, profile and abilities with permanently visible explanations. */
+@media(min-width:761px) {
+ #app main.screen-draft .draft-card-grid {
+  height:var(--draft-grid-height);max-height:none;
+  grid-template-rows:repeat(4,minmax(min-content,1fr));
+  grid-auto-rows:minmax(min-content,1fr);align-content:stretch;
+ }
+ #app main.screen-draft .draft-card-grid .candidate {height:100%;box-sizing:border-box;min-height:0;}
+ #app main.screen-draft .draft-card-grid .player-card.has-card-avatar {
+  grid-template-columns:minmax(0,18fr) minmax(0,35fr) minmax(0,47fr)!important;
+  grid-template-rows:minmax(min-content,1fr) auto;
+  min-height:0;align-items:start!important;height:100%!important;
+  gap:.45rem!important;
+ }
+ #app main.screen-draft .player-card-avatar {grid-column:1;grid-row:1;align-self:center;min-width:0;}
+ #app main.screen-draft .player-card-avatar img {
+  display:block;width:100%;height:clamp(80px,calc(var(--draft-grid-height,720px)/6.4),150px);
+  object-fit:contain;image-rendering:pixelated;
+ }
+ #app main.screen-draft .has-card-avatar .player-profile {grid-column:2;grid-row:1;}
+ #app main.screen-draft .has-card-avatar .player-abilities {grid-column:3;grid-row:1;}
+ #app main.screen-draft .has-card-avatar .player-special-row {
+  grid-column:1/-1!important;grid-row:2;align-self:start;overflow:visible;
+ }
+ #app main.screen-draft .special-ability-visible {font-size:var(--pc-card-small)!important;white-space:normal;}
+ #app main.screen-draft .special-ability-visible>p {
+  display:block!important;position:static!important;opacity:1!important;visibility:visible!important;
+  width:auto!important;max-height:none!important;margin:.25rem 0 0!important;
+  padding:0!important;font-size:var(--pc-card-small)!important;line-height:1.35!important;
+  white-space:normal!important;overflow:visible!important;
+ }
+}
