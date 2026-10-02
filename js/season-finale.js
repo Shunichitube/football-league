@@ -38,7 +38,7 @@ export function conveyorBlocking(matches,time){
  const frame=conveyorFrame(matches,time);if(frame.done)return frame;
  const {index,match,local:t}=frame,L=CONVEYOR_LAYOUT;
  const losses=matches.slice(0,index).filter(m=>m.outcome==='loss').length;
- const central={role:losses,x:L.centerX,y:L.centerY,motion:'idle',seconds:0,direction:'right'};
+ const central={role:losses,x:L.centerX,y:L.centerY,motion:'run',seconds:time,direction:'right'};
  const reserve={role:losses+1,x:L.reserveX,y:L.reserveY,motion:'idle',seconds:0,direction:'right'};
  const approach=smooth(t/.55);
  const rival={x:mix(1040,L.centerX,approach),y:mix(210,L.centerY,approach),scale:mix(.55,1,approach),motion:'run',seconds:t,direction:'left'};
@@ -46,7 +46,7 @@ export function conveyorBlocking(matches,time){
  if(match.outcome==='win'){
   central.x=L.centerX+45*smooth((t-.55)/.3)-45*smooth((t-1.55)/.65);
   central.y=L.centerY-50*smooth((t-.55)/.3)+50*smooth((t-1.55)/.85);
-  central.motion=t<.55?'idle':'dribble';central.seconds=Math.max(0,t-.55);
+  central.motion=t<.55?'run':'dribble';central.seconds=time;
   rival.x=t>.85?L.centerX-(t-.85)*350:rival.x;
   ball={x:central.x+L.ballDX+(t>.55?Math.sin(t*16)*3:0),y:central.y+L.ballDY};
  }else if(match.outcome==='loss'&&t>=.85){
@@ -64,7 +64,7 @@ export function conveyorBlocking(matches,time){
   if(t>=1.5){
    const pickup=smooth((t-1.5)/.5);
    central.x=mix(L.reserveX,L.centerX,pickup);central.y=mix(L.reserveY,L.centerY,pickup);
-   central.motion='dribble';central.seconds=t-1.5;central.direction='right';
+   central.motion='dribble';central.seconds=time;central.direction='right';
    ball={x:central.x+L.ballDX,y:central.y+L.ballDY};
    if(t>=2)central.direction='right';
    // Replenish the left foreground spot from beyond the left screen edge.
@@ -72,7 +72,7 @@ export function conveyorBlocking(matches,time){
    replacement={...reserve,role:losses+2,x:mix(L.entryX,L.reserveX,incoming),motion:t<2.2?'run':'idle',seconds:t<2.2?t-1.5:0,direction:'right'};
   }
  }else if(match.outcome==='draw'){
-  central.motion=t>=.6&&t<1.1?'shoot':t>=1.7?'dribble':'idle';central.seconds=t>=1.7?t-1.7:Math.max(0,t-.6);
+  central.motion=t>=.6&&t<1.1?'shoot':t>=1.7?'dribble':'run';central.seconds=central.motion==='shoot'?t-.6:time;
   rival.x=t>.85?L.centerX-(t-.85)*350:rival.x;
   const outward=smooth((t-.75)/.4),back=smooth((t-1.25)/.45),q=outward*(1-back);
   ball={x:mix(L.centerX+L.ballDX,L.reserveX+L.ballDX,q),y:mix(L.centerY+L.ballDY,L.reserveY+L.ballDY,q)};
