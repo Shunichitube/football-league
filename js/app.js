@@ -2,7 +2,7 @@ import {createSfxController} from './sfx.js?v=1';
 import {createBgmController} from './bgm.js?v=audio-assets-v2';
 import {renderGrandResults,mountGrandFinale} from './grand-finale-ui.js?v=joy-arms-front-v5';
 import {createGameExperience} from './game-experience.js?v=body-alpha-v3';
-import { playSeasonFinale } from './season-finale.js?v=central-running-v1';
+import { playSeasonFinale } from './season-finale.js?v=preview-paced-v1';
 import { rareKind, rareAgeLabel } from './rare-characters.js';
 import { playTrainingCinematic } from './training-cinematic.js?v=shared-ball-v1';
 import { renderSeasonResults } from './season-results-ui.js?v=combined-results-v1';
