@@ -1,19 +1,27 @@
-import {loadMotionAtlas} from './player-motion.js?v=hair-editor-v1';
+import {MOTION_HAIR_LAYOUTS} from './motion-hair-layout.js?v=1';
+import {loadMotionAtlas} from './player-motion.js?v=idle-editor-v1';
 import {HAIR_STYLES} from './avatar-profile.js?v=appearance-v29';
 import {drawMotionHair,drawQuarterFace,motionHairBox} from './avatar-rendering.js?v=hair-editor-v1';
-import {readHairAdjustments,saveHairAdjustments,effectiveHairAdjustment,defaultHairAdjustment} from './motion-hair-adjustments.js?v=1';
+import {readHairAdjustments,saveHairAdjustments,effectiveHairAdjustment,defaultHairAdjustment} from './motion-hair-adjustments.js?v=idle-editor-v1';
 const $=id=>document.getElementById(id),status=$('status');
-const boxes=[[205,12,315,300],[172,12,315,300],[205,12,315,300],[172,12,315,300]];
-let drafts=readHairAdjustments(),style=0,selected=0,drag=null,dirty=false;
+const mode=new URLSearchParams(location.search).get('motion')==='idle'?'idle':'run',layout=MOTION_HAIR_LAYOUTS[mode];
+$('motion').value=mode;
+$('title').textContent=(mode==='idle'?'待機':'走り')+'の髪位置調整';
+$('together-label').textContent=layout.frames+'コマまとめて調整';
+$('hint').textContent='1コマだけ調整する場合は、まとめて調整のチェックを外してください。保存すると、このブラウザの'+(mode==='idle'?'待機':'走り・ドリブル')+'に反映されます。';
+let boxes,source,factor;
+let drafts=readHairAdjustments(mode),style=0,selected=0,drag=null,dirty=false;
 const history=[];
 const clone=value=>JSON.parse(JSON.stringify(value));
-const entry=()=>drafts[style]||(drafts[style]=defaultHairAdjustment(style));
+const entry=()=>drafts[style]||(drafts[style]=defaultHairAdjustment(style,mode));
 function snapshot(){history.push(clone(drafts));if(history.length>40)history.shift();}
 function changed(){dirty=true;status.textContent='未保存の調整があります。位置が合ったら「保存」を押してください。';}
 HAIR_STYLES.forEach((name,i)=>$('hair').add(new Option(`${String(i+1).padStart(2,'0')} · ${name}`,i)));
 let atlas;
 try{atlas=await loadMotionAtlas();}catch(error){status.textContent='素材を読み込めませんでした。最新のファイルを取得して再読み込みしてください。';throw error;}
-const views=Array.from({length:4},(_,frame)=>{
+source=mode==='idle'?atlas.base:atlas.run;factor=627/(source.width/layout.columns);
+boxes=layout.boxes.map(box=>box.map(n=>n*factor));
+const views=Array.from({length:layout.frames},(_,frame)=>{
  const figure=document.createElement('figure'),caption=document.createElement('figcaption'),canvas=document.createElement('canvas');
  caption.textContent=`コマ ${frame+1}`;canvas.width=627;canvas.height=627;canvas.setAttribute('aria-label',`コマ${frame+1}の髪位置調整`);
  figure.append(caption,canvas);$('views').append(figure);
@@ -24,7 +32,8 @@ function rectFor(frame){return motionHairBox(assetsFor(frame),{hairStyle:style},
 function draw(){
  for(const v of views){
   const {ctx,frame,canvas}=v;ctx.clearRect(0,0,627,627);ctx.imageSmoothingEnabled=false;
-  ctx.drawImage(atlas.run,frame%2*627,Math.floor(frame/2)*627,627,627,0,0,627,627);
+  const cw=source.width/layout.columns,ch=source.height/layout.rows;
+  ctx.drawImage(source,frame%layout.columns*cw,Math.floor(frame/layout.columns)*ch,cw,ch,0,0,627,627);
   const [x,y,w,h]=boxes[frame];if($('face').checked)drawQuarterFace(ctx,atlas.avatar,[x+w*.13,y+h*.14,w*.78,h*.86]);
   drawMotionHair(ctx,assetsFor(frame),{hairStyle:style,hairColor:0},boxes[frame]);
   v.figure.classList.toggle('selected',selected===frame);
@@ -64,25 +73,26 @@ for(const view of views){
  const finish=event=>{if(drag?.pointer===event.pointerId){drag=null;draw();}};
  view.canvas.addEventListener('pointerup',finish);view.canvas.addEventListener('pointercancel',finish);
 }
+$('motion').onchange=()=>{location.href='hair-adjust.html?motion='+$('motion').value;};
 $('hair').onchange=()=>{style=Number($('hair').value);draw();};
 $('together').onchange=draw;$('face').onchange=draw;$('bounds').onchange=draw;
 $('zoom').oninput=()=>{document.documentElement.style.setProperty('--size',$('zoom').value+'px');$('zoom-label').textContent=Math.round(Number($('zoom').value)/340*100)+'%';draw();};
 $('undo').onclick=()=>{if(history.length){drafts=history.pop();changed();draw();}};
-$('reset').onclick=()=>{snapshot();drafts[style]=defaultHairAdjustment(style);changed();draw();};
+$('reset').onclick=()=>{snapshot();drafts[style]=defaultHairAdjustment(style,mode);changed();draw();};
 $('save').onclick=()=>{
- try{drafts=saveHairAdjustments(drafts);dirty=false;status.textContent='保存しました。モーション確認ページを開くと、走り・ドリブルに反映されます。';}
+ try{drafts=saveHairAdjustments(drafts,mode);dirty=false;status.textContent='保存しました。モーション確認ページを開くと、選んだモーションに反映されます。';}
  catch{status.textContent='保存できませんでした。「設定を書き出す」で調整を残してください。';}
 };
 $('export').onclick=()=>{
- const url=URL.createObjectURL(new Blob([JSON.stringify({version:1,hairstyles:drafts},null,2)],{type:'application/json'}));
- const a=document.createElement('a');a.href=url;a.download='run-hair-adjustments.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ const url=URL.createObjectURL(new Blob([JSON.stringify({version:1,motion:mode,hairstyles:drafts},null,2)],{type:'application/json'}));
+ const a=document.createElement('a');a.href=url;a.download=mode+'-hair-adjustments.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
 $('import-button').onclick=()=>$('import').click();
 $('import').onchange=async event=>{
  const file=event.target.files[0];if(!file)return;
  try{
-  const data=JSON.parse(await file.text());if(data.version!==1||!data.hairstyles||Array.isArray(data.hairstyles)||typeof data.hairstyles!=='object')throw Error();
-  snapshot();drafts=saveHairAdjustments(data.hairstyles);dirty=false;status.textContent='設定を読み込み、保存しました。';draw();
+  const data=JSON.parse(await file.text());if((data.motion||'run')!==mode||data.version!==1||!data.hairstyles||Array.isArray(data.hairstyles)||typeof data.hairstyles!=='object')throw Error();
+  snapshot();drafts=saveHairAdjustments(data.hairstyles,mode);dirty=false;status.textContent='設定を読み込み、保存しました。';draw();
  }catch{status.textContent='設定を読み込めませんでした。書き出したJSONファイルを選んでください。';}
  event.target.value='';
 };
