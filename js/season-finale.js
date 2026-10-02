@@ -1,7 +1,7 @@
 import {loadMotionAtlas,drawMotion} from './player-motion.js?v=motion-cleanup-v2';
 import {playerAppearance} from './avatar-profile.js?v=appearance-v29';
 import {drawAvatar} from './player-avatar.js?v=season-finale-v1';
-import {celebrationTexture} from './avatar-celebration.js?v=motion-cleanup-v2';
+import {celebrationTexture,drawCelebration} from './avatar-celebration.js?v=joy-alpha-v2';
 
 export const finaleKind=rank=>rank===1?'goal':rank<=3?'parry':'catch';
 export const CONVEYOR_MATCH_SECONDS=2.4;
@@ -118,7 +118,7 @@ export function createFinalePainter(data,club,rank,keeper,clubs=[],fixtures=[]){
  };
  const joy=(ctx,p,x,y,height,t,gk=false,sad=false)=>{
   const pose=Math.floor(t*3)%4,im=celebrationTexture(atlas,playerAppearance(p||{id:'finale-keeper',primaryPosition:'GK'}),{kit:club.color,goalkeeper:gk,pose,dejected:sad});
-  ctx.imageSmoothingEnabled=false;ctx.drawImage(im,x-height*300/470/2,y-height,height*300/470,height);
+  drawCelebration(ctx,im,x,y,height);
  };
  const portraits=roster.map(p=>{const im=document.createElement('canvas');im.width=300;im.height=470;drawAvatar(im.getContext('2d'),atlas.avatar,playerAppearance(p),{kit:club.color,goalkeeper:p.primaryPosition==='GK'});return im;});
  return {
