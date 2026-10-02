@@ -1,4 +1,4 @@
-import {loadMotionAtlas,drawMotion} from './player-motion.js?v=body-alpha-v3';
+import {loadMotionAtlas,drawMotion} from './player-motion.js?v=modular-motion-v2';
 import { pixelTexture } from './arena-characters.js?v=appearance-v29';
 // Presentation only: no game, random-generator or storage imports.
 export const ARENA = Object.freeze({ width: 1672, height: 941 });
@@ -145,3 +145,4 @@ export async function mountArena(canvas){
   resize();schedule();canvas.dataset.ready='true';
   return ()=>{dead=true;cancelAnimationFrame(frame);removeEventListener('resize',resize);document.removeEventListener('visibilitychange',visibility);document.removeEventListener('click',toggle);reduce.removeEventListener('change',schedule);};
 }
+

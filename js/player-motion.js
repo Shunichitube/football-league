@@ -1,6 +1,6 @@
 import {drawRareMotion} from './rare-avatar.js?v=cell-cleanup-v1';
-import {loadAvatarAssets} from './avatar-rendering.js?v=modular-motion-v1';
-import {appearanceMotionFrame} from './avatar-motion-parts.js?v=modular-motion-v1';
+import {loadMotionLayerAssets} from './avatar-rendering.js?v=modular-motion-v2';
+import {renderMotionLayers} from './avatar-motion-layers.js?v=modular-motion-v2';
 export const MOTIONS = {
   idle: { label: '待機', frames: [0, 1], fps: 2 },
   run: { label: '走り', frames: [0, 1, 2, 3, 4, 5, 6, 7], fps: 16 },
@@ -27,7 +27,7 @@ export async function loadMotionAtlas() {
     load('../assets/avatars/player-celebrate-base-v1.png'),
     load('../assets/avatars/player-celebrate-arms-v1.png'),
     load('../assets/avatars/keeper-dejected-base-v1.png'),
-    loadAvatarAssets()
+    loadMotionLayerAssets()
   ]);
   return { base, run, inbetweens, correctedSix, shoot, catch: catchSheet, dive, celebrate, celebrateArms, dejected, avatar };
 }
@@ -57,9 +57,8 @@ export function drawMotion(ctx, atlas, motion, seconds, { direction = 'right', b
   const offsets = usesRun ? (isBetween ? [[-50,-12],[7,-8],[-48,3],[5,3]] : [[-50,0],[20,0],[-48,10],[21,11]])[sourceIndex] : actionOffsets[motion]?.[index] || [0,0];
   const dx = (width-w)/2 + offsets[0] / 627 * w;
   const dy = (height-h)/2 + offsets[1] / 627 * h + (usesRun ? height*.04 : 0);
-  const personalized = appearanceMotionFrame(atlas, sheet, sourceIndex, columns, appearance ?? 0, {kit, goalkeeper, baseOnly});
-  if(personalized)ctx.drawImage(personalized,0,0,personalized.width,personalized.height,dx,dy,w,h);
-  else ctx.drawImage(sheet, (sourceIndex % columns) * cellWidth, Math.floor(sourceIndex / columns) * cellHeight, cellWidth, cellHeight, dx, dy, w, h);
+  const personalized = renderMotionLayers(atlas, sheet, sourceIndex, columns, appearance ?? 0, {kit, goalkeeper, baseOnly});
+  ctx.drawImage(personalized,0,0,personalized.width,personalized.height,dx,dy,w,h);
   if (ball && motion === 'dribble') {
     const x = width * (.82 + Math.sin(seconds * Math.PI * 5) * .025), y = dy + h*.9;
     const r = h*.052;

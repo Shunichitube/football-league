@@ -1,6 +1,5 @@
-import {drawAvatar} from './player-avatar.js?v=modular-motion-v1';
 import {avatarProfile,kitColor} from './avatar-profile.js?v=appearance-v29';
-import {createSurface,recolorPixels} from './avatar-rendering.js?v=modular-motion-v1';
+import {createSurface,recolorPixels,drawFrontMotionLayers} from './avatar-rendering.js?v=modular-motion-v2';
 import {drawRareMotion} from './rare-avatar.js?v=cell-cleanup-v1';
 
 const cache=new Map();
@@ -52,7 +51,7 @@ export function celebrationTexture(atlas,value,{kit,goalkeeper=false,pose=1,deje
  // Sad poses keep the head in front; joy arms are composited after the head.
  ctx.drawImage(body,paddingX+150-(box[0]+box[2]/2)*scale,paddingY+offsetY,w*scale,h*scale);
  const head=createSurface(atlas.avatar,300,470);
- drawAvatar(head.getContext('2d'),atlas.avatar,profile,{kit,goalkeeper,headOnly:true,base:false,expression:dejected?'sad':'happy'});
+ drawFrontMotionLayers(head.getContext('2d'),atlas.avatar,profile,{expression:dejected?'sad':'happy'});
  if(!baseOnly)ctx.drawImage(head,paddingX+(dejected?0:JOY_OFFSETS[index][0]),paddingY+(dejected?0:JOY_OFFSETS[index][1]));
  // Independent raised-arm layer sits in front of the face and hair.
  if(!dejected){

@@ -1,7 +1,7 @@
-import {loadMotionAtlas} from './player-motion.js?v=modular-motion-v1';
+import {loadMotionAtlas} from './player-motion.js?v=modular-motion-v2';
 import {playerAppearance} from './avatar-profile.js?v=appearance-v29';
-import {drawAvatar} from './player-avatar.js?v=modular-motion-v1';
-import {celebrationTexture} from './avatar-celebration.js?v=modular-motion-v1';
+import {drawAvatar} from './player-avatar.js?v=modular-motion-v2';
+import {celebrationTexture} from './avatar-celebration.js?v=modular-motion-v2';
 
 const AUDIO_KEY='football-league:audio-settings';
 export function normalizeAudio(value={}){

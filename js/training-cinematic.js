@@ -1,5 +1,5 @@
-import {footballTexture} from './arena-scene.js?v=shared-ball-v1';
-import {loadMotionAtlas,drawMotion} from './player-motion.js?v=body-alpha-v3';
+import {footballTexture} from './arena-scene.js?v=modular-motion-v2';
+import {loadMotionAtlas,drawMotion} from './player-motion.js?v=modular-motion-v2';
 import {playerAppearance} from './avatar-profile.js?v=rare-v2';
 import {playerAvatarTexture} from './player-avatar.js?v=rare-v2';
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -72,3 +72,4 @@ const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
   layer.classList.add('training-results-visible');finished=true;
  }finally{if(!finished)cleanup();}
 }
+

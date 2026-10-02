@@ -1,10 +1,10 @@
 import {createSfxController} from './sfx.js?v=1';
 import {createBgmController} from './bgm.js?v=audio-assets-v2';
-import {renderGrandResults,mountGrandFinale} from './grand-finale-ui.js?v=joy-arms-front-v5';
-import {createGameExperience} from './game-experience.js?v=body-alpha-v3';
-import { playSeasonFinale } from './season-finale.js?v=preview-paced-v1';
+import {renderGrandResults,mountGrandFinale} from './grand-finale-ui.js?v=modular-motion-v2';
+import {createGameExperience} from './game-experience.js?v=modular-motion-v2';
+import { playSeasonFinale } from './season-finale.js?v=modular-motion-v2';
 import { rareKind, rareAgeLabel } from './rare-characters.js';
-import { playTrainingCinematic } from './training-cinematic.js?v=shared-ball-v1';
+import { playTrainingCinematic } from './training-cinematic.js?v=modular-motion-v2';
 import { renderSeasonResults } from './season-results-ui.js?v=combined-results-v1';
 import { createInitialState } from './app-state.js';
 import { createAuctionClock } from './auction-clock.js';
@@ -660,3 +660,4 @@ configureRename(async(playerId,name)=>{
   return false;
 });
 render();
+
