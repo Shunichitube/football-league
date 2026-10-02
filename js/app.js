@@ -503,7 +503,27 @@ function renderEntryDialog() {
   }
 }
 let renderedView = null;
+function beginPendingFinale(){
+  if(finalePending&&s.view==='seasonResults'&&!finaleDispose){
+    finalePending=false;
+    const key=finaleKey();
+    if(!playedFinales.has(key)){
+      playedFinales.add(key);
+      const club=me(),rank=standings(s.league).find(row=>row.club.id===club.id)?.rank||6;
+      const opponents=s.league.clubs.filter(row=>row.id!==club.id);
+      const keeper=opponents.flatMap(row=>row.roster).find(p=>p.primaryPosition==='GK');
+      const matches=s.league.seasonResults,clubs=s.league.clubs;
+      finaleDispose=experience.showLeagueStart(s.league.season,()=>{finaleDispose=playSeasonFinale({app,club,rank,keeper,matches,clubs,onDone:()=>{finaleDispose=null;render();}});});
+    }
+  }
+}
 function render() {
+  // Keep the existing lineup DOM behind the start popup and cinematics.
+  // The resolved results are rendered only after the finale is dismissed.
+  if(s.view==='seasonResults'&&(finalePending||finaleDispose)){
+    beginPendingFinale();
+    if(finaleDispose){updateRoomStatus();syncBgm();return;}
+  }
   if(endingDispose){endingDispose();endingDispose=null;endingPending=s.view==='grandFinal';}
   if(s.view!=='seasonResults'&&finaleDispose){finaleDispose();finaleDispose=null;}
   const seasonTransition=s.view==='draft'&&renderedView==='release';
@@ -534,18 +554,6 @@ function render() {
   experience.syncGrowth(s.view==='growth'?s.growth:[],s.league?me():null);
   renderedView = s.view;
   document.dispatchEvent(new CustomEvent('football-league:view-rendered'));
-  if(finalePending&&s.view==='seasonResults'&&!finaleDispose){
-    finalePending=false;
-    const key=finaleKey();
-    if(!playedFinales.has(key)){
-      playedFinales.add(key);
-      const club=me(),rank=standings(s.league).find(row=>row.club.id===club.id)?.rank||6;
-      const opponents=s.league.clubs.filter(row=>row.id!==club.id);
-      const keeper=opponents.flatMap(row=>row.roster).find(p=>p.primaryPosition==='GK');
-      const matches=s.league.seasonResults,clubs=s.league.clubs;
-      finaleDispose=experience.showLeagueStart(s.league.season,()=>{finaleDispose=playSeasonFinale({app,club,rank,keeper,matches,clubs,onDone:()=>{finaleDispose=null;syncBgm();}});});
-    }
-  }
   if(endingPending&&s.view==='grandFinal'&&!endingDispose){
     endingPending=false;
     endingDispose=mountGrandFinale(app,s.league,e,()=>{endingDispose=null;});
