@@ -5,6 +5,7 @@ import {celebrationTexture,drawCelebration} from './avatar-celebration.js?v=draf
 
 export const finaleKind=rank=>rank===1?'goal':rank<=3?'parry':'catch';
 export const CONVEYOR_MATCH_SECONDS=2.4;
+export const CONVEYOR_LAYOUT=Object.freeze({centerX:480,centerY:360,reserveX:735,reserveY:475,entryX:1055,ballDX:25,ballDY:-12,shotX:745,shotY:350});
 // Read snapshots only. Multiplayer stores other clubs' fixtures here as well.
 export function conveyorMatches(matches,clubId){
  const seen=new Set();
@@ -34,44 +35,51 @@ const smooth=q=>{q=Math.max(0,Math.min(1,q));return q*q*(3-2*q);};
 const mix=(a,b,q)=>a+(b-a)*q;
 export function conveyorBlocking(matches,time){
  const frame=conveyorFrame(matches,time);if(frame.done)return frame;
- const {index,match,local:t}=frame;
+ const {index,match,local:t}=frame,L=CONVEYOR_LAYOUT;
  const losses=matches.slice(0,index).filter(m=>m.outcome==='loss').length;
- const central={role:losses,x:480,y:420,motion:'idle',seconds:0,direction:'right'};
- const reserve={role:losses+1,x:650,y:525,motion:'idle',seconds:0,direction:'right'};
- const rival={x:mix(740,480,smooth((t-.3)/.55)),y:420,motion:t<.3?'idle':'run',seconds:t-.3,direction:'left'};
- let ball={x:530,y:395},departed=null,replacement=null;
+ const central={role:losses,x:L.centerX,y:L.centerY,motion:'idle',seconds:0,direction:'right'};
+ const reserve={role:losses+1,x:L.reserveX,y:L.reserveY,motion:'run',seconds:time,direction:'right'};
+ const rival={x:mix(740,L.centerX,smooth((t-.3)/.55)),y:L.centerY,motion:t<.3?'idle':'run',seconds:Math.max(0,t-.3),direction:'left'};
+ let ball={x:central.x+L.ballDX,y:central.y+L.ballDY},departed=null,replacement=null;
  if(match.outcome==='win'){
-  central.x=480+45*smooth((t-.55)/.3)-45*smooth((t-1.55)/.85);
-  central.y=420-75*smooth((t-.55)/.3)+75*smooth((t-1.55)/.85);
+  central.x=L.centerX+45*smooth((t-.55)/.3)-45*smooth((t-1.55)/.85);
+  central.y=L.centerY-50*smooth((t-.55)/.3)+50*smooth((t-1.55)/.85);
   central.motion=t<.55?'idle':'dribble';central.seconds=Math.max(0,t-.55);
-  rival.x=t>.85?480-(t-.85)*350:rival.x;
-  ball={x:central.x+50+(t>.55?Math.sin(t*16)*6:0),y:central.y-25};
+  rival.x=t>.85?L.centerX-(t-.85)*350:rival.x;
+  ball={x:central.x+L.ballDX+(t>.55?Math.sin(t*16)*3:0),y:central.y+L.ballDY};
  }else if(match.outcome==='loss'&&t>=.85){
-  // The old carrier is stationary relative to the belt, never running away.
-  departed={...central,x:480-(t-.85)*150,motion:'idle',seconds:0};
-  rival.x=t<1?mix(480,560,smooth((t-.85)/.15)):560;
-  rival.motion=t<1?'dribble':t<1.5?'shoot':'run';rival.seconds=t<1?t-.85:t<1.5?t-1:t-1.5;rival.direction='right';
-  if(t>=1.5)rival.x=560+(t-1.5)*400;
-  const flight=smooth((t-1.15)/.3);
-  ball={x:t<1.15?rival.x+50:mix(610,700,flight),y:mix(395,500,flight)-Math.sin(flight*Math.PI)*35};
-  if(t>=1.45){
-   const pickup=smooth((t-1.45)/.35);
-   central.role=losses+1;central.x=mix(650,480,pickup);central.y=mix(525,420,pickup);
-   central.motion='dribble';central.seconds=t-1.45;ball={x:central.x+50,y:central.y-25};
-   replacement={...reserve,role:losses+2,x:650+(CONVEYOR_MATCH_SECONDS-t)*150};
-  }else{central.x=reserve.x;central.y=reserve.y;central.role=reserve.role;}
+  departed={...central,x:L.centerX-(t-.85)*150,motion:'idle',seconds:0};
+  rival.x=t<1?mix(L.centerX,560,smooth((t-.85)/.15)):560;
+  rival.motion=t<1?'dribble':t<1.15?'shoot':'run';
+  rival.seconds=t<1?t-.85:t<1.15?t-1:t-1.15;rival.direction='right';
+  if(t>=1.15)rival.x=560+(t-1.15)*400;
+  const roll=smooth((t-1.15)/.35);
+  // The stolen ball rolls on the turf to the waiting runner's front foot.
+  ball=t<1.15?{x:rival.x+L.ballDX,y:L.centerY+L.ballDY}:
+   {x:mix(560+L.ballDX,L.reserveX+L.ballDX,roll),y:mix(L.centerY+L.ballDY,L.reserveY+L.ballDY,roll)};
+  central.role=reserve.role;central.x=reserve.x;central.y=reserve.y;
+  central.motion='run';central.seconds=time;
+  if(t>=1.5){
+   const pickup=smooth((t-1.5)/.5);
+   central.x=mix(L.reserveX,L.centerX,pickup);central.y=mix(L.reserveY,L.centerY,pickup);
+   central.motion='dribble';central.seconds=t-1.5;central.direction='left';
+   ball={x:central.x+L.ballDX,y:central.y+L.ballDY};
+   if(t>=2)central.direction='right';
+   // The next runner enters from behind and reaches the same waiting spot.
+   const incoming=smooth((t-1.5)/(CONVEYOR_MATCH_SECONDS-1.5));
+   replacement={...reserve,role:losses+2,x:mix(L.entryX,L.reserveX,incoming),motion:'run',seconds:t-1.5,direction:'left'};
+  }
  }else if(match.outcome==='draw'){
   central.motion=t>=.6&&t<1.1?'shoot':t>=1.7?'dribble':'idle';central.seconds=t>=1.7?t-1.7:Math.max(0,t-.6);
-  rival.x=t>.85?480-(t-.85)*350:rival.x;
+  rival.x=t>.85?L.centerX-(t-.85)*350:rival.x;
   const outward=smooth((t-.75)/.4),back=smooth((t-1.25)/.45),q=outward*(1-back);
-  ball={x:mix(530,700,q),y:mix(395,500,q)};
+  ball={x:mix(L.centerX+L.ballDX,L.reserveX+L.ballDX,q),y:mix(L.centerY+L.ballDY,L.reserveY+L.ballDY,q)};
  }
- // Earlier losers remain on the moving belt across fixture boundaries.
  let pastRole=0;
  const waiting=matches.slice(0,index).flatMap((m,i)=>{
   if(m.outcome!=='loss')return [];
-  const role=pastRole++,x=480-(time-(i*CONVEYOR_MATCH_SECONDS+.85))*150;
-  return x>-140?[{role,x,y:420,motion:'idle',seconds:0,direction:'right'}]:[];
+  const role=pastRole++,x=L.centerX-(time-(i*CONVEYOR_MATCH_SECONDS+.85))*150;
+  return x>-140?[{role,x,y:L.centerY,motion:'idle',seconds:0,direction:'right'}]:[];
  });
  return {...frame,central,reserve,rival,ball,departed,replacement,waiting,losses};
 }
@@ -142,19 +150,19 @@ export function createFinalePainter(data,club,rank,keeper,clubs=[],fixtures=[]){
    const opponent=clubs.find(c=>c.id===match.opponent?.id),rival=opponent?.roster.find(p=>p.primaryPosition!=='GK')||opponent?.roster[0];
    const member=role=>cast[role%cast.length]||scorer;
    scorer=member(matches.filter(m=>m.outcome==='loss').length);
-   const drawRole=(pose,height=200)=>actor(ctx,pose.motion,pose.seconds,pose.x,pose.y,height,member(pose.role),member(pose.role)?.primaryPosition==='GK',club.color,pose.direction);
+   const drawRole=(pose,height=100)=>actor(ctx,pose.motion,pose.seconds,pose.x,pose.y,height,member(pose.role),member(pose.role)?.primaryPosition==='GK',club.color,pose.direction);
    const enemy=frame.rival;
-   const blend=ease(handoff),lead={...frame.central,x:mix(frame.central.x,340,blend),y:mix(frame.central.y,455,blend)};
-   const people=[...frame.waiting.map(pose=>({pose})),...(frame.departed?[{pose:frame.departed}]:[]),{pose:enemy,enemy:true},{pose:lead,lead:true},...(!frame.departed?[{pose:frame.reserve,height:210}]:frame.replacement?[{pose:frame.replacement,height:210}]:[])];
+   const blend=ease(handoff),lead={...frame.central,x:mix(frame.central.x,CONVEYOR_LAYOUT.shotX,blend),y:mix(frame.central.y,CONVEYOR_LAYOUT.shotY,blend)};
+   const people=[...frame.waiting.map(pose=>({pose})),...(frame.departed?[{pose:frame.departed}]:[]),{pose:enemy,enemy:true},{pose:lead,lead:true},...(!frame.departed?[{pose:frame.reserve,height:105}]:frame.replacement?[{pose:frame.replacement,height:105}]:[])];
    // Draw the upper lane first, leaving the reserve in the foreground.
    people.sort((a,b)=>a.pose.y-b.pose.y).forEach(row=>{
     ctx.save();ctx.globalAlpha=row.lead?1:1-blend;
-    if(row.enemy)actor(ctx,enemy.motion,enemy.seconds,enemy.x,enemy.y,200,rival,rival?.primaryPosition==='GK',opponent?.color||match.opponent?.color||'#b64c64',enemy.direction);
-    else drawRole(row.pose,row.lead?mix(200,240,blend):row.height||200);
+    if(row.enemy)actor(ctx,enemy.motion,enemy.seconds,enemy.x,enemy.y,100,rival,rival?.primaryPosition==='GK',opponent?.color||match.opponent?.color||'#b64c64',enemy.direction);
+    else drawRole(row.pose,row.lead?mix(100,120,blend):row.height||100);
     ctx.restore();
    });
-   let ballX=mix(frame.ball.x,420,blend),ballY=mix(frame.ball.y,430,blend);
-   football(ctx,ballX,ballY,12,time*12);
+   let ballX=mix(frame.ball.x,CONVEYOR_LAYOUT.shotX+40,blend),ballY=mix(frame.ball.y,CONVEYOR_LAYOUT.shotY-12,blend);
+   football(ctx,ballX,ballY,6,time*12);
    // The final running pose dissolves into the first existing kick pose.
    if(handoff){ctx.save();ctx.globalAlpha=ease(handoff);this.cinematic(ctx,0);ctx.restore();}
    return frame;
@@ -164,25 +172,25 @@ export function createFinalePainter(data,club,rank,keeper,clubs=[],fixtures=[]){
    ctx.imageSmoothingEnabled=true;
    if(frame.scene==='shoot'){
     ctx.drawImage(home,500,410,672,315,0,0,960,540);
-    actor(ctx,'shoot',t,340,455,240);
-    const q=Math.max(0,Math.min(1,(t-.35)/.8));football(ctx,420+q*380,430-q*90,12-q*4,t*12);
+    actor(ctx,'shoot',t,CONVEYOR_LAYOUT.shotX,CONVEYOR_LAYOUT.shotY,120);
+    const q=Math.max(0,Math.min(1,(t-.35)/.8));football(ctx,CONVEYOR_LAYOUT.shotX+40+q*160,CONVEYOR_LAYOUT.shotY-12-q*55,6-q*2,t*12);
    }else if(frame.scene!=='white'){
     ctx.drawImage(goal,0,0,960,540);
     if(frame.scene==='flight'){
      const q=t-1.15,d=Math.max(0,Math.min(1,(q-.55)/.8)),p=Math.max(0,Math.min(1,q/1.55));
-     if(kind==='catch')actor(ctx,'catch',q<.55?0:.18,355,385,255,keeper,true);
-     else actor(ctx,d?'dive':'catch',d*.375,355+d*130,385-d*100,255,keeper,true);
-     football(ctx,950-p*(kind==='catch'?563:435),kind==='catch'?285-p*4:325-p*152,17-p*3,t*15);
+     if(kind==='catch')actor(ctx,'catch',q<.55?0:.18,355,385,127.5,keeper,true);
+     else actor(ctx,d?'dive':'catch',d*.375,355+d*130,385-d*100,127.5,keeper,true);
+     football(ctx,mix(950,kind==='catch'?371:500,p),mix(325,kind==='catch'?333:229,p),17-p*9,t*15);
     }else if(frame.scene==='impact'){
      ctx.save();ctx.translate(960*.55,540*.42);ctx.scale(1.85,1.85);ctx.translate(-490,-154);
      ctx.drawImage(bulge,0,0,960,540);football(ctx,490+Math.sin(t*30)*1.5,154,14,t*15);ctx.restore();
     }else if(frame.scene==='celebrate'){
-     football(ctx,478,321,14,0);joy(ctx,keeper,355,395,240,t,true,true);joy(ctx,scorer,783,407,270,t);
+     football(ctx,478,321,14,0);joy(ctx,keeper,355,395,120,t,true,true);joy(ctx,scorer,783,407,135,t);
     }else if(frame.scene==='parry'){
-     actor(ctx,'dive',.25,460,325,255,keeper,true);
-     const p=Math.min(1,(t-2.7)/1.15);football(ctx,595+p*445,220-p*125+p*p*35,14,t*18);
+     actor(ctx,'dive',.25,485,285,127.5,keeper,true);
+     const p=Math.min(1,(t-2.7)/1.15);football(ctx,500+p*540,229-p*125+p*p*35,8,t*18);
     }else if(frame.scene==='catch'){
-     actor(ctx,'catch',.6,355,385,255,keeper,true);football(ctx,387,281,16,0);
+     actor(ctx,'catch',.6,355,385,127.5,keeper,true);football(ctx,371,333,8,0);
     }
    }
    if(frame.white){ctx.fillStyle=`rgba(255,255,255,${frame.white})`;ctx.fillRect(0,0,960,540);}
