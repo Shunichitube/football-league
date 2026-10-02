@@ -17,6 +17,15 @@ function alignDraftVenue(){
  // Measure normal flow without the existing margin so repeated renders do not drift.
  const flowY=grid.getBoundingClientRect().top+scrollY-(parseFloat(getComputedStyle(grid).marginTop)||0);
  document.body.style.setProperty('--draft-grid-gap',`${Math.max(16,cardsY-flowY)}px`);
+ // Use the free space below the cards, keeping the fixed action dock clear.
+ if(innerWidth>=761){
+  const gridTop=flowY+Math.max(16,cardsY-flowY);
+  const dock=app.querySelector(':scope > main.screen-draft .draft-action-dock');
+  const gridBottom=dock?.getBoundingClientRect().top??innerHeight-110;
+  document.body.style.setProperty('--draft-grid-height',`${Math.max(180,gridBottom-gridTop-14)}px`);
+ }else{
+  document.body.style.removeProperty('--draft-grid-height');
+ }
 }
 function sync(){
   const title=app.querySelector(':scope > .arena-title')?'title':app.querySelector(':scope > main.screen-draft')?'draft':app.querySelector(':scope > main.auction-room')?'auction':app.querySelector(':scope > main.screen-season-results')?'season-results':app.querySelector(':scope > main.contract-room, :scope > main.release-office')?'contract':app.querySelector(':scope > main.development-room')?'development':null;
