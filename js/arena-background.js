@@ -21,7 +21,8 @@ function alignDraftVenue(){
  if(innerWidth>=761){
   const gridTop=flowY+Math.max(16,cardsY-flowY);
   const dock=app.querySelector(':scope > main.screen-draft .draft-action-dock');
-  const gridBottom=dock?.getBoundingClientRect().top??innerHeight-110;
+  // The marked floor boundary is about 87% down the visible venue.
+  const gridBottom=Math.min(dock?.getBoundingClientRect().top??innerHeight-110,innerHeight*.87);
   document.body.style.setProperty('--draft-grid-height',`${Math.max(180,gridBottom-gridTop-14)}px`);
  }else{
   document.body.style.removeProperty('--draft-grid-height');
