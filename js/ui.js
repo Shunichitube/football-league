@@ -3,7 +3,7 @@ import { dialogs } from './dialogs.js';
 import {playerAppearance,kitColor} from './avatar-profile.js?v=appearance-v29';
 import { formatMatchEvents } from './match-log.js?v=appearance-v29';
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.22.0';
-import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=appearance-v29';
+import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=robot-descriptions-v1';
 import { LINEUP_SLOTS, validateLineup } from './rules.js?v=appearance-v29';
 import { pixelTexture } from './arena-characters.js?v=appearance-v29';
 
@@ -146,12 +146,19 @@ export function positionCounts(roster) {
   return ['GK', 'DF', 'MF', 'FW'].map(position => ({ position, label: positionLabel(position), count: roster.filter(player => player.primaryPosition === position).length }));
 }
 
+function renderRosterCard(player,club,options) {
+ const honors=player.honors||{};
+ const badges=honors.mvp||honors.best5 ? `<div class="player-honors">${honors.mvp?'<span class="honor-badge honor-mvp">MVP</span>':''}${honors.best5?'<span class="honor-badge honor-best5">BEST 5</span>':''}</div>` : '';
+ const actions=`<div class="roster-card-actions">${renameButton(player,options)}${options.allowRelease?`<button type="button" data-stage10="release" data-release-player="${escapeHtml(player.id)}" class="subtle release-button">この選手を放出</button>`:''}</div>`;
+ return renderContractPlayerCard(player,club).replace(/(?=<\/div>\s*<dl class="squad-abilities">)/,badges+actions);
+}
+
 export function renderRosterPanel(club, options = {}) {
   const rosterSort = options.rosterSort || 'position';
   return `<section data-app-overlay data-ui-dialog="roster" class="overlay-panel roster-panel" role="dialog" aria-modal="true" aria-label="所属選手">
     <div class="overlay-heading"><div><p class="eyebrow">${escapeHtml(club.name)}</p><h2>所属選手</h2></div><button type="button" data-dialog-close data-stage10="close" class="subtle">閉じる</button></div>
     <div class="bench-heading roster-sort-heading"><div class="position-counts">${positionCounts(club.roster).map(row => `<span>${row.label} <b>${row.count}</b></span>`).join('')}</div><label>並び順<select data-player-sort="roster"><option value="position" ${rosterSort === 'position' ? 'selected' : ''}>ポジション順</option><option value="overall" ${rosterSort === 'overall' ? 'selected' : ''}>総合ランク順</option><option value="age" ${rosterSort === 'age' ? 'selected' : ''}>年齢順</option><option value="contract" ${rosterSort === 'contract' ? 'selected' : ''}>契約年数順</option></select></label></div>
-    <div class="candidate-grid">${club.roster.map(player => renderPlayerCard(player, { allowRelease: Boolean(options.allowRelease), allowRename: Boolean(options.allowRename || options.allowRelease) })).join('')}</div>
+    <div class="candidate-grid">${club.roster.map(player => renderRosterCard(player, club, { allowRelease: Boolean(options.allowRelease), allowRename: Boolean(options.allowRename || options.allowRelease) })).join('')}</div>
   </section>`;
 }
 
@@ -297,7 +304,7 @@ export function renderSeasonPlayerStats(club) {
     const display=displayPlayer(player);
     const average=season.appearances?(season.ratingTotal/season.appearances).toFixed(1):'—';
     const metrics=[['出場',season.appearances],['得点',season.goals],['アシスト',season.assists],['平均評価',average],['シュート',season.shots],['攻撃貢献',season.attackContributions],['守備成功',season.defensiveStops],['セーブ',season.saves]];
-    return `<article class="season-stat-card" aria-label="${escapeHtml(player.name)}の個人成績"><div class="season-stat-profile"><img src="${squadAvatar(player,club.color)}" alt="${escapeHtml(player.name)}" draggable="false"><div><strong class="season-stat-name">${escapeHtml(player.name)}</strong><b>総合 ${escapeHtml(display.overallRank)}</b><span>${escapeHtml(positionLabel(player.primaryPosition))} ・ ${escapeHtml(rareAgeLabel(player))}</span><small>契約 ${display.contractYears}年</small>${growthExpectation(player)}<p class="season-stat-special" title="${escapeHtml(display.specialAbility?SPECIAL_ABILITY_DESCRIPTIONS[display.specialAbility]||'':'')}">特能 ${escapeHtml(display.specialAbility||'―')}${display.specialAbility ? `<span class="season-stat-special-description">${escapeHtml(SPECIAL_ABILITY_DESCRIPTIONS[display.specialAbility]||'')}</span>` : ''}</p></div></div><dl class="season-stat-metrics">${metrics.map(([label,value])=>`<div><dt>${label}</dt><dd>${escapeHtml(value??0)}</dd></div>`).join('')}</dl></article>`;
+    return `<article class="season-stat-card" aria-label="${escapeHtml(player.name)}の個人成績"><div class="season-stat-profile"><img src="${squadAvatar(player,club.color)}" alt="${escapeHtml(player.name)}" draggable="false"><div><strong class="season-stat-name">${escapeHtml(player.name)}</strong><b>総合 ${escapeHtml(display.overallRank)}</b><span>${escapeHtml(positionLabel(player.primaryPosition))} ・ ${escapeHtml(rareAgeLabel(player))}</span><small>契約 ${display.contractYears}年</small>${growthExpectation(player)}</div></div><dl class="season-stat-metrics">${metrics.map(([label,value])=>`<div><dt>${label}</dt><dd>${escapeHtml(value??0)}</dd></div>`).join('')}</dl><p class="season-stat-special" title="${escapeHtml(display.specialAbility?SPECIAL_ABILITY_DESCRIPTIONS[display.specialAbility]||'':'')}">特能 ${escapeHtml(display.specialAbility||'―')}${display.specialAbility ? `<span class="season-stat-special-description">${escapeHtml(SPECIAL_ABILITY_DESCRIPTIONS[display.specialAbility]||'')}</span>` : ''}</p></article>`;
   }).join('')}</section>`;
 }
 

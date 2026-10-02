@@ -1,7 +1,7 @@
 import { CONFIG } from './config.js';
 
 export const RARE_CHARACTERS = Object.freeze({
-  golden_egg: { name:'金の卵', position:'MF', rank:'F', ability:'孵化', description:'23歳で一度だけ孵化。ひよこ40%、皇帝ペンギン40%、フェニックス15%、ドラゴン5%。', scout:'光り輝く金色の卵。将来性は計り知れないが、今のところ卵である。' },
+  golden_egg: { name:'金の卵', position:'MF', rank:'F', ability:'孵化', description:'23歳で孵る。何が孵るかは不明', scout:'光り輝く金色の卵。将来性は計り知れないが、今のところ卵である。' },
   chick: { name:'ひよこ', position:'MF', rank:'F', ability:null, description:'特殊能力なし。', scout:'大きな期待を背負って生まれた、小さなひよこ。本人は元気いっぱいなので、責めないであげてほしい。' },
   emperor_penguin: { name:'皇帝ペンギン', position:'DF', rank:'B', stamina:'A', ability:'皇帝', description:'出場中、自分を含む味方の守備＋5。GKにも適用。複数体は重ね掛け、上限99。', scout:'皇帝の風格で味方の守備を引き締める。本人は何も指示していないが、周りが勝手に姿勢を正す。' },
   phoenix: { name:'フェニックス', position:'MF', rank:'A', stamina:'SS', ability:'不死鳥', description:'メイン対戦相手に選ばれるたび、相手に追加4フェーズ分の消耗。', scout:'尽きることのない体力を持つ伝説の鳥。相手だけが疲れていくので、対戦後はだいたい嫌われる。' },

@@ -1,4 +1,4 @@
-import { applyRareCharacter, rollRareCharacter, rareKind, RARE_CHARACTERS } from './rare-characters.js';
+import { applyRareCharacter, rollRareCharacter, rareKind, RARE_CHARACTERS } from './rare-characters.js?v=egg-secret-v1';
 import { calculateOverall, createPlayer, displayPlayer, FIELD_STAT_KEYS, STAT_LABELS } from './data.js?v=0.22.0';
 import { createRandom, weightedPick } from './random.js';
 import { ACTION_TYPES } from './rules.js?v=rare-v2';
@@ -50,7 +50,9 @@ export const SPECIAL_ABILITIES = {
 
 export const SPECIAL_ABILITY_DESCRIPTIONS = {
   ...Object.fromEntries(Object.values(RARE_CHARACTERS).filter(d => d.ability).map(d => [d.ability, d.description])),
-  精密パス: RARE_CHARACTERS.robot.description, 精密ドリブル: RARE_CHARACTERS.robot.description, 精密シュート: RARE_CHARACTERS.robot.description,
+  精密パス: 'パスが必ず成功。ドリブルとシュートは失敗する。',
+  精密ドリブル: 'ドリブルが必ず成功。パスとシュートは失敗する。',
+  精密シュート: 'シュートが必ずゴール。パスとドリブルは失敗する。',
   セービング: 'シュート対応全般に強い。', 安定感: 'GK判定のブレが小さくなる。', 守護神: '接戦の終盤でGK能力を発揮しやすい。', スイーパーGK: '相手が深く攻め込んだ場面で、GKの守備力が最終対応を助ける。', パワープレー: '終盤ビハインド時、GKが前線に加わり攻撃力を高める。攻撃失敗時はカウンターを受けやすくなる。', ロングフィード: 'GKキャッチ後、前線の状況が良ければロングボールで速攻を狙う。',
   ボールハンター: '第1守備や奪取場面で力を発揮する。', カバーリング: '突破や速攻へのカバー対応で力を発揮する。', パスカット: 'パス攻撃への守備で力を発揮する。', カウンター起点: '守備成功後のカウンターにつながりやすい。', ビルドアップ: 'パス攻撃全般で力を発揮する。', 最終防衛線: 'ゴール前の大ピンチで力を発揮する。',
   スピードスター: '速攻や突破場面で走力を発揮しやすい。', ドリブラー: 'ドリブル攻撃全般で力を発揮する。', チャンスメイカー: 'パス攻撃全般でチャンスを作りやすい。', カットイン: 'ドリブルからのシュート場面で力を発揮する。', ハードワーカー: '攻守に走力を発揮しやすい。', 万能型: 'バランス戦術で攻守に力を発揮する。',
