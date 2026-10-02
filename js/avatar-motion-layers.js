@@ -1,5 +1,5 @@
 import {MOTION_HAIR_LAYOUTS} from './motion-hair-layout.js?v=1';
-import {readHairAdjustments,effectiveHairAdjustment,hairAdjustmentRevision} from './motion-hair-adjustments.js?v=idle-clean-v6';
+import {readHairAdjustments,effectiveHairAdjustment,hairAdjustmentRevision} from './motion-hair-adjustments.js?v=motion-ui-v7';
 import {avatarProfile,kitColor} from './avatar-profile.js?v=appearance-v29';
 import {createSurface,recolorPixels,drawQuarterMotionLayers} from './avatar-rendering.js?v=hair-editor-v1';
 // Head rectangles are registered to the approved body drawings, in source-cell pixels.

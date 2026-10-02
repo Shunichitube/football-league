@@ -1,8 +1,8 @@
 import {MOTION_HAIR_LAYOUTS} from './motion-hair-layout.js?v=1';
-import {loadMotionAtlas} from './player-motion.js?v=idle-clean-v6';
+import {loadMotionAtlas} from './player-motion.js?v=motion-ui-v7';
 import {HAIR_STYLES} from './avatar-profile.js?v=appearance-v29';
 import {drawMotionHair,drawQuarterFace,motionHairBox} from './avatar-rendering.js?v=hair-editor-v1';
-import {readHairAdjustments,saveHairAdjustments,effectiveHairAdjustment,defaultHairAdjustment} from './motion-hair-adjustments.js?v=idle-clean-v6';
+import {readHairAdjustments,saveHairAdjustments,effectiveHairAdjustment,defaultHairAdjustment} from './motion-hair-adjustments.js?v=motion-ui-v7';
 const $=id=>document.getElementById(id),status=$('status');
 const mode=new URLSearchParams(location.search).get('motion')==='idle'?'idle':'run',layout=MOTION_HAIR_LAYOUTS[mode];
 $('motion').value=mode;
@@ -73,7 +73,11 @@ for(const view of views){
  const finish=event=>{if(drag?.pointer===event.pointerId){drag=null;draw();}};
  view.canvas.addEventListener('pointerup',finish);view.canvas.addEventListener('pointercancel',finish);
 }
-$('motion').onchange=()=>{location.href='hair-adjust.html?motion='+$('motion').value;};
+$('motion').onchange=()=>{
+ const next=$('motion').value;$('motion').value=mode;
+ if(next===mode)return;
+ const url=new URL(location.href);url.searchParams.set('motion',next);url.searchParams.set('v','motion-ui-v7');location.assign(url.href);
+};
 $('hair').onchange=()=>{style=Number($('hair').value);draw();};
 $('together').onchange=draw;$('face').onchange=draw;$('bounds').onchange=draw;
 $('zoom').oninput=()=>{document.documentElement.style.setProperty('--size',$('zoom').value+'px');$('zoom-label').textContent=Math.round(Number($('zoom').value)/340*100)+'%';draw();};
@@ -96,5 +100,12 @@ $('import').onchange=async event=>{
  }catch{status.textContent='設定を読み込めませんでした。書き出したJSONファイルを選んでください。';}
  event.target.value='';
 };
+addEventListener('pageshow',event=>{if(event.persisted&&!dirty){drafts=readHairAdjustments(mode);draw();}});
+addEventListener('storage',event=>{
+ const key=mode==='idle'?'football-league:idle-hair-adjustments:v2':'football-league:run-hair-adjustments:v1';
+ if(event.key!==key&&event.key!==null)return;
+ if(dirty){status.textContent='別の画面で設定が更新されました。現在の調整を保存するか、再読み込みしてください。';return;}
+ drafts=readHairAdjustments(mode);history.length=0;draw();status.textContent='保存済みの位置を読み込みました。';
+});
 addEventListener('beforeunload',event=>{if(dirty){event.preventDefault();event.returnValue='';}});
 status.textContent='髪をドラッグして位置を合わせてください。四隅のハンドルで大きさを変えられます。';draw();

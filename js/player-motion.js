@@ -1,6 +1,6 @@
 import {drawRareMotion} from './rare-avatar.js?v=cell-cleanup-v1';
 import {loadMotionLayerAssets} from './avatar-rendering.js?v=modular-motion-v2';
-import {renderMotionLayers} from './avatar-motion-layers.js?v=idle-clean-v6';
+import {renderMotionLayers} from './avatar-motion-layers.js?v=motion-ui-v7';
 export const MOTIONS = {
   idle: { label: '待機', frames: [0, 1], fps: 2 },
   run: { label: '走り', frames: [0, 1, 2, 3], fps: 8 },
