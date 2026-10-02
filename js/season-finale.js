@@ -1,11 +1,11 @@
 import {footballTexture} from './arena-scene.js?v=shared-ball-v1';
-import {loadMotionAtlas,drawMotion} from './player-motion.js?v=preview-paced-v1';
+import {loadMotionAtlas,drawMotion} from './player-motion.js?v=body-alpha-v3';
 import {playerAppearance} from './avatar-profile.js?v=appearance-v29';
 import {drawAvatar} from './player-avatar.js?v=season-finale-v1';
 import {celebrationTexture,drawCelebration} from './avatar-celebration.js?v=body-alpha-v3';
 
 export const finaleKind=rank=>rank===1?'goal':rank<=3?'parry':'catch';
-export const CONVEYOR_MATCH_SECONDS=4.5;
+export const CONVEYOR_MATCH_SECONDS=3.4;
 export const CONVEYOR_LAYOUT=Object.freeze({centerX:480,centerY:360,reserveX:79,reserveY:505,entryX:-65,ballDX:25,ballDY:-12,shotX:745,shotY:350});
 // Read snapshots only. Multiplayer stores other clubs' fixtures here as well.
 export function conveyorMatches(matches,clubId){
@@ -38,50 +38,52 @@ export function conveyorBlocking(matches,time){
  const frame=conveyorFrame(matches,time);if(frame.done)return frame;
  const {index,match,local:t}=frame,L=CONVEYOR_LAYOUT;
  const losses=matches.slice(0,index).filter(m=>m.outcome==='loss').length;
- const actionStart=1.8;
- const central={role:losses,x:L.centerX,y:L.centerY,motion:t<actionStart?'idle':'run',seconds:t<actionStart?time:t-actionStart,direction:'right'};
- const reserve={role:losses+1,x:L.reserveX,y:L.reserveY,motion:'idle',seconds:time,direction:'right'};
- const approach=smooth(t/1.35);
- const rival={x:mix(1040,L.centerX+65,approach),y:mix(210,L.centerY,approach),scale:mix(.55,1,approach),motion:t<1.35?'run':t<actionStart?'idle':'run',seconds:t<1.35?t:t<actionStart?t-1.35:t-actionStart,direction:'left'};
+ const central={role:losses,x:L.centerX,y:L.centerY,motion:'run',seconds:time,direction:'right'};
+ const reserve={role:losses+1,x:L.reserveX,y:L.reserveY,motion:'idle',seconds:0,direction:'right'};
+ const approach=smooth(t/.55);
+ const rival={x:mix(1040,L.centerX,approach),y:mix(210,L.centerY,approach),scale:mix(.55,1,approach),motion:'run',seconds:t,direction:'left'};
  let ball={x:central.x+L.ballDX,y:central.y+L.ballDY},departed=null,replacement=null;
- if(match.outcome==='win'&&t>=actionStart){
-  central.x=L.centerX+45*smooth((t-actionStart)/.65)-45*smooth((t-3)/.9);
-  central.y=L.centerY-50*smooth((t-actionStart)/.65)+50*smooth((t-3)/.9);
-  central.motion='dribble';
-  rival.x=t>2.45?L.centerX+65-(t-2.45)*175:rival.x;
-  ball={x:central.x+L.ballDX+Math.sin((t-actionStart)*8)*3,y:central.y+L.ballDY};
- }else if(match.outcome==='loss'&&t>=2.2){
-  departed={...central,x:L.centerX-(t-2.2)*90,motion:'idle',seconds:time};
-  rival.x=t<2.5?mix(L.centerX+65,560,smooth((t-2.2)/.3)):560;
-  rival.motion=t<2.5?'dribble':t<3.5?'shoot':'run';
-  rival.seconds=t<2.5?t-2.2:t<3.5?t-2.5:t-3.5;rival.direction='right';
-  if(t>=3.5)rival.x=560+(t-3.5)*200;
-  const roll=smooth((t-3)/.35);
-  ball=t<3?{x:rival.x+L.ballDX,y:L.centerY+L.ballDY}:
+ if(match.outcome==='win'){
+  central.x=L.centerX+45*smooth((t-.55)/.3)-45*smooth((t-1.55)/.65);
+  central.y=L.centerY-50*smooth((t-.55)/.3)+50*smooth((t-1.55)/.85);
+  central.motion=t<.55?'run':'dribble';central.seconds=time;
+  rival.x=t>.85?L.centerX-(t-.85)*350:rival.x;
+  ball={x:central.x+L.ballDX+(t>.55?Math.sin(t*16)*3:0),y:central.y+L.ballDY};
+ }else if(match.outcome==='loss'&&t>=.85){
+  departed={...central,x:L.centerX-(t-.85)*150,motion:'idle',seconds:0};
+  rival.x=t<1?mix(L.centerX,560,smooth((t-.85)/.15)):560;
+  rival.motion=t<1?'dribble':t<1.15?'shoot':'run';
+  rival.seconds=t<1?t-.85:t<1.15?t-1:t-1.15;rival.direction='right';
+  if(t>=1.15)rival.x=560+(t-1.15)*400;
+  const roll=smooth((t-1.15)/.35);
+  // The stolen ball rolls on the turf to the waiting runner's front foot.
+  ball=t<1.15?{x:rival.x+L.ballDX,y:L.centerY+L.ballDY}:
    {x:mix(560+L.ballDX,L.reserveX+L.ballDX,roll),y:mix(L.centerY+L.ballDY,L.reserveY+L.ballDY,roll)};
   central.role=reserve.role;central.x=reserve.x;central.y=reserve.y;
-  central.motion='idle';central.seconds=time;
-  if(t>=3.35){
-   const pickup=smooth((t-3.35)/.6);
+  central.motion='idle';central.seconds=0;
+  if(t>=1.5){
+   const pickup=smooth((t-1.5)/.5);
    central.x=mix(L.reserveX,L.centerX,pickup);central.y=mix(L.reserveY,L.centerY,pickup);
-   central.motion='dribble';central.seconds=t-3.35;
+   central.motion='dribble';central.seconds=time;central.direction='right';
    ball={x:central.x+L.ballDX,y:central.y+L.ballDY};
-   const incoming=smooth((t-3.35)/.65);
-   replacement={...reserve,role:losses+2,x:mix(L.entryX,L.reserveX,incoming),motion:t<4?'run':'idle',seconds:t-3.35,direction:'right'};
+   if(t>=2)central.direction='right';
+   // Replenish the left foreground spot from beyond the left screen edge.
+   const incoming=smooth((t-1.5)/.7);
+   replacement={...reserve,role:losses+2,x:mix(L.entryX,L.reserveX,incoming),motion:t<2.2?'run':'idle',seconds:t<2.2?t-1.5:0,direction:'right'};
   }
- }else if(match.outcome==='draw'&&t>=actionStart){
-  central.motion=t<2.8?'shoot':'run';central.seconds=t<2.8?t-actionStart:t-2.8;
-  rival.x=t>2.45?L.centerX+65-(t-2.45)*175:rival.x;
-  const outward=smooth((t-2.35)/.5),back=smooth((t-3)/.8),q=outward*(1-back);
+ }else if(match.outcome==='draw'){
+  central.motion=t>=.6&&t<1.1?'shoot':t>=1.7?'dribble':'run';central.seconds=central.motion==='shoot'?t-.6:time;
+  rival.x=t>.85?L.centerX-(t-.85)*350:rival.x;
+  const outward=smooth((t-.75)/.4),back=smooth((t-1.25)/.45),q=outward*(1-back);
   ball={x:mix(L.centerX+L.ballDX,L.reserveX+L.ballDX,q),y:mix(L.centerY+L.ballDY,L.reserveY+L.ballDY,q)};
  }
  let pastRole=0;
  const waiting=matches.slice(0,index).flatMap((m,i)=>{
   if(m.outcome!=='loss')return [];
-  const role=pastRole++,x=L.centerX-(time-(i*CONVEYOR_MATCH_SECONDS+2.2))*90;
-  return x>-140?[{role,x,y:L.centerY,motion:'idle',seconds:time,direction:'right'}]:[];
+  const role=pastRole++,x=L.centerX-(time-(i*CONVEYOR_MATCH_SECONDS+.85))*150;
+  return x>-140?[{role,x,y:L.centerY,motion:'idle',seconds:0,direction:'right'}]:[];
  });
- return {...frame,central,reserve,rival,ball,departed,replacement,waiting,losses,resultReady:t>=4};
+ return {...frame,central,reserve,rival,ball,departed,replacement,waiting,losses,resultReady:t>=2.25};
 }
 export function podiumPositions(count){
  const n=Math.min(12,Math.max(0,count)),gap=105;
@@ -118,13 +120,13 @@ export function createFinalePainter(data,club,rank,keeper,clubs=[],fixtures=[]){
  const {atlas,ground,home,goal,bulge}=data;
  const roster=club.roster.slice(0,12),cast=conveyorCast(club);
  let scorer=cast[fixtures.filter(m=>m.outcome==='loss').length%cast.length]||roster[0];
- const sprite=document.createElement('canvas');sprite.width=480;sprite.height=480;
+ const sprite=document.createElement('canvas');sprite.width=400;sprite.height=400;
  const actor=(ctx,motion,t,x,y,height,p=scorer,gk=false,kit=club.color,direction='right')=>{
-  drawMotion(sprite.getContext('2d'),atlas,motion,t*.5,{appearance:playerAppearance(p||{id:'finale-keeper',primaryPosition:'GK'}),kit,goalkeeper:gk,loop:['idle','run','dribble'].includes(motion),direction});
+  drawMotion(sprite.getContext('2d'),atlas,motion,t,{appearance:playerAppearance(p||{id:'finale-keeper',primaryPosition:'GK'}),kit,goalkeeper:gk,loop:['idle','run','dribble'].includes(motion),direction});
   ctx.imageSmoothingEnabled=false;ctx.drawImage(sprite,x-height/2,y-height,height,height);
  };
  const joy=(ctx,p,x,y,height,t,gk=false,sad=false)=>{
-  const pose=Math.floor(t*1.5)%4,im=celebrationTexture(atlas,playerAppearance(p||{id:'finale-keeper',primaryPosition:'GK'}),{kit:club.color,goalkeeper:gk,pose,dejected:sad});
+  const pose=Math.floor(t*3)%4,im=celebrationTexture(atlas,playerAppearance(p||{id:'finale-keeper',primaryPosition:'GK'}),{kit:club.color,goalkeeper:gk,pose,dejected:sad});
   drawCelebration(ctx,im,x,y,height);
  };
  const portraits=roster.map(p=>{const im=document.createElement('canvas');im.width=300;im.height=470;drawAvatar(im.getContext('2d'),atlas.avatar,playerAppearance(p),{kit:club.color,goalkeeper:p.primaryPosition==='GK'});return im;});
@@ -134,9 +136,9 @@ export function createFinalePainter(data,club,rank,keeper,clubs=[],fixtures=[]){
    if(frame.done)return frame;
    // Use the home ground at the same crop/scale as the existing shot.
    // Whole tiles slide left; the last tile eases to the original crop exactly.
-   const ease=q=>q*q*(3-2*q),handoff=index===matches.length-1?Math.max(0,(t-4)/.5):0;
+   const ease=q=>q*q*(3-2*q),handoff=index===matches.length-1?Math.max(0,(t-2.8)/.6):0;
    const remaining=duration-time;
-   const distance=remaining<.5?75*.5*(1-ease(1-remaining/.5)):remaining*75;
+   const distance=remaining<.6?150*.6*(1-ease(1-remaining/.6)):remaining*150;
    const offset=((distance%1920)+1920)%1920;
    ctx.imageSmoothingEnabled=true;
    // Alternating mirror tiles join at identical edges rather than jumping cuts.
