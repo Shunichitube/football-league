@@ -103,10 +103,23 @@ if (typeof document !== 'undefined' && !globalThis.__footballLeagueRenameHook) {
 
 
 const rankWidths = { G:18, F:28, E:38, D:48, C:58, B:68, A:78, S:88, SS:100 };
-function growthBar(ability, changes = []) {
+function growthBarState(ability, changes = []) {
   const change = changes.find(c => c.key === ability.key);
-  const before = rankWidths[change?.from], after = rankWidths[ability.rank];
-  return after > before ? `<em class="growth-bar-gain" style="left:${before}%;width:${after-before}%" aria-hidden="true"></em>` : '';
+  if (!change) return null;
+  const before = rankWidths[change.from], after = rankWidths[ability.rank];
+  if (!Number.isFinite(before) || !Number.isFinite(after)) return null;
+  const numericLoss = Number.isFinite(change.fromValue) && Number.isFinite(change.toValue)
+    ? change.fromValue - change.toValue : null;
+  const loss = numericLoss !== null ? Math.max(0, numericLoss * 2) : Math.max(0, before - after);
+  if (loss > 0) {
+    const width = Math.min(before, loss);
+    return { kind:'loss', left:before-width, width, remaining:before-width };
+  }
+  return after > before ? {kind:'gain',left:before,width:after-before} : null;
+}
+function growthBar(ability, changes = []) {
+  const segment = growthBarState(ability, changes);
+  return segment ? `<em class="growth-bar-${segment.kind}" style="left:${segment.left}%;width:${segment.width}%" aria-hidden="true"></em>` : '';
 }
 
 export function renderPlayerCard(player, options = {}) {
@@ -182,7 +195,8 @@ function growthDirection(ability,changes){
  return Number.isFinite(change.fromValue)&&Number.isFinite(change.toValue)?Math.sign(change.toValue-change.fromValue):Math.sign((rankWidths[change.to]||0)-(rankWidths[change.from]||0))||(change.increased?1:0);
 }
 function squadGrowthBar(ability,changes){
- return `<i class="rank-bar rank-${escapeHtml(ability.rank)}"><b></b>${changes?growthBar(ability,changes):''}</i>`;
+ const segment = changes ? growthBarState(ability,changes) : null;
+ return `<i class="rank-bar rank-${escapeHtml(ability.rank)}"><b${segment?.kind==='loss' ? ` style="width:${segment.remaining}%"` : ''}></b>${changes?growthBar(ability,changes):''}</i>`;
 }
 function renderSquadCard(player, lineup, selectedId, clubColor, growthChanges = null, showSpecialDescription = true) {
   playerRefs.set(player.id, player);
