@@ -124,7 +124,7 @@ export function renderPlayerCard(player, options = {}) {
     : '';
   return `<article class="player-card">
     <div class="player-profile">
-      ${rareKind(player) ? `<img class="rare-card-portrait" src="${rarePortraitUrl(player)}" alt="${escapeHtml(player.name)}">` : ''}
+      ${options.showPortrait !== false && rareKind(player) ? `<img class="rare-card-portrait" src="${rarePortraitUrl(player)}" alt="${escapeHtml(player.name)}">` : ''}
       <div class="player-title"><span class="player-name-box" style="min-width:0">${options.clubColor ? `<i class="club-color-dot player-club-dot" style="--club:${escapeHtml(options.clubColor)}"></i>` : ''}${nameMarkup(display)}${renameButton(player, options)}</span><strong class="overall-rank">総合 ${display.overallRank}</strong></div>
       <span class="position-badge">${positionLabel(display.primaryPosition)}</span>
       <p class="player-meta">年齢 <b>${escapeHtml(rareAgeLabel(player))}</b></p>
@@ -277,7 +277,7 @@ export function renderMatchDetail(match) {
   const midpoint = Math.ceil(rows.length / 2);
   const homeRows = (hasTeamIds ? rows.filter(row => row.teamId === homeId) : rows.slice(0, midpoint)).sort(compareMatchRows);
   const awayRows = (hasTeamIds ? rows.filter(row => row.teamId === awayId) : rows.slice(midpoint)).sort(compareMatchRows);
-  const resultCard = row => { const clubColor = row.teamId === awayId ? match.fixture.away.color : match.fixture.home.color; return `<article class="candidate match-player-result">${renderPlayerCard(row.player,{clubColor})}<div class="match-player-avatar"><img src="${squadAvatar(row.player,clubColor)}" alt="${escapeHtml(row.player.name)}"></div><p><b>調子 ${match.result.forms[row.player.id] || '−'}</b>・評価 ${row.rating.toFixed(1)}</p><p>得点 ${row.goals}・アシスト ${row.assists}・シュート ${row.shots}</p><p>攻撃貢献 ${row.attackContributions}・守備成功 ${row.defensiveStops}・セーブ ${row.saves}</p></article>`; };
+  const resultCard = row => { const clubColor = row.teamId === awayId ? match.fixture.away.color : match.fixture.home.color; return `<article class="candidate match-player-result">${renderPlayerCard(row.player,{clubColor,showPortrait:false})}<div class="match-player-avatar"><img src="${squadAvatar(row.player,clubColor)}" alt="${escapeHtml(row.player.name)}"></div><p><b>調子 ${match.result.forms[row.player.id] || '−'}</b>・評価 ${row.rating.toFixed(1)}</p><p>得点 ${row.goals}・アシスト ${row.assists}・シュート ${row.shots}</p><p>攻撃貢献 ${row.attackContributions}・守備成功 ${row.defensiveStops}・セーブ ${row.saves}</p></article>`; };
   return `<main class="match-detail"><div class="match-detail-topbar"><p class="eyebrow">第${match.round}節 試合詳細</p><button type="button" data-nav="seasonResults" class="match-results-back">← シーズン結果に戻る</button></div>
     <div class="scoreboard"><span><i class="club-color-dot" style="--club:${escapeHtml(match.fixture.home.color)}"></i>${escapeHtml(match.fixture.home.name)}</span><b>${match.result.score.home} - ${match.result.score.away}</b><span><i class="club-color-dot" style="--club:${escapeHtml(match.fixture.away.color)}"></i>${escapeHtml(match.fixture.away.name)}</span></div>
     <section class="match-summary"><p><b>得点者：</b>${scorers}</p><p><b>アシスト：</b>${assists}</p><p><b>試合MVP：</b>${escapeHtml(mvp.player.name)}（評価 ${mvp.rating.toFixed(1)}）</p></section>
