@@ -1,7 +1,7 @@
 import {drawAvatar} from './player-avatar.js?v=season-finale-v1';
 import {avatarProfile,kitColor} from './avatar-profile.js?v=appearance-v29';
 import {createSurface,recolorPixels} from './avatar-rendering.js?v=appearance-v29';
-import {eraseOriginalHead} from './avatar-motion-parts.js?v=ear-cleanup-v1';
+import {eraseOriginalHead} from './avatar-motion-parts.js?v=body-alpha-v3';
 import {drawRareMotion} from './rare-avatar.js?v=cell-cleanup-v1';
 
 const cache=new Map(),headMasks=new WeakMap();
@@ -45,7 +45,12 @@ export function eraseCelebrationHead(data,width,height,box,mask){
  const top=Math.round(box[1]+center.y-box[1]-(mask.center.y-JOY_HEADS[0][1]));
  for(let y=0;y<mask.height;y++)for(let x=0;x<mask.width;x++){
   const xx=left+x,yy=top+y;
-  if(mask.alpha[y*mask.width+x]&&xx>=0&&xx<width&&yy>=0&&yy<height)data[(yy*width+xx)*4+3]=0;
+  if(mask.alpha[y*mask.width+x]&&xx>=0&&xx<width&&yy>=0&&yy<height){
+   const i=(yy*width+xx)*4,r=data[i],g=data[i+1],b=data[i+2];
+   const warm=r>20&&r>g*1.12&&r>b*1.25&&g>=b;
+   // Transparent head gaps and light/blue uniform pixels belong to the body.
+   if(data[i+3]&&(warm||Math.max(r,g,b)<65))data[i+3]=0;
+  }
  }
  return data;
 }
@@ -98,7 +103,7 @@ export function celebrationTexture(atlas,value,{kit,goalkeeper=false,pose=1,deje
  // A fixed body registration preserves the source jump instead of cancelling it.
  const reference=dejected?box:JOY_HEADS[0],offsetY=250-(reference[1]+reference[3])*scale;
  // Sad poses keep the head in front; joy arms are composited after the head.
- if(dejected)ctx.drawImage(body,paddingX+150-(box[0]+box[2]/2)*scale,paddingY+offsetY,w*scale,h*scale);
+ ctx.drawImage(body,paddingX+150-(box[0]+box[2]/2)*scale,paddingY+offsetY,w*scale,h*scale);
  const head=createSurface(atlas.avatar,300,470);
  drawAvatar(head.getContext('2d'),atlas.avatar,profile,{kit,goalkeeper,headOnly:true,expression:dejected?'sad':'happy'});
  const headDX=dejected?0:(sourceCenter.x-box[0]-box[2]/2-(mask.center.x-JOY_HEADS[0][0]-JOY_HEADS[0][2]/2))*scale;
@@ -107,7 +112,6 @@ export function celebrationTexture(atlas,value,{kit,goalkeeper=false,pose=1,deje
  // The source head has already been removed. Remaining hands/arms cover the face.
  if(!dejected){
   const dx=paddingX+150-(box[0]+box[2]/2)*scale,dy=paddingY+offsetY;
-  ctx.drawImage(body,dx,dy,w*scale,h*scale);
   // Restore both arms last, including pixels that overlap the source head mask.
   ctx.drawImage(arms,dx,dy,w*scale,h*scale);
  }
