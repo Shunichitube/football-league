@@ -1,4 +1,4 @@
-import {DEFAULT_RUN_HAIR_ADJUSTMENTS} from './motion-hair-defaults.js?v=approved-v1';
+import {DEFAULT_RUN_HAIR_ADJUSTMENTS,DEFAULT_IDLE_HAIR_ADJUSTMENTS} from './motion-hair-defaults.js?v=idle-approved-v5';
 // Offsets are in the 627px source frame; scaling is uniform about the hair center.
 export const HAIR_ADJUSTMENT_KEY='football-league:run-hair-adjustments:v1';
 const storageKey=mode=>mode==='idle'?'football-league:idle-hair-adjustments:v1':HAIR_ADJUSTMENT_KEY;
@@ -9,7 +9,7 @@ export function normalizeAdjustment(value){
  return {x:n('x',0,-627,627),y:n('y',0,-627,627),scale:n('scale',1,.25,3)};
 }
 export function defaultHairAdjustment(style,mode='run'){
- const entry=mode==='run'?DEFAULT_RUN_HAIR_ADJUSTMENTS[style]:null;
+ const entry=mode==='run'?DEFAULT_RUN_HAIR_ADJUSTMENTS[style]:DEFAULT_IDLE_HAIR_ADJUSTMENTS[style];
  return {shared:normalizeAdjustment(entry?.shared),frames:Array.from({length:frameCount(mode)},(_,f)=>normalizeAdjustment(entry?.frames?.[f]))};
 }
 export function readHairAdjustments(mode='run'){

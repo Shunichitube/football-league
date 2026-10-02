@@ -1,8 +1,8 @@
 import {MOTION_HAIR_LAYOUTS} from './motion-hair-layout.js?v=1';
-import {loadMotionAtlas} from './player-motion.js?v=idle-editor-v1';
+import {loadMotionAtlas} from './player-motion.js?v=idle-approved-v5';
 import {HAIR_STYLES} from './avatar-profile.js?v=appearance-v29';
 import {drawMotionHair,drawQuarterFace,motionHairBox} from './avatar-rendering.js?v=hair-editor-v1';
-import {readHairAdjustments,saveHairAdjustments,effectiveHairAdjustment,defaultHairAdjustment} from './motion-hair-adjustments.js?v=idle-editor-v1';
+import {readHairAdjustments,saveHairAdjustments,effectiveHairAdjustment,defaultHairAdjustment} from './motion-hair-adjustments.js?v=idle-approved-v5';
 const $=id=>document.getElementById(id),status=$('status');
 const mode=new URLSearchParams(location.search).get('motion')==='idle'?'idle':'run',layout=MOTION_HAIR_LAYOUTS[mode];
 $('motion').value=mode;

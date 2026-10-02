@@ -1,5 +1,5 @@
-import {footballTexture} from './arena-scene.js?v=redrawn-run-v1';
-import {loadMotionAtlas,drawMotion} from './player-motion.js?v=redrawn-run-v1';
+import {footballTexture} from './arena-scene.js?v=idle-approved-v5';
+import {loadMotionAtlas,drawMotion} from './player-motion.js?v=idle-approved-v5';
 import {playerAppearance} from './avatar-profile.js?v=rare-v2';
 import {playerAvatarTexture} from './player-avatar.js?v=rare-v2';
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));

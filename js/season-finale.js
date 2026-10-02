@@ -1,5 +1,5 @@
-import {footballTexture} from './arena-scene.js?v=shared-ball-v1';
-import {loadMotionAtlas,drawMotion} from './player-motion.js?v=redrawn-run-v1';
+import {footballTexture} from './arena-scene.js?v=idle-approved-v5';
+import {loadMotionAtlas,drawMotion} from './player-motion.js?v=idle-approved-v5';
 import {playerAppearance} from './avatar-profile.js?v=appearance-v29';
 import {drawAvatar} from './player-avatar.js?v=season-finale-v1';
 import {celebrationTexture,drawCelebration} from './avatar-celebration.js?v=modular-motion-v2';

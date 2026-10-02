@@ -1,6 +1,6 @@
 import {drawRareMotion} from './rare-avatar.js?v=cell-cleanup-v1';
 import {loadMotionLayerAssets} from './avatar-rendering.js?v=modular-motion-v2';
-import {renderMotionLayers} from './avatar-motion-layers.js?v=idle-editor-v1';
+import {renderMotionLayers} from './avatar-motion-layers.js?v=idle-approved-v5';
 export const MOTIONS = {
   idle: { label: '待機', frames: [0, 1], fps: 2 },
   run: { label: '走り', frames: [0, 1, 2, 3], fps: 8 },
@@ -17,7 +17,7 @@ export function motionFrame(motion, seconds, { loop } = {}) {
 export async function loadMotionAtlas() {
   const load = async path => { const image = new Image(); image.src = new URL(path, import.meta.url).href; await image.decode(); return image; };
   const [base, run, shoot, catchSheet, dive, celebrate, celebrateArms, dejected, avatar] = await Promise.all([
-    load('../assets/avatars/player-idle-redrawn-v1.png'),
+    load('../assets/avatars/player-idle-redrawn-v1.png?v=idle-approved-v5'),
     load('../assets/avatars/player-run-redrawn-v1.png'),
     load('../assets/avatars/player-shoot-base-v1.png'),
     load('../assets/avatars/keeper-catch-base-v1.png'),

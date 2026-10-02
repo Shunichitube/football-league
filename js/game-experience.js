@@ -1,4 +1,4 @@
-import {loadMotionAtlas} from './player-motion.js?v=redrawn-run-v1';
+import {loadMotionAtlas} from './player-motion.js?v=idle-approved-v5';
 import {playerAppearance} from './avatar-profile.js?v=appearance-v29';
 import {drawAvatar} from './player-avatar.js?v=modular-motion-v2';
 import {celebrationTexture} from './avatar-celebration.js?v=modular-motion-v2';
