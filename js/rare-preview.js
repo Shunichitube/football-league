@@ -3,7 +3,7 @@ import {createPlayer} from './data.js';
 import {createRandom} from './random.js';
 import {playerAppearance} from './avatar-profile.js?v=rare-v2';
 import {renderPlayerCard,escapeHtml} from './ui.js?v=rare-v2';
-import {loadMotionAtlas,drawMotion} from './player-motion.js?v=rare-v2';
+import {loadMotionAtlas,drawMotion} from './player-motion.js?v=motion-cleanup-v2';
 const players=Object.keys(RARE_CHARACTERS).map(kind=>applyRareCharacter(createPlayer(kind,'MF',createRandom(kind)),kind,createRandom(kind)));
 const view=document.querySelector('#preview');
 view.innerHTML=players.map(p=>`<article>${renderPlayerCard(p)}<p>${escapeHtml(p.scoutComment)}</p><canvas width="300" height="470" aria-label="${p.name}の動作"></canvas></article>`).join('');

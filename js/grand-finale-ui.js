@@ -1,7 +1,7 @@
 import {grandResults,formatPt} from './grand-results.js';
-import {loadMotionAtlas} from './player-motion.js?v=appearance-v29';
+import {loadMotionAtlas} from './player-motion.js?v=motion-cleanup-v2';
 import {playerAppearance} from './avatar-profile.js?v=appearance-v29';
-import {celebrationTexture} from './avatar-celebration.js?v=1';
+import {celebrationTexture} from './avatar-celebration.js?v=motion-cleanup-v2';
 import {drawAvatar} from './player-avatar.js?v=season-finale-v1';
 
 export function renderGrandResults(league, humanId, e) {

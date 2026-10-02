@@ -1,8 +1,8 @@
-import {renderGrandResults,mountGrandFinale} from './grand-finale-ui.js?v=1';
-import {createGameExperience} from './game-experience.js?v=1';
-import { playSeasonFinale } from './season-finale.js?v=conveyor-v3';
+import {renderGrandResults,mountGrandFinale} from './grand-finale-ui.js?v=motion-cleanup-v2';
+import {createGameExperience} from './game-experience.js?v=motion-cleanup-v2';
+import { playSeasonFinale } from './season-finale.js?v=motion-cleanup-v2';
 import { rareKind, rareAgeLabel } from './rare-characters.js';
-import { playTrainingCinematic } from './training-cinematic.js?v=6';
+import { playTrainingCinematic } from './training-cinematic.js?v=motion-cleanup-v2';
 import { renderSeasonResults } from './season-results-ui.js?v=3';
 import { createInitialState } from './app-state.js';
 import { createAuctionClock } from './auction-clock.js';
