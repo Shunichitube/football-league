@@ -1254,3 +1254,14 @@ body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
   margin:0;line-height:1.25;white-space:normal;overflow-wrap:anywhere;
  }
 }
+
+/* Development ability text is smaller; cards may shrink with their contents. */
+@media(min-width:761px) {
+ #app main.development-room:not(.focus-room) .squad-abilities dt,
+ #app main.development-room:not(.focus-room) .squad-abilities dd {
+  font-size:clamp(11.2px,.8vw,16px);line-height:1.15;
+ }
+ #app main.development-room:not(.focus-room) .squad-abilities {gap:4px;}
+ #app main.development-room:not(.focus-room) .squad-abilities>div {padding:3px;gap:4px;}
+ #app main.development-room:not(.focus-room) .squad-player {min-height:0!important;}
+}
