@@ -1,11 +1,11 @@
 import { rareKind, rarePortraitUrl, rareAgeLabel } from './rare-characters.js';
 import { dialogs } from './dialogs.js';
-import {playerAppearance,kitColor} from './avatar-profile.js?v=appearance-v28';
-import { formatMatchEvents } from './match-log.js?v=appearance-v28';
+import {playerAppearance,kitColor} from './avatar-profile.js?v=appearance-v29';
+import { formatMatchEvents } from './match-log.js?v=appearance-v29';
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.22.0';
-import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=appearance-v28';
-import { LINEUP_SLOTS, validateLineup } from './rules.js?v=appearance-v28';
-import { pixelTexture } from './arena-characters.js?v=appearance-v28';
+import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=appearance-v29';
+import { LINEUP_SLOTS, validateLineup } from './rules.js?v=appearance-v29';
+import { pixelTexture } from './arena-characters.js?v=appearance-v29';
 
 export const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
 

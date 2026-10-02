@@ -1,5 +1,5 @@
-import {loadMotionAtlas,drawMotion} from './player-motion.js?v=appearance-v28';
-import { pixelTexture } from './arena-characters.js?v=appearance-v28';
+import {loadMotionAtlas,drawMotion} from './player-motion.js?v=appearance-v29';
+import { pixelTexture } from './arena-characters.js?v=appearance-v29';
 // Presentation only: no game, random-generator or storage imports.
 export const ARENA = Object.freeze({ width: 1672, height: 941 });
 export function arenaTransform(width, height) {

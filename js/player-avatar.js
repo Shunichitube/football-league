@@ -1,8 +1,8 @@
 import {drawRarePortrait} from './rare-avatar.js';
 // Shared body, separately registered hairstyle/face/accessory layers.
-import {avatarProfile,kitColor} from './avatar-profile.js?v=appearance-v28';
-import {drawHair,drawGlasses,paintPart,loadAvatarAssets,AVATAR_BROWS} from './avatar-rendering.js?v=appearance-v28';
-export {avatarProfile,HAIR_STYLES,HAIR_COLORS,FACE_STYLES,SKIN_TONES} from './avatar-profile.js?v=appearance-v28';
+import {avatarProfile,kitColor} from './avatar-profile.js?v=appearance-v29';
+import {drawHair,drawGlasses,paintPart,loadAvatarAssets,AVATAR_BROWS} from './avatar-rendering.js?v=appearance-v29';
+export {avatarProfile,HAIR_STYLES,HAIR_COLORS,FACE_STYLES,SKIN_TONES} from './avatar-profile.js?v=appearance-v29';
 export const AVATAR_SIZE={width:300,height:470};
 const HEAD=[104,121,256,220],BODY=[104,341,256,210];
 const headX=x=>150+(x-150)*.88;
