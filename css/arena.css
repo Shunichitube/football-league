@@ -966,3 +966,48 @@ body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
  #app .release-confirm-card .squad-player {grid-template-rows:minmax(135px,1fr) auto!important;height:auto!important;min-height:230px;}
  #app main.screen-squad .squad-compare {overflow:auto;}
 }
+
+/* Contract decisions share one four-column desktop screen. */
+@media(min-width:761px) {
+ body:has(main.contract-events-screen) {height:100svh;overflow:hidden;}
+ #app main.contract-room.contract-events-screen {
+  width:96vw;max-width:none;height:calc(100svh - 110px);max-height:calc(100svh - 110px);
+  margin:10px auto;padding:14px 16px;display:grid;
+  grid-template-rows:auto minmax(0,1fr) auto;gap:10px;overflow:hidden;
+ }
+ .contract-events-header .eyebrow {margin:0 0 4px;}
+ .contract-events-header .screen-heading {margin:0;}
+ .contract-events-header h2 {font-size:clamp(20px,1.6vw,30px);margin:0;}
+ .contract-events-header .hint,.contract-events-count {font-size:clamp(12px,.9vw,17px);margin:5px 0;}
+ #app .contract-events-grid {
+  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  grid-template-rows:repeat(var(--event-rows,3),minmax(0,1fr));
+  grid-auto-rows:minmax(250px,1fr);gap:10px!important;margin:0;min-height:0;overflow:auto;
+ }
+ #app .contract-events-grid>.candidate {
+  display:flex;flex-direction:column;width:100%;min-width:0;min-height:0;
+  margin:0;padding:9px;background:#0d2539ed;overflow:auto;
+ }
+ #app .contract-events-grid .contract-event-label {
+  flex:none;margin:0 0 6px;padding:4px 7px;border-bottom:1px solid #568b91;
+  color:#ffe4a5;font-size:clamp(14px,1vw,19px);
+ }
+ #app main.contract-events-screen .squad-player {
+  flex:1;min-height:0!important;height:auto!important;
+  grid-template-columns:minmax(0,24fr) minmax(0,31fr) minmax(0,45fr);
+  grid-template-rows:minmax(0,1fr) auto!important;gap:6px;
+  padding:9px;overflow:visible;
+ }
+ #app main.contract-events-screen .squad-avatar img {width:clamp(58px,4.5vw,90px);height:clamp(85px,12vh,135px);max-width:100%;}
+ #app main.contract-events-screen .squad-identity {font-size:clamp(12px,.85vw,17px);gap:4px;}
+ #app main.contract-events-screen .squad-identity .player-name {font-size:clamp(16px,1.1vw,22px)!important;}
+ #app main.contract-events-screen .squad-abilities>div {grid-template-columns:minmax(0,42%) minmax(0,58%);padding:2px;}
+ #app main.contract-events-screen .squad-abilities dt,
+ #app main.contract-events-screen .squad-abilities dd {font-size:clamp(11px,.75vw,15px);}
+ #app .contract-events-grid>.candidate>p {flex:none;font-size:clamp(13px,.9vw,18px);margin:5px 0;}
+ .contract-event-actions {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;flex:none;}
+ #app .contract-event-actions button {margin:0;padding:7px 5px;min-height:36px;font-size:clamp(12px,.85vw,17px);}
+ .contract-events-footer {display:flex;justify-content:center;}
+ #app .contract-events-footer button {margin:0;min-height:42px;font-size:clamp(15px,1vw,20px);min-width:280px;}
+}
+@media(max-width:760px) {.contract-events-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}}
