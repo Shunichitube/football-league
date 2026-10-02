@@ -1,8 +1,8 @@
 import {createSfxController} from './sfx.js?v=1';
 import {createBgmController} from './bgm.js?v=audio-assets-v2';
-import {renderGrandResults,mountGrandFinale} from './grand-finale-ui.js?v=draft-six-podium-v4';
-import {createGameExperience} from './game-experience.js?v=draft-six-podium-v4';
-import { playSeasonFinale } from './season-finale.js?v=conveyor-left-reserve-v6';
+import {renderGrandResults,mountGrandFinale} from './grand-finale-ui.js?v=joy-arms-front-v5';
+import {createGameExperience} from './game-experience.js?v=mvp-joy-v5';
+import { playSeasonFinale } from './season-finale.js?v=joy-arms-front-v7';
 import { rareKind, rareAgeLabel } from './rare-characters.js';
 import { playTrainingCinematic } from './training-cinematic.js?v=motion-cleanup-v2';
 import { renderSeasonResults } from './season-results-ui.js?v=3';
@@ -551,6 +551,7 @@ function render() {
   document.querySelectorAll('.rename-modal-backdrop,.rename-modal-panel').forEach(node => document.body.append(node));
   dialogs.sync();
   auctionClock.sync(s.view === 'auction' && !!s.auction && !s.auction.completed);
+  experience.syncMvp(['seasonResults','awards'].includes(s.view)&&s.league?awards(s.league).mvp:null);
   experience.syncGrowth(s.view==='growth'?s.growth:[],s.league?me():null);
   renderedView = s.view;
   document.dispatchEvent(new CustomEvent('football-league:view-rendered'));

@@ -5,6 +5,13 @@ import {eraseOriginalHead} from './avatar-motion-parts.js?v=ear-cleanup-v1';
 import {drawRareMotion} from './rare-avatar.js?v=cell-cleanup-v1';
 
 const cache=new Map(),headMasks=new WeakMap();
+// Source-sheet arm silhouettes are kept separately from the head eraser.
+const JOY_ARMS=[
+ [[[315,280],[369,276],[382,360],[313,370]],[[487,276],[542,280],[552,370],[483,360]]],
+ [[[105,177],[158,177],[211,258],[188,298],[135,255],[105,224]],[[400,177],[453,177],[457,224],[420,255],[373,298],[351,258]]],
+ [[[239,142],[293,142],[361,229],[335,274],[271,221],[239,192]],[[567,142],[621,142],[623,192],[589,221],[535,274],[511,229]]],
+ [[[150,262],[204,255],[216,344],[150,355]],[[366,255],[419,262],[423,355],[360,344]]]
+];
 const JOY_HEADS=[[298,35,280,250],[143,35,280,250],[298,8,280,250],[143,35,280,250]];
 export const CELEBRATION_SIZE={width:420,height:550,paddingX:60,paddingY:40};
 function upperHeadCenter(data,width,height,box){
@@ -64,6 +71,13 @@ export function celebrationTexture(atlas,value,{kit,goalkeeper=false,pose=1,deje
  const w=sheet.width/(dejected?1:2),h=sheet.height/(dejected?1:2);
  const body=createSurface(atlas.avatar,w,h),bc=body.getContext('2d');
  bc.drawImage(sheet,dejected?0:index%2*w,dejected?0:Math.floor(index/2)*h,w,h,0,0,w,h);
+ const arms=dejected?null:createSurface(atlas.avatar,w,h);
+ if(arms){
+  const ac=arms.getContext('2d');ac.save();ac.beginPath();
+  for(const polygon of JOY_ARMS[index]){polygon.forEach(([x,y],i)=>i?ac.lineTo(x,y):ac.moveTo(x,y));ac.closePath();}
+  ac.clip();ac.drawImage(body,0,0);ac.restore();
+  const ap=ac.getImageData(0,0,w,h);recolorPixels(ap.data,{skinTone:profile.skinTone,kit,goalkeeper});ac.putImageData(ap,0,0);
+ }
  const box=dejected?[350,145,590,545]:JOY_HEADS[index],pixels=bc.getImageData(0,0,w,h);
  const mask=dejected?null:joyHeadMask(atlas);
  const sourceCenter=dejected?null:upperHeadCenter(pixels.data,w,h,box);
@@ -91,6 +105,11 @@ export function celebrationTexture(atlas,value,{kit,goalkeeper=false,pose=1,deje
  const headDY=dejected?0:(sourceCenter.y-mask.center.y)*scale;
  ctx.drawImage(head,paddingX+headDX,paddingY+headDY);
  // The source head has already been removed. Remaining hands/arms cover the face.
- if(!dejected)ctx.drawImage(body,paddingX+150-(box[0]+box[2]/2)*scale,paddingY+offsetY,w*scale,h*scale);
+ if(!dejected){
+  const dx=paddingX+150-(box[0]+box[2]/2)*scale,dy=paddingY+offsetY;
+  ctx.drawImage(body,dx,dy,w*scale,h*scale);
+  // Restore both arms last, including pixels that overlap the source head mask.
+  ctx.drawImage(arms,dx,dy,w*scale,h*scale);
+ }
  if(cache.size>=96)cache.delete(cache.keys().next().value);cache.set(key,out);return out;
 }

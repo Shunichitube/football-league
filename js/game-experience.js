@@ -1,7 +1,7 @@
 import {loadMotionAtlas} from './player-motion.js?v=motion-cleanup-v2';
 import {playerAppearance} from './avatar-profile.js?v=appearance-v29';
 import {drawAvatar} from './player-avatar.js?v=season-finale-v1';
-import {celebrationTexture} from './avatar-celebration.js?v=draft-six-podium-v4';
+import {celebrationTexture} from './avatar-celebration.js?v=joy-arms-front-v5';
 
 const AUDIO_KEY='football-league:audio-settings';
 export function normalizeAudio(value={}){
@@ -21,7 +21,7 @@ async function celebrationAssets(){
 }
 export function createGameExperience({dialogs,onExit}){
  let audio;try{audio=normalizeAudio(JSON.parse(localStorage.getItem(AUDIO_KEY)||'{}'));}catch{audio=normalizeAudio();}
- let active=null,queue=[],settings=null,growthRaf=0,growthGeneration=0;
+ let active=null,queue=[],settings=null,growthRaf=0,growthGeneration=0,awardRaf=0,awardGeneration=0;
  const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
  const sync=()=>dialogs.sync();
  function openNext(){
@@ -74,11 +74,30 @@ export function createGameExperience({dialogs,onExit}){
   panel.querySelector('[data-settings-exit]').addEventListener('click',()=>{closeSettings();onExit();});
   dialogs.beforeRender();document.body.append(backdrop,panel);settings={backdrop,panel};sync();
  });
+ function stopAwards(){awardGeneration++;cancelAnimationFrame(awardRaf);awardRaf=0;}
  function stopGrowth(){growthGeneration++;cancelAnimationFrame(growthRaf);growthRaf=0;}
  return {
   showDraft(player,won,club){return enqueue({title:won?'獲得しました！':'獲得できませんでした。',player,won,club});},
   showLeagueStart(season,onDone){return enqueue({title:'リーグ戦スタート！',subtitle:`第${season}シーズン · 全10試合`,onDone});},
-  reset(){queue=[];active?.dispose();closeSettings();stopGrowth();},
+  reset(){queue=[];active?.dispose();closeSettings();stopGrowth();stopAwards();},
+  syncMvp(winner){
+   stopAwards();const generation=awardGeneration;
+   const node=document.querySelector('.results-winner.is-mvp, .award-card.mvp');
+   if(!winner||!node)return;
+   celebrationAssets().then(atlas=>{
+    if(generation!==awardGeneration||!node.isConnected)return;
+    const canvas=document.createElement('canvas');canvas.width=420;canvas.height=550;
+    canvas.className='mvp-joy-avatar';canvas.setAttribute('aria-label',`${winner.p.name}が喜んでいます`);
+    const portrait=node.querySelector('img, .mvp-joy-avatar');if(portrait)portrait.replaceWith(canvas);else node.append(canvas);
+    let last=-1;
+    const paint=now=>{
+     if(generation!==awardGeneration||!canvas.isConnected)return;
+     const pose=reduced()?1:Math.floor(now/280)%4;
+     if(pose!==last){const ctx=canvas.getContext('2d');ctx.clearRect(0,0,420,550);ctx.drawImage(celebrationTexture(atlas,playerAppearance(winner.p),{kit:winner.c.color,goalkeeper:winner.p.primaryPosition==='GK',pose}),0,0);last=pose;}
+     if(!reduced())awardRaf=requestAnimationFrame(paint);
+    };paint(performance.now());
+   }).catch(error=>console.warn('MVP celebration unavailable',error));
+  },
   syncGrowth(rows,club){
    stopGrowth();const generation=growthGeneration;
    const targets=rows.filter(growthCelebrates).map(row=>({row,node:document.querySelector(`[data-growth-player="${CSS.escape(row.player.id)}"] .squad-avatar`)})).filter(x=>x.node);
