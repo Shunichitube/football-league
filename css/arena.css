@@ -1019,3 +1019,17 @@ body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
 .squad-identity .growth-expectation b,
 .compare-profile .growth-expectation b,
 .season-stat-profile .growth-expectation b {color:#b4f4bc;font-size:inherit;}
+
+/* Larger auction actions and supporting labels on desktop. */
+@media(min-width:761px) {
+ #app .auction-scene .auction-controls {padding:16px 24px;box-sizing:border-box;}
+ #app .auction-scene .auction-controls>div:first-child {font-size:28px;gap:32px;margin-bottom:16px;flex-wrap:wrap;}
+ #app .auction-scene .auction-bid-buttons {gap:16px;}
+ #app .auction-scene .auction-bid-buttons button {
+  min-height:76px;min-width:240px;padding:16px 24px;
+  font-size:32px;line-height:1.2;border-radius:12px;
+ }
+ #app .auction-scene .auction-bid-buttons small {font-size:22px;margin-left:12px;}
+ #app .auction-scene .auction-controls>p {font-size:24px;line-height:1.3;margin-top:16px;}
+ #app .auction-scene .auction-topline button {font-size:26px;padding:18px 28px;min-height:64px;}
+}
