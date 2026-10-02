@@ -291,8 +291,11 @@ export function renderMatchDetail(match) {
 export function renderSeasonPlayerStats(club) {
   const rows = [...club.roster].sort((a, b) => b.season.goals - a.season.goals || b.season.assists - a.season.assists || b.season.appearances - a.season.appearances);
   return `<section class="candidate-grid season-player-stats">${rows.map(player => {
-    const average = player.season.appearances ? (player.season.ratingTotal / player.season.appearances).toFixed(1) : '—';
-    return `<article class="candidate">${renderPlayerCard(player)}<p>出場 ${player.season.appearances}・得点 ${player.season.goals}・アシスト ${player.season.assists}</p><p>平均評価 ${average}・シュート ${player.season.shots}・攻撃貢献 ${player.season.attackContributions}</p><p>守備成功 ${player.season.defensiveStops}・セーブ ${player.season.saves}</p></article>`;
+    const season=player.season;
+    const display=displayPlayer(player);
+    const average=season.appearances?(season.ratingTotal/season.appearances).toFixed(1):'—';
+    const metrics=[['出場',season.appearances],['得点',season.goals],['アシスト',season.assists],['平均評価',average],['シュート',season.shots],['攻撃貢献',season.attackContributions],['守備成功',season.defensiveStops],['セーブ',season.saves]];
+    return `<article class="season-stat-card" aria-label="${escapeHtml(player.name)}の個人成績"><div class="season-stat-profile"><img src="${squadAvatar(player,club.color)}" alt="${escapeHtml(player.name)}" draggable="false"><div><strong class="season-stat-name">${escapeHtml(player.name)}</strong><b>総合 ${escapeHtml(display.overallRank)}</b><span>${escapeHtml(positionLabel(player.primaryPosition))} ・ ${escapeHtml(rareAgeLabel(player))}</span><small>契約 ${display.contractYears}年</small><p class="season-stat-special" title="${escapeHtml(display.specialAbility?SPECIAL_ABILITY_DESCRIPTIONS[display.specialAbility]||'':'')}">特能 ${escapeHtml(display.specialAbility||'―')}</p></div></div><dl class="season-stat-metrics">${metrics.map(([label,value])=>`<div><dt>${label}</dt><dd>${escapeHtml(value??0)}</dd></div>`).join('')}</dl></article>`;
   }).join('')}</section>`;
 }
 
