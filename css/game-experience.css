@@ -3,7 +3,7 @@
 .experience-backdrop,.settings-backdrop{position:fixed;inset:0;background:#0009;z-index:3500;backdrop-filter:blur(3px)}
 .experience-popup,.game-settings-panel{position:fixed;z-index:3501;top:50%;left:50%;transform:translate(-50%,-50%);width:min(460px,90vw);box-sizing:border-box;background:#112c40;border:2px solid #82d4b3;border-radius:22px;padding:24px;text-align:center;color:#fff;box-shadow:0 24px 80px #0009;overflow:hidden}
 .experience-popup h2{position:relative;z-index:1;margin:0;font-size:30px;color:#fff1a7}
-.experience-popup canvas{width:180px;height:282px;object-fit:contain;position:relative;z-index:1}
+.experience-popup canvas{width:252px;height:330px;max-width:100%;image-rendering:pixelated;object-fit:contain;position:relative;z-index:1}
 .experience-popup p{position:relative;z-index:1;font-size:20px;margin:8px 0}
 .experience-popup.is-lost{background:#15202b;border-color:#647485}.experience-popup.is-lost h2{color:#d0d7df}.experience-popup.is-lost canvas{filter:brightness(.4) saturate(.3)}
 .experience-confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden}.experience-confetti i{position:absolute;left:var(--x);top:-20px;width:7px;height:13px;background:var(--color);animation:feedback-fall 1.8s linear infinite;animation-delay:var(--delay)}
