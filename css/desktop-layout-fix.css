@@ -891,3 +891,65 @@
   white-space:normal!important;overflow:visible!important;
  }
 }
+
+/* Fit all 24 draft candidates into four rows of the available viewport. */
+@media(min-width:761px) {
+ #app main.screen-draft {
+  --pc-card-name:clamp(10px,calc(var(--draft-grid-height,580px)/48),15px);
+  --pc-card-rank:clamp(9px,calc(var(--draft-grid-height,580px)/56),13px);
+  --pc-card-small:clamp(8px,calc(var(--draft-grid-height,580px)/64),11px);
+ }
+ #app main.screen-draft .draft-card-grid {
+  grid-template-rows:repeat(4,minmax(0,1fr));
+  grid-auto-rows:minmax(0,1fr);gap:4px!important;padding:1px;
+ }
+ #app main.screen-draft .draft-card-grid .candidate {
+  min-height:0;height:100%;padding:4px!important;gap:0;
+ }
+ #app main.screen-draft .draft-card-grid .player-card.has-card-avatar {
+  box-sizing:border-box;height:100%!important;min-height:0;
+  grid-template-rows:minmax(0,1fr) auto;
+  padding:4px!important;gap:3px 4px!important;
+ }
+ #app main.screen-draft .player-card-avatar img {
+  height:clamp(40px,calc(var(--draft-grid-height,580px)/8),90px);
+  max-height:100%;object-fit:contain;
+ }
+ #app main.screen-draft .player-title {gap:0!important;}
+ #app main.screen-draft .player-name {font-size:var(--pc-card-name)!important;line-height:1.05;}
+ #app main.screen-draft .overall-rank {font-size:var(--pc-card-rank)!important;line-height:1.05;}
+ #app main.screen-draft .player-profile p,
+ #app main.screen-draft .player-meta,
+ #app main.screen-draft .growth-expectation {
+  font-size:var(--pc-card-small)!important;margin:1px 0!important;line-height:1.1!important;
+ }
+ #app main.screen-draft .position-badge {
+  min-width:0!important;font-size:var(--pc-card-small)!important;
+  padding:1px 4px!important;margin:2px 0!important;line-height:1.05;
+ }
+ #app main.screen-draft .ability-grid {gap:1px!important;}
+ #app main.screen-draft .ability-grid div {
+  grid-template-columns:minmax(0,40%) minmax(0,60%)!important;
+  padding:1px 2px!important;gap:2px!important;
+ }
+ #app main.screen-draft .ability-grid dt {
+  font-size:var(--pc-card-small)!important;line-height:1.1;
+ }
+ #app main.screen-draft .ability-grid dd {
+  font-size:var(--pc-card-rank)!important;line-height:1.1;
+  grid-template-columns:12px minmax(0,1fr)!important;gap:2px!important;
+ }
+ #app main.screen-draft .rank-bar {height:4px!important;}
+ #app main.screen-draft .has-card-avatar .player-special-row {
+  padding-top:3px!important;margin-top:0!important;
+ }
+ #app main.screen-draft .special-ability-visible,
+ #app main.screen-draft .special-ability-visible>span,
+ #app main.screen-draft .special-ability,
+ #app main.screen-draft .special-ability.none {
+  font-size:var(--pc-card-small)!important;line-height:1.15!important;
+ }
+ #app main.screen-draft .special-ability-visible>p {
+  margin:2px 0 0!important;font-size:var(--pc-card-small)!important;line-height:1.15!important;
+ }
+}
