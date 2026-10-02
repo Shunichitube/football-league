@@ -1265,3 +1265,16 @@ body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
  #app main.development-room:not(.focus-room) .squad-abilities>div {padding:3px;gap:4px;}
  #app main.development-room:not(.focus-room) .squad-player {min-height:0!important;}
 }
+
+/* Apply the smaller ability text to growth-result cards as well. */
+@media(min-width:761px) {
+ #app main.growth-modal .growth-result .squad-abilities dt,
+ #app main.growth-modal .growth-result .squad-abilities dd {
+  font-size:clamp(11.2px,.8vw,16px);line-height:1.15;
+ }
+ #app main.growth-modal .growth-result .squad-abilities {gap:4px;}
+ #app main.growth-modal .growth-result .squad-abilities>div {padding:3px;gap:4px;}
+ #app main.growth-modal .growth-result .squad-player {
+  min-height:0!important;grid-template-rows:auto auto!important;
+ }
+}
