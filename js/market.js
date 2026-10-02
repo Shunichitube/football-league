@@ -1,4 +1,4 @@
-import { applyRareCharacter, rollRareCharacter, rareKind, RARE_CHARACTERS } from './rare-characters.js';
+import { applyRareCharacter, rollRareCharacter, rareKind, RARE_CHARACTERS } from './rare-characters.js?v=egg-secret-v1';
 import { calculateOverall, createPlayer, displayPlayer, FIELD_STAT_KEYS, STAT_LABELS } from './data.js?v=0.22.0';
 import { createRandom, weightedPick } from './random.js';
 import { ACTION_TYPES } from './rules.js?v=rare-v2';
