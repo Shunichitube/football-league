@@ -49,7 +49,7 @@ async function screenHarness() {
   const url = new URL('../js/app.js', import.meta.url);
   let source = readFileSync(url, 'utf8');
   const bindings = {};
-  for (const match of source.matchAll(/^import \{ ([^}]+) \} from '([^']+)';$/gm)) {
+  for (const match of source.matchAll(/^import\s*\{\s*([^}]+)\s*\}\s*from '([^']+)';$/gm)) {
     const module = await import(new URL(match[2], url));
     for (const name of match[1].split(',')) {
       const [exported, local = exported] = name.trim().split(/\s+as\s+/);
@@ -73,7 +73,7 @@ async function screenHarness() {
   const document = { querySelector: () => app, addEventListener() {}, querySelectorAll: () => [] };
   source = source.replace(/^import .+;\r?\n/gm, '').replace(/render\(\);\s*$/, '');
   return runInNewContext(source + '\n({ screens, setState: value => s=value, getState: () => s, setRoom: room => roomAdapter.client.room=room, startAuction, returnToTitle })', {
-    ...bindings, document, configureRename() {}, dialogs: null
+    ...bindings, createGameExperience: () => ({reset() {}, syncGrowth() {}}), document, addEventListener() {}, configureRename() {}, dialogs: null
   });
 }
 
@@ -98,7 +98,7 @@ test('all screen routes render real fixtures without mutating league or auction'
   try {
     harness.setRoom({ roomId: 'LOCAL', players: [], phase: 'lobby' });
     harness.setState(state);
-    const expected = ['title','setup','draft','auction','table','stats','squad','seasonResults','matchDetail','home','offseasonEvents','development','focus','growth','release','history','loadTitle','savePanel','roomEntry','roomLobby'];
+    const expected = ['title','setup','draft','auction','table','stats','squad','seasonResults','matchDetail','home','offseasonEvents','development','focus','growth','release','history','grandFinal','loadTitle','savePanel','roomEntry','roomLobby'];
     assert.deepEqual(Object.keys(harness.screens).sort(), expected.sort());
     for (const view of expected) {
       state.view = view;

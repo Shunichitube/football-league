@@ -490,7 +490,7 @@ export function simulateMatch(home, away, rng) {
   const originalStats = new Map(all.map(player => [player.id, { ...player.stats }]));
   const forms = Object.fromEntries(all.map(player => { const roll = rng.next(), factor = roll < .2 ? 1.05 : roll < .8 ? 1 : .95; for (const key of [...FIELD_KEYS, 'gk']) if (typeof player.stats[key] === 'number') player.stats[key] = Math.round(player.stats[key] * factor); return [player.id, factor > 1 ? '↑' : factor < 1 ? '↓' : '−']; }));
   refreshKeeper(homeState); refreshKeeper(awayState);
-  const ratings = Object.fromEntries(all.map(player => [player.id, 6])), stat = new Map(all.map(player => [player.id, { shots: 0, goals: 0, assists: 0, attackContributions: 0, defensiveStops: 0, saves: 0, conceded: 0 }]));
+  const ratings = Object.fromEntries(all.map(player => [player.id, 6])), stat = new Map(all.map(player => [player.id, { shots: 0, goals: 0, assists: 0, attackContributions: 0, breakthroughs: 0, defensiveStops: 0, saves: 0, conceded: 0 }]));
   const score = { home: 0, away: 0 }, events = [];
   const defenseDebuff = new Map([[home.id, 0], [away.id, 0]]);
   const powerPlayRisk = new Map([[home.id, 0], [away.id, 0]]);
@@ -571,6 +571,7 @@ export function simulateMatch(home, away, rng) {
       if (duel === 'success' || (duel !== 'stop' && diff > -2)) {
         const contributor = roles.contributor || attackers[0];
         stat.get(contributor.id).attackContributions++; ratings[contributor.id] += .05;
+        if (type === 'DRIBBLE') stat.get(contributor.id).breakthroughs++;
         const nextType = secondStageKind(activeAttack.firstType, rng);
         events.push(logEvent(phase, 'STAGE 1 SUCCESS', contributor, `${type} → ${nextType} / ${roleDescription(type, 1, roles)}`, sideKey(attack, home), displayRoles(type, roles, { stage: 1, keeper: isPowerPlay ? attackState.keeper.name : null })));
         activeAttack = { ...activeAttack, type: nextType, stage: 2, roles, powerPlay: isPowerPlay };
@@ -617,6 +618,7 @@ export function simulateMatch(home, away, rng) {
     const chance = finalDefenseChance(stageChance(diff), secondRoles.defender);
     const contributor = secondRoles.contributor || attackers[0];
     stat.get(contributor.id).attackContributions++; ratings[contributor.id] += .08;
+    if (type === 'DRIBBLE') stat.get(contributor.id).breakthroughs++;
     const shooter = pickShooterFromRoles(type, secondRoles, attackers, attack.tactic, rng);
     stat.get(shooter.id).shots++; ratings[shooter.id] += .05;
     const attackSide = sideKey(attack, home), defendSide = sideKey(defend, home);

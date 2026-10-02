@@ -1,3 +1,4 @@
+import {renderGrandResults,mountGrandFinale} from './grand-finale-ui.js?v=1';
 import {createGameExperience} from './game-experience.js?v=1';
 import { playSeasonFinale } from './season-finale.js?v=conveyor-v3';
 import { rareKind, rareAgeLabel } from './rare-characters.js';
@@ -27,10 +28,12 @@ const app = document.querySelector('#app');
 let s = createInitialState();
 const experience=createGameExperience({dialogs,onExit:()=>{returnToTitle();render();}});
 let finalePending=false,finaleDispose=null;
+let endingPending=false,endingDispose=null;
 const playedFinales=new Set();
 const finaleKey=()=>JSON.stringify([s.mode,s.roomId||'',s.league?.seed,s.league?.season,me()?.id]);
 function returnToTitle() {
   experience.reset();
+  endingDispose?.();endingDispose=null;endingPending=false;
   finaleDispose?.();finaleDispose=null;finalePending=false;
   roomAdapter?.leave();
   s = createInitialState();
@@ -207,16 +210,18 @@ function renderSeasonAwards() {
   const a = awards(s.league);
   return `<section class="season-awards"><p class="eyebrow">シーズン${s.league.season} 表彰</p><h2>最優秀選手 / ベスト5</h2><div class="candidate-grid">${a.mvp?'<article class="award-card mvp">'+player(a.mvp.p)+'<p class="award-club"><i class="club-color-dot" style="--club:'+e(a.mvp.c.color)+'"></i>'+e(a.mvp.c.name)+'</p><span class="mvp-badge">MVP</span></article>':'<p>該当者なし</p>'}${a.best5.map(x=>'<article class="award-card">'+player(x.p)+'<p class="award-club"><i class="club-color-dot" style="--club:'+e(x.c.color)+'"></i>'+e(x.c.name)+'</p></article>').join('')}</div>${s.league.season===10?'<button data-stage6="history" class="subtle">10シーズンの歴史</button>':'<p class="hint">オフシーズン処理後に次年度市場へ進みます。</p>'}</section>`;
 }
+function grandFinal(){return renderGrandResults(s.league,me().id,e);}
 function history() {
   const club = me();
-  return `${head()}<main class="history-page"><p class="eyebrow">10 SEASONS COMPLETE</p><h1>クラブ10年間の歩み</h1>${renderClubAchievements(s.league,club)}${renderRankHistoryChart(s.league)}<details class="season-history-details"><summary>シーズン別の記録を見る</summary>${s.league.history.map(h=>`<section class="candidate"><b><i class="club-color-dot" style="--club:${e(h.championColor||'#64748b')}"></i>シーズン${h.season}・優勝 ${e(h.champion)}</b><p>最優秀選手 ${e(h.mvp||'—')}</p><p>得点王 ${(h.topScorers||[]).map(row=>`${e(row.name)} ${row.goals}得点`).join(' ／ ')||'—'}</p><p>最終順位 ${h.table.map(row=>`${row.rank}位 ${e(row.club)}`).join(' ／ ')}</p><p>Best5 ${h.best5.map(row=>typeof row==='string'?e(row):`${positionLabel(row.position)} ${e(row.name)}`).join(' ／ ')||'—'}</p></section>`).join('')}</details><div class="history-actions"><button data-nav="home" class="subtle">シーズン結果に戻る</button><button data-a="title" class="subtle">ホーム画面に戻る</button></div></main>`;
+  return `${head()}<main class="history-page"><p class="eyebrow">10 SEASONS COMPLETE</p><h1>クラブ10年間の歩み</h1>${renderClubAchievements(s.league,club)}${renderRankHistoryChart(s.league)}<details class="season-history-details"><summary>シーズン別の記録を見る</summary>${s.league.history.map(h=>`<section class="candidate"><b><i class="club-color-dot" style="--club:${e(h.championColor||'#64748b')}"></i>シーズン${h.season}・優勝 ${e(h.champion)}</b><p>最優秀選手 ${e(h.mvp||'—')}</p><p>得点王 ${(h.topScorers||[]).map(row=>`${e(row.name)} ${row.goals}得点`).join(' ／ ')||'—'}</p><p>最終順位 ${h.table.map(row=>`${row.rank}位 ${e(row.club)}`).join(' ／ ')}</p><div class="table-wrap"><table><thead><tr><th>順位</th><th>クラブ</th><th>勝点</th><th>勝利</th><th>得点</th><th>失点</th></tr></thead><tbody>${h.table.map(row=>`<tr><td>${row.rank}</td><td>${e(row.club)}</td><td>${row.points||0}</td><td>${row.wins||0}</td><td>${row.goals||0}</td><td>${row.against||0}</td></tr>`).join('')}</tbody></table></div><p>Best5 ${h.best5.map(row=>typeof row==='string'?e(row):`${positionLabel(row.position)} ${e(row.name)}`).join(' ／ ')||'—'}</p></section>`).join('')}</details><div class="history-actions"><button data-nav="grandFinal" class="subtle">総合結果に戻る</button><button data-a="title" class="subtle">ホーム画面に戻る</button></div></main>`;
 }
 function renderCompletedSeasonActions() {
   if (s.offseasonComplete) return '';
   return s.league.season === 10
-    ? '<button data-a="title" class="subtle">ホーム画面に戻る</button>'
+    ? '<button data-ending="start">10シーズンの最終表彰へ</button>'
     : '<button data-stage4="offseason">オフシーズンへ進む</button>';
 }
+onGameClick('app',ev=>{const action=ev.target.closest('[data-ending]')?.dataset.ending;if(!action)return;if(action==='details'){s.view='history';render();}else if(['start','replay'].includes(action)){if(s.league.season!==10||!s.league.completed)return;finalizeSeason(s.league);endingPending=true;s.view='grandFinal';render();}});
 onGameClick('app',ev=>{const x=ev.target.closest('[data-stage6]')?.dataset.stage6;if(x==='history'){s.view='history';render()}});
 
 
@@ -469,7 +474,7 @@ function updateRoomStatus() {
 }
 const screens = Object.freeze({
   title, setup, draft, auction, table, stats, squad, seasonResults, matchDetail, home,
-  offseasonEvents, development, focus, growth, release, history, loadTitle, savePanel,
+  offseasonEvents, development, focus, growth, release, history, grandFinal, loadTitle, savePanel,
   roomEntry, roomLobby
 });
 function renderEntryDialog() {
@@ -491,6 +496,7 @@ function renderEntryDialog() {
 }
 let renderedView = null;
 function render() {
+  if(endingDispose){endingDispose();endingDispose=null;endingPending=s.view==='grandFinal';}
   if(s.view!=='seasonResults'&&finaleDispose){finaleDispose();finaleDispose=null;}
   const seasonTransition=s.view==='draft'&&renderedView==='release';
   const trainingTransition=s.view==='growth'&&['focus','development'].includes(renderedView);
@@ -532,6 +538,10 @@ function render() {
       finaleDispose=experience.showLeagueStart(s.league.season,()=>{finaleDispose=playSeasonFinale({app,club,rank,keeper,matches,clubs,onDone:()=>{finaleDispose=null;}});});
     }
   }
+  if(endingPending&&s.view==='grandFinal'&&!endingDispose){
+    endingPending=false;
+    endingDispose=mountGrandFinale(app,s.league,e,()=>{endingDispose=null;});
+  }
   if(trainingTransition)void playTrainingCinematic(me(),previousScreen);
   if(seasonTransition){
     const transition=document.createElement('div');transition.className='season-move-overlay';transition.setAttribute('role','status');
@@ -542,6 +552,7 @@ function render() {
 roomAdapter=new RoomAdapter(()=>s,next=>{
   // Only a live season transition plays the finale; resuming a result does not.
   if(s.mode==='room'&&s.league&&!s.league.completed&&next.league?.completed&&next.view==='seasonResults'&&s.roomId===next.roomId)finalePending=true;
+  if(next.view==='grandFinal'&&(s.view!=='grandFinal'||s.roomId!==next.roomId)){endingPending=true;}
   const previous=s;
   s=next;
   if(previous.mode==='room'&&previous.roomId===next.roomId&&previous.draft&&next.draft&&previous.league?.season===next.league?.season){

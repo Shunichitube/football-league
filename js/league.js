@@ -126,6 +126,8 @@ function archiveCareer(league, player, clubId = null) {
     id: player.id,
     name: player.name,
     position: player.primaryPosition,
+    avatar: player.avatar ? { ...player.avatar } : undefined,
+    rareCharacter: player.rareCharacter, specialAbility: player.specialAbility,
     career: { ...(player.career || {}) },
     clubCareer: Object.fromEntries(Object.entries(player.clubCareer || {}).map(([id, stats]) => [id, { ...stats }])),
     clubSeasons: { ...(player.clubSeasons || {}) },
@@ -145,14 +147,17 @@ function applyResult(league, fixture, result) {
   else { home.draws++; away.draws++; home.points++; away.points++; }
   for (const row of result.playerResults) {
     const p = row.player;
+    p.season.breakthroughs = (p.season.breakthroughs || 0) + (row.breakthroughs || 0);
     p.season.appearances++; p.season.goals += row.goals; p.season.assists += row.assists; p.season.shots += row.shots; p.season.attackContributions += row.attackContributions; p.season.defensiveStops += row.defensiveStops; p.season.saves += row.saves; p.season.conceded += row.conceded; p.season.ratingTotal += row.rating; p.season.playedPhases = (p.season.playedPhases || 0) + (row.playedPhases || 0);
     p.career ||= { appearances: 0, goals: 0, assists: 0, shots: 0, attackContributions: 0, defensiveStops: 0, saves: 0, conceded: 0, ratingTotal: 0, playedPhases: 0 };
+    p.career.breakthroughs = (p.career.breakthroughs || 0) + (row.breakthroughs || 0);
     p.career.appearances++; p.career.goals += row.goals; p.career.assists += row.assists; p.career.shots += row.shots; p.career.attackContributions += row.attackContributions; p.career.defensiveStops += row.defensiveStops; p.career.saves += row.saves; p.career.conceded += row.conceded; p.career.ratingTotal += row.rating; p.career.playedPhases = (p.career.playedPhases || 0) + (row.playedPhases || 0);
     const club = league.clubs.find(candidate => candidate.roster.some(member => member.id === p.id));
     if (club) {
       p.clubCareer ||= {};
       const stats = p.clubCareer[club.id] ||= { appearances: 0, goals: 0, assists: 0 };
       stats.appearances++; stats.goals += row.goals; stats.assists += row.assists;
+      for (const key of ['saves', 'defensiveStops', 'breakthroughs']) stats[key] = (stats[key] || 0) + (row[key] || 0);
       archiveCareer(league, p, club.id);
     } else archiveCareer(league, p);
   }
@@ -248,6 +253,7 @@ function recordSeasonHistory(league) {
   }
   league.history.push({
     season: league.season,
+    fixtures: (league.fixtureResults || []).map(match => ({ homeId: match.homeId, awayId: match.awayId, homeGoals: match.homeGoals, awayGoals: match.awayGoals })),
     table: table.map(x => ({ club: x.club.name, clubId: x.club.id, color: x.club.color, rank: x.rank, points: x.points, wins: x.wins, goals: x.goalsFor, against: x.goalsAgainst, maxWinStreak: maxWinStreak(league, x.club.id) })),
     champion: table[0].club.name,
     championClubId: table[0].club.id,
