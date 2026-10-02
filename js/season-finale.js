@@ -1,10 +1,11 @@
-import {loadMotionAtlas,drawMotion} from './player-motion.js?v=motion-cleanup-v2';
+import {footballTexture} from './arena-scene.js?v=shared-ball-v1';
+import {loadMotionAtlas,drawMotion} from './player-motion.js?v=body-alpha-v3';
 import {playerAppearance} from './avatar-profile.js?v=appearance-v29';
 import {drawAvatar} from './player-avatar.js?v=season-finale-v1';
-import {celebrationTexture,drawCelebration} from './avatar-celebration.js?v=joy-arms-front-v5';
+import {celebrationTexture,drawCelebration} from './avatar-celebration.js?v=body-alpha-v3';
 
 export const finaleKind=rank=>rank===1?'goal':rank<=3?'parry':'catch';
-export const CONVEYOR_MATCH_SECONDS=2.4;
+export const CONVEYOR_MATCH_SECONDS=3.4;
 export const CONVEYOR_LAYOUT=Object.freeze({centerX:480,centerY:360,reserveX:79,reserveY:505,entryX:-65,ballDX:25,ballDY:-12,shotX:745,shotY:350});
 // Read snapshots only. Multiplayer stores other clubs' fixtures here as well.
 export function conveyorMatches(matches,clubId){
@@ -39,10 +40,11 @@ export function conveyorBlocking(matches,time){
  const losses=matches.slice(0,index).filter(m=>m.outcome==='loss').length;
  const central={role:losses,x:L.centerX,y:L.centerY,motion:'idle',seconds:0,direction:'right'};
  const reserve={role:losses+1,x:L.reserveX,y:L.reserveY,motion:'idle',seconds:0,direction:'right'};
- const rival={x:mix(740,L.centerX,smooth((t-.3)/.55)),y:L.centerY,motion:t<.3?'idle':'run',seconds:Math.max(0,t-.3),direction:'left'};
+ const approach=smooth(t/.55);
+ const rival={x:mix(1040,L.centerX,approach),y:mix(210,L.centerY,approach),scale:mix(.55,1,approach),motion:'run',seconds:t,direction:'left'};
  let ball={x:central.x+L.ballDX,y:central.y+L.ballDY},departed=null,replacement=null;
  if(match.outcome==='win'){
-  central.x=L.centerX+45*smooth((t-.55)/.3)-45*smooth((t-1.55)/.85);
+  central.x=L.centerX+45*smooth((t-.55)/.3)-45*smooth((t-1.55)/.65);
   central.y=L.centerY-50*smooth((t-.55)/.3)+50*smooth((t-1.55)/.85);
   central.motion=t<.55?'idle':'dribble';central.seconds=Math.max(0,t-.55);
   rival.x=t>.85?L.centerX-(t-.85)*350:rival.x;
@@ -81,7 +83,7 @@ export function conveyorBlocking(matches,time){
   const role=pastRole++,x=L.centerX-(time-(i*CONVEYOR_MATCH_SECONDS+.85))*150;
   return x>-140?[{role,x,y:L.centerY,motion:'idle',seconds:0,direction:'right'}]:[];
  });
- return {...frame,central,reserve,rival,ball,departed,replacement,waiting,losses};
+ return {...frame,central,reserve,rival,ball,departed,replacement,waiting,losses,resultReady:t>=2.25};
 }
 export function podiumPositions(count){
  const n=Math.min(12,Math.max(0,count)),gap=105;
@@ -108,12 +110,11 @@ async function loadResources(){
  resources??=Promise.all([loadMotionAtlas(),load('arena/arena-base.webp'),load('arena/home-arena-v2.webp'),load('arena/goal-cutin-background-v1.webp'),load('arena/goal-net-bulge-no-ball-v3.webp'),load('avatars/player-celebrate-front-happy-v3.webp'),load('avatars/keeper-dejected-v1.webp')]).then(([atlas,ground,home,goal,bulge,celebrate,dejected])=>({atlas:{...atlas,celebrate,dejected},ground,home,goal,bulge}));
  try{return await resources;}catch(error){resources=null;throw error;}
 }
+let sharedBall;
 function football(ctx,x,y,r,spin=0){
- ctx.save();ctx.translate(x,y);ctx.rotate(spin);ctx.fillStyle='#f9fafb';ctx.strokeStyle='#18222e';ctx.lineWidth=1.5;
- ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle='#18222e';
- for(const [cx,cy,size] of [[0,0,.4],[-.7,-.45,.26],[.65,.5,.26]]){
-  ctx.beginPath();for(let i=0;i<5;i++){const a=i*Math.PI*2/5;const px=(cx+Math.cos(a)*size)*r,py=(cy+Math.sin(a)*size)*r;i?ctx.lineTo(px,py):ctx.moveTo(px,py);}ctx.closePath();ctx.fill();
- }ctx.restore();
+ sharedBall??=footballTexture();
+ ctx.save();ctx.imageSmoothingEnabled=false;ctx.translate(x,y);ctx.rotate(spin);
+ ctx.drawImage(sharedBall,-r,-r,r*2,r*2);ctx.restore();
 }
 export function createFinalePainter(data,club,rank,keeper,clubs=[],fixtures=[]){
  const {atlas,ground,home,goal,bulge}=data;
@@ -135,7 +136,7 @@ export function createFinalePainter(data,club,rank,keeper,clubs=[],fixtures=[]){
    if(frame.done)return frame;
    // Use the home ground at the same crop/scale as the existing shot.
    // Whole tiles slide left; the last tile eases to the original crop exactly.
-   const ease=q=>q*q*(3-2*q),handoff=index===matches.length-1?Math.max(0,(t-1.8)/.6):0;
+   const ease=q=>q*q*(3-2*q),handoff=index===matches.length-1?Math.max(0,(t-2.8)/.6):0;
    const remaining=duration-time;
    const distance=remaining<.6?150*.6*(1-ease(1-remaining/.6)):remaining*150;
    const offset=((distance%1920)+1920)%1920;
@@ -150,15 +151,15 @@ export function createFinalePainter(data,club,rank,keeper,clubs=[],fixtures=[]){
    const opponent=clubs.find(c=>c.id===match.opponent?.id),rival=opponent?.roster.find(p=>p.primaryPosition!=='GK')||opponent?.roster[0];
    const member=role=>cast[role%cast.length]||scorer;
    scorer=member(matches.filter(m=>m.outcome==='loss').length);
-   const drawRole=(pose,height=100)=>actor(ctx,pose.motion,pose.seconds,pose.x,pose.y,height,member(pose.role),member(pose.role)?.primaryPosition==='GK',club.color,pose.direction);
+   const drawRole=(pose,height=80)=>actor(ctx,pose.motion,pose.seconds,pose.x,pose.y,height,member(pose.role),member(pose.role)?.primaryPosition==='GK',club.color,pose.direction);
    const enemy=frame.rival;
    const blend=ease(handoff),lead={...frame.central,x:mix(frame.central.x,CONVEYOR_LAYOUT.shotX,blend),y:mix(frame.central.y,CONVEYOR_LAYOUT.shotY,blend)};
-   const people=[...frame.waiting.map(pose=>({pose})),...(frame.departed?[{pose:frame.departed}]:[]),{pose:enemy,enemy:true},{pose:lead,lead:true},...(!frame.departed?[{pose:frame.reserve,height:105}]:frame.replacement?[{pose:frame.replacement,height:105}]:[])];
+   const people=[...frame.waiting.map(pose=>({pose})),...(frame.departed?[{pose:frame.departed}]:[]),{pose:enemy,enemy:true},{pose:lead,lead:true},...(!frame.departed?[{pose:frame.reserve,height:84}]:frame.replacement?[{pose:frame.replacement,height:84}]:[])];
    // Draw the upper lane first, leaving the reserve in the foreground.
    people.sort((a,b)=>a.pose.y-b.pose.y).forEach(row=>{
     ctx.save();ctx.globalAlpha=row.lead?1:1-blend;
-    if(row.enemy)actor(ctx,enemy.motion,enemy.seconds,enemy.x,enemy.y,100,rival,rival?.primaryPosition==='GK',opponent?.color||match.opponent?.color||'#b64c64',enemy.direction);
-    else drawRole(row.pose,row.lead?mix(100,120,blend):row.height||100);
+    if(row.enemy)actor(ctx,enemy.motion,enemy.seconds,enemy.x,enemy.y,80*enemy.scale,rival,rival?.primaryPosition==='GK',opponent?.color||match.opponent?.color||'#b64c64',enemy.direction);
+    else drawRole(row.pose,row.lead?mix(80,96,blend):row.height||80);
     ctx.restore();
    });
    let ballX=mix(frame.ball.x,CONVEYOR_LAYOUT.shotX+40,blend),ballY=mix(frame.ball.y,CONVEYOR_LAYOUT.shotY-12,blend);
@@ -172,7 +173,7 @@ export function createFinalePainter(data,club,rank,keeper,clubs=[],fixtures=[]){
    ctx.imageSmoothingEnabled=true;
    if(frame.scene==='shoot'){
     ctx.drawImage(home,500,410,672,315,0,0,960,540);
-    actor(ctx,'shoot',t,CONVEYOR_LAYOUT.shotX,CONVEYOR_LAYOUT.shotY,120);
+    actor(ctx,'shoot',t,CONVEYOR_LAYOUT.shotX,CONVEYOR_LAYOUT.shotY,96);
     const q=Math.max(0,Math.min(1,(t-.35)/.8));football(ctx,CONVEYOR_LAYOUT.shotX+40+q*160,CONVEYOR_LAYOUT.shotY-12-q*55,6-q*2,t*12);
    }else if(frame.scene!=='white'){
     ctx.drawImage(goal,0,0,960,540);
@@ -254,7 +255,7 @@ export function playSeasonFinale({app,club,rank,keeper,matches=[],clubs=[],onDon
   if(stage==='ceremony')painter.ceremony(ctx,clock);
   else if(stage==='conveyor'){
    const current=painter.conveyor(ctx,clock,fixtures);
-   scoreboard.hidden=false;scoreboard.style.opacity=String(Math.min(1,(conveyorDuration-clock)/.5));
+   scoreboard.hidden=!current.resultReady;scoreboard.style.opacity=String(Math.min(1,(conveyorDuration-clock)/.5));
    if(shownMatch!==current.index){shownMatch=current.index;const m=current.match;
     roundLabel.textContent=`SEASON ${current.index+1} / ${fixtures.length}　·　第${m.round}節`;
     score.textContent=`${m.goals} — ${m.against}`;opponentName.textContent=m.opponent?.name||'対戦相手';
