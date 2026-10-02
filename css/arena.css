@@ -1081,3 +1081,52 @@ body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
   padding:3px 5px;margin-bottom:2px;
  }
 }
+
+/* Keep ranks, bars and growth arrows in separate bounded columns. */
+#app .squad-abilities dd.squad-ability-values {
+ display:grid;grid-template-columns:24px minmax(0,1fr)!important;
+ align-items:center;gap:5px;min-width:0;margin:0;
+}
+#app .squad-abilities dd.squad-ability-values.has-growth-changes {
+ grid-template-columns:24px minmax(0,1fr) 20px!important;
+}
+#app .squad-abilities dd.squad-ability-values .rank-bar {
+ width:100%;min-width:0;max-width:100%;box-sizing:border-box;
+}
+#app .squad-abilities dd.squad-ability-values>.ability-direction {
+ grid-column:3;position:static;margin:0;text-align:center;font-size:15px;line-height:1;
+}
+@media(min-width:761px) {
+ #app main.development-room:not(.focus-room),
+ #app main.development-room.growth-modal {
+  width:96vw!important;max-width:none!important;
+ }
+ #app main.development-room:not(.focus-room) .squad-player {
+  height:auto!important;min-height:260px!important;
+  grid-template-columns:minmax(0,22fr) minmax(0,33fr) minmax(0,45fr);
+  grid-template-rows:auto auto!important;
+  padding:12px!important;gap:10px;overflow:visible;
+ }
+ #app main.development-room:not(.focus-room) .squad-abilities {
+  align-self:start;justify-content:flex-start;min-height:0;min-width:0;gap:6px;
+ }
+ #app main.development-room:not(.focus-room) .squad-abilities>div {
+  grid-template-columns:minmax(0,42fr) minmax(0,58fr);
+  min-width:0;gap:5px;padding:4px;
+ }
+ #app main.development-room:not(.focus-room) .squad-abilities dt {
+  font-size:clamp(14px,1vw,20px);white-space:normal;overflow:visible;text-overflow:clip;
+ }
+ #app main.development-room:not(.focus-room) .squad-abilities dd {
+  font-size:clamp(14px,1vw,20px);
+ }
+ #app main.development-room:not(.focus-room) .squad-identity {
+  font-size:clamp(15px,1.05vw,21px);
+ }
+ #app main.development-room:not(.focus-room) .squad-special {
+  min-height:0;height:auto;align-self:start;overflow:visible;
+ }
+ #app main.growth-modal .growth-result>p {
+  font-size:clamp(13px,.9vw,18px);line-height:1.4;
+ }
+}
