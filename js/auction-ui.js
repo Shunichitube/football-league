@@ -1,6 +1,6 @@
 import { rarePortraitUrl } from './rare-characters.js';
-import {playerAppearance,kitColor} from './avatar-profile.js?v=rare-v2';
-import { pixelTexture } from './arena-characters.js?v=rare-v2';
+import {playerAppearance,kitColor} from './avatar-profile.js?v=appearance-v27';
+import { pixelTexture } from './arena-characters.js?v=appearance-v27';
 import { minimumAuctionBid } from './live-auction.js';
 import { STAGE, AUCTION_SEATS } from './stage-layout.js';
 const avatars=new Map();

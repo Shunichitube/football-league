@@ -15,7 +15,7 @@ export function avatarProfile(value = 0) {
 }
 export function createPlayerAppearance(id, position) {
   const seed = appearanceSeed(`${id}:${position}`);
-  return avatarProfile({ seed, glasses: Math.floor(seed / 180) % 5 === 0 });
+  return avatarProfile({ seed, glasses: Math.floor(seed / 180) % 20 === 0 });
 }
 export function playerAppearance(player) {
   if (rareKind(player)) return {version:4,rareCharacter:player.rareCharacter};

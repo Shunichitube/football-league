@@ -1,6 +1,6 @@
 import {loadRareAssets} from './rare-avatar.js';
-import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js?v=rare-v2';
-import { HAIR_PARTS } from './avatar-hair-parts.js?v=rare-v2';
+import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js?v=appearance-v27';
+import { HAIR_PARTS } from './avatar-hair-parts.js?v=appearance-v27';
 const rgb = hex => hex.slice(1).match(/../g).map(n => parseInt(n,16));
 export function recolorPixels(pixels, { skinTone = 0, kit, goalkeeper = false, recolorKit = true, hairColor, frontKeeperBody = false, partWidth = 256 } = {}) {
   const skin = rgb(SKIN_TONES[avatarProfile({skinTone}).skinTone].color), uniform = rgb(kitColor(kit, goalkeeper));
@@ -144,21 +144,27 @@ function glassesRim(ctx,x,y,w,h){
 function drawQuarterGlasses(ctx,eyes,scale,temples){
   const spacing=eyes[1][0]+eyes[1][2]/2-eyes[0][0]-eyes[0][2]/2;
   const border=4.5*scale;
+  const tilt=Math.atan2(eyes[1][1]+eyes[1][3]/2-eyes[0][1]-eyes[0][3]/2,spacing);
   const lenses=eyes.map(([x,y,w,h],side)=>{
     const width=spacing*(side===0?1.12:1.00),center=x+w/2+(side===0?-7:7)*scale;
-    return [center-width/2,y-5*scale,width,h+10*scale];
+    return [center-width/2,y-6*scale,width,h+12*scale];
   });
   ctx.save();ctx.strokeStyle='#252b30';ctx.fillStyle='#252b30';ctx.lineWidth=5*scale;ctx.lineCap='round';
-  // Arms and bridge sit behind the two independently hollow frame rims.
-  lenses.forEach(([x,y,w,h],side)=>{
-    const edge=side===0?x:x+w,temple=temples?.[side];
-    if(temple){ctx.beginPath();ctx.moveTo(...temple);ctx.lineTo(edge,y+h*.22);ctx.stroke();}
+  const point=([x,y,w,h],px,py)=>{
+    const dx=px-w/2,dy=py-h/2;
+    return [x+w/2+dx*Math.cos(tilt)-dy*Math.sin(tilt),y+h/2+dx*Math.sin(tilt)+dy*Math.cos(tilt)];
+  };
+  // The rims, bridge and arms use the same slanted face plane.
+  lenses.forEach((lens,side)=>{
+    const [x,y,w,h]=lens,temple=temples?.[side];
+    if(temple){ctx.beginPath();ctx.moveTo(...temple);ctx.lineTo(...point(lens,side===0?0:w,h*.22));ctx.stroke();}
   });
   const [near,far]=lenses;
-  ctx.beginPath();ctx.moveTo(near[0]+near[2],near[1]+near[3]*.20);
-  ctx.quadraticCurveTo((near[0]+near[2]+far[0])/2,(near[1]+far[1])/2,far[0],far[1]+far[3]*.20);ctx.stroke();
+  const a=point(near,near[2],near[3]*.20),b=point(far,0,far[3]*.20);
+  ctx.beginPath();ctx.moveTo(...a);ctx.quadraticCurveTo((a[0]+b[0])/2,(a[1]+b[1])/2-2*scale,...b);ctx.stroke();
   for(const [x,y,w,h]of lenses){
-    ctx.beginPath();glassesRim(ctx,x,y,w,h);glassesRim(ctx,x+border,y+border,w-border*2,h-border*2);ctx.fill('evenodd');
+    ctx.save();ctx.translate(x+w/2,y+h/2);ctx.rotate(tilt);
+    ctx.beginPath();glassesRim(ctx,-w/2,-h/2,w,h);glassesRim(ctx,-w/2+border,-h/2+border,w-border*2,h-border*2);ctx.fill('evenodd');ctx.restore();
   }
   ctx.restore();
 }
@@ -196,7 +202,7 @@ export function drawQuarterHead(ctx,assets,value,box) {
     if(brow&&assets.parts){
       const bx=ex-ew*.48,by=ey-eh*.60,bw=ew*1.89,bh=eh*.457;
       if(profile.face===1){
-        ctx.save();ctx.translate(bx+bw/2,by+bh/2);ctx.rotate((side===0?-1:1)*Math.PI/15);
+        ctx.save();ctx.translate(bx+bw/2,by+bh/2);ctx.rotate(-Math.PI/15);
         ctx.scale(side===0?1:-1,1);
         ctx.drawImage(assets.parts,...AVATAR_BROWS[1][0],-bw/2,-bh/2,bw,bh);ctx.restore();
       }else ctx.drawImage(assets.parts,...brow,bx,by,bw,bh);
