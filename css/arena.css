@@ -1130,3 +1130,21 @@ body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
   font-size:clamp(13px,.9vw,18px);line-height:1.4;
  }
 }
+
+/* Larger draft and auction completion windows. */
+@media(min-width:761px) {
+ #app main.phase-complete-screen .phase-complete-modal {
+  width:min(1080px,94vw);max-height:calc(100svh - 48px);
+  padding:72px 56px;border-radius:28px;
+ }
+ #app main.phase-complete-screen .phase-complete-modal h2 {
+  font-size:52px;margin-bottom:32px;line-height:1.2;
+ }
+ #app main.phase-complete-screen .phase-complete-modal p {
+  font-size:32px;margin-bottom:36px;line-height:1.5;
+ }
+ #app main.phase-complete-screen .phase-complete-modal button {
+  min-width:300px;min-height:96px;font-size:32px;
+  padding:24px 40px;margin:12px;border-radius:16px;
+ }
+}
