@@ -1,6 +1,6 @@
 import {drawRareMotion} from './rare-avatar.js?v=cell-cleanup-v1';
 import {loadMotionLayerAssets} from './avatar-rendering.js?v=modular-motion-v2';
-import {renderMotionLayers} from './avatar-motion-layers.js?v=motion-ui-v7';
+import {renderMotionLayers} from './avatar-motion-layers.js?v=motion-ui-v8';
 export const MOTIONS = {
   idle: { label: '待機', frames: [0, 1], fps: 2 },
   run: { label: '走り', frames: [0, 1, 2, 3], fps: 8 },
@@ -19,7 +19,7 @@ export async function loadMotionAtlas() {
   const [base, run, shoot, catchSheet, dive, celebrate, celebrateArms, dejected, avatar] = await Promise.all([
     load('../assets/avatars/player-idle-redrawn-v1.png?v=idle-approved-v5'),
     load('../assets/avatars/player-run-redrawn-v1.png'),
-    load('../assets/avatars/player-shoot-base-v1.png'),
+    load('../assets/avatars/player-shoot-redrawn-v1.png?v=motion-ui-v8'),
     load('../assets/avatars/keeper-catch-base-v1.png'),
     load('../assets/avatars/keeper-dive-base-v1.png'),
     load('../assets/avatars/player-celebrate-base-v1.png'),
@@ -48,7 +48,7 @@ export function drawMotion(ctx, atlas, motion, seconds, { direction = 'right', b
   const w = cellWidth * scale, h = cellHeight * scale;
   // Align the independently drawn heads; retain the small airborne foot lift.
   const actionOffsets = {
-    shoot: [[-35,0],[30,0],[-25,12],[10,12]],
+    shoot: [[-50,0],[44,0],[-48,10],[38,10]],
     catch: [[-35,0],[30,0],[-25,0],[25,0]]
   };
   const offsets = usesRun ? [[-25,0],[8,0],[-25,0],[8,0]][sourceIndex] : motion === 'idle' ? [[-62,0],[63,0]][index] : actionOffsets[motion]?.[index] || [0,0];

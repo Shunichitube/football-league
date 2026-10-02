@@ -1,14 +1,16 @@
-import {MOTION_HAIR_LAYOUTS} from './motion-hair-layout.js?v=1';
-import {loadMotionAtlas} from './player-motion.js?v=motion-ui-v7';
+import {MOTION_HAIR_LAYOUTS} from './motion-hair-layout.js?v=motion-ui-v8';
+import {loadMotionAtlas} from './player-motion.js?v=motion-ui-v8';
 import {HAIR_STYLES} from './avatar-profile.js?v=appearance-v29';
 import {drawMotionHair,drawQuarterFace,motionHairBox} from './avatar-rendering.js?v=hair-editor-v1';
-import {readHairAdjustments,saveHairAdjustments,effectiveHairAdjustment,defaultHairAdjustment} from './motion-hair-adjustments.js?v=motion-ui-v7';
+import {readHairAdjustments,saveHairAdjustments,effectiveHairAdjustment,defaultHairAdjustment} from './motion-hair-adjustments.js?v=motion-ui-v8';
 const $=id=>document.getElementById(id),status=$('status');
-const mode=new URLSearchParams(location.search).get('motion')==='idle'?'idle':'run',layout=MOTION_HAIR_LAYOUTS[mode];
+const requestedMode=new URLSearchParams(location.search).get('motion');
+const mode=['idle','shoot'].includes(requestedMode)?requestedMode:'run',layout=MOTION_HAIR_LAYOUTS[mode];
+const modeLabel={idle:'待機',run:'走り・ドリブル',shoot:'シュート'}[mode];
 $('motion').value=mode;
-$('title').textContent=(mode==='idle'?'待機':'走り')+'の髪位置調整';
+$('title').textContent=modeLabel+'の髪位置調整';
 $('together-label').textContent=layout.frames+'コマまとめて調整';
-$('hint').textContent='1コマだけ調整する場合は、まとめて調整のチェックを外してください。保存すると、このブラウザの'+(mode==='idle'?'待機':'走り・ドリブル')+'に反映されます。';
+$('hint').textContent='1コマだけ調整する場合は、まとめて調整のチェックを外してください。保存すると、このブラウザの'+modeLabel+'に反映されます。';
 let boxes,source,factor;
 let drafts=readHairAdjustments(mode),style=0,selected=0,drag=null,dirty=false;
 const history=[];
@@ -19,7 +21,7 @@ function changed(){dirty=true;status.textContent='未保存の調整がありま
 HAIR_STYLES.forEach((name,i)=>$('hair').add(new Option(`${String(i+1).padStart(2,'0')} · ${name}`,i)));
 let atlas;
 try{atlas=await loadMotionAtlas();}catch(error){status.textContent='素材を読み込めませんでした。最新のファイルを取得して再読み込みしてください。';throw error;}
-source=mode==='idle'?atlas.base:atlas.run;factor=627/(source.width/layout.columns);
+source=mode==='idle'?atlas.base:mode==='shoot'?atlas.shoot:atlas.run;factor=627/(source.width/layout.columns);
 boxes=layout.boxes.map(box=>box.map(n=>n*factor));
 const views=Array.from({length:layout.frames},(_,frame)=>{
  const figure=document.createElement('figure'),caption=document.createElement('figcaption'),canvas=document.createElement('canvas');
@@ -76,7 +78,7 @@ for(const view of views){
 $('motion').onchange=()=>{
  const next=$('motion').value;$('motion').value=mode;
  if(next===mode)return;
- const url=new URL(location.href);url.searchParams.set('motion',next);url.searchParams.set('v','motion-ui-v7');location.assign(url.href);
+ const url=new URL(location.href);url.searchParams.set('motion',next);url.searchParams.set('v','motion-ui-v8');location.assign(url.href);
 };
 $('hair').onchange=()=>{style=Number($('hair').value);draw();};
 $('together').onchange=draw;$('face').onchange=draw;$('bounds').onchange=draw;
@@ -102,7 +104,7 @@ $('import').onchange=async event=>{
 };
 addEventListener('pageshow',event=>{if(event.persisted&&!dirty){drafts=readHairAdjustments(mode);draw();}});
 addEventListener('storage',event=>{
- const key=mode==='idle'?'football-league:idle-hair-adjustments:v2':'football-league:run-hair-adjustments:v1';
+ const key=mode==='idle'?'football-league:idle-hair-adjustments:v2':mode==='shoot'?'football-league:shoot-hair-adjustments:v1':'football-league:run-hair-adjustments:v1';
  if(event.key!==key&&event.key!==null)return;
  if(dirty){status.textContent='別の画面で設定が更新されました。現在の調整を保存するか、再読み込みしてください。';return;}
  drafts=readHairAdjustments(mode);history.length=0;draw();status.textContent='保存済みの位置を読み込みました。';

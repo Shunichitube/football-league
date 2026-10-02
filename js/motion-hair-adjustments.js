@@ -8,7 +8,7 @@ const storageKey=mode=>{
   try{globalThis.localStorage?.removeItem(LEGACY_IDLE_KEY);}catch{}
   return 'football-league:idle-hair-adjustments:v2';
  }
- return HAIR_ADJUSTMENT_KEY;
+ return mode==='shoot'?'football-league:shoot-hair-adjustments:v1':HAIR_ADJUSTMENT_KEY;
 };
 const frameCount=mode=>mode==='idle'?2:4;
 const identity=()=>({x:0,y:0,scale:1});
@@ -17,7 +17,7 @@ export function normalizeAdjustment(value){
  return {x:n('x',0,-627,627),y:n('y',0,-627,627),scale:n('scale',1,.25,3)};
 }
 export function defaultHairAdjustment(style,mode='run'){
- const entry=mode==='run'?DEFAULT_RUN_HAIR_ADJUSTMENTS[style]:DEFAULT_IDLE_HAIR_ADJUSTMENTS[style];
+ const entry=mode==='run'?DEFAULT_RUN_HAIR_ADJUSTMENTS[style]:mode==='idle'?DEFAULT_IDLE_HAIR_ADJUSTMENTS[style]:null;
  return {shared:normalizeAdjustment(entry?.shared),frames:Array.from({length:frameCount(mode)},(_,f)=>normalizeAdjustment(entry?.frames?.[f]))};
 }
 export function readHairAdjustments(mode='run'){
