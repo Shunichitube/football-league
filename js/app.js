@@ -1,3 +1,4 @@
+import {createSfxController} from './sfx.js?v=1';
 import {createBgmController} from './bgm.js?v=audio-assets-v2';
 import {renderGrandResults,mountGrandFinale} from './grand-finale-ui.js?v=motion-cleanup-v2';
 import {createGameExperience} from './game-experience.js?v=motion-cleanup-v2';
@@ -28,6 +29,7 @@ const standings=league=>roomAdapter?.active?roomAdapter.standings(league,singleS
 const app = document.querySelector('#app');
 let s = createInitialState();
 const bgm=createBgmController();
+const sfx=createSfxController();
 const experience=createGameExperience({dialogs,onExit:()=>{returnToTitle();render();}});
 let finalePending=false,finaleDispose=null;
 let endingPending=false,endingDispose=null;
@@ -243,6 +245,7 @@ function placeLineupPlayer(playerId, slotIndex) {
     s.comparisonSourcePlayerId = null;
   }
   render();
+  return result.ok;
 }
 onGameClick('app', event => {
   if (event.target.closest('[data-rename-player]')) return;
@@ -313,6 +316,7 @@ app.addEventListener('dragstart', event => {
   const id = source.dataset.lineupDrag;
   if (!id || !me().roster.some(player => player.id === id)) return;
   draggingLineupPlayerId = id;
+  sfx.beginLineupDrag();
   source.classList.add('is-dragging');
   app.querySelector('.formation-pitch')?.classList.add('awaiting-drop');
   event.dataTransfer.effectAllowed = 'move';
@@ -333,8 +337,9 @@ app.addEventListener('drop', event => {
   event.preventDefault();
   const id = draggingLineupPlayerId;
   draggingLineupPlayerId = null;
+  sfx.endLineupDrag();
   if (me().lineup[Number(slot.dataset.lineupSlot)] === id) return;
-  placeLineupPlayer(id, Number(slot.dataset.lineupSlot));
+  if (placeLineupPlayer(id, Number(slot.dataset.lineupSlot))) sfx.play('lineup');
 });
 app.addEventListener('dragend', () => {
   draggingLineupPlayerId = null;
