@@ -5,7 +5,7 @@ import {celebrationTexture,drawCelebration} from './avatar-celebration.js?v=draf
 
 export const finaleKind=rank=>rank===1?'goal':rank<=3?'parry':'catch';
 export const CONVEYOR_MATCH_SECONDS=2.4;
-export const CONVEYOR_LAYOUT=Object.freeze({centerX:480,centerY:360,reserveX:735,reserveY:475,entryX:1055,ballDX:25,ballDY:-12,shotX:745,shotY:350});
+export const CONVEYOR_LAYOUT=Object.freeze({centerX:480,centerY:360,reserveX:79,reserveY:505,entryX:-65,ballDX:25,ballDY:-12,shotX:745,shotY:350});
 // Read snapshots only. Multiplayer stores other clubs' fixtures here as well.
 export function conveyorMatches(matches,clubId){
  const seen=new Set();
@@ -38,7 +38,7 @@ export function conveyorBlocking(matches,time){
  const {index,match,local:t}=frame,L=CONVEYOR_LAYOUT;
  const losses=matches.slice(0,index).filter(m=>m.outcome==='loss').length;
  const central={role:losses,x:L.centerX,y:L.centerY,motion:'idle',seconds:0,direction:'right'};
- const reserve={role:losses+1,x:L.reserveX,y:L.reserveY,motion:'run',seconds:time,direction:'right'};
+ const reserve={role:losses+1,x:L.reserveX,y:L.reserveY,motion:'idle',seconds:0,direction:'right'};
  const rival={x:mix(740,L.centerX,smooth((t-.3)/.55)),y:L.centerY,motion:t<.3?'idle':'run',seconds:Math.max(0,t-.3),direction:'left'};
  let ball={x:central.x+L.ballDX,y:central.y+L.ballDY},departed=null,replacement=null;
  if(match.outcome==='win'){
@@ -58,16 +58,16 @@ export function conveyorBlocking(matches,time){
   ball=t<1.15?{x:rival.x+L.ballDX,y:L.centerY+L.ballDY}:
    {x:mix(560+L.ballDX,L.reserveX+L.ballDX,roll),y:mix(L.centerY+L.ballDY,L.reserveY+L.ballDY,roll)};
   central.role=reserve.role;central.x=reserve.x;central.y=reserve.y;
-  central.motion='run';central.seconds=time;
+  central.motion='idle';central.seconds=0;
   if(t>=1.5){
    const pickup=smooth((t-1.5)/.5);
    central.x=mix(L.reserveX,L.centerX,pickup);central.y=mix(L.reserveY,L.centerY,pickup);
-   central.motion='dribble';central.seconds=t-1.5;central.direction='left';
+   central.motion='dribble';central.seconds=t-1.5;central.direction='right';
    ball={x:central.x+L.ballDX,y:central.y+L.ballDY};
    if(t>=2)central.direction='right';
-   // The next runner enters from behind and reaches the same waiting spot.
-   const incoming=smooth((t-1.5)/(CONVEYOR_MATCH_SECONDS-1.5));
-   replacement={...reserve,role:losses+2,x:mix(L.entryX,L.reserveX,incoming),motion:'run',seconds:t-1.5,direction:'left'};
+   // Replenish the left foreground spot from beyond the left screen edge.
+   const incoming=smooth((t-1.5)/.7);
+   replacement={...reserve,role:losses+2,x:mix(L.entryX,L.reserveX,incoming),motion:t<2.2?'run':'idle',seconds:t<2.2?t-1.5:0,direction:'right'};
   }
  }else if(match.outcome==='draw'){
   central.motion=t>=.6&&t<1.1?'shoot':t>=1.7?'dribble':'idle';central.seconds=t>=1.7?t-1.7:Math.max(0,t-.6);

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {finaleKind,finaleFrame,podiumPositions,conveyorMatches,conveyorFrame,conveyorCast,conveyorBlocking} from '../js/season-finale.js';
+import {finaleKind,finaleFrame,podiumPositions,conveyorMatches,conveyorFrame,conveyorCast,conveyorBlocking,CONVEYOR_LAYOUT} from '../js/season-finale.js';
 
 test('central and foreground reserve follow the actual FW, MF1 and MF2 lineup',()=>{
  const roster=['GK','DF','MF','MF','FW'].map((primaryPosition,id)=>({id,primaryPosition}));
@@ -12,10 +12,10 @@ test('central and foreground reserve follow the actual FW, MF1 and MF2 lineup',(
  const stolen=conveyorBlocking(matches,.95);
  assert.equal(stolen.departed.motion,'idle');assert.ok(stolen.departed.x<480);
  assert.equal(stolen.central.role,1);assert.equal(stolen.central.motion,'idle');
- const kick=conveyorBlocking(matches,1.2);assert.equal(kick.rival.motion,'shoot');
+ const kick=conveyorBlocking(matches,1.08);assert.equal(kick.rival.motion,'shoot');
  const pickup=conveyorBlocking(matches,1.65);
  assert.equal(pickup.central.role,1);assert.equal(pickup.central.motion,'dribble');
- assert.equal(pickup.replacement.role,2);assert.equal(pickup.replacement.motion,'idle');
+ assert.equal(pickup.replacement.role,2);assert.equal(pickup.replacement.motion,'run');
  const next=conveyorBlocking(matches,2.4);
  assert.equal(next.central.role,1);assert.equal(next.reserve.role,2);
  assert.equal(next.waiting[0].role,0);assert.ok(next.waiting[0].x<stolen.departed.x);
@@ -75,4 +75,21 @@ test('podium centers every roster size and caps the display at twelve',()=>{
   assert.ok(positions.every(p=>p.y===700&&p.x>150&&p.x<1522));
  }
  assert.deepEqual(podiumPositions(13),podiumPositions(12));
+});
+
+test('reserve waits in the left foreground and replacements run in from the left',()=>{
+ const matches=[{outcome:'loss'},{outcome:'win'}],L=CONVEYOR_LAYOUT;
+ const first=conveyorBlocking(matches,0);
+ assert.equal(first.reserve.x,79);assert.equal(first.reserve.y,505);
+ assert.equal(first.reserve.motion,'idle');
+ const entering=conveyorBlocking(matches,1.5);
+ assert.ok(entering.replacement.x<0);assert.equal(entering.replacement.direction,'right');
+ const moving=conveyorBlocking(matches,1.8);
+ assert.ok(moving.replacement.x>entering.replacement.x);
+ assert.ok(moving.replacement.x<L.reserveX);
+ assert.ok(moving.central.x>L.reserveX);assert.equal(moving.central.direction,'right');
+ const arrived=conveyorBlocking(matches,2.25);
+ assert.equal(arrived.replacement.x,L.reserveX);assert.equal(arrived.replacement.motion,'idle');
+ const next=conveyorBlocking(matches,2.4);
+ assert.equal(next.reserve.x,arrived.replacement.x);assert.equal(next.reserve.role,arrived.replacement.role);
 });
