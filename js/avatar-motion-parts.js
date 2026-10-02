@@ -19,7 +19,10 @@ export function eraseOriginalHead(data,width,height,box){
  for(let y=top;y<bottom;y++)for(let x=left;x<right;x++){
   const n=y*width+x,i=n*4,r=data[i],g=data[i+1],b=data[i+2];
   const warm=r>20&&r>g*1.12&&r>b*1.25&&g>=b;
-  if(data[i+3]>16&&!warm&&Math.max(r,g,b)>45)body[n]=1;
+  const blueKit=b>35&&b>r*1.45&&b>g*1.08;
+  const gloveOrGrayKit=Math.min(r,g,b)>45&&Math.max(r,g,b)-Math.min(r,g,b)<15;
+  // Brown/purple antialiasing at the old ear is not a piece of the uniform.
+  if(data[i+3]>16&&!warm&&(blueKit||gloveOrGrayKit))body[n]=1;
  }
  // A raised forearm can enter the lower part of the head rectangle. Preserve
  // separate warm components that begin below the face, rather than erasing them.
@@ -45,13 +48,29 @@ export function eraseOriginalHead(data,width,height,box){
  for(let y=top;y<bottom;y++)for(let x=left;x<right;x++){
   const n=y*width+x,i=n*4;if(body[n]||!data[i+3])continue;
   let keep=false;
-  if(Math.max(data[i],data[i+1],data[i+2])<65){
+  // The old ear/hair outline is warm even when almost black. Proximity to a
+  // blue shoulder must not keep it; real arms have already been preserved above.
+  const warmEdge=data[i]>data[i+1]*1.12&&data[i]>data[i+2]*1.25;
+  if(Math.max(data[i],data[i+1],data[i+2])<65&&!warmEdge){
     for(let dy=-4;dy<=4&&!keep;dy++)for(let dx=-4;dx<=4;dx++){
       const xx=x+dx,yy=y+dy;
       if(xx>=left&&xx<right&&yy>=top&&yy<bottom&&body[yy*width+xx]){keep=true;break;}
     }
   }
   if(!keep)data[i+3]=0;
+ }
+ // Remove detached edge flecks left above the shoulders. Preserve components
+ // joined to the body below, or to a raised arm outside the head rectangle.
+ const joined=new Uint8Array(width*height),queue=[];
+ const enqueue=(x,y)=>{if(x<left||x>=right||y<top||y>bottom||y>=height)return;const n=y*width+x;if(!joined[n]&&data[n*4+3]>16){joined[n]=1;queue.push(n);}};
+ for(let x=left;x<right;x++)enqueue(x,bottom);
+ for(let y=top;y<bottom;y++){enqueue(left,y);enqueue(right-1,y);}
+ for(let k=0;k<queue.length;k++){const n=queue[k],x=n%width,y=Math.floor(n/width);enqueue(x-1,y);enqueue(x+1,y);enqueue(x,y-1);enqueue(x,y+1);}
+ for(let y=top;y<bottom;y++)for(let x=left;x<right;x++){
+  const n=y*width+x;if(joined[n]||!data[n*4+3])continue;
+  let edge=false;
+  if(data[n*4+3]<=16)for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const xx=x+dx,yy=y+dy;if(xx>=left&&xx<right&&yy>=top&&yy<=bottom&&yy<height&&joined[yy*width+xx])edge=true;}
+  if(!edge)data[n*4+3]=0;
  }
  return data;
 }

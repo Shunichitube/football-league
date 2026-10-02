@@ -1,7 +1,7 @@
 import {drawAvatar} from './player-avatar.js?v=season-finale-v1';
 import {avatarProfile,kitColor} from './avatar-profile.js?v=appearance-v29';
 import {createSurface,recolorPixels} from './avatar-rendering.js?v=appearance-v29';
-import {eraseOriginalHead} from './avatar-motion-parts.js?v=appearance-v29';
+import {eraseOriginalHead} from './avatar-motion-parts.js?v=ear-cleanup-v1';
 import {drawRareMotion} from './rare-avatar.js';
 
 const cache=new Map();

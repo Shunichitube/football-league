@@ -37,6 +37,15 @@ test('actions stop at the final pose and right-foot shooting is never mirrored',
 });
 
 import {eraseOriginalHead} from '../js/avatar-motion-parts.js';
+test('old ear outlines and detached antialias flecks are removed beside the shoulder',()=>{
+ const width=60,height=60,pixels=new Uint8ClampedArray(width*height*4);
+ const put=(x,y,color)=>pixels.set([...color,255],(y*width+x)*4);
+ for(let y=42;y<55;y++)for(let x=20;x<40;x++)put(x,y,[15,55,230]);
+ put(23,40,[25,3,0]);put(21,39,[78,55,67]);put(16,37,[90,90,90]);
+ eraseOriginalHead(pixels,width,height,[0,0,60,50]);
+ for(const [x,y]of [[23,40],[21,39],[16,37]])assert.equal(pixels[(y*width+x)*4+3],0);
+ assert.deepEqual([...pixels.slice((44*width+25)*4,(44*width+25)*4+4)],[15,55,230,255]);
+});
 test('head removal preserves shirt, glove and raised arm inside the head bounds',()=>{
  const width=60,height=60,pixels=new Uint8ClampedArray(width*height*4);
  const put=(x,y,color)=>pixels.set([...color,255],(y*width+x)*4);
