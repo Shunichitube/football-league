@@ -15,7 +15,7 @@ import { applySeasonFinances, awards, clubAchievements, createLeague, finalizeSe
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=appearance-v29';
 import { createRandom } from './random.js';
 import { createAuctionPool, createDraftPool, resolveDraftActions } from './market.js?v=appearance-v29';
-import { renderContractPlayerCard, configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=match-portrait-v1';
+import { renderContractPlayerCard, configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=growth-expectation-v1';
 import { decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=appearance-v29';
 import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=appearance-v29';
 import { RoomAdapter } from './room-adapter.js?v=online-flow-v2';
