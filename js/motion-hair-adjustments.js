@@ -1,3 +1,4 @@
+import {DEFAULT_RUN_HAIR_ADJUSTMENTS} from './motion-hair-defaults.js?v=approved-v1';
 // Offsets are in the 627px source frame; scaling is uniform about the hair center.
 export const HAIR_ADJUSTMENT_KEY='football-league:run-hair-adjustments:v1';
 const identity=()=>({x:0,y:0,scale:1});
@@ -5,12 +6,16 @@ export function normalizeAdjustment(value){
  const n=(key,fallback,min,max)=>Number.isFinite(value?.[key])?Math.max(min,Math.min(max,value[key])):fallback;
  return {x:n('x',0,-627,627),y:n('y',0,-627,627),scale:n('scale',1,.25,3)};
 }
+export function defaultHairAdjustment(style){
+ const entry=DEFAULT_RUN_HAIR_ADJUSTMENTS[style];
+ return {shared:normalizeAdjustment(entry?.shared),frames:Array.from({length:4},(_,f)=>normalizeAdjustment(entry?.frames?.[f]))};
+}
 export function readHairAdjustments(){
- try{
-  const raw=JSON.parse(globalThis.localStorage?.getItem(HAIR_ADJUSTMENT_KEY)||'{}'),result={};
-  for(let i=0;i<20;i++)if(raw[i])result[i]={shared:normalizeAdjustment(raw[i].shared),frames:Array.from({length:4},(_,f)=>normalizeAdjustment(raw[i].frames?.[f]))};
-  return result;
- }catch{return {};}
+ let raw={};
+ try{raw=JSON.parse(globalThis.localStorage?.getItem(HAIR_ADJUSTMENT_KEY)||'{}')||{};}catch{}
+ const result={};
+ for(let i=0;i<20;i++)result[i]=raw[i]?{shared:normalizeAdjustment(raw[i].shared),frames:Array.from({length:4},(_,f)=>normalizeAdjustment(raw[i].frames?.[f]))}:defaultHairAdjustment(i);
+ return result;
 }
 export function effectiveHairAdjustment(entry,frame){
  const a=normalizeAdjustment(entry?.shared),b=normalizeAdjustment(entry?.frames?.[frame]);

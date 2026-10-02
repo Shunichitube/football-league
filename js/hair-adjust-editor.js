@@ -1,13 +1,13 @@
 import {loadMotionAtlas} from './player-motion.js?v=hair-editor-v1';
 import {HAIR_STYLES} from './avatar-profile.js?v=appearance-v29';
 import {drawMotionHair,drawQuarterFace,motionHairBox} from './avatar-rendering.js?v=hair-editor-v1';
-import {readHairAdjustments,saveHairAdjustments,effectiveHairAdjustment,emptyHairAdjustment} from './motion-hair-adjustments.js?v=1';
+import {readHairAdjustments,saveHairAdjustments,effectiveHairAdjustment,defaultHairAdjustment} from './motion-hair-adjustments.js?v=1';
 const $=id=>document.getElementById(id),status=$('status');
 const boxes=[[205,12,315,300],[172,12,315,300],[205,12,315,300],[172,12,315,300]];
 let drafts=readHairAdjustments(),style=0,selected=0,drag=null,dirty=false;
 const history=[];
 const clone=value=>JSON.parse(JSON.stringify(value));
-const entry=()=>drafts[style]||(drafts[style]=emptyHairAdjustment());
+const entry=()=>drafts[style]||(drafts[style]=defaultHairAdjustment(style));
 function snapshot(){history.push(clone(drafts));if(history.length>40)history.shift();}
 function changed(){dirty=true;status.textContent='未保存の調整があります。位置が合ったら「保存」を押してください。';}
 HAIR_STYLES.forEach((name,i)=>$('hair').add(new Option(`${String(i+1).padStart(2,'0')} · ${name}`,i)));
@@ -68,7 +68,7 @@ $('hair').onchange=()=>{style=Number($('hair').value);draw();};
 $('together').onchange=draw;$('face').onchange=draw;$('bounds').onchange=draw;
 $('zoom').oninput=()=>{document.documentElement.style.setProperty('--size',$('zoom').value+'px');$('zoom-label').textContent=Math.round(Number($('zoom').value)/340*100)+'%';draw();};
 $('undo').onclick=()=>{if(history.length){drafts=history.pop();changed();draw();}};
-$('reset').onclick=()=>{snapshot();drafts[style]=emptyHairAdjustment();changed();draw();};
+$('reset').onclick=()=>{snapshot();drafts[style]=defaultHairAdjustment(style);changed();draw();};
 $('save').onclick=()=>{
  try{drafts=saveHairAdjustments(drafts);dirty=false;status.textContent='保存しました。モーション確認ページを開くと、走り・ドリブルに反映されます。';}
  catch{status.textContent='保存できませんでした。「設定を書き出す」で調整を残してください。';}
