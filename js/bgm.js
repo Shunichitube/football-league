@@ -1,8 +1,8 @@
 const AUDIO_KEY = 'football-league:audio-settings';
 export const BGM_FILES = {
-  home: new URL('../assets/audio/ホーム画面とゲーム最終結果の画面BGM.mp3', import.meta.url).href,
-  preparation: new URL('../assets/audio/選手育成中.mp3', import.meta.url).href,
-  result: new URL('../assets/audio/優勝決定！.mp3', import.meta.url).href
+  home: new URL('../assets/audio/音源/ホーム画面とゲーム最終結果の画面BGM.mp3', import.meta.url).href,
+  preparation: new URL('../assets/audio/音源/選手育成中.mp3', import.meta.url).href,
+  result: new URL('../assets/audio/音源/優勝決定！.mp3', import.meta.url).href
 };
 export function bgmTrack(view, simulating = false) {
   if (simulating) return null;
