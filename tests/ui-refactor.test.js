@@ -45,7 +45,7 @@ test('six auction desk anchors stay ordered inside the venue', () => {
 
 // Evaluate the real app's screen functions without publishing test hooks or
 // requiring a browser. Only bitmap drawing is substituted; DOM writes fail.
-async function screenHarness() {
+async function screenHarness(controls = {}) {
   const url = new URL('../js/app.js', import.meta.url);
   let source = readFileSync(url, 'utf8');
   const bindings = {};
@@ -70,9 +70,12 @@ async function screenHarness() {
   ));
   const app = { dataset: {}, contains: () => false, addEventListener() {} };
   Object.defineProperty(app, 'innerHTML', { set() { throw new Error('Screen function wrote to DOM'); } });
-  const document = { querySelector: () => app, addEventListener() {}, querySelectorAll: () => [] };
+  const document = { querySelector: selector => controls[selector] || (selector === '#app' ? app : null), addEventListener() {}, querySelectorAll: () => [] };
   source = source.replace(/^import .+;\r?\n/gm, '').replace(/render\(\);\s*$/, '');
-  return runInNewContext(source + '\n({ screens, setState: value => s=value, getState: () => s, setRoom: room => roomAdapter.client.room=room, startAuction, returnToTitle })', {
+  return runInNewContext(source + `\n({ screens, setState: value => s=value, getState: () => s, setRoom: room => roomAdapter.client.room=room, startAuction, returnToTitle,
+    click: (key,value) => {render=()=>{};const event={target:{matches:()=>false,closest:selector=>selector==='[data-'+key+']'?{dataset:{[key.replace(/-([a-z])/g,(_,letter)=>letter.toUpperCase())]:value}}:null}};for(const {scope,handler} of clickHandlers)if(scope==='app')handler(event);},
+    tick: now => {const previous=Date.now;Date.now=()=>now;try{updateAuction();}finally{Date.now=previous;}}
+  })`, {
     ...bindings, createBgmController: () => ({sync() {},dispose() {}}), createGameExperience: () => ({reset() {}, syncGrowth() {}}), document, addEventListener() {}, configureRename() {}, dialogs: null
   });
 }
@@ -126,4 +129,35 @@ test('all screen routes render real fixtures without mutating league or auction'
   } finally {
     delete globalThis.localStorage;
   }
+});
+
+
+test('single player real actions complete a white-club season and proceed to year two', async()=>{
+ const controls={'#name':{value:'白いクラブ'},'#seed':{value:'single-ui-flow'}};
+ const harness=await screenHarness(controls);
+ assert.doesNotMatch(harness.screens.setup(),/チームカラー|id="color"/);
+ harness.click('a','start');let state=harness.getState();
+ assert.equal(state.view,'draft');assert.equal(state.league.clubs[0].color,'#ffffff');
+ harness.click('a','skipDraft');assert.equal(state.draft.completed,true);
+ harness.click('a','toAuction');let now=Date.now();
+ for(let guard=0;!state.auction.completed&&guard<100;guard++){now+=60000;harness.tick(now);}
+ assert.equal(state.auction.completed,true);
+ harness.click('a','squad');assert.equal(state.view,'squad');
+ harness.click('a','season');assert.equal(state.view,'seasonResults');
+ assert.equal(state.league.fixtureResults.length,30);assert.equal(state.league.seasonResults.length,10);
+ harness.click('a','season');assert.equal(state.league.fixtureResults.length,30);
+ harness.click('stage4','offseason');assert.equal(state.view,'offseasonEvents');
+ for(const p of state.league.clubs[0].roster.filter(p=>p.contractYears<=0))harness.click('renew',p.id);
+ for(const event of [...state.retentionEvents])harness.click('retention-pay',event.playerId);
+ for(const offer of [...state.specialOffers])harness.click('special-skip',offer.playerId);
+ harness.click('stage4','eventsDone');assert.equal(state.view,'development');
+ for(const p of state.league.clubs[0].roster.slice(0,2)){harness.click('train',p.id);controls[`[data-focus="${p.id}"]`]={value:p.primaryPosition==='GK'?'gk':'pass'};}
+ harness.click('stage4','confirm');assert.equal(state.view,'focus');
+ harness.click('stage4','grow');assert.equal(state.view,'growth');
+ assert.equal(state.growth.length,state.league.clubs[0].roster.length);
+ const {exportSave,importSave}=await import('../js/storage.js');
+ assert.equal(importSave(exportSave({league:state.league})).league.season,1);
+ harness.click('stage4','releasePhase');assert.equal(state.view,'release');
+ harness.click('stage4','releaseDone');assert.equal(state.view,'draft');assert.equal(state.league.season,2);
+ assert.equal(state.league.clubs[0].color,'#ffffff');
 });

@@ -84,7 +84,7 @@ export class RoomAdapter {
     try { this.applyPreview(); } catch (error) { this.actions.pop(); throw error; }
     this.remember(); this.render();
   }
-  async enter(kind, name, color, id) { this.active = true; return this.client.enter(kind, name, color, id); }
+  async enter(kind, name, roomId) { this.active = true; return this.client.enter(kind, name, roomId); }
   async resume() { this.active = true; await this.client.resume(); }
   leave() { this.remember(); this.active = false; this.client.stop(); }
   async submit(input = {}) { this.remember(); return this.client.mutate('submit', input); }

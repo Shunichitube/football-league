@@ -15,7 +15,7 @@ PCは2カラム、スマホは1カラムで最低幅320pxに対応する。ペ�
 | 画面 | 主な内容 |
 | --- | --- |
 | TITLE | NEW GAME / LOAD GAME / IMPORT SAVE、バージョン |
-| NEW GAME SETUP | クラブ名、監督名、チームカラー、任意seed、CPUクラブ一覧 |
+| NEW GAME SETUP | クラブ名、任意seed。シングルのチームカラーは白固定で選択UIなし。マルチは参加順に色を自動割当 |
 | HOME | 現在順位、勝点、資金、戦績、次節、ランキング・ニュース |
 | SQUAD | 戦術、簡易コート、GK/DF/MF/MF/FW、控え、配置エラー |
 | PLAYER DETAIL | 年齢、国籍、ポジション、ランク能力、調子、契約、成績、特殊能力 |
