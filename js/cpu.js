@@ -1,8 +1,9 @@
+import {rareKind} from './rare-characters.js';
 import { calculateOverall, createPlayer } from './data.js?v=0.17.2';
-import { processOffseason, renewalFee } from './development.js?v=0.17.30';
+import { processOffseason, renewalFee } from './development.js?v=rare-v2';
 import { createRandom } from './random.js';
-import { cpuBid, cpuCandidatePick } from './market.js?v=0.17.30';
-import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=0.17.2';
+import { cpuBid, cpuCandidatePick } from './market.js?v=rare-v2';
+import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=rare-v2';
 
 const LINEUP_ROLES = ['DF', 'MF', 'MF', 'FW'];
 const REQUIRED = { GK: 1, DF: 1, MF: 2, FW: 1 };
@@ -83,7 +84,7 @@ function trainingFocus(player) {
 }
 
 export function selectCpuTraining(club) {
-  const selected = [...club.roster].sort((a, b) => publicDevelopmentScore(b, club) - publicDevelopmentScore(a, club) || calculateOverall(b) - calculateOverall(a)).slice(0, 2);
+  const selected = club.roster.filter(player => !rareKind(player)).sort((a, b) => publicDevelopmentScore(b, club) - publicDevelopmentScore(a, club) || calculateOverall(b) - calculateOverall(a)).slice(0, 2);
   return new Map(selected.map(player => [player.id, trainingFocus(player)]));
 }
 
@@ -100,7 +101,7 @@ export function decideCpuContractActions(club) {
     const overall = calculateOverall(player);
     const fee = renewalFee(player);
     const important = shadow.lineup.includes(player.id) || player.season.appearances >= 5;
-    const releaseForAge = player.age >= 33 && positionExcess && !important;
+    const releaseForAge = !rareKind(player) && player.age >= 33 && positionExcess && !important;
     const releaseForLevel = overall < teamAverage - 5 && positionExcess && !important;
     const canAfford = shadow.funds >= fee;
     const renew = mustKeep || (canAfford && !releaseForAge && !releaseForLevel);
@@ -147,7 +148,7 @@ export function prepareCpuMarketSpace(league) {
         const weak = average - calculateOverall(player);
         const replaceInitial = player.isInitial && positionPlayers.some(candidate => candidate.id !== player.id && calculateOverall(candidate) > calculateOverall(player)) ? 20 : 0;
         const bench = club.lineup.includes(player.id) ? 0 : 3;
-        const age = player.age >= 33 ? 4 : player.age >= 30 ? 2 : 0;
+        const age = rareKind(player) ? 0 : player.age >= 33 ? 4 : player.age >= 30 ? 2 : 0;
         const youngProtection = player.age <= 23 ? -6 : 0;
         const special = player.specialAbility ? -1 : 0;
         const excess = positionPlayers.length > REQUIRED[player.primaryPosition] ? 3 : 0;

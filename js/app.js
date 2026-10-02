@@ -1,20 +1,21 @@
+import { rareKind, rareAgeLabel } from './rare-characters.js';
 import { playTrainingCinematic } from './training-cinematic.js?v=6';
 import { renderSeasonResults } from './season-results-ui.js?v=3';
 import { createInitialState } from './app-state.js';
 import { createAuctionClock } from './auction-clock.js';
 import { dialogs } from './dialogs.js';
 import { openLot, raiseBid, passLot, tickLot } from './live-auction.js?v=0.21.1';
-import { auctionAvatar, renderLiveAuction } from './auction-ui.js?v=complete-modal-v1-development-room-v1';
+import { auctionAvatar, renderLiveAuction } from './auction-ui.js?v=rare-v2';
 import { applySeasonFinances, awards, clubAchievements, createLeague, finalizeSeason, recordDraftAcquisition, simulateRemainingSeason, standings as singleStandings, startNextSeason } from './league.js?v=0.17.29';
-import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=appearance-v26';
+import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=rare-v2';
 import { createRandom } from './random.js';
-import { createAuctionPool, createDraftPool, resolveDraftActions } from './market.js?v=0.22.0';
-import { renderContractPlayerCard, configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=rank-arrows-v1';
-import { decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=0.17.30';
-import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=0.17.2';
+import { createAuctionPool, createDraftPool, resolveDraftActions } from './market.js?v=rare-v2';
+import { renderContractPlayerCard, configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=rare-v2';
+import { decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=rare-v2';
+import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=rare-v2';
 import { RoomAdapter } from './room-adapter.js?v=0.20.0';
 import { classifyScreens } from './screen-classifier.js';
-import { createContractEvents, createSpecialTrainingOffers, renewalFee, trainingSkills } from './development.js?v=growth-values-v1';
+import { createContractEvents, createSpecialTrainingOffers, renewalFee, trainingSkills } from './development.js?v=rare-v2';
 import { exportSave, importSave, loadSlot, saveSlot, slotInfo } from './storage.js?v=0.17.27';
 const clickHandlers=[];
 const onGameClick=(scope,handler)=>clickHandlers.push({scope,handler});
@@ -95,7 +96,7 @@ onGameClick('app',ev=>{const resultTab=ev.target.closest('[data-result-tab]')?.d
 
 // Stage 4 off-season screens are layered onto the existing season flow.
 const rankScore = { SS: 9, S: 8, A: 7, B: 6, C: 5, D: 4, E: 3, F: 2, G: 1 };
-const marketRelease = (league, club, player) => { club.roster=club.roster.filter(candidate=>candidate.id!==player.id); club.lineup=club.lineup.filter(id=>id!==player.id); if(!player.isInitial){league.releasedPlayers ||= []; if(!league.releasedPlayers.some(candidate=>candidate.id===player.id)) league.releasedPlayers.push(player);} };
+const marketRelease = (league, club, player) => { club.roster=club.roster.filter(candidate=>candidate.id!==player.id); club.lineup=club.lineup.filter(id=>id!==player.id); if(!player.isInitial && rareKind(player)!=='golden_egg'){league.releasedPlayers ||= []; if(!league.releasedPlayers.some(candidate=>candidate.id===player.id)) league.releasedPlayers.push(player);} };
 const wouldBreakTeam = (club, player) => club.roster.length <= 5 || (player.primaryPosition === 'GK' && club.roster.filter(candidate=>candidate.primaryPosition==='GK').length <= 1);
 function decrementContracts(){for(const club of s.league.clubs) for(const player of club.roster) player.contractYears--;}
 function finishOffseasonEvents(){s.specialOffers=(s.specialOffers||[]).filter(row=>me().roster.some(player=>player.id===row.playerId));s.view='development'}
@@ -131,7 +132,7 @@ function growth() {
     const priority = x => x.specialTrainingResult ? 0 : x.focus ? 1 : x.awakeningKeys?.length ? 2 : 3;
     const resultsById = new Map(s.growth.map(x => [x.player.id, x]));
     const growthResults = sortPlayers(s.growth.map(x => x.player), s.developmentSort).map(p => resultsById.get(p.id)).sort((a,b) => priority(a)-priority(b));
-    return `${head()}<main class="development-room growth-modal" role="dialog" aria-modal="true" aria-label="育成結果"><div class="phase-topbar"><p class="eyebrow">成長結果</p><h2>育成・特別特訓の結果</h2><p class="hint">${s.mode==='room'?'全クラブの育成・成長・衰退・加齢を完了しました。':'CPU5クラブも育成・成長・衰退・加齢を完了しました。'}</p></div><section class="candidate-grid">${growthResults.map(x => `<article class="candidate growth-result ${x.specialTrainingResult ? `growth-special-${x.specialTrainingResult.steps}` : x.focus ? 'growth-focus' : x.awakeningKeys?.length ? 'growth-awakened' : ''}"><div class="growth-labels" aria-label="育成内容">${x.specialTrainingResult ? '<span>若手育成イベント</span>' : ''}${x.focus ? `<span>重点育成：${e(STAT_LABELS[x.focus] || x.focus)}</span>` : ''}${x.awakeningKeys?.length ? '<span>覚醒</span>' : ''}</div>${renderContractPlayerCard(x.player,me(),x.changes)}<p>年齢 ${x.player.age - 1} → ${x.player.age}</p>${x.awakeningKeys?.length ? `<p><b>覚醒！</b></p>` : ''}${x.specialTrainingResult?`<p><b>特別特訓：</b>${x.specialTrainingResult.label}</p>`:''}<p>${x.retired ? '35歳で引退' : x.changes.map(c=>`${STAT_LABELS[c.key]} ${c.from === c.to && c.increased ? `${c.from} ↑` : `${c.from} → ${c.to}`}`).join(' ／ ') || 'ランク変化なし'}</p>${x.learnedAbility ? `<p><b>特殊能力を習得！</b><br>★ ${x.learnedAbility}</p>` : ''}</article>`).join('')}</section><button data-stage4="releasePhase">放出フェイズへ進む</button></main>`;
+    return `${head()}<main class="development-room growth-modal" role="dialog" aria-modal="true" aria-label="育成結果"><div class="phase-topbar"><p class="eyebrow">成長結果</p><h2>育成・特別特訓の結果</h2><p class="hint">${s.mode==='room'?'全クラブの育成・成長・衰退・加齢を完了しました。':'CPU5クラブも育成・成長・衰退・加齢を完了しました。'}</p></div><section class="candidate-grid">${growthResults.map(x => `<article class="candidate growth-result ${x.specialTrainingResult ? `growth-special-${x.specialTrainingResult.steps}` : x.focus ? 'growth-focus' : x.awakeningKeys?.length ? 'growth-awakened' : ''}"><div class="growth-labels" aria-label="育成内容">${x.specialTrainingResult ? '<span>若手育成イベント</span>' : ''}${x.focus ? `<span>重点育成：${e(STAT_LABELS[x.focus] || x.focus)}</span>` : ''}${x.awakeningKeys?.length ? '<span>覚醒</span>' : ''}</div>${renderContractPlayerCard(x.player,me(),x.changes)}<p>年齢 ${['sage','robot','black_hole'].includes(rareKind(x.player)) ? e(rareAgeLabel(x.player)) : `${x.player.age - 1} → ${x.player.age}`}</p>${x.hatched ? `<p><b>金の卵が孵化しました！ ${e(x.player.name)}</b></p>` : ''}${x.awakeningKeys?.length ? `<p><b>覚醒！</b></p>` : ''}${x.specialTrainingResult?`<p><b>特別特訓：</b>${x.specialTrainingResult.label}</p>`:''}<p>${x.retired ? '35歳で引退' : x.changes.map(c=>`${STAT_LABELS[c.key]} ${c.from === c.to && c.increased ? `${c.from} ↑` : `${c.from} → ${c.to}`}`).join(' ／ ') || 'ランク変化なし'}</p>${x.learnedAbility ? `<p><b>特殊能力を習得！</b><br>★ ${x.learnedAbility}</p>` : ''}</article>`).join('')}</section><button data-stage4="releasePhase">放出フェイズへ進む</button></main>`;
 }
 
 function release() {

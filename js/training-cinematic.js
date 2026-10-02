@@ -1,6 +1,6 @@
-import {loadMotionAtlas,drawMotion} from './player-motion.js?v=appearance-v21';
-import {playerAppearance} from './avatar-profile.js?v=appearance-v21';
-import {playerAvatarTexture} from './player-avatar.js?v=appearance-v21';
+import {loadMotionAtlas,drawMotion} from './player-motion.js?v=rare-v2';
+import {playerAppearance} from './avatar-profile.js?v=rare-v2';
+import {playerAvatarTexture} from './player-avatar.js?v=rare-v2';
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 let active=false;
 export async function playTrainingCinematic(club,previousScreen){

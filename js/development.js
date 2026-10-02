@@ -1,6 +1,7 @@
+import { rareKind, hatchEgg } from './rare-characters.js';
 import { rankOf } from './config.js';
 import { calculateOverall, FIELD_STAT_KEYS, FIELD_PLAYER_STAT_KEYS } from './data.js?v=0.17.2';
-import { SPECIAL_ABILITIES } from './market.js?v=0.17.30';
+import { SPECIAL_ABILITIES } from './market.js?v=rare-v2';
 import { weightedPick } from './random.js';
 
 const RANKS = ['G', 'F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS'];
@@ -79,7 +80,7 @@ export function createContractEvents(club, rng) {
 export function createSpecialTrainingOffers(club, rng) {
   return club.roster.map(player => {
     const rank = rankOf(calculateOverall(player));
-    if (player.isInitial || !SPECIAL_TRAINING_COST[rank] || rng.next() >= .01) return null;
+    if (rareKind(player) || player.isInitial || !SPECIAL_TRAINING_COST[rank] || rng.next() >= .01) return null;
     return { playerId: player.id, cost: SPECIAL_TRAINING_COST[rank], rank };
   }).filter(Boolean);
 }
@@ -99,6 +100,12 @@ export function processOffseason(club, training, rng, specialTraining = new Set(
     const ageBefore = player.age;
     player.age++;
     const focus = training.get(player.id);
+    if (rareKind(player)) {
+      const hatched = hatchEgg(player, rng);
+      const changes = skills(player).filter(key => beforeValues[key] !== player.stats[key]).map(key => ({ key, from: before[key], to: rankOf(player.stats[key]), fromValue: beforeValues[key], toValue: player.stats[key], increased: player.stats[key] > beforeValues[key] }));
+      results.push({ player, changes, retired:false, focus:null, awakeningKeys:[], learnedAbility:null, specialTrainingResult:null, hatched });
+      continue;
+    }
     const grew = [];
     for (const key of skills(player)) {
       const value = player.stats[key]; let delta = 0;
@@ -141,7 +148,7 @@ export function processOffseason(club, training, rng, specialTraining = new Set(
     const changes = skills(player).filter(key => beforeValues[key] !== player.stats[key]).map(key => ({ key, from: before[key], to: rankOf(player.stats[key]), fromValue: beforeValues[key], toValue: player.stats[key], increased: player.stats[key] > beforeValues[key], awakened: awakeningKeys.includes(key) }));
     results.push({ player, changes, retired: player.age >= 35, focus, awakeningKeys, learnedAbility, specialTrainingResult });
   }
-  club.roster = club.roster.filter(p => p.age < 35);
+  club.roster = club.roster.filter(p => rareKind(p) || p.age < 35);
   return results;
 }
 

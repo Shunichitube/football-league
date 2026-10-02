@@ -1,6 +1,7 @@
+import { applyRareCharacter, rollRareCharacter, rareKind, RARE_CHARACTERS } from './rare-characters.js';
 import { calculateOverall, createPlayer, displayPlayer, FIELD_STAT_KEYS, STAT_LABELS } from './data.js?v=0.22.0';
 import { createRandom, weightedPick } from './random.js';
-import { ACTION_TYPES } from './rules.js?v=0.17.2';
+import { ACTION_TYPES } from './rules.js?v=rare-v2';
 
 const DRAFT_DISTRIBUTION = [['G', 15], ['F', 25], ['E', 40], ['D', 15], ['C', 4], ['B', 1]];
 const DRAFT_COST = 5;
@@ -48,6 +49,8 @@ export const SPECIAL_ABILITIES = {
 };
 
 export const SPECIAL_ABILITY_DESCRIPTIONS = {
+  ...Object.fromEntries(Object.values(RARE_CHARACTERS).filter(d => d.ability).map(d => [d.ability, d.description])),
+  精密パス: RARE_CHARACTERS.robot.description, 精密ドリブル: RARE_CHARACTERS.robot.description, 精密シュート: RARE_CHARACTERS.robot.description,
   セービング: 'シュート対応全般に強い。', 安定感: 'GK判定のブレが小さくなる。', 守護神: '接戦の終盤でGK能力を発揮しやすい。', スイーパーGK: '相手が深く攻め込んだ場面で、GKの守備力が最終対応を助ける。', パワープレー: '終盤ビハインド時、GKが前線に加わり攻撃力を高める。攻撃失敗時はカウンターを受けやすくなる。', ロングフィード: 'GKキャッチ後、前線の状況が良ければロングボールで速攻を狙う。',
   ボールハンター: '第1守備や奪取場面で力を発揮する。', カバーリング: '突破や速攻へのカバー対応で力を発揮する。', パスカット: 'パス攻撃への守備で力を発揮する。', カウンター起点: '守備成功後のカウンターにつながりやすい。', ビルドアップ: 'パス攻撃全般で力を発揮する。', 最終防衛線: 'ゴール前の大ピンチで力を発揮する。',
   スピードスター: '速攻や突破場面で走力を発揮しやすい。', ドリブラー: 'ドリブル攻撃全般で力を発揮する。', チャンスメイカー: 'パス攻撃全般でチャンスを作りやすい。', カットイン: 'ドリブルからのシュート場面で力を発揮する。', ハードワーカー: '攻守に走力を発揮しやすい。', 万能型: 'バランス戦術で攻守に力を発揮する。',
@@ -87,14 +90,15 @@ function createVariedStats(player, tierName, rng) {
   player.marketTier = tierName;
 }
 
-function playerForTier(id, position, tierName, age, rng) {
+function playerForTier(id, position, tierName, age, rng, source) {
   const p = createPlayer(id, position, rng, { initial: false });
   createVariedStats(p, tierName, rng);
-  p.age = age; p.isInitial = false; p.contractYears = 3; p.specialAbility = rng.next() < .4 ? abilityFor(position, rng) : null; p.scoutComment = createScoutComment(p, rng); return p;
+  p.age = age; p.isInitial = false; p.contractYears = 3; p.specialAbility = rng.next() < .4 ? abilityFor(position, rng) : null; p.scoutComment = createScoutComment(p, rng); const kind = source ? rollRareCharacter(source, rng) : null; return kind ? applyRareCharacter(p, kind, rng) : p;
 }
 function abilityFor(position, rng) { return rng.pick(SPECIAL_ABILITIES[position]); }
 
 export function createScoutComment(player, rng) {
+  if (rareKind(player)) return RARE_CHARACTERS[player.rareCharacter].scout;
   const keys = player.primaryPosition === 'GK' ? GK_SCOUT_KEYS : FIELD_STAT_KEYS;
   const currentKey = [...keys].sort((a, b) => player.stats[b] - player.stats[a])[0];
   const growthKey = [...keys].sort((a, b) => player.hiddenGrowth[b] - player.hiddenGrowth[a])[0];
@@ -112,11 +116,13 @@ export function createScoutComment(player, rng) {
   else if (average >= 1.12 && rng.next() < .18) rare = '非常に高い成長性を感じる';
   return [currentHint, ageHint, growthHint, abilityHint, rare].filter(Boolean).join('。') + '。';
 }
-export function createDraftPool(seed, season = 1) { const rng = createRandom(`${seed}:season:${season}:draft-pool`); return Array.from({ length: 24 }, (_, i) => playerForTier(season * 10000 + 1000 + i, marketPosition(rng), tier(DRAFT_DISTRIBUTION, rng), rng.int(18,22), rng)); }
+export function createDraftPool(seed, season = 1) { const rng = createRandom(`${seed}:season:${season}:draft-pool`); return Array.from({ length: 24 }, (_, i) => playerForTier(season * 10000 + 1000 + i, marketPosition(rng), tier(DRAFT_DISTRIBUTION, rng), rng.int(18,22), rng, 'draft')); }
 export function createAuctionPool(seed, season = 1, releasedPlayers = []) {
   const rng = createRandom(`${seed}:season:${season}:auction-pool`);
   const returning = [...releasedPlayers]
     .filter(player => {
+      if (rareKind(player) === 'golden_egg') return false;
+      if (rareKind(player)) return true;
       const rank = displayPlayer(player).overallRank;
       const eligibleRanks = player.age >= 30
         ? ['SS', 'S', 'A', 'B']
@@ -128,20 +134,20 @@ export function createAuctionPool(seed, season = 1, releasedPlayers = []) {
     .slice(0, 9)
     .map(row => ({ ...row.player, marketSource: 'released' }));
   const generatedCount = 18 - returning.length;
-  const generated = Array.from({ length: generatedCount }, (_, i) => ({ ...playerForTier(season * 10000 + 2000 + i, marketPosition(rng), tier(AUCTION_DISTRIBUTION, rng), rng.int(22,31), rng), marketSource: 'generated' }));
+  const generated = Array.from({ length: generatedCount }, (_, i) => ({ ...playerForTier(season * 10000 + 2000 + i, marketPosition(rng), tier(AUCTION_DISTRIBUTION, rng), rng.int(22,31), rng, 'auction'), marketSource: 'generated' }));
   return [...returning, ...generated];
 }
 export function publicValue(player) { return BASE_VALUE[displayPlayer(player).overallRank]; }
 export function cpuCandidatePick(club, candidates, rng) {
   // 複数の空き枠を持って市場へ入ったCPUは、競売用に2枠を残す。
   if (club.reserveAuctionSlot && club.roster.length >= 10) return null;
-  const futureCounts = Object.fromEntries(Object.keys(REQUIRED_POSITIONS).map(position => [position, club.roster.filter(player => player.primaryPosition === position && player.age < 34).length]));
+  const futureCounts = Object.fromEntries(Object.keys(REQUIRED_POSITIONS).map(position => [position, club.roster.filter(player => player.primaryPosition === position && (rareKind(player) || player.age < 34)).length]));
   return [...candidates].sort((a,b) => cpuDraftScore(club, b, futureCounts, rng) - cpuDraftScore(club, a, futureCounts, rng))[0];
 }
 function cpuDraftScore(club, player, futureCounts, rng) { const need=futureCounts[player.primaryPosition] < REQUIRED_POSITIONS[player.primaryPosition]; return publicValue(player) * 3 + (23 - player.age) * 1.5 + (need ? 100 : 0) + rng.next() * 3; }
 export function cpuBid(club, player, rng) {
   if (club.roster.length >= 12 || club.funds < 6) return 0;
-  const futureCount = club.roster.filter(p => p.primaryPosition === player.primaryPosition && p.age < 34).length;
+  const futureCount = club.roster.filter(p => p.primaryPosition === player.primaryPosition && (rareKind(p) || p.age < 34)).length;
   const shortage = futureCount < REQUIRED_POSITIONS[player.primaryPosition] ? rng.int(15,25) : 0;
   const samePosition = club.roster.filter(p => p.primaryPosition === player.primaryPosition);
   const bestCurrent = samePosition.length ? Math.max(...samePosition.map(publicValue)) : null;
@@ -149,7 +155,7 @@ export function cpuBid(club, player, rng) {
   const upgrade = bestCurrent !== null && publicValue(player) > bestCurrent ? rng.int(8,16) : 0;
   // 十分な人数が揃った後は、上位ランクの選手を待つ。
   if (club.roster.length >= 10 && !shortage && !upgrade) return 0;
-  const age = player.age <= 23 ? 3 : player.age >= 30 ? -3 : 0;
+  const age = rareKind(player) ? 0 : player.age <= 23 ? 3 : player.age >= 30 ? -3 : 0;
   const value = Math.max(0, Math.round((publicValue(player) + shortage + upgrade + age) * (.75 + rng.next() * .3)));
   return Math.min(value, Math.max(0, club.funds - (upgrade || shortage ? 10 : 50)));
 }

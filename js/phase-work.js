@@ -1,7 +1,8 @@
+import { rareKind } from './rare-characters.js';
 // Shared validation for a private work-in-progress copy and authoritative Room input.
-import { applyClubAction, ACTION_TYPES, validateLineup } from './rules.js?v=0.17.2';
-import { selectBestLineup } from './cpu.js?v=0.17.30';
-import { trainingSkills } from './development.js?v=0.17.30';
+import { applyClubAction, ACTION_TYPES, validateLineup } from './rules.js?v=rare-v2';
+import { selectBestLineup } from './cpu.js?v=rare-v2';
+import { trainingSkills } from './development.js?v=rare-v2';
 
 export const clone = value => JSON.parse(JSON.stringify(value));
 export function requireValue(condition, message) { if (!condition) throw new Error(message); }
@@ -28,7 +29,7 @@ export function applyWork(league, clubId, events, actions = []) {
         // Same retention-decline semantics as the single-player app.
         club.roster = club.roster.filter(row => row.id !== player.id);
         club.lineup = club.lineup.filter(id => id !== player.id);
-        if (!player.isInitial && !league.releasedPlayers.some(row => row.id === player.id)) league.releasedPlayers.push(player);
+        if (!player.isInitial && rareKind(player) !== 'golden_egg' && !league.releasedPlayers.some(row => row.id === player.id)) league.releasedPlayers.push(player);
       }
       pending.retention = pending.retention.filter(row => row.playerId !== player.id);
     } else if (action.type === 'specialPay' || action.type === 'specialSkip') {

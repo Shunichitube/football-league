@@ -1,5 +1,6 @@
-import {loadAvatarAssets} from './avatar-rendering.js?v=appearance-v26';
-import {appearanceMotionFrame} from './avatar-motion-parts.js?v=appearance-v26';
+import {drawRareMotion} from './rare-avatar.js';
+import {loadAvatarAssets} from './avatar-rendering.js?v=rare-v2';
+import {appearanceMotionFrame} from './avatar-motion-parts.js?v=rare-v2';
 export const MOTIONS = {
   idle: { label: '待機', frames: [0, 1], fps: 2 },
   run: { label: '走り', frames: [0, 1, 2, 3, 4, 5, 6, 7], fps: 16 },
@@ -28,6 +29,7 @@ export async function loadMotionAtlas() {
   return { base, run, inbetweens, correctedSix, shoot, catch: catchSheet, dive, avatar };
 }
 export function drawMotion(ctx, atlas, motion, seconds, { direction = 'right', ball = false, loop, appearance, kit, goalkeeper = false } = {}) {
+  if(drawRareMotion(ctx,atlas.avatar?.rare,appearance,motion,seconds,{direction,ball,loop}))return;
   const index = motionFrame(motion, seconds, { loop });
   const width = ctx.canvas.width, height = ctx.canvas.height;
   const usesRun = motion === 'run' || motion === 'dribble';

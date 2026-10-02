@@ -2,7 +2,7 @@ import { openLot, raiseBid, passLot, tickLot } from '../js/live-auction.js?v=0.2
 // Room owns the phase and private inputs. All game rules come from main's modules.
 import { createLeague, standings, simulateRemainingSeason, finalizeSeason, applySeasonFinances, recordDraftAcquisition, startNextSeason } from '../js/league.js?v=0.17.29';
 import { createDraftPool, createAuctionPool, resolveDraftActions } from '../js/market.js?v=0.17.31';
-import { decideCpuDraftAction, prepareCpuClubs, manageCpuContracts, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from '../js/cpu.js?v=0.17.30';
+import { decideCpuDraftAction, prepareCpuClubs, manageCpuContracts, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from '../js/cpu.js?v=rare-v1';
 import { createContractEvents, createSpecialTrainingOffers } from '../js/development.js?v=0.17.31';
 import { ACTION_TYPES } from '../js/rules.js?v=0.17.2';
 import { createRandom } from '../js/random.js';

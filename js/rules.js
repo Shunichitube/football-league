@@ -1,4 +1,5 @@
-import { renewalFee } from './development.js?v=0.17.2';
+import { rareKind } from './rare-characters.js';
+import { renewalFee } from './development.js?v=rare-v2';
 
 export const ACTION_TYPES = Object.freeze({
   DRAFT_PICK: 'DRAFT_PICK',
@@ -87,7 +88,7 @@ export function applyClubAction(club, action, league = null) {
     if (player.primaryPosition === 'GK' && club.roster.filter(candidate => candidate.primaryPosition === 'GK').length <= 1) return { ok: false, error: 'GKを0人にはできません。' };
     club.roster = club.roster.filter(candidate => candidate.id !== player.id);
     club.lineup = club.lineup.filter(id => id !== player.id);
-    if (!player.isInitial && league) {
+    if (!player.isInitial && rareKind(player) !== 'golden_egg' && league) {
       league.releasedPlayers ||= [];
       if (!league.releasedPlayers.some(candidate => candidate.id === player.id)) league.releasedPlayers.push(player);
     }

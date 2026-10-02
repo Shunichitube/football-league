@@ -1,5 +1,6 @@
-import {playerAppearance,kitColor} from './avatar-profile.js?v=appearance-v26';
-import { pixelTexture } from './arena-characters.js?v=appearance-v26';
+import { rarePortraitUrl } from './rare-characters.js';
+import {playerAppearance,kitColor} from './avatar-profile.js?v=rare-v2';
+import { pixelTexture } from './arena-characters.js?v=rare-v2';
 import { minimumAuctionBid } from './live-auction.js';
 import { STAGE, AUCTION_SEATS } from './stage-layout.js';
 const avatars=new Map();
@@ -44,6 +45,7 @@ function auctionVenueCharacters(clubs){
   return `<div class="auction-crowd" aria-hidden="true">${audience}</div>${ribbon}${flags}<div class="auction-light-beam beam-left" aria-hidden="true"></div><div class="auction-light-beam beam-right" aria-hidden="true"></div><img class="auction-host" src="${venueSprite('#172e50',71)}" alt="" aria-hidden="true">${staff}<span class="auction-furniture-front" aria-hidden="true"></span><div class="auction-foreground" aria-hidden="true">${consoles}${operators}</div>`;
 }
 export function auctionAvatar(player,clubColor){
+  const portrait=rarePortraitUrl(player);if(portrait)return portrait;
   const appearance=playerAppearance(player),goalkeeper=player.primaryPosition==='GK',color=kitColor(clubColor,goalkeeper);
   const key=JSON.stringify([appearance,color,goalkeeper]);
   if(!avatars.has(key))avatars.set(key,pixelTexture(color,appearance,'player',{goalkeeper}).toDataURL());

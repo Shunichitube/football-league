@@ -1,3 +1,4 @@
+import { rareKind } from './rare-characters.js';
 // Appearance is deterministic and never consumes the match/league RNG.
 export const HAIR_STYLES = ['ショート', 'サイドパート', 'スパイキー', 'クルーカット', '坊主', 'モヒカン', 'センター分け', 'カーリー', 'フレンチクロップ', 'クイッフ', 'オールバック', 'ポンパドール', 'ボブ', 'ウェーブ', 'アフロ', 'ベリーショート', 'ポニーテール', 'お団子', 'アンダーカット', 'ロング'];
 export const FACE_STYLES = ['ノーマル', 'きりっと', 'やさしい'];
@@ -10,13 +11,14 @@ export const appearanceSeed = value => String(value).split('').reduce((hash, cha
 export function avatarProfile(value = 0) {
   const profile = value && typeof value === 'object' ? value : null;
   const seed = Number(profile?.seed ?? value) || 0;
-  return { version: 4, body: 0, hairStyle: variant(profile?.hairStyle ?? seed, 20), face: variant(profile?.face ?? Math.floor(seed / 20), 3), hairColor: variant(profile?.hairColor ?? Math.floor(seed / 900),10), skinTone: variant(profile?.skinTone ?? Math.floor(seed / 60), 3), glasses: profile?.glasses === true || profile?.glasses === 1 };
+  return { ...(rareKind(profile) ? {rareCharacter:profile.rareCharacter} : {}), version: 4, body: 0, hairStyle: variant(profile?.hairStyle ?? seed, 20), face: variant(profile?.face ?? Math.floor(seed / 20), 3), hairColor: variant(profile?.hairColor ?? Math.floor(seed / 900),10), skinTone: variant(profile?.skinTone ?? Math.floor(seed / 60), 3), glasses: profile?.glasses === true || profile?.glasses === 1 };
 }
 export function createPlayerAppearance(id, position) {
   const seed = appearanceSeed(`${id}:${position}`);
   return avatarProfile({ seed, glasses: Math.floor(seed / 180) % 5 === 0 });
 }
 export function playerAppearance(player) {
+  if (rareKind(player)) return {version:4,rareCharacter:player.rareCharacter};
   if (player.avatar?.version >= 3) return avatarProfile({...player.avatar,hairColor:player.avatar.version>=4?player.avatar.hairColor:Math.floor(appearanceSeed(`${player.id}:${player.primaryPosition}`)/900)%10});
   // Old saves get stable expanded appearances without editing their saved roster.
   const generated = createPlayerAppearance(String(player.id).replace(/^p-/, ''), player.primaryPosition);

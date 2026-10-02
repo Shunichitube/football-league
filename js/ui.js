@@ -1,10 +1,11 @@
+import { rareKind, rarePortraitUrl, rareAgeLabel } from './rare-characters.js';
 import { dialogs } from './dialogs.js';
-import {playerAppearance,kitColor} from './avatar-profile.js?v=appearance-v26';
-import { formatMatchEvents } from './match-log.js?v=0.17.31';
+import {playerAppearance,kitColor} from './avatar-profile.js?v=rare-v2';
+import { formatMatchEvents } from './match-log.js?v=rare-v2';
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.22.0';
-import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=0.17.2';
-import { LINEUP_SLOTS, validateLineup } from './rules.js?v=0.17.2';
-import { pixelTexture } from './arena-characters.js?v=appearance-v26';
+import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=rare-v2';
+import { LINEUP_SLOTS, validateLineup } from './rules.js?v=rare-v2';
+import { pixelTexture } from './arena-characters.js?v=rare-v2';
 
 export const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
 
@@ -22,6 +23,7 @@ const positionLabel = position => POSITION_LABELS[position] || position;
 const slotLabel = (slot, index) => `${positionLabel(slot)}${slot === 'MF' ? ` ${index === 2 ? '1' : '2'}` : ''}`;
 const fitPositions = position => ({ GK: 'GK', DF: 'DF / MF', MF: 'DF / MF / FW', FW: 'MF / FW' }[position] || positionLabel(position));
 const growthHint = player => {
+  if (rareKind(player)) return '能力固定';
   if (!player.hiddenGrowth || typeof player.hiddenGrowth !== 'object') return '―';
   const keys = player.primaryPosition === 'GK' ? ['gk', 'defense', 'speed', 'pass'] : ['speed', 'pass', 'dribble', 'shoot', 'defense', 'stamina'];
   const key = keys.filter(name => typeof player.hiddenGrowth[name] === 'number').sort((a, b) => player.hiddenGrowth[b] - player.hiddenGrowth[a])[0];
@@ -122,9 +124,10 @@ export function renderPlayerCard(player, options = {}) {
     : '';
   return `<article class="player-card">
     <div class="player-profile">
+      ${rareKind(player) ? `<img class="rare-card-portrait" src="${rarePortraitUrl(player)}" alt="${escapeHtml(player.name)}">` : ''}
       <div class="player-title"><span class="player-name-box" style="min-width:0">${options.clubColor ? `<i class="club-color-dot player-club-dot" style="--club:${escapeHtml(options.clubColor)}"></i>` : ''}${nameMarkup(display)}${renameButton(player, options)}</span><strong class="overall-rank">総合 ${display.overallRank}</strong></div>
       <span class="position-badge">${positionLabel(display.primaryPosition)}</span>
-      <p class="player-meta">年齢 <b>${display.age}歳</b></p>
+      <p class="player-meta">年齢 <b>${escapeHtml(rareAgeLabel(player))}</b></p>
       <p class="player-meta">契約 <b>${display.contractYears}年</b></p>
       <p class="growth-expectation">成長期待：<b>${growthHint(player)}</b></p>
       ${honorBadges}
@@ -152,6 +155,7 @@ export function renderRosterPanel(club, options = {}) {
 
 const squadAvatars = new Map();
 function squadAvatar(player, clubColor) {
+  const portrait = rarePortraitUrl(player); if (portrait) return portrait;
   const appearance = playerAppearance(player), goalkeeper = player.primaryPosition === 'GK';
   const color = kitColor(clubColor, goalkeeper), key = JSON.stringify([appearance, color, goalkeeper]);
   if (typeof document === 'undefined') return '';
@@ -179,7 +183,7 @@ function renderSquadCard(player, lineup, selectedId, clubColor, growthChanges = 
   const abilities = publicAbilities(player);
   return `<article class="squad-player ${slot < 0 ? 'reserve' : 'starter'} ${selectedId === player.id ? 'selected-player' : ''}" data-compare-player="${escapeHtml(player.id)}" data-lineup-drag="${escapeHtml(player.id)}" draggable="true" tabindex="0" aria-label="${escapeHtml(player.name)}、${escapeHtml(status)}、総合${escapeHtml(display.overallRank)}">
     <div class="squad-avatar" draggable="true" data-lineup-drag="${escapeHtml(player.id)}" aria-hidden="true">${squadRoleBadge(player, lineup)}<img src="${squadAvatar(player, clubColor)}" alt="" draggable="false"></div>
-    <div class="squad-identity"><b class="player-name" data-player-name="${escapeHtml(player.id)}" title="${escapeHtml(player.name)}">${escapeHtml(player.name)}</b><strong>総合 ${escapeHtml(display.overallRank)}</strong><span>${escapeHtml(positionLabel(player.primaryPosition))} ・ ${display.age}歳</span><span>契約 ${display.contractYears}年</span><div class="squad-card-actions"><button type="button" data-lineup-player="${escapeHtml(player.id)}" class="subtle">${selectedId === player.id ? '選択中' : '選択'}</button><button type="button" data-rename-player="${escapeHtml(player.id)}" class="subtle" aria-label="${escapeHtml(player.name)}の名前変更">改名</button></div></div>
+    <div class="squad-identity"><b class="player-name" data-player-name="${escapeHtml(player.id)}" title="${escapeHtml(player.name)}">${escapeHtml(player.name)}</b><strong>総合 ${escapeHtml(display.overallRank)}</strong><span>${escapeHtml(positionLabel(player.primaryPosition))} ・ ${escapeHtml(rareAgeLabel(player))}</span><span>契約 ${display.contractYears}年</span><div class="squad-card-actions"><button type="button" data-lineup-player="${escapeHtml(player.id)}" class="subtle">${selectedId === player.id ? '選択中' : '選択'}</button><button type="button" data-rename-player="${escapeHtml(player.id)}" class="subtle" aria-label="${escapeHtml(player.name)}の名前変更">改名</button></div></div>
     <dl class="squad-abilities">${abilities.map(ability => `<div><dt>${escapeHtml(ability.label)}</dt><dd><span>${escapeHtml(ability.rank)}${abilityArrow(growthDirection(ability,growthChanges))}</span>${squadGrowthBar(ability,growthChanges)}</dd></div>`).join('')}</dl>
     <div class="squad-special" title="${escapeHtml(display.specialAbility ? SPECIAL_ABILITY_DESCRIPTIONS[display.specialAbility] || '' : '')}"><span>特能</span><b>${escapeHtml(display.specialAbility || '―')}</b></div>
   </article>`;
@@ -198,7 +202,7 @@ export function renderSquadComparison(club, selectedId, targetId = null) {
   const order = ['G','F','E','D','C','B','A','S','SS'];
   const left = displayPlayer(source), right = target ? displayPlayer(target) : null;
   const abilities = publicAbilities(source);
-  const profile = player => player ? `<div class="compare-profile">${squadRoleBadge(player, club.lineup || [])}<img src="${squadAvatar(player, club.color)}" alt=""><div><strong>${escapeHtml(player.name)}</strong><span>総合 ${escapeHtml(displayPlayer(player).overallRank)} ・ ${escapeHtml(positionLabel(player.primaryPosition))}</span><small>${player.age}歳 ・ 契約${player.contractYears}年</small></div></div>` : '<div class="compare-profile compare-placeholder">所属選手にホバーまたは選択</div>';
+  const profile = player => player ? `<div class="compare-profile">${squadRoleBadge(player, club.lineup || [])}<img src="${squadAvatar(player, club.color)}" alt=""><div><strong>${escapeHtml(player.name)}</strong><span>総合 ${escapeHtml(displayPlayer(player).overallRank)} ・ ${escapeHtml(positionLabel(player.primaryPosition))}</span><small>${escapeHtml(rareAgeLabel(player))} ・ 契約${player.contractYears}年</small></div></div>` : '<div class="compare-profile compare-placeholder">所属選手にホバーまたは選択</div>';
   return `<div class="compare-duel"><section class="compare-person">${profile(source)}<div class="compare-ability-list">${abilities.map(ability => `<div><span>${escapeHtml(ability.label)}</span><b>${escapeHtml(ability.rank)}</b>${squadGrowthBar(ability,null)}</div>`).join('')}</div><p class="compare-special">特能 <b>${escapeHtml(left.specialAbility || '―')}</b></p></section><span class="compare-vs">VS</span><section class="compare-person">${profile(target)}<div class="compare-ability-list">${abilities.map(ability => {
     const rank = right?.ranks[ability.key];
     const change = rank ? Math.sign(order.indexOf(rank) - order.indexOf(ability.rank)) : 0;

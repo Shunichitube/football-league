@@ -1,3 +1,4 @@
+import {rareKind} from '../js/rare-characters.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRandom } from '../js/random.js';
@@ -128,13 +129,14 @@ test('市場の特殊能力は約40%で、全候補が生成対象に含まれ�
   const seen = new Set();
   for (let i = 0; i < 120; i++) {
     for (const player of [...createDraftPool(`ability-${i}`), ...createAuctionPool(`ability-${i}`)]) {
+      if (rareKind(player)) continue;
       total++;
       if (player.specialAbility) { withAbility++; seen.add(player.specialAbility); }
     }
   }
   const rate = withAbility / total;
   assert.ok(rate >= .36 && rate <= .44, `special ability rate: ${rate}`);
-  assert.deepEqual([...seen].sort(), Object.values(SPECIAL_ABILITIES).flat().sort());
+  assert.deepEqual([...seen].sort(), [...new Set(Object.values(SPECIAL_ABILITIES).flat())].sort());
 });
 
 test('hiddenGrowthは能力別で、GKはGK能力・守備・走力・パスが成長期待の中心になる', () => {

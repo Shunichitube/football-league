@@ -51,6 +51,7 @@ export function formatMatchEvents(events, clubs, nameOf = name => name) {
       case 'POWER PLAY RISK': add(event, 'パワープレーを止められる。GKの戻りが遅れている'); break;
       case 'POWER PLAY RISK TRIGGERED': add(event, `GK${p}が戻り切れず、守備が不安定になる`); break;
       case 'POWER PLAY RISK CLEARED': add(event, `${p}がゴールへ戻り、守備体勢が整う`); break;
+      case 'RARE ABILITY': add(event, `${p}：${event.extra}`); break;
       case 'GOAL': {
         const other = side === 'home' ? 'away' : 'home';
         const before = score[side] - score[other];
@@ -62,7 +63,7 @@ export function formatMatchEvents(events, clubs, nameOf = name => name) {
           situation = `${club}が${lastLeader === other ? '逆転' : 'リード'}`;
         if (after !== 0 && (side === 'home' || side === 'away')) lastLeader = after > 0 ? side : other;
         const assist = d.assist;
-        add(event, `${score.home}－${score.away}　${p}がゴール${situation ? '　' + situation : ''}${assist ? '　アシスト：' + name(assist) : ''}`, true);
+        add(event, `${score.home}－${score.away}　${d.ownGoal ? `${p}のオウンゴール` : `${p}がゴール`}${d.special ? `（${d.special}）` : ''}${situation ? '　' + situation : ''}${assist ? '　アシスト：' + name(assist) : ''}`, true);
         break;
       }
       case 'GK CATCH':

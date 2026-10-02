@@ -1,5 +1,5 @@
 import { rankOf } from './config.js';
-import { createPlayerAppearance } from './avatar-profile.js?v=appearance-v26';
+import { createPlayerAppearance } from './avatar-profile.js?v=rare-v2';
 
 export const FIELD_STAT_KEYS = ['shoot', 'speed', 'defense', 'dribble', 'pass'];
 export const FIELD_PLAYER_STAT_KEYS = [...FIELD_STAT_KEYS, 'stamina'];

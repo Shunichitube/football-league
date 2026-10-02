@@ -1,13 +1,15 @@
+import {drawRarePortrait} from './rare-avatar.js';
 // Shared body, separately registered hairstyle/face/accessory layers.
-import {avatarProfile,kitColor} from './avatar-profile.js?v=appearance-v26';
-import {drawHair,drawGlasses,paintPart,loadAvatarAssets,AVATAR_BROWS} from './avatar-rendering.js?v=appearance-v26';
-export {avatarProfile,HAIR_STYLES,HAIR_COLORS,FACE_STYLES,SKIN_TONES} from './avatar-profile.js?v=appearance-v26';
+import {avatarProfile,kitColor} from './avatar-profile.js?v=rare-v2';
+import {drawHair,drawGlasses,paintPart,loadAvatarAssets,AVATAR_BROWS} from './avatar-rendering.js?v=rare-v2';
+export {avatarProfile,HAIR_STYLES,HAIR_COLORS,FACE_STYLES,SKIN_TONES} from './avatar-profile.js?v=rare-v2';
 export const AVATAR_SIZE={width:300,height:470};
 const HEAD=[104,121,256,220],BODY=[104,341,256,210];
 const headX=x=>150+(x-150)*.88;
 const EYE=[174,703,26,46];
 
 export function drawAvatar(ctx,assets,value=0,{kit,goalkeeper=false}={}) {
+ if(drawRarePortrait(ctx,assets.rare,value))return;
  const profile=avatarProfile(value),parts=assets.parts||assets;
  ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,300,470);
  const options={skinTone:profile.skinTone,kit:kitColor(kit,goalkeeper),goalkeeper};
