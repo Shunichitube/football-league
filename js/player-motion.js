@@ -1,4 +1,4 @@
-import {drawRareMotion} from './rare-avatar.js';
+import {drawRareMotion} from './rare-avatar.js?v=cell-cleanup-v1';
 import {loadAvatarAssets} from './avatar-rendering.js?v=appearance-v29';
 import {appearanceMotionFrame} from './avatar-motion-parts.js?v=ear-cleanup-v1';
 export const MOTIONS = {
