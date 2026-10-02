@@ -1330,3 +1330,47 @@ body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
  .overlay-panel.roster-panel .overlay-heading {position:static;padding:0;}
  .overlay-panel.roster-panel .position-counts {margin:8px 0;}
 }
+
+/* Personal records fit inside the existing result window in four by three cells. */
+@media(min-width:761px) {
+ #app .season-results-dashboard.is-stats .results-stats-panel {
+  height:100%;min-height:0;max-height:100%;box-sizing:border-box;
+  padding:7px 9px;overflow:visible;
+ }
+ #app .season-results-dashboard.is-stats .season-player-stats {
+  flex:1;min-width:0;min-height:0;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  grid-template-rows:repeat(3,minmax(0,1fr));gap:5px!important;
+  align-content:stretch;overflow:visible;
+ }
+ #app .season-results-dashboard.is-stats .season-stat-card {
+  min-width:0;min-height:0;box-sizing:border-box;
+  padding:6px 8px;gap:4px 7px;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);
+  grid-template-rows:minmax(0,1fr) auto;align-content:stretch;
+ }
+ #app .season-results-dashboard.is-stats .season-stat-profile {
+  min-width:0;min-height:0;grid-template-columns:clamp(40px,3.4vw,65px) minmax(0,1fr);
+  gap:5px;
+ }
+ #app .season-results-dashboard.is-stats .season-stat-profile img {
+  height:clamp(45px,6.5vh,85px);max-height:100%;
+ }
+ #app .season-results-dashboard.is-stats .season-stat-profile>div {gap:2px;line-height:1.1;}
+ #app .season-results-dashboard.is-stats .season-stat-name {font-size:clamp(11px,1.65vh,16px);}
+ #app .season-results-dashboard.is-stats .season-stat-profile b {font-size:clamp(9px,1.35vh,13px);}
+ #app .season-results-dashboard.is-stats .season-stat-profile span,
+ #app .season-results-dashboard.is-stats .season-stat-profile small {font-size:clamp(8px,1.15vh,11px);}
+ #app .season-results-dashboard.is-stats .season-stat-metrics {min-width:0;gap:3px;}
+ #app .season-results-dashboard.is-stats .season-stat-metrics>div {gap:3px;padding:2px 4px;}
+ #app .season-results-dashboard.is-stats .season-stat-metrics dt {
+  font-size:clamp(8px,1.1vh,11px);line-height:1.1;
+ }
+ #app .season-results-dashboard.is-stats .season-stat-metrics dd {
+  font-size:clamp(10px,1.5vh,15px);line-height:1.1;
+ }
+ #app .season-results-dashboard.is-stats .season-stat-special {
+  padding-top:3px;font-size:clamp(9px,1.25vh,12px);line-height:1.2;
+ }
+ #app .season-results-dashboard.is-stats .season-stat-special-description {margin-top:1px;line-height:1.2;}
+}
