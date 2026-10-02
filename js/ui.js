@@ -123,9 +123,10 @@ export function renderPlayerCard(player, options = {}) {
   const honorBadges = honors.mvp || honors.best5
     ? `<div class="player-honors">${honors.mvp ? '<span class="honor-badge honor-mvp">MVP</span>' : ''}${honors.best5 ? '<span class="honor-badge honor-best5">BEST 5</span>' : ''}</div>`
     : '';
-  return `<article class="player-card">
+  return `<article class="player-card${options.cardAvatar ? ' has-card-avatar' : ''}">
+    ${options.cardAvatar ? `<div class="player-card-avatar"><img src="${squadAvatar(player,options.clubColor)}" alt="${escapeHtml(player.name)}" draggable="false"></div>` : ''}
     <div class="player-profile">
-      ${options.showPortrait !== false && rareKind(player) ? `<img class="rare-card-portrait" src="${rarePortraitUrl(player)}" alt="${escapeHtml(player.name)}">` : ''}
+      ${!options.cardAvatar && options.showPortrait !== false && rareKind(player) ? `<img class="rare-card-portrait" src="${rarePortraitUrl(player)}" alt="${escapeHtml(player.name)}">` : ''}
       <div class="player-title"><span class="player-name-box" style="min-width:0">${options.clubColor ? `<i class="club-color-dot player-club-dot" style="--club:${escapeHtml(options.clubColor)}"></i>` : ''}${nameMarkup(display)}${renameButton(player, options)}</span><strong class="overall-rank">総合 ${display.overallRank}</strong></div>
       <span class="position-badge">${positionLabel(display.primaryPosition)}</span>
       <p class="player-meta">年齢 <b>${escapeHtml(rareAgeLabel(player))}</b></p>
