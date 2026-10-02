@@ -1057,3 +1057,27 @@ body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
   font-size:clamp(18px,1.14vw,22px);line-height:1.15;padding:2px 8px;flex-shrink:0;
  }
 }
+
+/* Compact individual results and keep the MVP clear of the cards. */
+@media(min-width:761px) {
+ #app .season-results-dashboard.is-stats .results-stats-panel {
+  height:auto;max-height:100%;box-sizing:border-box;
+  padding:10px 12px;overflow:auto;
+ }
+ #app .season-results-dashboard.is-stats .season-player-stats {
+  flex:none;grid-template-rows:repeat(3,auto);
+  align-content:start;align-items:stretch;overflow:visible;
+ }
+ #app .season-results-dashboard.is-stats .season-stat-card {
+  justify-content:flex-start;gap:10px;padding:10px 12px;
+ }
+ #app .season-results-dashboard.is-stats .season-stat-profile {
+  align-items:center;
+ }
+ #app .season-results-dashboard.is-stats .results-winner.is-mvp .mvp-joy-avatar {
+  height:clamp(75px,12vh,140px);max-height:140px;
+ }
+ #app .season-results-dashboard.is-stats .results-winner-name {
+  padding:3px 5px;margin-bottom:2px;
+ }
+}
