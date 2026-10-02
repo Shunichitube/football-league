@@ -93,5 +93,5 @@ export class RoomClient {
     this.timer = setTimeout(poll, this.room?.phase === 'auction' ? 750 : 2500);
   }
   stop() { this.generation++; this.pollGeneration++; clearTimeout(this.timer); this.timer = null; }
-  async resume() { await this.refresh(); this.startPolling(); }
+  async resume() { if(this.pending)await this.retry(); await this.refresh(); this.startPolling(); }
 }

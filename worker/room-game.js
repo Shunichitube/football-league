@@ -158,6 +158,7 @@ function resolveAll(room) {
     case 'team-setup':
       for (const club of league.clubs.filter(club => club.controllerType === 'HUMAN')) Object.assign(club, { lineup: [...room.inputs[club.id].lineup], tactic: room.inputs[club.id].tactic });
       return enterPhase(room, 'season-ready');
+    case 'season-ready': return runSeason(room);
     case 'season-result':
       if (league.season >= 10) return enterPhase(room, 'game-complete');
       return beginOffseason(room);
@@ -203,7 +204,7 @@ export function submitInput(room, player, input) {
       if (room.phase === 'offseason-events') requireValue(!result.club.roster.some(p => p.contractYears <= 0) && !result.pending.retention.length && !result.pending.special.length, '未処理の判断が残っています。');
       accepted = { actions: input.actions.map(row => ({ type: row.type, playerId: row.playerId })) }; break;
     }
-    case 'draft-complete': case 'auction-complete': case 'season-result': case 'growth-result': accepted = {}; break;
+    case 'draft-complete': case 'auction-complete': case 'season-ready': case 'season-result': case 'growth-result': accepted = {}; break;
     default: throw new Error('このフェーズでは入力できません。');
   }
   room.inputs[club.id] = accepted;
@@ -212,6 +213,7 @@ export function submitInput(room, player, input) {
 }
 export function runSeason(room) {
   requireValue(room.phase === 'season-ready', '全員の編成完了を待っています。');
+  requireValue(humanIds(room).every(id=>Object.hasOwn(room.inputs,id)), '全員のリーグ開始ボタンを待っています。');
   simulateRemainingSeason(room.game.league);
   if (room.game.league.season === 10) finalizeSeason(room.game.league);
   enterPhase(room, 'season-result');

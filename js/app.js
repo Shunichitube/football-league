@@ -1,3 +1,4 @@
+import {createGameExperience} from './game-experience.js?v=1';
 import { playSeasonFinale } from './season-finale.js?v=conveyor-v3';
 import { rareKind, rareAgeLabel } from './rare-characters.js';
 import { playTrainingCinematic } from './training-cinematic.js?v=6';
@@ -14,7 +15,7 @@ import { createAuctionPool, createDraftPool, resolveDraftActions } from './marke
 import { renderContractPlayerCard, configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=appearance-v29';
 import { decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=appearance-v29';
 import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=appearance-v29';
-import { RoomAdapter } from './room-adapter.js?v=0.20.0';
+import { RoomAdapter } from './room-adapter.js?v=resume-v1';
 import { classifyScreens } from './screen-classifier.js';
 import { createContractEvents, createSpecialTrainingOffers, renewalFee, trainingSkills } from './development.js?v=appearance-v29';
 import { exportSave, importSave, loadSlot, saveSlot, slotInfo } from './storage.js?v=0.17.27';
@@ -24,10 +25,12 @@ let roomAdapter=null;
 const standings=league=>roomAdapter?.active?roomAdapter.standings(league,singleStandings):singleStandings(league);
 const app = document.querySelector('#app');
 let s = createInitialState();
+const experience=createGameExperience({dialogs,onExit:()=>{returnToTitle();render();}});
 let finalePending=false,finaleDispose=null;
 const playedFinales=new Set();
 const finaleKey=()=>JSON.stringify([s.mode,s.roomId||'',s.league?.seed,s.league?.season,me()?.id]);
 function returnToTitle() {
+  experience.reset();
   finaleDispose?.();finaleDispose=null;finalePending=false;
   roomAdapter?.leave();
   s = createInitialState();
@@ -38,7 +41,7 @@ const POSITION_SORT_ORDER={GK:0,DF:1,MF:2,FW:3},RANK_SORT_ORDER={SS:0,S:1,A:2,B:
 function sortPlayers(players,mode='position'){return [...players].map((player,index)=>({player,index})).sort((a,b)=>{const pa=a.player,pb=b.player,pos=(POSITION_SORT_ORDER[pa.primaryPosition]??99)-(POSITION_SORT_ORDER[pb.primaryPosition]??99),rank=RANK_SORT_ORDER[displayPlayer(pa).overallRank]-RANK_SORT_ORDER[displayPlayer(pb).overallRank],age=pa.age-pb.age,contract=pa.contractYears-pb.contractYears,joined=a.index-b.index;if(mode==='overall')return rank||pos||age||contract||joined;if(mode==='age')return age||pos||rank||contract||joined;if(mode==='contract')return contract||pos||rank||age||joined;return pos||rank||age||contract||joined}).map(row=>row.player)}
 function sortControl(scope,value){return `<div class="phase-sort-heading"><span></span><label>並び順<select data-player-sort="${scope}"><option value="position" ${value==='position'?'selected':''}>ポジション順</option><option value="overall" ${value==='overall'?'selected':''}>総合ランク順</option><option value="age" ${value==='age'?'selected':''}>年齢順</option><option value="contract" ${value==='contract'?'selected':''}>契約年数順</option></select></label></div>`}
 function head(){let c=me(),r=standings(s.league).find(x=>x.club.id===c.id);return `<header><a data-nav="home" class="brand">FOOTBALL <b>LEAGUE</b></a><span>シーズン ${s.league.season} / 10</span><span><i class="club-color-dot" style="--club:${e(c.color)}"></i>${e(c.name)}・${r.rank}位・${c.funds}pt</span>${s.mode==='room'?`<span><button data-room="leave" class="subtle">タイトルへ</button></span>`:''}</header>${s.mode==='room'?roomSync():''}`}
-function title(){return `<main class="title arena-title" aria-label="FOOTBALL LEAGUE タイトル画面"><span class="arena-crest" aria-hidden="true">♛</span><h1>FOOTBALL<b>LEAGUE</b></h1><button data-a="setup">新しく始める</button><button data-stage19="loadTitle" class="subtle">続きから</button><button data-room="open" class="subtle">マルチプレイ</button><button type="button" class="arena-motion" data-arena-motion aria-pressed="false">演出を一時停止</button></main>`}
+function title(){return `<main class="title arena-title" aria-label="FOOTBALL LEAGUE タイトル画面"><span class="arena-crest" aria-hidden="true">♛</span><h1>FOOTBALL<b>LEAGUE</b></h1><button data-a="setup">新しく始める</button><button data-stage19="loadTitle" class="subtle">続きから</button>${roomAdapter?.client.session||roomAdapter?.client.pending?'<button data-room="resume" class="subtle">オンラインの続きから</button>':''}<button data-room="open" class="subtle">マルチプレイ</button><button type="button" class="arena-motion" data-arena-motion aria-pressed="false">演出を一時停止</button></main>`}
 function setup(){return `<main class="setup"><h2>クラブを作成</h2><label>クラブ名<input id="name" placeholder="東京ファイブ"></label><label>チームカラー<input id="color" type="color" value="#4ade80"></label><label>シード（任意）<input id="seed" placeholder="同じ値なら同じ展開"></label><button data-a="start">ゲーム開始</button><button data-a="title" class="subtle">戻る</button></main>`}
 function recordDraftAcquisitions(d,result){if(!d||!result?.acquired?.length)return;d.history ||= [];for(const row of result.acquired){if(d.history.some(item=>item.player.id===row.player.id))continue;d.history.push({round:d.round,clubId:row.clubId,player:row.player,contested:!!row.contested,contenderIds:[...(row.contenderIds||[])]});if(s.league)recordDraftAcquisition(s.league,row.clubId,row.player);}}
 function renderDraftHistory(d){const history=d?.history||[];if(!history.length)return '<section class="draft-history"><div class="draft-history-heading"><h3>ここまでの指名結果</h3><span>まだ獲得選手はいません</span></div></section>';const humanId=me().id,rows=history.map(row=>{const club=s.league.clubs.find(candidate=>candidate.id===row.clubId),shown=displayPlayer(row.player),losers=(row.contenderIds||[]).filter(id=>id!==row.clubId).map(id=>s.league.clubs.find(candidate=>candidate.id===id)).filter(Boolean),lottery=row.contested?`<div class="draft-lottery-result"><span class="draft-lottery">抽選</span><small>外れ：${losers.length?losers.map(loser=>`<i class="club-color-dot" style="--club:${e(loser.color||'#64748b')}"></i>${e(loser.name)}`).join(' / '):'なし'}</small></div>`:'—';return `<tr class="${row.clubId===humanId?'you':''}"><td><b>${row.round}巡</b></td><td><i class="club-color-dot" style="--club:${e(club?.color||'#64748b')}"></i>${e(club?.name||'不明')}</td><td><strong>${e(row.player.name)}</strong></td><td>${e(positionLabel(row.player.primaryPosition))}</td><td>${row.player.age}歳</td><td><b class="draft-rank">${e(shown.overallRank)}</b></td><td>${lottery}</td></tr>`}).join('');return `<section class="draft-history"><div class="draft-history-heading"><h3>ここまでの指名結果</h3><span>${history.length}名獲得</span></div><div class="draft-history-table-wrap"><table class="draft-history-table"><thead><tr><th>巡</th><th>獲得クラブ</th><th>選手</th><th>POS</th><th>年齢</th><th>総合</th><th>抽選結果</th></tr></thead><tbody>${rows}</tbody></table></div></section>`}
@@ -62,7 +65,7 @@ function nextOrderedPick(d){d.orderIndex++;while(d.orderIndex<d.order.length&&!d
 function advanceDraftRound(){let d=s.draft;if(d.pendingClubIds.length)return false;if(d.round>=4){d.completed=true;s.note='ドラフトが終了しました。指名結果を確認してオークションへ進んでください。';return true}d.round++;prepareDraftRound(d);return false}
 function runCpuDraft(){let guard=0;while(s.view==='draft'&&guard++<100){let d=s.draft,humanId=me().id;if(d.pendingClubIds.includes(humanId))break;if(!d.pendingClubIds.length){if(advanceDraftRound())break;continue}const actions=d.pendingClubIds.map(id=>s.league.clubs.find(club=>club.id===id)).filter(club=>club?.controllerType==='CPU').map(club=>decideCpuDraftAction(club,d.pool,d.rng)).filter(Boolean);const result=resolveDraftActions({clubs:s.league.clubs,candidates:d.pool,pendingClubIds:d.pendingClubIds,actions,rng:d.rng});recordDraftAcquisitions(d,result);d.pool=result.candidates;if(d.mode==='ORDERED')nextOrderedPick(d);else d.pendingClubIds=result.pendingClubIds;if(!result.acquired.length&&result.declinedIds.length===0&&d.mode==='SIMULTANEOUS')d.pendingClubIds=[]}}
 function beginDraft(){const season=s.league.season;s.draftHistoryOpen=false;s.selectedDraftPlayerId=null;s.league.releasePhaseOpen=false;s.match=null;s.seasonSimulation=null;s.league.clubs.forEach(club=>{club.reserveAuctionSlot=club.controllerType==='CPU'&&12-club.roster.length>=2});s.draft={pool:createDraftPool(s.league.seed,season),round:1,rng:createRandom(`${s.league.seed}:season:${season}:draft`),pendingClubIds:[],humanDeclined:false,history:[],completed:false};prepareDraftRound(s.draft);s.view='draft';s.note=`シーズン${season}ドラフトを開始します。`;runCpuDraft()}
-function pickDraft(p){let d=s.draft,humanId=me().id;if(!d.pendingClubIds.includes(humanId))return;const actions=d.pendingClubIds.map(id=>s.league.clubs.find(club=>club.id===id)).map(club=>club?.controllerType==='CPU'?decideCpuDraftAction(club,d.pool,d.rng):club?.id===humanId?{type:ACTION_TYPES.DRAFT_PICK,clubId:club.id,playerId:p.id}:null).filter(Boolean);const result=resolveDraftActions({clubs:s.league.clubs,candidates:d.pool,pendingClubIds:d.pendingClubIds,actions,rng:d.rng});recordDraftAcquisitions(d,result);d.pool=result.candidates;const acquired=result.acquired.find(row=>row.clubId===humanId);if(d.mode==='ORDERED')nextOrderedPick(d);else d.pendingClubIds=result.pendingClubIds;if(!acquired&&d.mode==='SIMULTANEOUS'){s.note=`${p.name}は競合抽選で外れました。外れクラブとして再指名してください。`;return}s.note=`${p.name}を${acquired?.contested?'競合抽選で':''}獲得しました。`;runCpuDraft()}
+function pickDraft(p){let d=s.draft,humanId=me().id;if(!d.pendingClubIds.includes(humanId))return;const actions=d.pendingClubIds.map(id=>s.league.clubs.find(club=>club.id===id)).map(club=>club?.controllerType==='CPU'?decideCpuDraftAction(club,d.pool,d.rng):club?.id===humanId?{type:ACTION_TYPES.DRAFT_PICK,clubId:club.id,playerId:p.id}:null).filter(Boolean);const result=resolveDraftActions({clubs:s.league.clubs,candidates:d.pool,pendingClubIds:d.pendingClubIds,actions,rng:d.rng});recordDraftAcquisitions(d,result);d.pool=result.candidates;const acquired=result.acquired.find(row=>row.clubId===humanId);experience.showDraft(p,!!acquired,me());if(d.mode==='ORDERED')nextOrderedPick(d);else d.pendingClubIds=result.pendingClubIds;if(!acquired&&d.mode==='SIMULTANEOUS'){s.note=`${p.name}は競合抽選で外れました。外れクラブとして再指名してください。`;return}s.note=`${p.name}を${acquired?.contested?'競合抽選で':''}獲得しました。`;runCpuDraft()}
 function bid(amount){if(amount===0)passLot(s.auction,me().id);else raiseBid(s.auction,s.league.clubs,me().id,amount);}
 function refreshAuctionState(){
   const room=app.querySelector('main.auction-room');
@@ -137,7 +140,7 @@ function growth() {
     const priority = x => x.specialTrainingResult ? 0 : x.focus ? 1 : x.awakeningKeys?.length ? 2 : 3;
     const resultsById = new Map(s.growth.map(x => [x.player.id, x]));
     const growthResults = sortPlayers(s.growth.map(x => x.player), s.developmentSort).map(p => resultsById.get(p.id)).sort((a,b) => priority(a)-priority(b));
-    return `${head()}<main class="development-room growth-modal" role="dialog" aria-modal="true" aria-label="育成結果"><div class="phase-topbar"><p class="eyebrow">成長結果</p><h2>育成・特別特訓の結果</h2><p class="hint">${s.mode==='room'?'全クラブの育成・成長・衰退・加齢を完了しました。':'CPU5クラブも育成・成長・衰退・加齢を完了しました。'}</p></div><section class="candidate-grid">${growthResults.map(x => `<article class="candidate growth-result ${x.specialTrainingResult ? `growth-special-${x.specialTrainingResult.steps}` : x.focus ? 'growth-focus' : x.awakeningKeys?.length ? 'growth-awakened' : ''}"><div class="growth-labels" aria-label="育成内容">${x.specialTrainingResult ? '<span>若手育成イベント</span>' : ''}${x.focus ? `<span>重点育成：${e(STAT_LABELS[x.focus] || x.focus)}</span>` : ''}${x.awakeningKeys?.length ? '<span>覚醒</span>' : ''}</div>${renderContractPlayerCard(x.player,me(),x.changes)}<p>年齢 ${['sage','robot','black_hole'].includes(rareKind(x.player)) ? e(rareAgeLabel(x.player)) : `${x.player.age - 1} → ${x.player.age}`}</p>${x.hatched ? `<p><b>金の卵が孵化しました！ ${e(x.player.name)}</b></p>` : ''}${x.awakeningKeys?.length ? `<p><b>覚醒！</b></p>` : ''}${x.specialTrainingResult?`<p><b>特別特訓：</b>${x.specialTrainingResult.label}</p>`:''}<p>${x.retired ? '35歳で引退' : x.changes.map(c=>`${STAT_LABELS[c.key]} ${c.from === c.to && c.increased ? `${c.from} ↑` : `${c.from} → ${c.to}`}`).join(' ／ ') || 'ランク変化なし'}</p>${x.learnedAbility ? `<p><b>特殊能力を習得！</b><br>★ ${x.learnedAbility}</p>` : ''}</article>`).join('')}</section><button data-stage4="releasePhase">放出フェイズへ進む</button></main>`;
+    return `${head()}<main class="development-room growth-modal" role="dialog" aria-modal="true" aria-label="育成結果"><div class="phase-topbar"><p class="eyebrow">成長結果</p><h2>育成・特別特訓の結果</h2><p class="hint">${s.mode==='room'?'全クラブの育成・成長・衰退・加齢を完了しました。':'CPU5クラブも育成・成長・衰退・加齢を完了しました。'}</p></div><section class="candidate-grid">${growthResults.map(x => `<article class="candidate growth-result ${x.specialTrainingResult ? `growth-special-${x.specialTrainingResult.steps}` : x.focus ? 'growth-focus' : x.awakeningKeys?.length ? 'growth-awakened' : ''}" data-growth-player="${e(x.player.id)}"><div class="growth-labels" aria-label="育成内容">${x.specialTrainingResult ? '<span>若手育成イベント</span>' : ''}${x.focus ? `<span>重点育成：${e(STAT_LABELS[x.focus] || x.focus)}</span>` : ''}${x.awakeningKeys?.length ? '<span>覚醒</span>' : ''}</div>${renderContractPlayerCard(x.player,me(),x.changes)}<p>年齢 ${['sage','robot','black_hole'].includes(rareKind(x.player)) ? e(rareAgeLabel(x.player)) : `${x.player.age - 1} → ${x.player.age}`}</p>${x.hatched ? `<p><b>金の卵が孵化しました！ ${e(x.player.name)}</b></p>` : ''}${x.awakeningKeys?.length ? `<p><b>覚醒！</b></p>` : ''}${x.specialTrainingResult?`<p><b>特別特訓：</b>${x.specialTrainingResult.label}</p>`:''}<p>${x.retired ? '35歳で引退' : x.changes.map(c=>`${STAT_LABELS[c.key]} ${c.from === c.to && c.increased ? `${c.from} ↑` : `${c.from} → ${c.to}`}`).join(' ／ ') || 'ランク変化なし'}</p>${x.learnedAbility ? `<p><b>特殊能力を習得！</b><br>★ ${x.learnedAbility}</p>` : ''}</article>`).join('')}</section><button data-stage4="releasePhase">放出フェイズへ進む</button></main>`;
 }
 
 function release() {
@@ -459,8 +462,8 @@ function updateRoomStatus() {
   });
   document.querySelectorAll('[data-a="season"]').forEach(node=>{
     node.dataset.ruleDisabled ??= String(node.disabled);
-    node.textContent=phase==='season-ready'?'シーズンをシミュレート':roomAdapter.player?.completed?'編成完了済み':'編成を確定する';
-    node.disabled=node.dataset.ruleDisabled==='true'||roomAdapter.locked||!['team-setup','season-ready'].includes(phase)||(phase==='season-ready'&&!roomAdapter.isHost);
+    node.textContent=phase==='season-ready'?(roomAdapter.player?.completed?'リーグ開始待ち':'リーグ戦を開始する'):roomAdapter.player?.completed?'編成完了済み':'編成を確定する';
+    node.disabled=node.dataset.ruleDisabled==='true'||roomAdapter.locked||!['team-setup','season-ready'].includes(phase);
   });
   if(phase==='auction-complete')document.querySelectorAll('[data-a="squad"]').forEach(node=>{node.disabled=roomAdapter.locked;});
 }
@@ -514,6 +517,7 @@ function render() {
   document.querySelectorAll('.rename-modal-backdrop,.rename-modal-panel').forEach(node => document.body.append(node));
   dialogs.sync();
   auctionClock.sync(s.view === 'auction' && !!s.auction && !s.auction.completed);
+  experience.syncGrowth(s.view==='growth'?s.growth:[],s.league?me():null);
   renderedView = s.view;
   document.dispatchEvent(new CustomEvent('football-league:view-rendered'));
   if(finalePending&&s.view==='seasonResults'&&!finaleDispose){
@@ -524,7 +528,8 @@ function render() {
       const club=me(),rank=standings(s.league).find(row=>row.club.id===club.id)?.rank||6;
       const opponents=s.league.clubs.filter(row=>row.id!==club.id);
       const keeper=opponents.flatMap(row=>row.roster).find(p=>p.primaryPosition==='GK');
-      finaleDispose=playSeasonFinale({app,club,rank,keeper,matches:s.league.seasonResults,clubs:s.league.clubs,onDone:()=>{finaleDispose=null;}});
+      const matches=s.league.seasonResults,clubs=s.league.clubs;
+      finaleDispose=experience.showLeagueStart(s.league.season,()=>{finaleDispose=playSeasonFinale({app,club,rank,keeper,matches,clubs,onDone:()=>{finaleDispose=null;}});});
     }
   }
   if(trainingTransition)void playTrainingCinematic(me(),previousScreen);
@@ -537,8 +542,15 @@ function render() {
 roomAdapter=new RoomAdapter(()=>s,next=>{
   // Only a live season transition plays the finale; resuming a result does not.
   if(s.mode==='room'&&s.league&&!s.league.completed&&next.league?.completed&&next.view==='seasonResults'&&s.roomId===next.roomId)finalePending=true;
+  const previous=s;
   s=next;
+  if(previous.mode==='room'&&previous.roomId===next.roomId&&previous.draft&&next.draft&&previous.league?.season===next.league?.season){
+    const known=new Set((previous.draft.history||[]).map(row=>`${row.round}:${row.clubId}:${row.player.id}`));
+    for(const row of next.draft.history||[])if(!known.has(`${row.round}:${row.clubId}:${row.player.id}`)&&(row.clubId===me().id||row.contenderIds?.includes(me().id)))experience.showDraft(row.player,row.clubId===me().id,me());
+  }
 },()=>render(),()=>updateRoomStatus());
+addEventListener('pagehide',()=>{if(s.mode==='room')roomAdapter.remember();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&s.mode==='room')roomAdapter.remember();});
 function reportRoomError(error){ roomAdapter.status.error=error.message; updateRoomStatus(); }
 function sendRoom(promise){Promise.resolve(promise).catch(reportRoomError);}
 function roomClick(event){
@@ -575,7 +587,7 @@ function roomClick(event){
     else if(a==='skipDraft')sendRoom(roomAdapter.submit({pass:true}));
     else if(a==='bid'||a==='pass')sendRoom(roomAdapter.submit({bid:a==='pass'?0:Number(document.querySelector('#bid').value)}));
     else if(a==='season'){
-      if(roomAdapter.room.phase==='season-ready')sendRoom(roomAdapter.client.mutate('run-season'));
+      if(roomAdapter.room.phase==='season-ready')sendRoom(roomAdapter.submit({}));
       else sendRoom(roomAdapter.submit({lineup:me().lineup,tactic:me().tactic}));
     }
     else if(step==='eventsDone'||step==='releaseDone')sendRoom(roomAdapter.submit({actions:roomAdapter.actions}));

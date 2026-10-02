@@ -1,4 +1,4 @@
-import { RoomClient } from './room-client.js?v=0.20.0';
+import { RoomClient } from './room-client.js?v=resume-v1';
 import { clone, applyWork } from './phase-work.js?v=rare-v2';
 
 const VIEW = { lobby: 'roomLobby', draft: 'draft', 'draft-complete': 'draft', auction: 'auction', 'auction-complete': 'auction', 'team-setup': 'squad', 'season-ready': 'squad', 'season-result': 'seasonResults', 'offseason-events': 'offseasonEvents', development: 'development', 'growth-result': 'growth', release: 'release', 'game-complete': 'history' };
@@ -22,7 +22,7 @@ export class RoomAdapter {
   remember() {
     if (!this.room?.game || this.getState().mode !== 'room' || !this.getState().league) return;
     const s = this.getState(), club = s.league.clubs.find(row => row.id === this.player.clubId);
-    sessionStorage.setItem(this.workKey(), JSON.stringify({ actions: this.actions, lineup: club.lineup, tactic: club.tactic, training: [...(s.training || new Map())] }));
+    localStorage.setItem(this.workKey(), JSON.stringify({ actions: this.actions, lineup: club.lineup, tactic: club.tactic, training: [...(s.training || new Map())], selectedDraftPlayerId:s.selectedDraftPlayerId }));
   }
   receive(room) {
     if (!this.active) return;
@@ -37,14 +37,14 @@ export class RoomAdapter {
     const owner = room.players.find(row => row.id === this.client.session.playerId);
     if (!owner) throw new Error('クラブ割当が見つかりません。');
     if (changed) {
-      if (previous.roomId && previous.roomPhaseRevision) sessionStorage.removeItem(`${WORK_KEY}${previous.roomId}:${this.client.session.playerId}:${previous.roomPhaseRevision}`);
+      if (previous.roomId && previous.roomPhaseRevision) localStorage.removeItem(`${WORK_KEY}${previous.roomId}:${this.client.session.playerId}:${previous.roomPhaseRevision}`);
       let work = null;
-      try { work = JSON.parse(sessionStorage.getItem(this.workKey()) || 'null'); } catch { /* malformed local draft */ }
+      try { work = JSON.parse(localStorage.getItem(this.workKey()) || sessionStorage.getItem(this.workKey()) || 'null'); } catch { /* malformed local draft */ }
       this.actions = room.ownInput?.actions || work?.actions || [];
       const game = clone(room.game), league = game.league;
       league.humanClubId = owner.clubId;
       league.seasonResults = league.seasonResults.filter(match => match.fixture.homeId === owner.clubId || match.fixture.awayId === owner.clubId);
-      const state = { ...previous, mode: 'room', roomId: room.roomId, roomPhaseRevision: room.phaseRevision, roomRevision: room.revision, league, draft: game.draft, auction: game.auction, view: VIEW[room.phase], note: '', selectedLineupPlayerId: null, lineupMessage: '', lineupError: false, rosterOpen: false, draftHistoryOpen: false, auctionHistoryOpen: false, match: null, training: new Map(work?.training || []), financeSummary: game.financeSummary, growth: game.growth.find(row => row.clubId === owner.clubId)?.growth || [], retentionEvents: game.events[owner.clubId]?.retention || [], specialOffers: game.events[owner.clubId]?.special || [], specialTrainingAccepted: new Set(), offseasonComplete: false };
+      const state = { ...previous, mode: 'room', roomId: room.roomId, roomPhaseRevision: room.phaseRevision, roomRevision: room.revision, league, draft: game.draft, auction: game.auction, view: VIEW[room.phase], note: '', selectedLineupPlayerId: null, lineupMessage: '', lineupError: false, selectedDraftPlayerId:work?.selectedDraftPlayerId||null, rosterOpen: false, draftHistoryOpen: false, auctionHistoryOpen: false, match: null, training: new Map(work?.training || []), financeSummary: game.financeSummary, growth: game.growth.find(row => row.clubId === owner.clubId)?.growth || [], retentionEvents: game.events[owner.clubId]?.retention || [], specialOffers: game.events[owner.clubId]?.special || [], specialTrainingAccepted: new Set(), offseasonComplete: false };
       const club = league.clubs.find(row => row.id === owner.clubId);
       if (room.phase === 'team-setup' && (room.ownInput || work)) {
         const setup = room.ownInput || work;
@@ -55,7 +55,7 @@ export class RoomAdapter {
       this.setState(state);
       if (this.actions.length && ['release','offseason-events'].includes(room.phase)) {
         try { this.applyPreview(); }
-        catch { this.actions = []; state.note = '保存された入力を復元できませんでした。入力を確認してください。'; sessionStorage.removeItem(this.workKey()); }
+        catch { this.actions = []; state.note = '保存された入力を復元できませんでした。入力を確認してください。'; localStorage.removeItem(this.workKey()); }
       }
       this.render();
     } else {
@@ -109,11 +109,12 @@ export class RoomAdapter {
     const room = this.room;
     if (!room) return [];
     return room.players.map(player => {
-      let label = player.completed ? '完了' : '未完了';
+      let label = player.completed ? '次へ押下済み' : '次へ待ち';
       let state = player.completed ? 'done' : 'pending';
       if(room.phase==='auction'){label=room.game.auction.live?.leader===player.clubId?'最高入札':room.game.auction.live?.passed.includes(player.clubId)?'辞退':'入札可能';state='neutral';}
       else if (room.phase === 'lobby') { label = '参加済み'; state = 'neutral'; }
-      else if (room.phase === 'season-ready') { label = '完了'; state = 'done'; }
+      else if (room.phase === 'team-setup') label=player.completed?'編成確定済み':'編成待ち';
+      else if(room.phase==='development')label=player.completed?'育成実行済み':'育成待ち';
       else if (room.phase === 'game-complete') { label = '終了'; state = 'done'; }
       else if (room.phase === 'draft' && !room.game.draft.pendingClubIds.includes(player.clubId)) {
         const draft = room.game.draft;
@@ -135,7 +136,7 @@ export class RoomAdapter {
     if (!room) return '';
     if(room.phase==='auction')return '公開入札中・残り5秒以内の入札で5秒に延長';
     if (room.phase === 'game-complete') return '全10シーズンが終了しました。';
-    if (room.phase === 'season-ready') return this.isHost ? '全員の編成が完了しました。シーズンを実行できます。' : 'ホストのシーズン実行を待っています。';
+    if (room.phase === 'season-ready') return `${room.players.filter(p=>p.completed).length}/${room.players.length} 開始押下済み・全員が押すとリーグ戦が始まります。`;
     const players = room.phase === 'draft' ? room.players.filter(p => room.game.draft.pendingClubIds.includes(p.clubId)) : room.players;
     return `${players.filter(p => p.completed).length}/${players.length} 完了${this.player?.completed ? '・他のクラブを待っています' : ''}`;
   }
