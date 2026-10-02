@@ -1,4 +1,4 @@
-import {loadMotionAtlas,drawMotion} from './player-motion.js?v=motion-cleanup-v2';
+import {loadMotionAtlas,drawMotion} from './player-motion.js?v=body-alpha-v3';
 import { pixelTexture } from './arena-characters.js?v=appearance-v29';
 // Presentation only: no game, random-generator or storage imports.
 export const ARENA = Object.freeze({ width: 1672, height: 941 });
@@ -28,7 +28,7 @@ const supporterColors=['#68a9e0','#eb9e61','#81c6a0','#e18fa8','#ba9ce0','#e6c66
 function spectator(index){return pixelTexture(supporterColors[index%6],index,index%2===0?'woman':'man');}
 
 // A native 16px football sprite, matching the outlined character artwork.
-function footballTexture(){
+export function footballTexture(){
   const ball=makeCanvas(16,16),c=ball.getContext('2d');
   for(let y=0;y<16;y++)for(let x=0;x<16;x++){
     const radius=Math.hypot(x-7.5,y-7.5);
