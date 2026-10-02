@@ -5,7 +5,7 @@ import {createGameExperience} from './game-experience.js?v=mvp-joy-v5';
 import { playSeasonFinale } from './season-finale.js?v=joy-arms-front-v7';
 import { rareKind, rareAgeLabel } from './rare-characters.js';
 import { playTrainingCinematic } from './training-cinematic.js?v=motion-cleanup-v2';
-import { renderSeasonResults } from './season-results-ui.js?v=3';
+import { renderSeasonResults } from './season-results-ui.js?v=combined-results-v1';
 import { createInitialState } from './app-state.js';
 import { createAuctionClock } from './auction-clock.js';
 import { dialogs } from './dialogs.js';
@@ -15,7 +15,7 @@ import { applySeasonFinances, awards, clubAchievements, createLeague, finalizeSe
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=appearance-v29';
 import { createRandom } from './random.js';
 import { createAuctionPool, createDraftPool, resolveDraftActions } from './market.js?v=appearance-v29';
-import { renderContractPlayerCard, configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=squad-details-v1';
+import { renderContractPlayerCard, configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=combined-results-v1';
 import { decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=appearance-v29';
 import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=appearance-v29';
 import { RoomAdapter } from './room-adapter.js?v=online-flow-v2';
