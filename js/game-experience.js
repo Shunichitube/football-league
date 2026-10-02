@@ -1,7 +1,7 @@
 import {loadMotionAtlas} from './player-motion.js?v=motion-cleanup-v2';
 import {playerAppearance} from './avatar-profile.js?v=appearance-v29';
 import {drawAvatar} from './player-avatar.js?v=season-finale-v1';
-import {celebrationTexture} from './avatar-celebration.js?v=motion-cleanup-v2';
+import {celebrationTexture} from './avatar-celebration.js?v=joy-alpha-v2';
 
 const AUDIO_KEY='football-league:audio-settings';
 export function normalizeAudio(value={}){
@@ -33,7 +33,7 @@ export function createGameExperience({dialogs,onExit}){
   const title=document.createElement('h2');title.textContent=item.title;panel.append(title);
   let canvas;
   if(item.player){
-   canvas=document.createElement('canvas');canvas.width=300;canvas.height=470;canvas.setAttribute('aria-label',item.player.name);panel.append(canvas);
+   canvas=document.createElement('canvas');canvas.width=420;canvas.height=550;canvas.setAttribute('aria-label',item.player.name);panel.append(canvas);
    const name=document.createElement('p');name.textContent=item.player.name;panel.append(name);
   }
   if(item.subtitle){const text=document.createElement('p');text.textContent=item.subtitle;panel.append(text);}
@@ -52,8 +52,8 @@ export function createGameExperience({dialogs,onExit}){
    if(dead)return;
    const paint=now=>{
     if(dead)return;const ctx=canvas.getContext('2d');
-    if(item.won){ctx.clearRect(0,0,300,470);const im=celebrationTexture(atlas,playerAppearance(item.player),{kit:item.club.color,goalkeeper:item.player.primaryPosition==='GK',pose:reduced()?1:Math.floor(now/280)%4});ctx.drawImage(im,0,0,300,470);}
-    else drawAvatar(ctx,atlas.avatar,playerAppearance(item.player),{kit:item.club.color,goalkeeper:item.player.primaryPosition==='GK'});
+    if(item.won){ctx.clearRect(0,0,420,550);const im=celebrationTexture(atlas,playerAppearance(item.player),{kit:item.club.color,goalkeeper:item.player.primaryPosition==='GK',pose:reduced()?1:Math.floor(now/280)%4});ctx.drawImage(im,0,0);}
+    else {const portrait=document.createElement('canvas');portrait.width=300;portrait.height=470;drawAvatar(portrait.getContext('2d'),atlas.avatar,playerAppearance(item.player),{kit:item.club.color,goalkeeper:item.player.primaryPosition==='GK'});ctx.clearRect(0,0,420,550);ctx.drawImage(portrait,60,40);}
     if(item.won&&!reduced())raf=requestAnimationFrame(paint);
    };paint(performance.now());
   }).catch(error=>console.warn('Feedback avatar unavailable',error));
@@ -86,13 +86,13 @@ export function createGameExperience({dialogs,onExit}){
    celebrationAssets().then(atlas=>{
     if(generation!==growthGeneration)return;
     const actors=targets.filter(x=>x.node.isConnected).map(({row,node})=>{
-     const canvas=document.createElement('canvas');canvas.width=300;canvas.height=470;canvas.className='growth-joy-avatar';canvas.setAttribute('aria-hidden','true');node.querySelector('img')?.replaceWith(canvas);return {row,canvas};
+     const canvas=document.createElement('canvas');canvas.width=420;canvas.height=550;canvas.className='growth-joy-avatar';canvas.setAttribute('aria-hidden','true');node.querySelector('img')?.replaceWith(canvas);return {row,canvas};
     });
     let last=-1;
     const paint=now=>{
      if(generation!==growthGeneration)return;
      const pose=reduced()?1:Math.floor(now/280)%4;
-     if(pose!==last){for(const {row,canvas} of actors){const ctx=canvas.getContext('2d');ctx.clearRect(0,0,300,470);ctx.drawImage(celebrationTexture(atlas,playerAppearance(row.player),{kit:club.color,goalkeeper:row.player.primaryPosition==='GK',pose}),0,0,300,470);}last=pose;}
+     if(pose!==last){for(const {row,canvas} of actors){const ctx=canvas.getContext('2d');ctx.clearRect(0,0,420,550);ctx.drawImage(celebrationTexture(atlas,playerAppearance(row.player),{kit:club.color,goalkeeper:row.player.primaryPosition==='GK',pose}),0,0);}last=pose;}
      if(!reduced())growthRaf=requestAnimationFrame(paint);
     };paint(performance.now());
    }).catch(error=>console.warn('Growth celebration unavailable',error));
