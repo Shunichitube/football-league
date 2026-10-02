@@ -1,4 +1,4 @@
-import {createBgmController} from './bgm.js?v=1';
+import {createBgmController} from './bgm.js?v=audio-assets-v2';
 import {renderGrandResults,mountGrandFinale} from './grand-finale-ui.js?v=motion-cleanup-v2';
 import {createGameExperience} from './game-experience.js?v=motion-cleanup-v2';
 import { playSeasonFinale } from './season-finale.js?v=motion-cleanup-v2';
