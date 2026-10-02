@@ -8,4 +8,11 @@
 .finale-next:hover{background:#1b815a}.finale-next:focus-visible{outline:4px solid #fff;outline-offset:5px}
 .finale-white{background:#fff;color:#17212e}.finale-white .finale-next{box-shadow:0 4px 18px #16332425}
 .finale-loading{position:relative;max-width:85%;text-align:center}
+.finale-scoreboard{position:absolute;top:max(16px,4vh);left:50%;transform:translateX(-50%);width:min(820px,90vw);box-sizing:border-box;padding:12px 24px;border:1px solid #ffffff55;border-radius:16px;background:#071827ed;box-shadow:0 8px 30px #0008;text-align:center}
+.finale-scoreboard>p{margin:0;font-size:15px;font-weight:700;letter-spacing:.06em;color:#c5d9e8}
+.finale-scoreboard>div{display:grid;grid-template-columns:1fr auto 1fr;gap:24px;align-items:center;margin:6px 0}
+.finale-scoreboard span{font-size:clamp(16px,1.7vw,26px);font-weight:800;overflow-wrap:anywhere}
+.finale-scoreboard strong{font-size:clamp(28px,3vw,44px);white-space:nowrap;color:#fff}
+.finale-scoreboard[data-outcome="win"]>p:last-child{color:#8af3b6}.finale-scoreboard[data-outcome="loss"]>p:last-child{color:#ffa4a4}
+@media(max-width:600px){.finale-scoreboard{padding:10px 12px;top:16px}.finale-scoreboard>div{gap:10px}.finale-scoreboard>p{font-size:12px}}
 @media(max-width:600px){.finale-heading{top:5vh;padding:10px 20px}.finale-next{bottom:5vh;padding:14px 25px}}

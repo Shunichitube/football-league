@@ -4,6 +4,26 @@ import {drawAvatar} from './player-avatar.js?v=season-finale-v1';
 import {celebrationTexture} from './avatar-celebration.js?v=1';
 
 export const finaleKind=rank=>rank===1?'goal':rank<=3?'parry':'catch';
+export const CONVEYOR_MATCH_SECONDS=2.4;
+// Read snapshots only. Multiplayer stores other clubs' fixtures here as well.
+export function conveyorMatches(matches,clubId){
+ const seen=new Set();
+ return (matches||[]).filter(match=>{
+  const f=match.fixture,key=`${match.round}:${f?.homeId}:${f?.awayId}`;
+  if(!f||!match.result?.score||(f.homeId!==clubId&&f.awayId!==clubId)||seen.has(key))return false;
+  seen.add(key);return true;
+ }).sort((a,b)=>a.round-b.round).slice(0,10).map(match=>{
+  const home=match.fixture.homeId===clubId,score=match.result.score;
+  const goals=home?score.home:score.away,against=home?score.away:score.home;
+  return {round:match.round,opponent:home?match.fixture.away:match.fixture.home,goals,against,outcome:goals>against?'win':goals<against?'loss':'draw'};
+ });
+}
+export function conveyorFrame(matches,time){
+ const duration=matches.length*CONVEYOR_MATCH_SECONDS;
+ if(!matches.length||time>=duration)return {done:true,duration};
+ const index=Math.min(matches.length-1,Math.floor(Math.max(0,time)/CONVEYOR_MATCH_SECONDS));
+ return {done:false,duration,index,match:matches[index],local:Math.max(0,time)-index*CONVEYOR_MATCH_SECONDS};
+}
 export function podiumPositions(count){
  const n=Math.min(12,Math.max(0,count)),gap=105;
  return Array.from({length:n},(_,i)=>({x:836+(i-(n-1)/2)*gap,y:700}));
@@ -36,12 +56,12 @@ function football(ctx,x,y,r,spin=0){
   ctx.beginPath();for(let i=0;i<5;i++){const a=i*Math.PI*2/5;const px=(cx+Math.cos(a)*size)*r,py=(cy+Math.sin(a)*size)*r;i?ctx.lineTo(px,py):ctx.moveTo(px,py);}ctx.closePath();ctx.fill();
  }ctx.restore();
 }
-export function createFinalePainter(data,club,rank,keeper){
+export function createFinalePainter(data,club,rank,keeper,clubs=[]){
  const {atlas,ground,home,goal,bulge}=data;
  const roster=club.roster.slice(0,12),scorer=roster.find(p=>p.primaryPosition==='FW')||roster.find(p=>p.primaryPosition!=='GK')||roster[0];
  const sprite=document.createElement('canvas');sprite.width=400;sprite.height=400;
- const actor=(ctx,motion,t,x,y,height,p=scorer,gk=false)=>{
-  drawMotion(sprite.getContext('2d'),atlas,motion,t,{appearance:playerAppearance(p||{id:'finale-keeper',primaryPosition:'GK'}),kit:club.color,goalkeeper:gk,loop:motion==='idle'});
+ const actor=(ctx,motion,t,x,y,height,p=scorer,gk=false,kit=club.color,direction='right')=>{
+  drawMotion(sprite.getContext('2d'),atlas,motion,t,{appearance:playerAppearance(p||{id:'finale-keeper',primaryPosition:'GK'}),kit,goalkeeper:gk,loop:['idle','run','dribble'].includes(motion),direction});
   ctx.imageSmoothingEnabled=false;ctx.drawImage(sprite,x-height/2,y-height,height,height);
  };
  const joy=(ctx,p,x,y,height,t,gk=false,sad=false)=>{
@@ -50,11 +70,52 @@ export function createFinalePainter(data,club,rank,keeper){
  };
  const portraits=roster.map(p=>{const im=document.createElement('canvas');im.width=300;im.height=470;drawAvatar(im.getContext('2d'),atlas.avatar,playerAppearance(p),{kit:club.color,goalkeeper:p.primaryPosition==='GK'});return im;});
  return {
+  conveyor(ctx,time,matches){
+   const frame=conveyorFrame(matches,time),{match,local:t,index,duration}=frame;
+   if(frame.done)return frame;
+   // Use the home ground at the same crop/scale as the existing shot.
+   // Whole tiles slide left; the last tile eases to the original crop exactly.
+   const ease=q=>q*q*(3-2*q),handoff=index===matches.length-1?Math.max(0,(t-1.8)/.6):0;
+   const remaining=duration-time;
+   const distance=remaining<.6?150*.6*(1-ease(1-remaining/.6)):remaining*150;
+   const offset=((distance%1920)+1920)%1920;
+   ctx.imageSmoothingEnabled=true;
+   // Alternating mirror tiles join at identical edges rather than jumping cuts.
+   // Crop out the roof and benches, retaining one strip of the home crowd.
+   for(let tile=-2;tile<=1;tile++){
+    ctx.save();ctx.translate(tile*960+offset,0);
+    if(Math.abs(tile)%2){ctx.translate(960,0);ctx.scale(-1,1);}
+    ctx.drawImage(home,500,410,672,315,0,0,960,540);ctx.restore();
+   }
+   const opponent=clubs.find(c=>c.id===match.opponent?.id),rival=opponent?.roster.find(p=>p.primaryPosition!=='GK')||opponent?.roster[0];
+   const mate=roster.find(p=>p.id!==scorer?.id&&p.primaryPosition!=='GK')||scorer;
+   const progress=t/CONVEYOR_MATCH_SECONDS,retreat=match.outcome==='loss'&&t>1.25;
+   const runnerX=340+(match.outcome==='win'?Math.sin(progress*Math.PI)*65:retreat?-Math.sin((t-1.25)/1.15*Math.PI)*60:0);
+   const kick=match.outcome==='draw'&&t>=.65&&t<1.1;
+   actor(ctx,kick?'shoot':retreat?'run':'dribble',kick?t-.65:time,runnerX,455,240);
+   if(!handoff){
+    const rivalX=850-progress*850;
+    actor(ctx,retreat?'dribble':'run',time,rivalX,415,190,rival,rival?.primaryPosition==='GK',opponent?.color||match.opponent?.color||'#b64c64','left');
+    actor(ctx,'run',time+.2,560,365,175,mate,mate?.primaryPosition==='GK');
+   }else{
+    ctx.save();ctx.globalAlpha=1-ease(handoff);
+    actor(ctx,'run',time,220-handoff*200,415,190,rival,false,opponent?.color||'#b64c64','left');
+    actor(ctx,'run',time+.2,560,365,175,mate,mate?.primaryPosition==='GK');ctx.restore();
+   }
+   let ballX=runnerX+80+Math.sin(time*16)*8,ballY=430;
+   if(match.outcome==='draw'&&t>.7){const pass=Math.min(1,(t-.7)/.55);ballX=420+pass*185;ballY=430-pass*75;if(t>1.25){const back=Math.min(1,(t-1.25)/.55);ballX=605-back*185;ballY=355+back*75;}}
+   if(retreat){const steal=Math.min(1,(t-1.25)/.45);ballX=420-steal*260;if(t>1.8)ballX=160+Math.min(1,(t-1.8)/.6)*260;}
+   if(handoff){const blend=ease(handoff);ballX+=(420-ballX)*blend;ballY+=(430-ballY)*blend;}
+   football(ctx,ballX,ballY,12,time*12);
+   // The final running pose dissolves into the first existing kick pose.
+   if(handoff){ctx.save();ctx.globalAlpha=ease(handoff);this.cinematic(ctx,0);ctx.restore();}
+   return frame;
+  },
   cinematic(ctx,time){
    const t=time,frame=finaleFrame(rank,t),kind=finaleKind(rank);
    ctx.imageSmoothingEnabled=true;
    if(frame.scene==='shoot'){
-    ctx.drawImage(ground,500,480,672,315,0,0,960,540);
+    ctx.drawImage(home,500,410,672,315,0,0,960,540);
     actor(ctx,'shoot',t,340,455,240);
     const q=Math.max(0,Math.min(1,(t-.35)/.8));football(ctx,420+q*380,430-q*90,12-q*4,t*12);
    }else if(frame.scene!=='white'){
@@ -109,7 +170,8 @@ export function createFinalePainter(data,club,rank,keeper){
  };
 }
 
-export function playSeasonFinale({app,club,rank,keeper,onDone=()=>{}}){
+export function playSeasonFinale({app,club,rank,keeper,matches=[],clubs=[],onDone=()=>{}}){
+ const fixtures=conveyorMatches(matches,club.id),conveyorDuration=fixtures.length*CONVEYOR_MATCH_SECONDS;
  const root=document.createElement('section');root.className='season-finale';root.setAttribute('role','dialog');root.setAttribute('aria-modal','true');root.setAttribute('aria-label','シーズン最終演出');
  const canvas=document.createElement('canvas');canvas.setAttribute('aria-hidden','true');
  const heading=document.createElement('div');heading.className='finale-heading';heading.hidden=true;
@@ -117,8 +179,11 @@ export function playSeasonFinale({app,club,rank,keeper,onDone=()=>{}}){
  const placing=document.createElement('p');placing.textContent=rank===1?'優勝':rank===2?'準優勝':`第${rank}位`;heading.append(team,placing);
  const status=document.createElement('p');status.className='finale-loading';status.textContent='シーズン最終演出を準備しています…';status.setAttribute('role','status');
  const button=document.createElement('button');button.className='finale-next';button.textContent='次へ';button.hidden=true;
- root.append(canvas,heading,status,button);document.body.append(root);app.inert=true;
- let dead=false,raf=0,painter,stage='cinematic',clock=0,previous=0,lastPaint=0,loadTimer;
+ const scoreboard=document.createElement('div');scoreboard.className='finale-scoreboard';scoreboard.hidden=true;
+ const roundLabel=document.createElement('p'),teams=document.createElement('div'),ownName=document.createElement('span'),score=document.createElement('strong'),opponentName=document.createElement('span'),outcome=document.createElement('p');
+ ownName.textContent=club.name;teams.append(ownName,score,opponentName);scoreboard.append(roundLabel,teams,outcome);
+ root.append(canvas,heading,status,scoreboard,button);document.body.append(root);app.inert=true;
+ let dead=false,raf=0,painter,stage=fixtures.length?'conveyor':'cinematic',clock=0,previous=0,lastPaint=0,loadTimer,shownMatch=-1;
  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
  function dispose(){if(dead)return;dead=true;clearTimeout(loadTimer);cancelAnimationFrame(raf);removeEventListener('resize',resize);document.removeEventListener('visibilitychange',visibility);root.remove();app.inert=false;}
  function finish(){dispose();onDone();}
@@ -126,11 +191,21 @@ export function playSeasonFinale({app,club,rank,keeper,onDone=()=>{}}){
   if(!painter||dead)return;
   const ctx=canvas.getContext('2d'),w=stage==='ceremony'?1672:960,h=stage==='ceremony'?941:540;
   const scale=Math.min(canvas.width/w,canvas.height/h),x=(canvas.width-w*scale)/2,y=(canvas.height-h*scale)/2;
+  if(stage==='conveyor'&&clock>=conveyorDuration){stage='cinematic';clock-=conveyorDuration;scoreboard.hidden=true;}
   const frame=finaleFrame(rank,clock),white=stage==='cinematic'&&frame.scene==='white';
   root.classList.toggle('finale-white',white);ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle=white?'#fff':'#07121d';ctx.fillRect(0,0,canvas.width,canvas.height);
   ctx.setTransform(scale,0,0,scale,x,y);
-  if(stage==='ceremony')painter.ceremony(ctx,clock);else painter.cinematic(ctx,clock);
-  root.dataset.scene=stage==='ceremony'?'ceremony':frame.scene;
+  if(stage==='ceremony')painter.ceremony(ctx,clock);
+  else if(stage==='conveyor'){
+   const current=painter.conveyor(ctx,clock,fixtures);
+   scoreboard.hidden=false;scoreboard.style.opacity=String(Math.min(1,(conveyorDuration-clock)/.5));
+   if(shownMatch!==current.index){shownMatch=current.index;const m=current.match;
+    roundLabel.textContent=`SEASON ${current.index+1} / ${fixtures.length}　·　第${m.round}節`;
+    score.textContent=`${m.goals} — ${m.against}`;opponentName.textContent=m.opponent?.name||'対戦相手';
+    outcome.textContent=({win:'WIN · ドリブル突破',draw:'DRAW · パスをつなぐ',loss:'LOSE · 奪われてリスタート'})[m.outcome];scoreboard.dataset.outcome=m.outcome;
+   }
+  }else painter.cinematic(ctx,clock);
+  root.dataset.scene=stage==='ceremony'?'ceremony':stage==='conveyor'?'conveyor':frame.scene;
   if(stage==='cinematic'&&frame.ready&&button.hidden){button.hidden=false;button.focus({preventScroll:true});}
  }
  function resize(){const dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(innerWidth*dpr);canvas.height=Math.round(innerHeight*dpr);paint();}
@@ -147,8 +222,8 @@ export function playSeasonFinale({app,club,rank,keeper,onDone=()=>{}}){
  });
  addEventListener('resize',resize,{passive:true});document.addEventListener('visibilitychange',visibility);resize();
  Promise.race([loadResources(),new Promise((_,reject)=>{loadTimer=setTimeout(()=>reject(new Error('Finale assets timed out')),20000);})]).then(data=>{
-  if(dead)return;painter=createFinalePainter(data,club,rank,keeper);status.remove();
-  if(reduced)clock=finaleKind(rank)==='goal'?5.1:4.4;
+  if(dead)return;painter=createFinalePainter(data,club,rank,keeper,clubs);status.remove();
+  if(reduced){stage='cinematic';clock=finaleKind(rank)==='goal'?5.1:4.4;}
   paint();if(!reduced)raf=requestAnimationFrame(tick);
  }).catch(error=>{
   if(dead)return;console.error('Season finale assets failed to load',error);stage='error';status.textContent='演出を読み込めませんでした。シーズン結果へ進めます。';button.textContent='シーズン結果へ';button.hidden=false;button.focus();

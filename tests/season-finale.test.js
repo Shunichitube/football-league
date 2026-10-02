@@ -1,6 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {finaleKind,finaleFrame,podiumPositions} from '../js/season-finale.js';
+import {finaleKind,finaleFrame,podiumPositions,conveyorMatches,conveyorFrame} from '../js/season-finale.js';
+
+test('conveyor selects ten owned snapshots from multiplayer fixtures without modifying results',()=>{
+ const snapshots=Array.from({length:10},(_,i)=>[
+  {round:i+1,fixture:{homeId:1,awayId:2,home:{id:1,name:'Home'},away:{id:2,name:'Away'}},result:{score:{home:i%3,away:1}}},
+  {round:i+1,fixture:{homeId:3,awayId:4},result:{score:{home:0,away:0}}}
+ ]).flat();
+ const before=JSON.stringify(snapshots);
+ const selected=conveyorMatches([...snapshots].reverse().concat(snapshots[0]),1);
+ assert.equal(selected.length,10);assert.equal(selected[0].round,1);assert.equal(selected[9].round,10);
+ assert.deepEqual(selected.slice(0,3).map(m=>m.outcome),['loss','draw','win']);
+ assert.deepEqual(conveyorMatches(snapshots,2).slice(0,3).map(m=>m.outcome),['win','draw','loss']);
+ assert.equal(JSON.stringify(snapshots),before);
+ assert.equal(conveyorFrame(selected,0).index,0);
+ assert.equal(conveyorFrame(selected,2.4).index,1);
+ assert.equal(conveyorFrame(selected,23.99).index,9);
+ assert.deepEqual(conveyorFrame(selected,24),{done:true,duration:24});
+ assert.deepEqual(conveyorFrame([],0),{done:true,duration:0});
+});
 
 test('all six ranks use the approved goal, parry and standing catch outcomes',()=>{
  assert.deepEqual([1,2,3,4,5,6].map(finaleKind),['goal','parry','parry','catch','catch','catch']);

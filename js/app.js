@@ -1,4 +1,4 @@
-import { playSeasonFinale } from './season-finale.js?v=1';
+import { playSeasonFinale } from './season-finale.js?v=conveyor-v2';
 import { rareKind, rareAgeLabel } from './rare-characters.js';
 import { playTrainingCinematic } from './training-cinematic.js?v=6';
 import { renderSeasonResults } from './season-results-ui.js?v=3';
@@ -25,6 +25,8 @@ const standings=league=>roomAdapter?.active?roomAdapter.standings(league,singleS
 const app = document.querySelector('#app');
 let s = createInitialState();
 let finalePending=false,finaleDispose=null;
+const playedFinales=new Set();
+const finaleKey=()=>JSON.stringify([s.mode,s.roomId||'',s.league?.seed,s.league?.season,me()?.id]);
 function returnToTitle() {
   finaleDispose?.();finaleDispose=null;finalePending=false;
   roomAdapter?.leave();
@@ -516,10 +518,14 @@ function render() {
   document.dispatchEvent(new CustomEvent('football-league:view-rendered'));
   if(finalePending&&s.view==='seasonResults'&&!finaleDispose){
     finalePending=false;
-    const club=me(),rank=standings(s.league).find(row=>row.club.id===club.id)?.rank||6;
-    const opponents=s.league.clubs.filter(row=>row.id!==club.id);
-    const keeper=opponents.flatMap(row=>row.roster).find(p=>p.primaryPosition==='GK'&&!rareKind(p));
-    finaleDispose=playSeasonFinale({app,club,rank,keeper,onDone:()=>{finaleDispose=null;}});
+    const key=finaleKey();
+    if(!playedFinales.has(key)){
+      playedFinales.add(key);
+      const club=me(),rank=standings(s.league).find(row=>row.club.id===club.id)?.rank||6;
+      const opponents=s.league.clubs.filter(row=>row.id!==club.id);
+      const keeper=opponents.flatMap(row=>row.roster).find(p=>p.primaryPosition==='GK');
+      finaleDispose=playSeasonFinale({app,club,rank,keeper,matches:s.league.seasonResults,clubs:s.league.clubs,onDone:()=>{finaleDispose=null;}});
+    }
   }
   if(trainingTransition)void playTrainingCinematic(me(),previousScreen);
   if(seasonTransition){
@@ -530,7 +536,7 @@ function render() {
 }
 roomAdapter=new RoomAdapter(()=>s,next=>{
   // Only a live season transition plays the finale; resuming a result does not.
-  if(s.mode==='room'&&s.view==='squad'&&next.view==='seasonResults'&&s.roomId===next.roomId)finalePending=true;
+  if(s.mode==='room'&&s.league&&!s.league.completed&&next.league?.completed&&next.view==='seasonResults'&&s.roomId===next.roomId)finalePending=true;
   s=next;
 },()=>render(),()=>updateRoomStatus());
 function reportRoomError(error){ roomAdapter.status.error=error.message; updateRoomStatus(); }
