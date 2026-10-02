@@ -1410,3 +1410,26 @@ body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
  #app main.release-office .squad-special {font-size:13px;}
  #app main.release-office .squad-special-description {font-size:12px;}
 }
+
+/* Off-season event cards keep the formation-card width and natural content height. */
+@media(min-width:761px) {
+ #app main.contract-events-screen .contract-events-grid {
+  grid-template-columns:repeat(4,minmax(0,390px))!important;
+  grid-template-rows:repeat(var(--event-rows,3),max-content);
+  grid-auto-rows:max-content;align-content:start;align-items:start;
+  justify-content:start;
+ }
+ #app main.contract-events-screen .contract-events-grid>.candidate {
+  height:auto;align-self:start;gap:4px;padding:8px;
+ }
+ #app main.contract-events-screen .squad-player {
+  flex:0 0 auto;height:auto!important;min-height:0!important;
+  grid-template-rows:auto auto!important;gap:4px 6px;padding:8px;
+ }
+ #app main.contract-events-screen .squad-abilities {gap:3px;}
+ #app main.contract-events-screen .squad-special {
+  padding-top:4px;gap:2px 6px;line-height:1.25;
+ }
+ #app main.contract-events-screen .squad-special-description {margin-top:2px;line-height:1.25;}
+ #app main.contract-events-screen .contract-event-label {margin-bottom:3px;}
+}
