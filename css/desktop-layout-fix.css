@@ -89,7 +89,7 @@
     margin-top: 0.2rem;
   }
 
-  /* Draft: 1920px desktop target = 8 columns x 3 rows. */
+  /* Draft: 24 candidates = 6 columns x 4 rows on desktop. */
   main.screen-draft .eyebrow,
   main.screen-draft .screen-heading,
   main.screen-draft > .hint,
@@ -104,10 +104,10 @@
 
   main.screen-draft .candidate-grid {
     display: grid !important;
-    grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
     gap: 0.4rem !important;
     align-items: stretch !important;
-    margin: calc(2.35rem + 183px) 0 0.45rem !important;
+    margin: var(--draft-grid-gap, calc(2.35rem + 183px)) 0 0.45rem !important;
   }
 
   main.screen-draft .candidate {
@@ -276,9 +276,11 @@
   }
 
   main.screen-draft .draft-stage-avatar {
-    top: calc(3.75rem + 183px);
-    width: 138px;
-    height: 136px;
+    position: fixed;
+    top: calc(var(--draft-podium-y, 26vh) + 3px);
+    width: 96px;
+    height: 122px;
+    transform: translate(-50%, -100%);
   }
 
   main.screen-draft .draft-stage-avatar img {
