@@ -1382,3 +1382,31 @@ body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
 }
 @keyframes growth-loss-pulse {0%,100%{opacity:1;}50%{opacity:.15;}}
 @media(prefers-reduced-motion:reduce) {#app .growth-result .growth-bar-loss {animation:none;}}
+
+/* Release cards use their content height, with compact ability rows. */
+@media(min-width:761px) {
+ #app main.release-office .squad-player {
+  height:auto!important;min-height:0;grid-template-rows:auto auto!important;
+  padding:8px 9px;gap:4px 6px;
+ }
+ #app main.release-office .candidate {padding:4px;gap:4px;}
+ #app main.release-office .squad-abilities {gap:2px;justify-content:flex-start;}
+ #app main.release-office .squad-abilities>div {padding:1px 3px;gap:3px;}
+ #app main.release-office .squad-abilities dt,
+ #app main.release-office .squad-abilities dd {
+  font-size:clamp(11.7px,.81vw,16.2px);line-height:1.1;
+ }
+ #app main.release-office .squad-identity {gap:3px;}
+ #app main.release-office .squad-special {
+  padding-top:4px;gap:2px 6px;line-height:1.2;
+ }
+ #app main.release-office .squad-special-description {margin-top:2px;line-height:1.25;}
+ .overlay-panel.roster-panel {top:8vh;max-height:89vh;}
+}
+@media(min-width:761px) and (max-height:820px) {
+ #app main.release-office .squad-avatar img {height:120px;}
+ #app main.release-office .squad-identity {font-size:13px;}
+ #app main.release-office .squad-identity .player-name {font-size:18px!important;}
+ #app main.release-office .squad-special {font-size:13px;}
+ #app main.release-office .squad-special-description {font-size:12px;}
+}
