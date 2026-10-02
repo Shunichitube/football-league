@@ -1,10 +1,10 @@
 import {createSfxController} from './sfx.js?v=1';
 import {createBgmController} from './bgm.js?v=audio-assets-v2';
-import {renderGrandResults,mountGrandFinale} from './grand-finale-ui.js?v=modular-motion-v2';
-import {createGameExperience} from './game-experience.js?v=modular-motion-v2';
-import { playSeasonFinale } from './season-finale.js?v=modular-motion-v2';
+import {renderGrandResults,mountGrandFinale} from './grand-finale-ui.js?v=redrawn-run-v1';
+import {createGameExperience} from './game-experience.js?v=redrawn-run-v1';
+import { playSeasonFinale } from './season-finale.js?v=redrawn-run-v1';
 import { rareKind, rareAgeLabel } from './rare-characters.js';
-import { playTrainingCinematic } from './training-cinematic.js?v=modular-motion-v2';
+import { playTrainingCinematic } from './training-cinematic.js?v=redrawn-run-v1';
 import { renderSeasonResults } from './season-results-ui.js?v=combined-results-v1';
 import { createInitialState } from './app-state.js';
 import { createAuctionClock } from './auction-clock.js';
