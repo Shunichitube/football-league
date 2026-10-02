@@ -4,10 +4,25 @@ import { mountArena } from './arena-scene.js?v=motion-cleanup-v2';
 // A screen lifetime owns every animation/listener. Navigation destroys it.
 const app=document.querySelector('#app');
 let current=null,dispose=null,generation=0;
+// Match the fixed CSS background's cover transform (source image: 1672 x 941).
+export function draftVenueAnchors(width,height){
+ const scale=Math.max(width/1672,height/941),offsetY=(height-941*scale)/2;
+ return {podiumY:offsetY+239*scale,cardsY:offsetY+304*scale};
+}
+function alignDraftVenue(){
+ const grid=app.querySelector(':scope > main.screen-draft .draft-card-grid');
+ if(!grid)return;
+ const {podiumY,cardsY}=draftVenueAnchors(innerWidth,innerHeight);
+ document.body.style.setProperty('--draft-podium-y',`${podiumY}px`);
+ // Measure normal flow without the existing margin so repeated renders do not drift.
+ const flowY=grid.getBoundingClientRect().top+scrollY-(parseFloat(getComputedStyle(grid).marginTop)||0);
+ document.body.style.setProperty('--draft-grid-gap',`${Math.max(16,cardsY-flowY)}px`);
+}
 function sync(){
   const title=app.querySelector(':scope > .arena-title')?'title':app.querySelector(':scope > main.screen-draft')?'draft':app.querySelector(':scope > main.auction-room')?'auction':app.querySelector(':scope > main.screen-season-results')?'season-results':app.querySelector(':scope > main.contract-room, :scope > main.release-office')?'contract':app.querySelector(':scope > main.development-room')?'development':null;
   if(title==='auction')document.body.style.setProperty('--auction-header-bottom',`${Math.max(0,app.querySelector(':scope > header')?.getBoundingClientRect().bottom||0)}px`);
   if(title==='season-results')document.body.style.setProperty('--results-header-bottom',`${Math.max(0,app.querySelector(':scope > header')?.getBoundingClientRect().bottom||0)}px`);
+  if(title==='draft')alignDraftVenue();
   if(title===current)return;
   current=title;generation++;const token=generation;
   dispose?.();dispose=null;
