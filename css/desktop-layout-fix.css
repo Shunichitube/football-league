@@ -790,7 +790,7 @@
     gap: 0.5rem !important;
   }
 
-  main.match-detail .player-name { font-size: 0.98rem !important; }
+  main.match-detail .player-name { font-size: clamp(0.84rem, calc(var(--draft-grid-height, 720px) / 44), 0.98rem) !important; }
   main.match-detail .overall-rank { font-size: 0.86rem !important; }
   main.match-detail .player-profile p,
   main.match-detail .player-meta,
@@ -813,5 +813,48 @@
 
   main.screen-squad .lineup-editor {
     grid-template-columns: minmax(0, 42fr) minmax(0, 58fr);
+  }
+}
+/* Draft cards fill the space between the podium and the action dock. */
+@media (min-width: 761px) {
+  main.screen-draft {
+    --pc-card-name: clamp(1.05rem, calc(var(--draft-grid-height, 720px) / 36), 1.3rem);
+    --pc-card-rank: clamp(0.92rem, calc(var(--draft-grid-height, 720px) / 44), 1.05rem);
+    --pc-card-small: clamp(0.8rem, calc(var(--draft-grid-height, 720px) / 48), 0.95rem);
+  }
+  main.screen-draft .draft-card-grid {
+    height: var(--draft-grid-height, auto);
+    min-height: 0;
+    grid-auto-rows: minmax(150px, 1fr);
+    align-content: stretch;
+    overflow-y: auto;
+    padding: 2px;
+  }
+  main.screen-draft .draft-card-grid .candidate {
+    min-height: 0;
+    padding: 0.48rem !important;
+  }
+  main.screen-draft .draft-card-grid .player-card {
+    flex: 1;
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 0.5rem !important;
+    padding: 0.55rem !important;
+  }
+  main.screen-draft .position-badge { font-size: 0.9rem !important; }
+  main.screen-draft .ability-grid { gap: 0.14rem !important; }
+  main.screen-draft .ability-grid div {
+    grid-template-columns: 3.3rem minmax(0, 1fr) !important;
+    padding: 0.12rem 0.25rem !important;
+  }
+  main.screen-draft .ability-grid dt { font-size: clamp(0.7rem, calc(var(--draft-grid-height, 720px) / 52), 0.82rem) !important; }
+  main.screen-draft .ability-grid dd { font-size: 0.98rem !important; }
+  main.screen-draft .rank-bar { height: 6px !important; }
+  main.screen-draft .player-special-row .special-ability-hover > span,
+  main.screen-draft .player-special-row .special-ability-detail summary,
+  main.screen-draft .special-ability,
+  main.screen-draft .special-ability.none {
+    font-size: var(--pc-card-small) !important;
+    line-height: 1.25;
   }
 }
