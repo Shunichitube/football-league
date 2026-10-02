@@ -1,7 +1,7 @@
 import {loadMotionAtlas,drawMotion} from './player-motion.js?v=motion-cleanup-v2';
 import {playerAppearance} from './avatar-profile.js?v=appearance-v29';
 import {drawAvatar} from './player-avatar.js?v=season-finale-v1';
-import {celebrationTexture,drawCelebration} from './avatar-celebration.js?v=joy-alpha-v2';
+import {celebrationTexture,drawCelebration} from './avatar-celebration.js?v=joy-arms-front-v3';
 
 export const finaleKind=rank=>rank===1?'goal':rank<=3?'parry':'catch';
 export const CONVEYOR_MATCH_SECONDS=2.4;
