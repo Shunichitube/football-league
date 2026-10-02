@@ -1,0 +1,11 @@
+.season-finale{position:fixed;inset:0;z-index:3000;background:#07121d;isolation:isolate;color:#fff;display:grid;place-items:center;font-family:inherit}
+.season-finale canvas{position:absolute;inset:0;width:100%;height:100%}
+.season-finale [hidden]{display:none!important}
+.finale-heading{position:absolute;top:max(24px,8vh);text-align:center;max-width:90%;padding:12px 34px;border-radius:16px;background:#071827cf;border:1px solid #ffffff38;text-shadow:0 2px 5px #000}
+.finale-heading h1{font-size:clamp(20px,3vw,40px);margin:0;color:#fff;overflow-wrap:anywhere}
+.finale-heading p{font-size:clamp(24px,3.6vw,48px);margin:4px 0 0;font-weight:900;color:#ffe79b}
+.finale-next{position:absolute;bottom:max(24px,6vh);min-width:180px;padding:16px 32px;border:1px solid #b6ffd2;border-radius:12px;background:#126345;color:#fff;box-shadow:0 4px 25px #0007;font-family:inherit;font-size:18px;font-weight:700;cursor:pointer}
+.finale-next:hover{background:#1b815a}.finale-next:focus-visible{outline:4px solid #fff;outline-offset:5px}
+.finale-white{background:#fff;color:#17212e}.finale-white .finale-next{box-shadow:0 4px 18px #16332425}
+.finale-loading{position:relative;max-width:85%;text-align:center}
+@media(max-width:600px){.finale-heading{top:5vh;padding:10px 20px}.finale-next{bottom:5vh;padding:14px 25px}}

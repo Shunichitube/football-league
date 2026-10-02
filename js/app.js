@@ -1,3 +1,4 @@
+import { playSeasonFinale } from './season-finale.js?v=1';
 import { rareKind, rareAgeLabel } from './rare-characters.js';
 import { playTrainingCinematic } from './training-cinematic.js?v=6';
 import { renderSeasonResults } from './season-results-ui.js?v=3';
@@ -23,7 +24,9 @@ let roomAdapter=null;
 const standings=league=>roomAdapter?.active?roomAdapter.standings(league,singleStandings):singleStandings(league);
 const app = document.querySelector('#app');
 let s = createInitialState();
+let finalePending=false,finaleDispose=null;
 function returnToTitle() {
+  finaleDispose?.();finaleDispose=null;finalePending=false;
   roomAdapter?.leave();
   s = createInitialState();
 }
@@ -92,7 +95,7 @@ function updateAuction() {
   if(clock){const remaining=a.live?.closed?0:Math.max(0,Math.ceil(((a.live?.endAt||now)-now-(s.mode==='room'?(roomAdapter.clockOffset||0):0))/1000));clock.textContent=`0:${String(remaining).padStart(2,'0')}`;clock.classList.toggle('urgent',remaining<=5);}
 }
 const auctionClock=createAuctionClock(updateAuction);
-onGameClick('app',ev=>{const resultTab=ev.target.closest('[data-result-tab]')?.dataset.resultTab;if(resultTab){s.resultTab=resultTab;return render()}let draftSelect=ev.target.closest('[data-draft-select]')?.dataset.draftSelect,a=ev.target.closest('[data-a]')?.dataset.a,n=ev.target.closest('[data-nav]')?.dataset.nav,p=ev.target.closest('[data-p]')?.dataset.p,m=ev.target.closest('[data-season-match]')?.dataset.seasonMatch;if(draftSelect){s.selectedDraftPlayerId=draftSelect;return render()}if(m!==undefined){s.match=s.league.seasonResults[Number(m)];s.view='matchDetail';return render()}if(n){s.view=n;if(n!=='squad'){s.selectedLineupPlayerId=null;s.lineupMessage='';s.lineupError=false}return render()}if(p){let x=s.draft.pool.find(q=>q.id===p);if(x&&me().funds>=5&&me().roster.length<12)pickDraft(x);return render()}if(a==='toggleDraftHistory'){s.draftHistoryOpen=true;return render()}if(a==='toggleAuctionHistory'){s.auctionHistoryOpen=true;return render()}if(a==='toAuction'){startAuction();return render()}if(a==='setup'||a==='title'){if(a==='title')returnToTitle();else s.view=a;return render()}if(a==='start'){let name=document.querySelector('#name').value.trim();if(!name)return alert('クラブ名を入力してください。');let seed=document.querySelector('#seed').value.trim()||String(Date.now());s.league=createLeague({name,color:document.querySelector('#color').value,seed});s.offseasonComplete=false;beginDraft();return render()}if(a==='skipDraft'){s.selectedDraftPlayerId=null;s.draft.humanDeclined=true;if(s.draft.mode==='ORDERED')nextOrderedPick(s.draft);else s.draft.pendingClubIds=s.draft.pendingClubIds.filter(id=>id!==me().id);runCpuDraft();return render()}if(a==='bid'||a==='pass'){let n=a==='pass'?0:Number(document.querySelector('#bid').value);if(n<0||n>me().funds)return alert('入札額を確認してください。');bid(n);return render()}if(a==='squad'){s.view='squad';return render()}if(a==='season'){let lineup=validateLineup(me());if(!lineup.ok)return alert(lineup.error);s.seasonSimulation=simulateRemainingSeason(s.league);if(s.league.season===10)finalizeSeason(s.league);s.view='seasonResults';return render()}});
+onGameClick('app',ev=>{const resultTab=ev.target.closest('[data-result-tab]')?.dataset.resultTab;if(resultTab){s.resultTab=resultTab;return render()}let draftSelect=ev.target.closest('[data-draft-select]')?.dataset.draftSelect,a=ev.target.closest('[data-a]')?.dataset.a,n=ev.target.closest('[data-nav]')?.dataset.nav,p=ev.target.closest('[data-p]')?.dataset.p,m=ev.target.closest('[data-season-match]')?.dataset.seasonMatch;if(draftSelect){s.selectedDraftPlayerId=draftSelect;return render()}if(m!==undefined){s.match=s.league.seasonResults[Number(m)];s.view='matchDetail';return render()}if(n){s.view=n;if(n!=='squad'){s.selectedLineupPlayerId=null;s.lineupMessage='';s.lineupError=false}return render()}if(p){let x=s.draft.pool.find(q=>q.id===p);if(x&&me().funds>=5&&me().roster.length<12)pickDraft(x);return render()}if(a==='toggleDraftHistory'){s.draftHistoryOpen=true;return render()}if(a==='toggleAuctionHistory'){s.auctionHistoryOpen=true;return render()}if(a==='toAuction'){startAuction();return render()}if(a==='setup'||a==='title'){if(a==='title')returnToTitle();else s.view=a;return render()}if(a==='start'){let name=document.querySelector('#name').value.trim();if(!name)return alert('クラブ名を入力してください。');let seed=document.querySelector('#seed').value.trim()||String(Date.now());s.league=createLeague({name,color:document.querySelector('#color').value,seed});s.offseasonComplete=false;beginDraft();return render()}if(a==='skipDraft'){s.selectedDraftPlayerId=null;s.draft.humanDeclined=true;if(s.draft.mode==='ORDERED')nextOrderedPick(s.draft);else s.draft.pendingClubIds=s.draft.pendingClubIds.filter(id=>id!==me().id);runCpuDraft();return render()}if(a==='bid'||a==='pass'){let n=a==='pass'?0:Number(document.querySelector('#bid').value);if(n<0||n>me().funds)return alert('入札額を確認してください。');bid(n);return render()}if(a==='squad'){s.view='squad';return render()}if(a==='season'){let lineup=validateLineup(me());if(!lineup.ok)return alert(lineup.error);s.seasonSimulation=simulateRemainingSeason(s.league);finalePending=true;if(s.league.season===10)finalizeSeason(s.league);s.view='seasonResults';return render()}});
 
 // Stage 4 off-season screens are layered onto the existing season flow.
 const rankScore = { SS: 9, S: 8, A: 7, B: 6, C: 5, D: 4, E: 3, F: 2, G: 1 };
@@ -483,6 +486,7 @@ function renderEntryDialog() {
 }
 let renderedView = null;
 function render() {
+  if(s.view!=='seasonResults'&&finaleDispose){finaleDispose();finaleDispose=null;}
   const seasonTransition=s.view==='draft'&&renderedView==='release';
   const trainingTransition=s.view==='growth'&&['focus','development'].includes(renderedView);
   const previousScreen=trainingTransition?app.cloneNode(true):null;
@@ -510,6 +514,13 @@ function render() {
   auctionClock.sync(s.view === 'auction' && !!s.auction && !s.auction.completed);
   renderedView = s.view;
   document.dispatchEvent(new CustomEvent('football-league:view-rendered'));
+  if(finalePending&&s.view==='seasonResults'&&!finaleDispose){
+    finalePending=false;
+    const club=me(),rank=standings(s.league).find(row=>row.club.id===club.id)?.rank||6;
+    const opponents=s.league.clubs.filter(row=>row.id!==club.id);
+    const keeper=opponents.flatMap(row=>row.roster).find(p=>p.primaryPosition==='GK'&&!rareKind(p));
+    finaleDispose=playSeasonFinale({app,club,rank,keeper,onDone:()=>{finaleDispose=null;}});
+  }
   if(trainingTransition)void playTrainingCinematic(me(),previousScreen);
   if(seasonTransition){
     const transition=document.createElement('div');transition.className='season-move-overlay';transition.setAttribute('role','status');
@@ -517,7 +528,11 @@ function render() {
     setTimeout(()=>transition.remove(),3000);
   }
 }
-roomAdapter=new RoomAdapter(()=>s,next=>{s=next;},()=>render(),()=>updateRoomStatus());
+roomAdapter=new RoomAdapter(()=>s,next=>{
+  // Only a live season transition plays the finale; resuming a result does not.
+  if(s.mode==='room'&&s.view==='squad'&&next.view==='seasonResults'&&s.roomId===next.roomId)finalePending=true;
+  s=next;
+},()=>render(),()=>updateRoomStatus());
 function reportRoomError(error){ roomAdapter.status.error=error.message; updateRoomStatus(); }
 function sendRoom(promise){Promise.resolve(promise).catch(reportRoomError);}
 function roomClick(event){
