@@ -1,7 +1,15 @@
 import {DEFAULT_RUN_HAIR_ADJUSTMENTS,DEFAULT_IDLE_HAIR_ADJUSTMENTS} from './motion-hair-defaults.js?v=idle-approved-v5';
 // Offsets are in the 627px source frame; scaling is uniform about the hair center.
 export const HAIR_ADJUSTMENT_KEY='football-league:run-hair-adjustments:v1';
-const storageKey=mode=>mode==='idle'?'football-league:idle-hair-adjustments:v1':HAIR_ADJUSTMENT_KEY;
+const LEGACY_IDLE_KEY='football-league:idle-hair-adjustments:v1';
+const storageKey=mode=>{
+ if(mode==='idle'){
+  // Discard pre-approval idle overrides; preserve run settings and new idle edits.
+  try{globalThis.localStorage?.removeItem(LEGACY_IDLE_KEY);}catch{}
+  return 'football-league:idle-hair-adjustments:v2';
+ }
+ return HAIR_ADJUSTMENT_KEY;
+};
 const frameCount=mode=>mode==='idle'?2:4;
 const identity=()=>({x:0,y:0,scale:1});
 export function normalizeAdjustment(value){
