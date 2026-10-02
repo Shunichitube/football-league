@@ -1,8 +1,8 @@
 import {footballTexture} from './arena-scene.js?v=shared-ball-v1';
-import {loadMotionAtlas,drawMotion} from './player-motion.js?v=preview-paced-v1';
+import {loadMotionAtlas,drawMotion} from './player-motion.js?v=modular-motion-v1';
 import {playerAppearance} from './avatar-profile.js?v=appearance-v29';
 import {drawAvatar} from './player-avatar.js?v=season-finale-v1';
-import {celebrationTexture,drawCelebration} from './avatar-celebration.js?v=body-alpha-v3';
+import {celebrationTexture,drawCelebration} from './avatar-celebration.js?v=modular-motion-v1';
 
 export const finaleKind=rank=>rank===1?'goal':rank<=3?'parry':'catch';
 export const CONVEYOR_MATCH_SECONDS=4.5;
@@ -105,7 +105,7 @@ async function loadResources(){
   const im=new Image();im.src=new URL('../assets/'+name,import.meta.url).href;
   let timer;try{await Promise.race([im.decode(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Finale image timed out')),15000);})]);}finally{clearTimeout(timer);}return im;
  };
- resources??=Promise.all([loadMotionAtlas(),load('arena/arena-base.webp'),load('arena/home-arena-v2.webp'),load('arena/goal-cutin-background-v1.webp'),load('arena/goal-net-bulge-no-ball-v3.webp'),load('avatars/player-celebrate-front-happy-v3.webp'),load('avatars/keeper-dejected-v1.webp')]).then(([atlas,ground,home,goal,bulge,celebrate,dejected])=>({atlas:{...atlas,celebrate,dejected},ground,home,goal,bulge}));
+ resources??=Promise.all([loadMotionAtlas(),load('arena/arena-base.webp'),load('arena/home-arena-v2.webp'),load('arena/goal-cutin-background-v1.webp'),load('arena/goal-net-bulge-no-ball-v3.webp')]).then(([atlas,ground,home,goal,bulge])=>({atlas,ground,home,goal,bulge}));
  try{return await resources;}catch(error){resources=null;throw error;}
 }
 let sharedBall;
@@ -285,3 +285,4 @@ export function playSeasonFinale({app,club,rank,keeper,matches=[],clubs=[],onDon
  }).finally(()=>clearTimeout(loadTimer));
  return dispose;
 }
+

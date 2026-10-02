@@ -1,7 +1,7 @@
-import {loadMotionAtlas} from './player-motion.js?v=body-alpha-v3';
+import {loadMotionAtlas} from './player-motion.js?v=modular-motion-v1';
 import {playerAppearance} from './avatar-profile.js?v=appearance-v29';
-import {drawAvatar} from './player-avatar.js?v=season-finale-v1';
-import {celebrationTexture} from './avatar-celebration.js?v=body-alpha-v3';
+import {drawAvatar} from './player-avatar.js?v=modular-motion-v1';
+import {celebrationTexture} from './avatar-celebration.js?v=modular-motion-v1';
 
 const AUDIO_KEY='football-league:audio-settings';
 export function normalizeAudio(value={}){
@@ -14,9 +14,7 @@ export function growthCelebrates(row){
 }
 let assets;
 async function celebrationAssets(){
- assets??=Promise.all([loadMotionAtlas(),new Promise((resolve,reject)=>{
-  const im=new Image();im.src=new URL('../assets/avatars/player-celebrate-front-happy-v3.webp',import.meta.url).href;im.decode().then(()=>resolve(im),reject);
- })]).then(([atlas,celebrate])=>({...atlas,celebrate}));
+ assets??=loadMotionAtlas();
  try{return await assets;}catch(error){assets=null;throw error;}
 }
 export function createGameExperience({dialogs,onExit}){
@@ -118,3 +116,4 @@ export function createGameExperience({dialogs,onExit}){
   }
  };
 }
+

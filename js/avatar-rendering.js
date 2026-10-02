@@ -98,41 +98,19 @@ export function drawHair(ctx,assets,profile,view,box) {
 // The same atlas eyebrows are used in portraits and motion faces.
 export const AVATAR_BROWS=[null,[[595,670,46,27],[702,670,46,26]],[[1023,662,49,23],[1151,662,50,23]]];
 const QUARTER_EYES=[[316,332,44,102],[457,306,44,102]];
-const equalEyeHeads=new WeakMap();
-function equalEyeQuarterHead(assets){
-  const original=assets.quarterHead;
-  if(equalEyeHeads.has(original))return equalEyeHeads.get(original);
-  const surface=createSurface(assets,original.width,original.height);
-  if(!surface)return original;
-  const ctx=surface.getContext('2d');ctx.drawImage(original,0,0);
-  const data=ctx.getImageData(0,0,surface.width,surface.height),pixels=data.data;
-  const sx=surface.width/592,sy=surface.height/560;
-  const originalPixels=pixels.slice();
-  // Remove only the two eye colour masks. Preserve all alpha and surrounding skin.
-  for(const [bx,by,bw,bh,lx,rx]of [[309,320,57,114,304,369],[449,293,59,128,444,513]]){
-    for(let y=Math.floor(by*sy);y<Math.ceil((by+bh)*sy);y++){
-      const left=(y*surface.width+Math.floor(lx*sx))*4,right=(y*surface.width+Math.ceil(rx*sx))*4;
-      for(let x=Math.floor(bx*sx);x<Math.ceil((bx+bw)*sx);x++){
-        const k=(y*surface.width+x)*4;
-        if(pixels[k+3]){
-          const t=(x-lx*sx)/((rx-lx)*sx);
-          for(let c=0;c<3;c++)pixels[k+c]=Math.round(originalPixels[left+c]*(1-t)+originalPixels[right+c]*t);
-        }
-      }
-    }
-  }
-  // Scale the same far-eye mask into both slots; retain the face's existing alpha.
-  for(const [ex,ey,ew,eh]of QUARTER_EYES){
-    const width=Math.round(ew*sx),height=Math.round(eh*sy);
-    for(let y=0;y<height;y++)for(let x=0;x<width;x++){
-      const source=((Math.round(297*sy)+Math.floor(y*120*sy/height))*surface.width+Math.round(453*sx)+Math.floor(x*51*sx/width))*4;
-      const target=((Math.round(ey*sy)+y)*surface.width+Math.round(ex*sx)+x)*4;
-      if(Math.max(originalPixels[source],originalPixels[source+1],originalPixels[source+2])<40)
-        for(let c=0;c<3;c++)pixels[target+c]=originalPixels[source+c];
-    }
-  }
-  ctx.putImageData(data,0,0);
-  equalEyeHeads.set(original,surface);return surface;
+const quarterEyeLayers=new WeakMap();
+function quarterEyeLayer(assets){
+ const original=assets.quarterEyes||assets.quarterHead;
+ if(quarterEyeLayers.has(original))return quarterEyeLayers.get(original);
+ const eye=createSurface(assets,51,120),ctx=eye.getContext('2d');
+ ctx.drawImage(original,453*original.width/592,297*original.height/560,51*original.width/592,120*original.height/560,0,0,51,120);
+ const image=ctx.getImageData(0,0,51,120);
+ for(let i=0;i<image.data.length;i+=4)if(Math.max(image.data[i],image.data[i+1],image.data[i+2])>=40)image.data[i+3]=0;
+ ctx.putImageData(image,0,0);quarterEyeLayers.set(original,eye);return eye;
+}
+export function drawQuarterFace(ctx,assets,head){
+ const eye=quarterEyeLayer(assets);
+ for(const [ex,ey,ew,eh]of QUARTER_EYES)ctx.drawImage(eye,head[0]+head[2]*ex/592,head[1]+head[3]*ey/560,head[2]*ew/592,head[3]*eh/560);
 }
 function glassesRim(ctx,x,y,w,h){
   ctx.moveTo(x+w*.14,y);ctx.lineTo(x+w*.82,y-h*.025);
@@ -185,16 +163,17 @@ export function drawGlasses(ctx,eyes,{scale=1,quarter=false,temples}={}) {
   for(const [lens,side]of [[left,-1],[right,1]]){const [x,y,w,h]=lens,edge=side<0?x:x+w;ctx.beginPath();ctx.moveTo(edge,y+h*.23);const temple=temples?.[side<0?0:1];ctx.lineTo(...(temple||[edge+side*w*.18,y+h*.12]));ctx.stroke();}
   ctx.restore();
 }
-export function drawQuarterHead(ctx,assets,value,box) {
+export function drawQuarterHead(ctx,assets,value,box,{base=true}={}) {
   const profile=avatarProfile(value),[x,y,w,h]=box;
   const head=[x+w*.13,y+h*.14,w*.78,h*.86];
   const hairBox=assets.quarterHair?box:[x+w*.01,y+h*.01,w*.98,h];
-  const headImage=equalEyeQuarterHead(assets);
+  const headImage=assets.quarterHead;
   const headRect=[0,0,headImage.width,headImage.height];
   const headOptions={skinTone:profile.skinTone,recolorKit:false};
   // New motion hair assets already contain transparent ear and face openings.
   // Paint their alpha directly; legacy polygon clips cut away the new side locks.
-  paintPart(ctx,assets,headImage,headRect,head,headOptions);
+  if(base)paintPart(ctx,assets,headImage,headRect,head,headOptions);
+  drawQuarterFace(ctx,assets,head);
   drawHair(ctx,assets,profile,'quarter',hairBox);
   const eyes=QUARTER_EYES.map(([ex,ey,ew,eh])=>[head[0]+head[2]*ex/592,head[1]+head[3]*ey/560,head[2]*ew/592,head[3]*eh/560]);
   eyes.forEach(([ex,ey,ew,eh],side)=>{
@@ -214,9 +193,10 @@ let promise;
 export function loadAvatarAssets() {
   if(!promise)promise=(async()=>{
     const image=async path=>{const source=new Image();source.src=new URL(path,import.meta.url).href;await source.decode();return source;};
-    const [parts,hair,quarterHead,keeper,mohawkFront,mohawkQuarter,shortfadeFront,shortfadeQuarter]=await Promise.all([image('../assets/avatars/player-parts-v1.png'),image('../assets/avatars/player-hair-v3.webp'),image('../assets/avatars/player-head-quarter-v3.webp'),image('../assets/avatars/keeper-catch-v1.png'),image('../assets/avatars/mohawk-front-v3.webp'),image('../assets/avatars/mohawk-quarter-v1.webp'),image('../assets/avatars/shortfade-front-v1.webp'),image('../assets/avatars/shortfade-quarter-v1.webp')]);
+    const [parts,hair,quarterHead,keeper,mohawkFront,mohawkQuarter,shortfadeFront,shortfadeQuarter,quarterEyes]=await Promise.all([image('../assets/avatars/player-parts-v1.png'),image('../assets/avatars/player-hair-v3.webp'),image('../assets/avatars/player-head-quarter-base-v1.png'),image('../assets/avatars/keeper-catch-v1.png'),image('../assets/avatars/mohawk-front-v3.webp'),image('../assets/avatars/mohawk-quarter-v1.webp'),image('../assets/avatars/shortfade-front-v1.webp'),image('../assets/avatars/shortfade-quarter-v1.webp'),image('../assets/avatars/player-head-quarter-v3.webp')]);
     const quarterHair=await Promise.all(Array.from({length:20},(_,i)=>image('../assets/avatars/motion-hair-'+String(i+1).padStart(2,'0')+(MOTION_HAIR_REGISTERED.includes(i)?'-v3.webp':'-v2.webp'))));
-    return {rare:await loadRareAssets(),parts,hair,quarterHead,keeper,mohawkFront,mohawkQuarter,shortfadeFront,shortfadeQuarter,quarterHair,quarterHairRegistered:MOTION_HAIR_REGISTERED,quarterHairOffsets:MOTION_HAIR_OFFSETS};
+    return {rare:await loadRareAssets(),parts,hair,quarterHead,quarterEyes,keeper,mohawkFront,mohawkQuarter,shortfadeFront,shortfadeQuarter,quarterHair,quarterHairRegistered:MOTION_HAIR_REGISTERED,quarterHairOffsets:MOTION_HAIR_OFFSETS};
   })();
   return promise;
 }
+
