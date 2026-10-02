@@ -114,8 +114,8 @@ export function renderPlayerCard(player, options = {}) {
   const description = display.specialAbility ? SPECIAL_ABILITY_DESCRIPTIONS[display.specialAbility] : '';
   const specialAbility = display.specialAbility
     ? options.specialHover
-      ? `<div class="special-ability-detail special-ability-hover"><span>★ ${escapeHtml(display.specialAbility)} <em>詳細</em></span><p>${escapeHtml(description)}</p></div>`
-      : `<details class="special-ability-detail"><summary>★ ${escapeHtml(display.specialAbility)} <span>詳細</span></summary><p>${escapeHtml(description)}</p></details>`
+      ? `<div class="special-ability-detail special-ability-hover"><span>★ ${escapeHtml(display.specialAbility)} <em>詳細</em></span><p>${escapeHtml(description || '')}</p></div>`
+      : `<div class="special-ability-detail special-ability-visible"><span>★ ${escapeHtml(display.specialAbility)}</span><p>${escapeHtml(description || '')}</p></div>`
     : '<p class="special-ability none">―</p>';
   const release = options.allowRelease ? `<button type="button" data-stage10="release" data-release-player="${escapeHtml(player.id)}" class="subtle release-button">この選手を放出</button>` : '';
   const honors = player.honors || {};
@@ -175,7 +175,7 @@ function growthDirection(ability,changes){
 function squadGrowthBar(ability,changes){
  return `<i class="rank-bar rank-${escapeHtml(ability.rank)}"><b></b>${changes?growthBar(ability,changes):''}</i>`;
 }
-function renderSquadCard(player, lineup, selectedId, clubColor, growthChanges = null, showSpecialDescription = false) {
+function renderSquadCard(player, lineup, selectedId, clubColor, growthChanges = null, showSpecialDescription = true) {
   playerRefs.set(player.id, player);
   const display = displayPlayer(player);
   const slot = lineup.indexOf(player.id);
@@ -203,11 +203,11 @@ export function renderSquadComparison(club, selectedId, targetId = null) {
   const left = displayPlayer(source), right = target ? displayPlayer(target) : null;
   const abilities = publicAbilities(source);
   const profile = player => player ? `<div class="compare-profile">${squadRoleBadge(player, club.lineup || [])}<img src="${squadAvatar(player, club.color)}" alt=""><div><strong>${escapeHtml(player.name)}</strong><span>総合 ${escapeHtml(displayPlayer(player).overallRank)} ・ ${escapeHtml(positionLabel(player.primaryPosition))}</span><small>${escapeHtml(rareAgeLabel(player))} ・ 契約${player.contractYears}年</small></div></div>` : '<div class="compare-profile compare-placeholder">所属選手にホバーまたは選択</div>';
-  return `<div class="compare-duel"><section class="compare-person">${profile(source)}<div class="compare-ability-list">${abilities.map(ability => `<div><span>${escapeHtml(ability.label)}</span><b>${escapeHtml(ability.rank)}</b>${squadGrowthBar(ability,null)}</div>`).join('')}</div><p class="compare-special">特能 <b>${escapeHtml(left.specialAbility || '―')}</b></p></section><span class="compare-vs">VS</span><section class="compare-person">${profile(target)}<div class="compare-ability-list">${abilities.map(ability => {
+  return `<div class="compare-duel"><section class="compare-person">${profile(source)}<div class="compare-ability-list">${abilities.map(ability => `<div><span>${escapeHtml(ability.label)}</span><b>${escapeHtml(ability.rank)}</b>${squadGrowthBar(ability,null)}</div>`).join('')}</div><p class="compare-special">特能 <b>${escapeHtml(left.specialAbility || '―')}</b>${left.specialAbility ? `<span class="compare-special-description">${escapeHtml(SPECIAL_ABILITY_DESCRIPTIONS[left.specialAbility] || '')}</span>` : ''}</p></section><span class="compare-vs">VS</span><section class="compare-person">${profile(target)}<div class="compare-ability-list">${abilities.map(ability => {
     const rank = right?.ranks[ability.key];
     const change = rank ? Math.sign(order.indexOf(rank) - order.indexOf(ability.rank)) : 0;
     return `<div><span>${escapeHtml(ability.label)}</span><b>${escapeHtml(rank || '―')}</b><i class="rank-bar ${rank ? `rank-${escapeHtml(rank)}` : 'compare-no-rank'}"><b></b></i>${rank?abilityArrow(change,change>0?'比較対象が高い':change<0?'比較対象が低い':'同じ',true):''}</div>`;
-  }).join('')}</div><p class="compare-special">特能 <b>${escapeHtml(right?.specialAbility || '―')}</b></p></section></div>`;
+  }).join('')}</div><p class="compare-special">特能 <b>${escapeHtml(right?.specialAbility || '―')}</b>${right?.specialAbility ? `<span class="compare-special-description">${escapeHtml(SPECIAL_ABILITY_DESCRIPTIONS[right?.specialAbility] || '')}</span>` : ''}</p></section></div>`;
 }
 
 export function renderLineupEditor(club, selectedPlayerId = null, message = '', messageIsError = false, benchSort = 'position', tactics = '') {
@@ -295,7 +295,7 @@ export function renderSeasonPlayerStats(club) {
     const display=displayPlayer(player);
     const average=season.appearances?(season.ratingTotal/season.appearances).toFixed(1):'—';
     const metrics=[['出場',season.appearances],['得点',season.goals],['アシスト',season.assists],['平均評価',average],['シュート',season.shots],['攻撃貢献',season.attackContributions],['守備成功',season.defensiveStops],['セーブ',season.saves]];
-    return `<article class="season-stat-card" aria-label="${escapeHtml(player.name)}の個人成績"><div class="season-stat-profile"><img src="${squadAvatar(player,club.color)}" alt="${escapeHtml(player.name)}" draggable="false"><div><strong class="season-stat-name">${escapeHtml(player.name)}</strong><b>総合 ${escapeHtml(display.overallRank)}</b><span>${escapeHtml(positionLabel(player.primaryPosition))} ・ ${escapeHtml(rareAgeLabel(player))}</span><small>契約 ${display.contractYears}年</small><p class="season-stat-special" title="${escapeHtml(display.specialAbility?SPECIAL_ABILITY_DESCRIPTIONS[display.specialAbility]||'':'')}">特能 ${escapeHtml(display.specialAbility||'―')}</p></div></div><dl class="season-stat-metrics">${metrics.map(([label,value])=>`<div><dt>${label}</dt><dd>${escapeHtml(value??0)}</dd></div>`).join('')}</dl></article>`;
+    return `<article class="season-stat-card" aria-label="${escapeHtml(player.name)}の個人成績"><div class="season-stat-profile"><img src="${squadAvatar(player,club.color)}" alt="${escapeHtml(player.name)}" draggable="false"><div><strong class="season-stat-name">${escapeHtml(player.name)}</strong><b>総合 ${escapeHtml(display.overallRank)}</b><span>${escapeHtml(positionLabel(player.primaryPosition))} ・ ${escapeHtml(rareAgeLabel(player))}</span><small>契約 ${display.contractYears}年</small><p class="season-stat-special" title="${escapeHtml(display.specialAbility?SPECIAL_ABILITY_DESCRIPTIONS[display.specialAbility]||'':'')}">特能 ${escapeHtml(display.specialAbility||'―')}${display.specialAbility ? `<span class="season-stat-special-description">${escapeHtml(SPECIAL_ABILITY_DESCRIPTIONS[display.specialAbility]||'')}</span>` : ''}</p></div></div><dl class="season-stat-metrics">${metrics.map(([label,value])=>`<div><dt>${label}</dt><dd>${escapeHtml(value??0)}</dd></div>`).join('')}</dl></article>`;
   }).join('')}</section>`;
 }
 
