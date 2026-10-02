@@ -83,11 +83,14 @@ export function celebrationTexture(atlas,value,{kit,goalkeeper=false,pose=1,deje
  const scale=dejected?.42:.95;
  // A fixed body registration preserves the source jump instead of cancelling it.
  const reference=dejected?box:JOY_HEADS[0],offsetY=250-(reference[1]+reference[3])*scale;
- ctx.drawImage(body,paddingX+150-(box[0]+box[2]/2)*scale,paddingY+offsetY,w*scale,h*scale);
+ // Sad poses keep the head in front; joy arms are composited after the head.
+ if(dejected)ctx.drawImage(body,paddingX+150-(box[0]+box[2]/2)*scale,paddingY+offsetY,w*scale,h*scale);
  const head=createSurface(atlas.avatar,300,470);
  drawAvatar(head.getContext('2d'),atlas.avatar,profile,{kit,goalkeeper,headOnly:true,expression:dejected?'sad':'happy'});
  const headDX=dejected?0:(sourceCenter.x-box[0]-box[2]/2-(mask.center.x-JOY_HEADS[0][0]-JOY_HEADS[0][2]/2))*scale;
  const headDY=dejected?0:(sourceCenter.y-mask.center.y)*scale;
  ctx.drawImage(head,paddingX+headDX,paddingY+headDY);
+ // The source head has already been removed. Remaining hands/arms cover the face.
+ if(!dejected)ctx.drawImage(body,paddingX+150-(box[0]+box[2]/2)*scale,paddingY+offsetY,w*scale,h*scale);
  if(cache.size>=96)cache.delete(cache.keys().next().value);cache.set(key,out);return out;
 }
