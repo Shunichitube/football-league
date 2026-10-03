@@ -10,7 +10,20 @@
 .setup li{margin:.5rem 0}
 @media(max-width:560px){.room-sync{flex-wrap:wrap}}
 
-/* Keep live bidding status in one row so the auction keeps its height. */
-body.auction-hall-active .room-sync{flex-direction:row;flex-wrap:nowrap;align-items:center;gap:.8rem;margin:0 auto;padding:.15rem .75rem;overflow-x:auto;scrollbar-width:thin;line-height:1.4}
-body.auction-hall-active .room-sync-summary{flex:none;justify-content:flex-start;white-space:nowrap}
-body.auction-hall-active .room-participants{flex:none;flex-wrap:nowrap;align-items:center}
+/* Embed synchronization and participant status in the navigation band. */
+#app>header.room-status-header{display:flex;flex-wrap:nowrap;gap:.75rem;height:64px;padding:.5rem 1rem}
+#app>header.room-status-header>.brand,
+#app>header.room-status-header>span{flex:none;white-space:nowrap;font-size:.75rem}
+#app>header.room-status-header>.room-sync{flex:1;min-width:0;max-width:none;flex-direction:row;flex-wrap:nowrap;align-items:center;gap:.8rem;margin:0;padding:0;overflow-x:auto;scrollbar-width:thin;line-height:1.4}
+#app>header.room-status-header .room-sync-summary{flex:none;justify-content:flex-start;white-space:nowrap}
+#app>header.room-status-header .room-participants{flex:none;flex-wrap:nowrap;align-items:center;order:-1}
+#app>header.room-status-header .room-draft-result{flex:none;white-space:nowrap}
+#app>header.room-status-header .header-actions button{margin:0;padding:.4rem .6rem;font-size:.75rem}
+@media(max-width:760px){
+  #app>header.room-status-header{display:grid;grid-template-columns:minmax(0,1fr) 90px 72px;gap:4px 8px;height:auto;min-height:64px;padding:8px 12px}
+  #app>header.room-status-header>.brand{grid-column:1;grid-row:1;letter-spacing:0;font-size:.7rem}
+  #app>header.room-status-header>.header-season{grid-column:2;grid-row:1}
+  #app>header.room-status-header>.header-club{grid-column:1;grid-row:2;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  #app>header.room-status-header>.header-actions{grid-column:3;grid-row:1}
+  #app>header.room-status-header>.room-sync{grid-column:2/4;grid-row:2}
+}
