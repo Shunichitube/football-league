@@ -5,7 +5,7 @@ export const BGM_FILES = {
   result: new URL('../assets/audio/音源/優勝決定！.mp3', import.meta.url).href
 };
 export function bgmTrack(view, simulating = false) {
-  if (simulating) return null;
+  if (simulating) return 'home';
   if (['title','setup','loadTitle','roomEntry','roomLobby','grandFinal','history'].includes(view)) return 'home';
   if (['draft','auction','squad','home','offseasonEvents','development','focus','growth','release','stats','table'].includes(view)) return 'preparation';
   if (['seasonResults','matchDetail'].includes(view)) return 'result';

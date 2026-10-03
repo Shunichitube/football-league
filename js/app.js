@@ -1,5 +1,5 @@
 import {createSfxController} from './sfx.js?v=1';
-import {createBgmController} from './bgm.js?v=audio-assets-v2';
+import {createBgmController} from './bgm.js?v=season-bgm-v3';
 import {renderGrandResults,mountGrandFinale} from './grand-finale-ui.js?v=motion-ui-v15';
 import {createGameExperience} from './game-experience.js?v=motion-ui-v15';
 import { playSeasonFinale } from './season-finale.js?v=clubhouse-three-v3';

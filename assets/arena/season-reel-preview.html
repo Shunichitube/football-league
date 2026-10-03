@@ -1,10 +1,13 @@
 <!doctype html><html lang="ja"><head><meta charset="utf-8"><title>シーズン映像確認</title><link rel="stylesheet" href="../../css/season-finale.css"><script type="importmap">{"imports":{"three":"../../js/vendor/three/build/three.module.js","three/addons/":"../../js/vendor/three/addons/"}}</script></head><body style="background:#07121d;color:white;font-family:sans-serif"><main id="app"><h1>シーズン映像確認</h1><button id="start" disabled>10試合を再生</button><label>順位<select id="rank"><option value="1">1位・ゴール</option><option value="2">2位・弾く</option><option value="4">4位・キャッチ</option></select></label><p id="done"></p></main><script type="module">
+import {createBgmController} from '../../js/bgm.js';
+const bgm=createBgmController();
 import {createLeague} from '../../js/league.js';
 import {playSeasonFinale} from '../../js/season-finale.js';
 const league=createLeague({name:'CLUB COURT',color:'#42b8e6',seed:'three-season-review'}),club=league.clubs[0];
 const patterns=['win','win','draw','loss','win','draw','loss','win','win','win'];
 const matches=patterns.slice(0,new URLSearchParams(location.search).has('short')?1:10).map((outcome,i)=>{const opponent=league.clubs[1+i%5];return {round:i+1,fixture:{homeId:club.id,awayId:opponent.id,home:club,away:opponent},result:{score:{home:outcome==='win'?3:outcome==='draw'?1:0,away:outcome==='loss'?2:1}}};});
 document.querySelector('#start').onclick=async()=>{
+ bgm.sync({view:'seasonResults',simulating:true});
  if(new URLSearchParams(location.search).has('shot')){
   const [{loadMotionAtlas},{createSeasonReel},{seasonReelMatches}]=await Promise.all([import('../../js/player-motion.js'),import('../../js/season-three/reel.js'),import('../../js/season-reel.js')]);
   const host=document.createElement('div');host.style.cssText='position:fixed;inset:0';document.body.append(host);
@@ -12,7 +15,7 @@ document.querySelector('#start').onclick=async()=>{
   const reel=createSeasonReel({host,atlas,club,clubs:league.clubs,fixtures});let start=null;
   function tick(now){start??=now;reel.renderShot(((now-start)/1000)%2.2,'goal');requestAnimationFrame(tick);}requestAnimationFrame(tick);return;
  }
- playSeasonFinale({app:document.querySelector('#app'),club,clubs:league.clubs,matches,rank:Number(document.querySelector('#rank').value),onDone:()=>document.querySelector('#done').textContent='シーズン結果へ戻りました'});
+ playSeasonFinale({app:document.querySelector('#app'),club,clubs:league.clubs,matches,rank:Number(document.querySelector('#rank').value),onDone:()=>{bgm.sync({view:'seasonResults',simulating:false});document.querySelector('#done').textContent='シーズン結果へ戻りました'}});
 };
 document.querySelector('#start').disabled=false;
 </script></body></html>

@@ -1,5 +1,5 @@
 import { mountDraftHall } from './draft-hall.js?v=1.1.1-refactor';
-import { mountArena } from './arena-scene.js?v=shared-ball-v1';
+const mountArena=host=>import('./season-three/home.js?v=home-stadium-v1').then(module=>module.mountHomeStadium(host));
 
 // A screen lifetime owns every animation/listener. Navigation destroys it.
 const app=document.querySelector('#app');
@@ -47,7 +47,7 @@ function sync(){
   if(!title)return;
   // The auction has its own full-viewport venue image; the draft canvas belongs to the draft screen.
   if(title==='auction'||title==='season-results'||title==='contract'||title==='development')return;
-  const canvas=document.createElement('canvas');canvas.id='arena-background';canvas.setAttribute('aria-hidden','true');document.body.prepend(canvas);
+  const canvas=document.createElement(title==='title'?'div':'canvas');canvas.id='arena-background';canvas.setAttribute('aria-hidden','true');document.body.prepend(canvas);
   (title!=='title'?mountDraftHall(canvas):mountArena(canvas)).then(cleanup=>{if(token!==generation)cleanup();else dispose=cleanup;}).catch(error=>{
     if(token!==generation)return;
     canvas.remove();document.body.classList.add('arena-fallback');

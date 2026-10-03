@@ -1433,3 +1433,7 @@ body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
  #app main.contract-events-screen .squad-special-description {margin-top:2px;line-height:1.25;}
  #app main.contract-events-screen .contract-event-label {margin-bottom:3px;}
 }
+
+/* Leave the exhibition match visible beside the home controls. */
+@media(min-width:761px){#app>main.arena-title{top:12svh;left:20%;width:min(440px,38vw)}#app .arena-title .arena-motion{top:68svh}}
+#arena-background>canvas{display:block;width:100%;height:100%}
