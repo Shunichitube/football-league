@@ -1440,4 +1440,8 @@ body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
 
 .home-camera-dock{position:fixed;z-index:2;bottom:22px;left:50%;transform:translateX(-50%);display:flex;gap:6px;padding:10px;background:#071421e8;border:1px solid #b0d4e544;border-radius:12px}.home-camera-dock button{padding:8px 14px;font-size:12px;background:transparent;color:#d0e0ea;border:0;white-space:nowrap}.home-camera-dock button[aria-pressed=true]{background:#e4c585;color:#14212c}.home-camera-dock button:hover{background:#345665}
 
-body.arena-active #app{pointer-events:none}body.arena-active #app>.arena-title{pointer-events:auto}
+body.arena-active #app{pointer-events:none}
+body.arena-active #app>.arena-title,
+body.arena-active #app>.arena-popup-overlay{pointer-events:auto}
+
+.training-three-host{position:absolute;inset:0}.training-three-host>canvas{display:block;width:100%;height:100%}.training-practice:has(.training-three-host canvas)>h2{position:absolute;top:20px;left:50%;transform:translateX(-50%);z-index:1;pointer-events:none;margin:0;padding:10px 22px;border-radius:12px;background:#193a3ab8}
