@@ -1,8 +1,8 @@
 import {createSfxController} from './sfx.js?v=1';
 import {createBgmController} from './bgm.js?v=audio-assets-v2';
-import {renderGrandResults,mountGrandFinale} from './grand-finale-ui.js?v=motion-ui-v13';
-import {createGameExperience} from './game-experience.js?v=motion-ui-v13';
-import { playSeasonFinale } from './season-finale.js?v=motion-ui-v13';
+import {renderGrandResults,mountGrandFinale} from './grand-finale-ui.js?v=motion-ui-v14';
+import {createGameExperience} from './game-experience.js?v=motion-ui-v14';
+import { playSeasonFinale } from './season-finale.js?v=motion-ui-v14';
 import { rareKind, rareAgeLabel } from './rare-characters.js';
 import { playTrainingCinematic } from './training-cinematic.js?v=idle-approved-v5';
 import { renderSeasonResults } from './season-results-ui.js?v=combined-results-v1';

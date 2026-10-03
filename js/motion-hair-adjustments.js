@@ -8,6 +8,7 @@ const storageKey=mode=>{
   try{globalThis.localStorage?.removeItem(LEGACY_IDLE_KEY);}catch{}
   return 'football-league:idle-hair-adjustments:v2';
  }
+ if(mode==='dive')return 'football-league:dive-hair-adjustments:v1';
  if(mode==='catch')return 'football-league:catch-hair-adjustments:v1';
  if(mode==='celebrate')return 'football-league:celebrate-hair-adjustments:v1';
  return mode==='shoot'?'football-league:shoot-hair-adjustments:v1':HAIR_ADJUSTMENT_KEY;

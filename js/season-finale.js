@@ -1,8 +1,8 @@
 import {footballTexture} from './arena-scene.js?v=idle-approved-v5';
-import {loadMotionAtlas,drawMotion} from './player-motion.js?v=motion-ui-v13';
+import {loadMotionAtlas,drawMotion} from './player-motion.js?v=motion-ui-v14';
 import {playerAppearance} from './avatar-profile.js?v=appearance-v29';
 import {drawAvatar} from './player-avatar.js?v=season-finale-v1';
-import {celebrationTexture,drawCelebration} from './avatar-celebration.js?v=motion-ui-v13';
+import {celebrationTexture,drawCelebration} from './avatar-celebration.js?v=motion-ui-v14';
 
 export const finaleKind=rank=>rank===1?'goal':rank<=3?'parry':'catch';
 export const CONVEYOR_MATCH_SECONDS=4.5;
