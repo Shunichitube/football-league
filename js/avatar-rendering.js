@@ -106,20 +106,28 @@ export function drawMotionHair(ctx,assets,profile,box){
  if(!image)throw new Error('Motion hair layer is missing');
  paintPart(ctx,assets,image,[0,0,image.width,image.height],motionHairBox(assets,profile,box),{hairColor:profile.hairColor,recolorKit:false});
 }
-export function drawFrontMotionHair(ctx,assets,profile){
+export function frontMotionHairBox(assets,profile){
  const box=[35,20,230,220],replacement=profile.hairStyle===5?assets.mohawkFront:profile.hairStyle===15?assets.shortfadeFront:null;
  const image=replacement||assets.hair;
- if(!image)throw new Error('Front motion hair layer is missing');
+
  const part=replacement?[0,0,image.width,image.height]:HAIR_PARTS[profile.hairStyle].front;
- if(profile.hairStyle===5&&replacement){paintPart(ctx,assets,image,part,[0,-18,300,336],{hairColor:profile.hairColor,recolorKit:false});return;}
+ if(profile.hairStyle===5&&replacement)return [0,-18,300,336];
  const tall=[5,17].includes(profile.hairStyle),fit=({3:{scale:.83,x:0,y:7},4:{scale:.82,x:0,y:7,height:(.85*1.10)/.82},5:{scale:.90,x:0,y:4,height:1.0444},8:{scale:.83,x:0,y:7},11:{scale:1.06,x:-8,y:-6},15:{scale:.85,x:0,y:5,height:1.0588},16:{scale:1.06,x:-25,y:-14},17:{scale:1,x:0,y:0,height:.78}}[profile.hairStyle]||{});
  const extra=([14,16,19].includes(profile.hairStyle)?1.08:1)*1.04,width=box[2]*extra*(fit.scale||1),height=width*part[3]/part[2]*(fit.height||1);
  const left=box[0]+(box[2]-width)/2+(fit.x||0),top=Math.max(0,box[1]-(tall?box[3]*.12:0)+(fit.y||0))+(fit.shiftY||0);
- paintPart(ctx,assets,image,part,[left,top,width,height],{hairColor:profile.hairColor,recolorKit:false});
+ return [left,top,width,height];
+}
+export function drawFrontMotionHair(ctx,assets,profile,destination){
+ const replacement=profile.hairStyle===5?assets.mohawkFront:profile.hairStyle===15?assets.shortfadeFront:null,image=replacement||assets.hair;
+ if(!image)throw new Error('Front motion hair layer is missing');
+ const part=replacement?[0,0,image.width,image.height]:HAIR_PARTS[profile.hairStyle].front;
+ paintPart(ctx,assets,image,part,destination||frontMotionHairBox(assets,profile),{hairColor:profile.hairColor,recolorKit:false});
 }
 export function drawFrontMotionLayers(ctx,assets,value,{expression='happy'}={}){
+ const profile=avatarProfile(value);drawFrontMotionHair(ctx,assets,profile);drawFrontMotionFace(ctx,assets,profile,{expression});
+}
+export function drawFrontMotionFace(ctx,assets,value,{expression='happy'}={}){
  const profile=avatarProfile(value),headX=x=>150+(x-150)*.88,eyes=[];
- drawFrontMotionHair(ctx,assets,profile);
  for(let side=0;side<2;side++){
   const brow=AVATAR_BROWS[profile.face]?.[side];
   if(expression==='sad'){

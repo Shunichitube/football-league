@@ -1,6 +1,6 @@
 import {drawRareMotion} from './rare-avatar.js?v=cell-cleanup-v1';
 import {loadMotionLayerAssets} from './avatar-rendering.js?v=modular-motion-v2';
-import {renderMotionLayers} from './avatar-motion-layers.js?v=motion-ui-v10';
+import {renderMotionLayers} from './avatar-motion-layers.js?v=motion-ui-v11';
 export const MOTIONS = {
   idle: { label: '待機', frames: [0, 1], fps: 2 },
   run: { label: '走り', frames: [0, 1, 2, 3], fps: 8 },
@@ -16,18 +16,17 @@ export function motionFrame(motion, seconds, { loop } = {}) {
 }
 export async function loadMotionAtlas() {
   const load = async path => { const image = new Image(); image.src = new URL(path, import.meta.url).href; await image.decode(); return image; };
-  const [base, run, shoot, catchSheet, dive, celebrate, celebrateArms, dejected, avatar] = await Promise.all([
+  const [base, run, shoot, catchSheet, dive, celebrate, dejected, avatar] = await Promise.all([
     load('../assets/avatars/player-idle-redrawn-v1.png?v=idle-approved-v5'),
     load('../assets/avatars/player-run-redrawn-v1.png'),
-    load('../assets/avatars/player-shoot-redrawn-v1.png?v=motion-ui-v10'),
+    load('../assets/avatars/player-shoot-redrawn-v1.png?v=motion-ui-v11'),
     load('../assets/avatars/keeper-catch-base-v1.png'),
     load('../assets/avatars/keeper-dive-base-v1.png'),
-    load('../assets/avatars/player-celebrate-base-v1.png'),
-    load('../assets/avatars/player-celebrate-arms-v1.png'),
+    load('../assets/avatars/player-celebrate-redrawn-v1.png?v=motion-ui-v11'),
     load('../assets/avatars/keeper-dejected-base-v1.png'),
     loadMotionLayerAssets()
   ]);
-  return { base, run, shoot, catch: catchSheet, dive, celebrate, celebrateArms, dejected, avatar };
+  return { base, run, shoot, catch: catchSheet, dive, celebrate, dejected, avatar };
 }
 export function drawMotion(ctx, atlas, motion, seconds, { direction = 'right', ball = false, loop, appearance, kit, goalkeeper = false, baseOnly = false } = {}) {
   if(drawRareMotion(ctx,atlas.avatar?.rare,appearance,motion,seconds,{direction,ball,loop}))return;

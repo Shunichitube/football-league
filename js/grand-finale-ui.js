@@ -1,7 +1,7 @@
 import {grandResults,formatPt} from './grand-results.js';
-import {loadMotionAtlas} from './player-motion.js?v=idle-approved-v5';
+import {loadMotionAtlas} from './player-motion.js?v=motion-ui-v11';
 import {playerAppearance} from './avatar-profile.js?v=appearance-v29';
-import {celebrationTexture,drawCelebration} from './avatar-celebration.js?v=modular-motion-v2';
+import {celebrationTexture,drawCelebration} from './avatar-celebration.js?v=motion-ui-v11';
 import {drawAvatar} from './player-avatar.js?v=season-finale-v1';
 
 export function renderGrandResults(league, humanId, e) {
@@ -77,4 +77,3 @@ export function mountGrandFinale(host, league, e, onDone) {
   loadMotionAtlas().then(value=>{if(alive)atlas=value;}).catch(error=>console.error('Ending avatars unavailable',error));
   show();frame=requestAnimationFrame(paint);return dispose;
 }
-
