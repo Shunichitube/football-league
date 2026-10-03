@@ -1,5 +1,5 @@
 import { mountDraftHall } from './draft-hall.js?v=1.1.1-refactor';
-const mountArena=host=>import('./season-three/home.js?v=home-stadium-v1').then(module=>module.mountHomeStadium(host));
+const mountArena=host=>import('./season-three/home.js?v=home-stadium-v2').then(module=>module.mountHomeStadium(host));
 
 // A screen lifetime owns every animation/listener. Navigation destroys it.
 const app=document.querySelector('#app');

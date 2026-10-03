@@ -2,15 +2,16 @@ import * as THREE from 'three';
 import {createCourt} from './court.js';
 import {createCrowd} from './crowd.js';
 import {createFootball} from './football.js';
+import {homeExhibitionFrame} from './home-exhibition.js';
 import {loadMotionAtlas,drawMotion,MOTIONS} from '../player-motion.js';
 
 // A looping exhibition, entirely independent of league state and match RNG.
 export async function mountHomeStadium(host){
  const atlas=await loadMotionAtlas();
  if(!host.isConnected)return ()=>{};
- const court=createCourt(host,innerWidth,innerHeight),{scene,camera}=court;
+ const court=createCourt(host,innerWidth,innerHeight),{scene,camera,controls}=court;
  camera.fov=68;camera.updateProjectionMatrix();
- const crowd=createCrowd(scene),ball=createFootball();ball.scale.setScalar(.7);scene.add(ball);
+ const crowd=createCrowd(scene,{backNear:true}),ball=createFootball();ball.scale.setScalar(.7);scene.add(ball);
  const actors=[],textures=[],right=new THREE.Vector3(),pointer=new THREE.Vector2(),smooth=new THREE.Vector2();
  for(let i=0;i<10;i++){
   const goalkeeper=i%5===0,bank={};
@@ -26,46 +27,35 @@ export async function mountHomeStadium(host){
   actors.push({sprite,shadow,bank});
  }
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');let clock=0,last=0,raf=0,dead=false,paused=false;
- const lerp=THREE.MathUtils.lerp;
+ let view='free';
+ const dock=document.createElement('nav');dock.className='home-camera-dock';dock.setAttribute('aria-label','スタジアムの視点');
+ for(const [key,title] of [['stand','観客席'],['free','自由視点'],['overview','全体'],['sideline','コート脇'],['top','真上']]){const button=document.createElement('button');button.textContent=title;button.dataset.homeView=key;button.setAttribute('aria-pressed',String(key===view));dock.append(button);}document.body.append(dock);
+ const views={free:[0,8.5,20.5],overview:[32,29,35],sideline:[0,4,12.5],top:[.01,46,.01]};
+ function changeView(e){const key=e.target.closest('[data-home-view]')?.dataset.homeView;if(!key)return;view=key;controls.enabled=view!=='stand';controls.enableDamping=false;host.style.pointerEvents=controls.enabled?'auto':'none';if(view!=='stand'){camera.position.set(...views[view]);controls.target.set(0,.5,0);controls.update();}dock.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.homeView===view)));}dock.addEventListener('click',changeView);
+ controls.enabled=true;controls.enableDamping=false;host.style.pointerEvents='auto';camera.position.set(...views.free);controls.target.set(0,.5,0);controls.update();
  function paint(t){
-  // Each half-cycle swaps attacking teams without teleporting the players.
-  const cycle=t%36,sign=cycle<18?1:-1,u=cycle%18;
-  const advance=u<10?THREE.MathUtils.smoothstep(u,1,10):1-THREE.MathUtils.smoothstep(u,13,18);
-  const x=-5+advance*14;
-  const positions=[[-18.5,0],[-10+advance*3,2.8],[x-3,-4.3],[x-1,5],[x,0],[18.5,0],[11+advance*2,2],[x+1.7,-3.5],[x+1.8,4.2],[x+1.5,.8]];
-  // Opposite direction on the next possession; goalkeepers stay at their goals.
-  if(sign<0){for(let i=1;i<5;i++){const own=positions[i],opponent=positions[i+5];positions[i]=[-opponent[0],opponent[1]];positions[i+5]=[-own[0],own[1]];}}
-  const offset=sign>0?0:5,fw=positions[offset+4],mf=positions[offset+2],receiver=positions[offset+3];
-  let bx=fw[0]+sign*.55,bz=fw[1],by=.244;
-  if(u>=4&&u<6){const f=(u-4)/2;bx=lerp(fw[0],mf[0],f);bz=lerp(fw[1],mf[1],f);}
-  else if(u>=6&&u<7){bx=mf[0]+sign*.5;bz=mf[1];}
-  else if(u>=7&&u<9){const f=(u-7)/2;bx=lerp(mf[0],receiver[0],f);bz=lerp(mf[1],receiver[1],f);}
-  else if(u>=9&&u<10.5){const f=(u-9)/1.5;bx=lerp(receiver[0],fw[0],f);bz=lerp(receiver[1],fw[1],f);}
-  else if(u>=11&&u<12.5){const f=(u-11)/1.5;bx=lerp(fw[0]+sign*.55,sign*18.5,f);bz=lerp(0,.3,f);by+=Math.sin(f*Math.PI/2)*.8;}
-  else if(u>=12.5&&u<14){bx=sign*18.5;bz=.3;}
-  else if(u>=14){const f=(u-14)/4;bx=lerp(sign*18.5,fw[0],f);bz=lerp(.3,fw[1],f);}
+  const exhibition=homeExhibitionFrame(t),{actors:states,ball:football}=exhibition;
   smooth.lerp(reduced.matches?new THREE.Vector2():pointer,.04);
-  camera.position.set(smooth.x*.8,8.5+smooth.y*.4,20.5);camera.lookAt(smooth.x*1.7,.5+smooth.y*.5,0);camera.updateMatrixWorld();right.setFromMatrixColumn(camera.matrixWorld,0);
+  if(view==='stand'){camera.position.set(smooth.x*.8,8.5+smooth.y*.4,20.5);camera.lookAt(smooth.x*1.7,.5+smooth.y*.5,0);}else controls.update();camera.updateMatrixWorld();right.setFromMatrixColumn(camera.matrixWorld,0);
   actors.forEach((a,i)=>{
-   const keeper=i%5===0,p=positions[i],jitter=keeper?.22:.5;
-   const px=p[0]+Math.sin(t*.9+i)*jitter,pz=p[1]+Math.sin(t*1.2+i)*jitter;
-   const defendingKeeper=i===(sign>0?5:0),catching=defendingKeeper&&u>=12.3&&u<14;
-   const shooter=i===offset+4&&u>=10.5&&u<11.4;
-   const motion=keeper?(catching?'catch':'idle'):shooter?'shoot':i===offset+4&&u<4?'dribble':Math.abs(Math.cos(t*.9+i))<.15?'idle':'run';
-   const direction=right.x*(keeper?(bx>px?1:-1):sign*(i<5?1:-1))>0?'right':'left',frames=a.bank[`${motion}-${direction}`];
-   const seconds=catching?u-12.3:shooter?u-10.5:t*.75;
+   const p=states[i],px=p.x,pz=p.z,motion=p.motion;
+   const moving=Math.hypot(p.vx,p.vz)>0;
+   const horizontal=moving?right.x*p.vx+right.z*p.vz:right.x*(football.x-px)+right.z*(football.z-pz);
+   if(Math.abs(horizontal)>.01)a.facing=horizontal>0?'right':'left';
+   const direction=a.facing||'right',frames=a.bank[`${motion}-${direction}`];
+   const seconds=['shoot','catch'].includes(motion)?p.actionTime:t*.7;
    const step=Math.floor(seconds*MOTIONS[motion].fps);a.sprite.material.map=frames[['shoot','catch'].includes(motion)?Math.min(frames.length-1,step):step%frames.length];
    a.sprite.position.set(px,.09,pz);a.shadow.position.set(px,.098,pz);
   });
-  ball.visible=!(u>=12.8&&u<14);ball.position.set(bx,by,bz);ball.rotation.z=-t*5;
+  ball.visible=football.visible;ball.position.set(football.x,football.y,football.z);ball.rotation.z=-t*5;
   crowd(t*1000);court.animate(t*1000);court.render();host.dataset.ready='true';host.dataset.players='10';
  }
- function tick(now){if(dead)return;if(last&&!paused&&!document.hidden&&!reduced.matches)clock+=Math.min((now-last)/1000,.1);last=now;if(!document.hidden)paint(clock);raf=requestAnimationFrame(tick);}
+ function tick(now){if(dead)return;if(last&&!paused&&!document.hidden&&!reduced.matches)clock+=Math.min((now-last)/1000,.1)*.6;last=now;if(!document.hidden)paint(clock);raf=requestAnimationFrame(tick);}
  function move(e){pointer.set((e.clientX/innerWidth-.5)*2,-(e.clientY/innerHeight-.5)*2);}
  function leave(){pointer.set(0,0);}
  function resize(){court.resize(innerWidth,innerHeight);paint(clock);}
  function toggle(e){const button=e.target.closest('[data-arena-motion]');if(!button)return;paused=!paused;button.setAttribute('aria-pressed',String(paused));button.textContent=paused?'演出を再生':'演出を一時停止';}
  addEventListener('pointermove',move,{passive:true});document.addEventListener('pointerleave',leave);addEventListener('resize',resize);document.addEventListener('click',toggle);
  paint(0);raf=requestAnimationFrame(tick);
- return ()=>{dead=true;cancelAnimationFrame(raf);removeEventListener('pointermove',move);document.removeEventListener('pointerleave',leave);removeEventListener('resize',resize);document.removeEventListener('click',toggle);court.dispose();textures.forEach(t=>t.dispose());};
+ return ()=>{dead=true;cancelAnimationFrame(raf);removeEventListener('pointermove',move);document.removeEventListener('pointerleave',leave);removeEventListener('resize',resize);document.removeEventListener('click',toggle);dock.remove();court.dispose();textures.forEach(t=>t.dispose());};
 }

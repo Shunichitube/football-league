@@ -1,16 +1,16 @@
 import * as THREE from 'three';
-import {drawSpectator} from '../spectator-art.js';
+import {drawSpectator,drawSpectatorBack} from '../spectator-art.js';
 
 // Original spectator art, drawn independently of the player avatar assets.
-export function createCrowd(scene){
+export function createCrowd(scene,{backNear=false}={}){
  const colors=['#3f91bb','#dbb86a','#c26967','#5baf96','#7b79b8','#dce4e9','#c76c91','#496ac2','#c69557','#477b70','#9884c2','#e5bd87','#64a3ab','#bb6750','#697f96','#d0a25d','#779d62','#a56184','#dbd4b7','#417eab'];
- const textures=Array.from({length:20},(_,i)=>{
+ const textures=Array.from({length:backNear?40:20},(_,i)=>{
   const c=document.createElement('canvas');c.width=c.height=192;
-  drawSpectator(c.getContext('2d'),i,colors[i]);
+  (i>=20?drawSpectatorBack:drawSpectator)(c.getContext('2d'),i%20,colors[i%20]);
   const texture=new THREE.CanvasTexture(c);texture.colorSpace=THREE.SRGBColorSpace;return texture;
  });
- const groups=Array.from({length:20},()=>[]);let count=0;
- const add=(x,y,z)=>{const i=count++;groups[(i*7+Math.floor(i/13))%20].push({x,y,z,phase:i*1.73,bounce:i%7===0?1:0});};
+ const groups=Array.from({length:backNear?40:20},()=>[]);let count=0;
+ const add=(x,y,z)=>{const i=count++;groups[(i*7+Math.floor(i/13))%20+(backNear&&z>12?20:0)].push({x,y,z,phase:i*1.73,bounce:i%7===0?1:0});};
  // Match the actual seat layout; stair aisles stay accessible.
  for(const side of [-1,1])for(let row=0;row<8;row++)for(let col=0;col<62;col++){
   if(col%16<2)continue;

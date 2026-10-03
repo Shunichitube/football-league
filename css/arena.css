@@ -1437,3 +1437,7 @@ body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
 /* Leave the exhibition match visible beside the home controls. */
 @media(min-width:761px){#app>main.arena-title{top:12svh;left:20%;width:min(440px,38vw)}#app .arena-title .arena-motion{top:68svh}}
 #arena-background>canvas{display:block;width:100%;height:100%}
+
+.home-camera-dock{position:fixed;z-index:2;bottom:22px;left:50%;transform:translateX(-50%);display:flex;gap:6px;padding:10px;background:#071421e8;border:1px solid #b0d4e544;border-radius:12px}.home-camera-dock button{padding:8px 14px;font-size:12px;background:transparent;color:#d0e0ea;border:0;white-space:nowrap}.home-camera-dock button[aria-pressed=true]{background:#e4c585;color:#14212c}.home-camera-dock button:hover{background:#345665}
+
+body.arena-active #app{pointer-events:none}body.arena-active #app>.arena-title{pointer-events:auto}
