@@ -1,6 +1,6 @@
-import {drawRareMotion} from './rare-avatar.js?v=cell-cleanup-v1';
-import {loadMotionLayerAssets} from './avatar-rendering.js?v=modular-motion-v2';
-import {renderMotionLayers} from './avatar-motion-layers.js?v=motion-ui-v15';
+import {drawRareMotion} from './rare-avatar.js?v=rare-fit-v5';
+import {loadMotionLayerAssets} from './avatar-rendering.js?v=modular-motion-v4';
+import {renderMotionLayers} from './avatar-motion-layers.js?v=motion-ui-v24';
 export const MOTIONS = {
   idle: { label: '待機', frames: [0, 1], fps: 2 },
   run: { label: '走り', frames: [0, 1, 2, 3], fps: 8 },
@@ -16,19 +16,29 @@ export function motionFrame(motion, seconds, { loop } = {}) {
 }
 export async function loadMotionAtlas() {
   const load = async path => { const image = new Image(); image.src = new URL(path, import.meta.url).href; await image.decode(); return image; };
-  const [base, run, shoot, catchSheet, dive, celebrate, dejected, keeperBase, keeperCelebrate, avatar] = await Promise.all([
+  const [base, run, shoot, catchSheet, dive, celebrate, dejected, keeperBase, keeperCelebrate, keeperRunImage, keeperShootImage, avatar] = await Promise.all([
     load('../assets/avatars/player-idle-redrawn-v1.png?v=idle-approved-v5'),
     load('../assets/avatars/player-run-redrawn-v1.png'),
-    load('../assets/avatars/player-shoot-redrawn-v1.png?v=motion-ui-v15'),
-    load('../assets/avatars/keeper-catch-redrawn-v1.png?v=motion-ui-v15'),
-    load('../assets/avatars/keeper-dive-redrawn-v1.png?v=motion-ui-v15'),
-    load('../assets/avatars/player-celebrate-redrawn-v1.png?v=motion-ui-v15'),
+    load('../assets/avatars/player-shoot-redrawn-v1.png?v=motion-ui-v24'),
+    load('../assets/avatars/keeper-catch-redrawn-v1.png?v=motion-ui-v24'),
+    load('../assets/avatars/keeper-dive-redrawn-v1.png?v=motion-ui-v24'),
+    load('../assets/avatars/player-celebrate-redrawn-v1.png?v=motion-ui-v24'),
     load('../assets/avatars/keeper-dejected-base-v1.png'),
-    load('../assets/avatars/keeper-idle-redrawn-v1.png?v=motion-ui-v15'),
-    load('../assets/avatars/keeper-celebrate-redrawn-v1.png?v=motion-ui-v15'),
+    load('../assets/avatars/keeper-idle-redrawn-v1.png?v=motion-ui-v24'),
+    load('../assets/avatars/keeper-celebrate-redrawn-v1.png?v=motion-ui-v24'),
+    load('../assets/avatars/keeper-run-redrawn-v1.png?v=motion-ui-v24'),
+    load('../assets/avatars/keeper-shoot-redrawn-v1.png?v=motion-ui-v24'),
     loadMotionLayerAssets()
   ]);
-  return { base, run, shoot, catch: catchSheet, dive, celebrate, dejected, keeperBase, keeperCelebrate, avatar };
+  // Register clothing variants to the same source grid as the approved hair positions.
+  const register = (image, reference) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = reference.width; canvas.height = reference.height;
+    const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    return canvas;
+  };
+  return { base, run, shoot, catch: catchSheet, dive, celebrate, dejected, keeperBase, keeperCelebrate, keeperRun: register(keeperRunImage, run), keeperShoot: register(keeperShootImage, shoot), avatar };
 }
 export function drawMotion(ctx, atlas, motion, seconds, { direction = 'right', ball = false, loop, appearance, kit, goalkeeper = false, baseOnly = false } = {}) {
   if(drawRareMotion(ctx,atlas.avatar?.rare,appearance,motion,seconds,{direction,ball,loop}))return;
@@ -37,7 +47,7 @@ export function drawMotion(ctx, atlas, motion, seconds, { direction = 'right', b
   const usesRun = motion === 'run' || motion === 'dribble';
   const sourceIndex = index;
   const isAction = ['shoot', 'catch', 'dive'].includes(motion);
-  const sheet = isAction ? atlas[motion] : usesRun ? atlas.run : goalkeeper ? atlas.keeperBase : atlas.base;
+  const sheet = isAction ? (goalkeeper && motion === 'shoot' ? atlas.keeperShoot : atlas[motion]) : usesRun ? (goalkeeper ? atlas.keeperRun : atlas.run) : goalkeeper ? atlas.keeperBase : atlas.base;
   const columns = 2;
   const cellWidth = sheet.width / columns, cellHeight = sheet.height / (usesRun || isAction ? 2 : 1);
   ctx.clearRect(0, 0, width, height);

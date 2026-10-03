@@ -1,4 +1,4 @@
 .rare-card-portrait { width:96px; height:112px; object-fit:contain; image-rendering:pixelated; display:block; margin:0 auto .35rem; }
 .rare-preview { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; max-width:1200px; margin:24px auto; }
 .rare-preview article { padding:16px; border:1px solid #355b59; border-radius:12px; background:#10212b; }
-.rare-preview canvas { width:100%; max-height:240px; object-fit:contain; }
+.rare-preview canvas { width:min(100%,240px); height:auto; aspect-ratio:1; margin:auto; }

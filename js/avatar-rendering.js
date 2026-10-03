@@ -1,4 +1,4 @@
-import {loadRareAssets} from './rare-avatar.js';
+import {loadRareAssets} from './rare-avatar.js?v=rare-fit-v5';
 import { avatarProfile, SKIN_TONES, HAIR_COLORS, kitColor } from './avatar-profile.js?v=appearance-v29';
 import { HAIR_PARTS } from './avatar-hair-parts.js?v=appearance-v29';
 const rgb = hex => hex.slice(1).match(/../g).map(n => parseInt(n,16));

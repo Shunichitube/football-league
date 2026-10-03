@@ -3,7 +3,7 @@ import { dialogs } from './dialogs.js';
 import {playerAppearance,kitColor} from './avatar-profile.js?v=appearance-v29';
 import { formatMatchEvents } from './match-log.js?v=appearance-v29';
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=0.22.0';
-import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=robot-descriptions-v1';
+import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=rare-text-v3';
 import { LINEUP_SLOTS, validateLineup } from './rules.js?v=appearance-v29';
 import { pixelTexture } from './arena-characters.js?v=appearance-v29';
 
@@ -140,7 +140,7 @@ export function renderPlayerCard(player, options = {}) {
     ${options.cardAvatar ? `<div class="player-card-avatar"><img src="${squadAvatar(player,options.clubColor)}" alt="${escapeHtml(player.name)}" draggable="false"></div>` : ''}
     <div class="player-profile">
       ${!options.cardAvatar && options.showPortrait !== false && rareKind(player) ? `<img class="rare-card-portrait" src="${rarePortraitUrl(player)}" alt="${escapeHtml(player.name)}">` : ''}
-      <div class="player-title"><span class="player-name-box" style="min-width:0">${options.clubColor ? `<i class="club-color-dot player-club-dot" style="--club:${escapeHtml(options.clubColor)}"></i>` : ''}${nameMarkup(display)}${renameButton(player, options)}</span><strong class="overall-rank">総合 ${display.overallRank}</strong></div>
+      <div class="player-title"><span class="player-name-box" style="min-width:0">${options.clubColor && options.showClubColor !== false ? `<i class="club-color-dot player-club-dot" style="--club:${escapeHtml(options.clubColor)}"></i>` : ''}${nameMarkup(display)}${renameButton(player, options)}</span><strong class="overall-rank">総合 ${display.overallRank}</strong></div>
       <span class="position-badge">${positionLabel(display.primaryPosition)}</span>
       <p class="player-meta">年齢 <b>${escapeHtml(rareAgeLabel(player))}</b></p>
       <p class="player-meta">契約 <b>${display.contractYears}年</b></p>

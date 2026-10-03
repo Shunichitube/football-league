@@ -1,8 +1,8 @@
 import {footballTexture} from './arena-scene.js?v=idle-approved-v5';
-import {loadMotionAtlas,drawMotion} from './player-motion.js?v=motion-ui-v21';
+import {loadMotionAtlas,drawMotion} from './player-motion.js?v=motion-ui-v24';
 import {playerAppearance} from './avatar-profile.js?v=appearance-v29';
 import {drawAvatar} from './player-avatar.js?v=season-finale-v1';
-import {celebrationTexture,drawCelebration} from './avatar-celebration.js?v=motion-ui-v21';
+import {celebrationTexture,drawCelebration} from './avatar-celebration.js?v=motion-ui-v24';
 import {seasonReelMatches,seasonReelFrame,startingFive} from './season-reel.js';
 import {drawSpectator} from './spectator-art.js';
 

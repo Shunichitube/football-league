@@ -1,9 +1,9 @@
-import {celebrationHairBox,drawCelebrationLayers} from './celebration-layers.js?v=motion-ui-v15';
-import {MOTION_HAIR_LAYOUTS,SHOOT_DRAW_PADDING} from './motion-hair-layout.js?v=motion-ui-v15';
-import {loadMotionAtlas} from './player-motion.js?v=motion-ui-v15';
+import {celebrationHairBox,drawCelebrationLayers} from './celebration-layers.js?v=motion-ui-v24';
+import {MOTION_HAIR_LAYOUTS,SHOOT_DRAW_PADDING} from './motion-hair-layout.js?v=motion-ui-v24';
+import {loadMotionAtlas} from './player-motion.js?v=motion-ui-v24';
 import {HAIR_STYLES} from './avatar-profile.js?v=appearance-v29';
 import {drawMotionHair,drawQuarterFace,motionHairBox} from './avatar-rendering.js?v=hair-editor-v1';
-import {readHairAdjustments,saveHairAdjustments,effectiveHairAdjustment,defaultHairAdjustment} from './motion-hair-adjustments.js?v=motion-ui-v15';
+import {readHairAdjustments,saveHairAdjustments,effectiveHairAdjustment,defaultHairAdjustment} from './motion-hair-adjustments.js?v=motion-ui-v24';
 const $=id=>document.getElementById(id),status=$('status');
 const requestedMode=new URLSearchParams(location.search).get('motion');
 const mode=['idle','shoot','celebrate','catch','dive'].includes(requestedMode)?requestedMode:'run',layout=MOTION_HAIR_LAYOUTS[mode];
@@ -83,7 +83,7 @@ for(const view of views){
 $('motion').onchange=()=>{
  const next=$('motion').value;$('motion').value=mode;
  if(next===mode)return;
- const url=new URL(location.href);url.searchParams.set('motion',next);url.searchParams.set('v','motion-ui-v15');location.assign(url.href);
+ const url=new URL(location.href);url.searchParams.set('motion',next);url.searchParams.set('v','motion-ui-v24');location.assign(url.href);
 };
 $('hair').onchange=()=>{style=Number($('hair').value);draw();};
 $('together').onchange=draw;$('face').onchange=draw;$('bounds').onchange=draw;

@@ -1,9 +1,9 @@
-import {celebrationFrame} from './celebration-layers.js?v=motion-ui-v15';
-import {MOTION_HAIR_LAYOUTS,SHOOT_DRAW_PADDING} from './motion-hair-layout.js?v=motion-ui-v15';
-import {hairAdjustmentRevision} from './motion-hair-adjustments.js?v=motion-ui-v15';
+import {celebrationFrame} from './celebration-layers.js?v=motion-ui-v24';
+import {MOTION_HAIR_LAYOUTS,SHOOT_DRAW_PADDING} from './motion-hair-layout.js?v=motion-ui-v24';
+import {hairAdjustmentRevision} from './motion-hair-adjustments.js?v=motion-ui-v24';
 import {avatarProfile,kitColor} from './avatar-profile.js?v=appearance-v29';
-import {createSurface,recolorPixels,drawFrontMotionLayers} from './avatar-rendering.js?v=modular-motion-v2';
-import {drawRareMotion} from './rare-avatar.js?v=cell-cleanup-v1';
+import {createSurface,recolorPixels,drawFrontMotionLayers} from './avatar-rendering.js?v=modular-motion-v4';
+import {drawRareMotion} from './rare-avatar.js?v=rare-fit-v5';
 
 const cache=new Map();
 export const CELEBRATION_SIZE={width:420,height:550,paddingX:60,paddingY:40};

@@ -1,15 +1,15 @@
 import { CONFIG } from './config.js';
 
 export const RARE_CHARACTERS = Object.freeze({
-  golden_egg: { name:'金の卵', position:'MF', rank:'F', ability:'孵化', description:'23歳で孵る。何が孵るかは不明', scout:'光り輝く金色の卵。将来性は計り知れないが、今のところ卵である。' },
+  golden_egg: { name:'金の卵', position:'MF', rank:'F', ability:'孵化', description:'23歳で孵化。何が生まれるかは秘密', scout:'光り輝く金色の卵。将来性は計り知れないが、今のところ卵である。' },
   chick: { name:'ひよこ', position:'MF', rank:'F', ability:null, description:'特殊能力なし。', scout:'大きな期待を背負って生まれた、小さなひよこ。本人は元気いっぱいなので、責めないであげてほしい。' },
-  emperor_penguin: { name:'皇帝ペンギン', position:'DF', rank:'B', stamina:'A', ability:'皇帝', description:'出場中、自分を含む味方の守備＋5。GKにも適用。複数体は重ね掛け、上限99。', scout:'皇帝の風格で味方の守備を引き締める。本人は何も指示していないが、周りが勝手に姿勢を正す。' },
-  phoenix: { name:'フェニックス', position:'MF', rank:'A', stamina:'SS', ability:'不死鳥', description:'メイン対戦相手に選ばれるたび、相手に追加4フェーズ分の消耗。', scout:'尽きることのない体力を持つ伝説の鳥。相手だけが疲れていくので、対戦後はだいたい嫌われる。' },
-  dragon: { name:'ドラゴン', position:'FW', rank:'S', stamina:'G', ability:'ドラゴンシュート', description:'1試合1回、最初のシュートのGK判定から相手GK能力−10。試合終了まで継続。', scout:'圧倒的な力を秘めた龍。そのシュートはキーパーの自信まで吹き飛ばす。ただし、長く働くつもりはない。' },
-  king_kong: { name:'キングコング', position:'FW', rank:'D', shoot:'SS', age:120, ability:'獣の王', description:'シュート時80%で得点、20%でオウンゴール。得点はブラックホールの書き換え対象。', scout:'豪快なシュートでゴールを粉砕する獣の王。どちらのゴールを狙っているかは、本人にも分からない。' },
-  sage: { name:'仙人', position:'DF', rank:'C', ageLabel:'????歳', ability:'千里眼', description:'メイン守備に選ばれた時のみ、80%で攻撃阻止、20%でオウンゴール。', scout:'何千年と生きてきて、未来を見通す力がある。と言われているが、そろそろボケてきた。' },
-  robot: { name:'ロボット', position:'MF', rank:'C', ageLabel:'不詳', ability:'精密パス', description:'パス・ドリブル・シュートの1種を各1/3で搭載。搭載プレー100%成功、他2種は必ず失敗。受球可能。精密シュートは100%ゴール（ブラックホールの書き換え対象）。', scout:'超精密な機械。精密すぎてメモリー不足だった。' },
-  black_hole: { name:'ブラックホール', position:'GK', rank:'G', gk:'A', ageLabel:'不詳', ability:'ブラックホール', description:'失点判定時20%で自チームの得点へ変更。セーブ時5%で自チームの失点へ変更。転送先の再判定なし。', scout:'止められないボールも吸い込む、宇宙の神秘。止めたボールまで自分のゴールに吐き出すのは、仕様らしい。' }
+  emperor_penguin: { name:'皇帝ペンギン', position:'DF', rank:'B', stamina:'A', ability:'皇帝', description:'出場中、味方全員の守備力を上げる', scout:'皇帝の風格で味方の守備を引き締める。本人は何も指示していないが、周りが勝手に姿勢を正す。' },
+  phoenix: { name:'フェニックス', position:'MF', rank:'A', stamina:'SS', ability:'不死鳥', description:'対戦相手を大きく消耗させる', scout:'尽きることのない体力を持つ伝説の鳥。相手だけが疲れていくので、対戦後はだいたい嫌われる。' },
+  dragon: { name:'ドラゴン', position:'FW', rank:'S', stamina:'G', ability:'ドラゴンシュート', description:'シュート後試合終了まで相手GK能力を下げる', scout:'圧倒的な力を秘めた龍。そのシュートはキーパーの自信まで吹き飛ばす。ただし、長く働くつもりはない。' },
+  king_kong: { name:'キングコング', position:'FW', rank:'D', shoot:'SS', age:120, ability:'獣の王', description:'強力シュート。時々オウンゴールする', scout:'豪快なシュートでゴールを粉砕する獣の王。どちらのゴールを狙っているかは、本人にも分からない。' },
+  sage: { name:'仙人', position:'DF', rank:'C', ageLabel:'????歳', ability:'千里眼', description:'攻撃を高確率で阻止。時々オウンゴールする', scout:'何千年と生きてきて、未来を見通す力がある。と言われているが、そろそろボケてきた。' },
+  robot: { name:'ロボット', position:'MF', rank:'C', ageLabel:'不詳', ability:'精密パス', description:'3種のプレーから1種だけ必ず成功。他2種は失敗。', scout:'超精密な機械。精密すぎてメモリー不足だった。' },
+  black_hole: { name:'ブラックホール', position:'GK', rank:'G', gk:'A', ageLabel:'不詳', ability:'ブラックホール', description:'ボールをどちらかのゴールに転送', scout:'止められないボールも吸い込む、宇宙の神秘。止めたボールまで自分のゴールに吐き出すのは、仕様らしい。' }
 });
 export const rareKind = player => RARE_CHARACTERS[player?.rareCharacter] ? player.rareCharacter : null;
 export function rankMaximum(rank) {
