@@ -16,3 +16,5 @@
 .finale-scoreboard[data-outcome="win"]>p:last-child{color:#8af3b6}.finale-scoreboard[data-outcome="loss"]>p:last-child{color:#ffa4a4}
 @media(max-width:600px){.finale-scoreboard{padding:10px 12px;top:16px}.finale-scoreboard>div{gap:10px}.finale-scoreboard>p{font-size:12px}}
 @media(max-width:600px){.finale-heading{top:5vh;padding:10px 20px}.finale-next{bottom:5vh;padding:14px 25px}}
+
+.finale-three-court{position:absolute;inset:0;background:#080e18}.finale-scoreboard,.finale-heading,.finale-next,.finale-skip{z-index:2}.finale-loading{z-index:3}.finale-skip{position:absolute;right:24px;bottom:24px;padding:10px 20px;background:#071827dc;color:#fff;border:1px solid #ffffff55;border-radius:10px;cursor:pointer}.finale-scoreboard .finale-streak{color:#ffe79b;margin-top:4px}.finale-scoreboard[data-outcome="win"]>p:nth-last-child(2){color:#8af3b6}.finale-scoreboard[data-outcome="loss"]>p:nth-last-child(2){color:#ffa4a4}

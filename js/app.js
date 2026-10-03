@@ -2,7 +2,7 @@ import {createSfxController} from './sfx.js?v=1';
 import {createBgmController} from './bgm.js?v=audio-assets-v2';
 import {renderGrandResults,mountGrandFinale} from './grand-finale-ui.js?v=motion-ui-v15';
 import {createGameExperience} from './game-experience.js?v=motion-ui-v15';
-import { playSeasonFinale } from './season-finale.js?v=motion-ui-v15';
+import { playSeasonFinale } from './season-finale.js?v=clubhouse-three-v3';
 import { rareKind, rareAgeLabel } from './rare-characters.js';
 import { playTrainingCinematic } from './training-cinematic.js?v=motion-ui-v15';
 import { renderSeasonResults } from './season-results-ui.js?v=combined-results-v1';
@@ -518,7 +518,7 @@ function beginPendingFinale(){
       const opponents=s.league.clubs.filter(row=>row.id!==club.id);
       const keeper=opponents.flatMap(row=>row.roster).find(p=>p.primaryPosition==='GK');
       const matches=s.league.seasonResults,clubs=s.league.clubs;
-      finaleDispose=experience.showLeagueStart(s.league.season,()=>{finaleDispose=playSeasonFinale({app,club,rank,keeper,matches,clubs,onDone:()=>{finaleDispose=null;render();}});});
+      finaleDispose=experience.showLeagueStart(s.league.season,()=>{finaleDispose=playSeasonFinale({app,club,rank,keeper,matches,clubs,season:s.league.season,onDone:()=>{finaleDispose=null;render();}});});
     }
   }
 }

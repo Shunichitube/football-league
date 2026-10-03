@@ -1,8 +1,10 @@
 import {footballTexture} from './arena-scene.js?v=idle-approved-v5';
-import {loadMotionAtlas,drawMotion} from './player-motion.js?v=motion-ui-v15';
+import {loadMotionAtlas,drawMotion} from './player-motion.js?v=motion-ui-v21';
 import {playerAppearance} from './avatar-profile.js?v=appearance-v29';
 import {drawAvatar} from './player-avatar.js?v=season-finale-v1';
-import {celebrationTexture,drawCelebration} from './avatar-celebration.js?v=motion-ui-v15';
+import {celebrationTexture,drawCelebration} from './avatar-celebration.js?v=motion-ui-v21';
+import {seasonReelMatches,seasonReelFrame,startingFive} from './season-reel.js';
+import {drawSpectator} from './spectator-art.js';
 
 export const finaleKind=rank=>rank===1?'goal':rank<=3?'parry':'catch';
 export const CONVEYOR_MATCH_SECONDS=4.5;
@@ -96,6 +98,7 @@ export function finaleFrame(rank,time){
   return {scene:t<2.7?'flight':t<4.65?'impact':'celebrate',white,ready:t>=5.05};
  }
  if(t>=4)white=Math.min(1,(t-4)/.35);
+ if(kind==='catch'&&t>=4.35){white=t<4.7?1:t<5.1?1-(t-4.7)/.4:0;return {scene:'catch',white,ready:t>=5.15};}
  return {scene:t<2.7?'flight':t<4.35?kind:'white',white,ready:t>=4.35};
 }
 
@@ -116,6 +119,13 @@ function football(ctx,x,y,r,spin=0){
 }
 export function createFinalePainter(data,club,rank,keeper,clubs=[],fixtures=[]){
  const {atlas,ground,home,goal,bulge}=data;
+ const occupiedGoal=document.createElement('canvas');occupiedGoal.width=960;occupiedGoal.height=540;
+ const audience=occupiedGoal.getContext('2d');audience.drawImage(goal,0,0,960,540);
+ const net=document.createElement('canvas');net.width=960;net.height=540;const netCtx=net.getContext('2d');netCtx.drawImage(goal,0,0,960,540);
+ const pixels=netCtx.getImageData(0,0,960,540);for(let i=0;i<pixels.data.length;i+=4){const [r,g,b]=pixels.data.slice(i,i+3);if(r<85||b<85||Math.abs(r-g)>25||Math.abs(g-b)>35)pixels.data[i+3]=0;}netCtx.putImageData(pixels,0,0);
+ const fans=Array.from({length:20},(_,i)=>{const c=document.createElement('canvas');c.width=c.height=192;drawSpectator(c.getContext('2d'),i,['#548bb4','#d5b776','#788f65','#a6667e','#cccac1'][i%5]);return c;});
+ for(let row=0;row<5;row++)for(let col=0;col<48;col++){if(col%16<2)continue;audience.drawImage(fans[(col*7+row*3)%20],col*20-8,row*37-13,33,40);}
+ audience.drawImage(net,0,0);
  const roster=club.roster.slice(0,12),cast=conveyorCast(club);
  let scorer=cast[fixtures.filter(m=>m.outcome==='loss').length%cast.length]||roster[0];
  const sprite=document.createElement('canvas');sprite.width=480;sprite.height=480;
@@ -129,6 +139,7 @@ export function createFinalePainter(data,club,rank,keeper,clubs=[],fixtures=[]){
  };
  const portraits=roster.map(p=>{const im=document.createElement('canvas');im.width=300;im.height=470;drawAvatar(im.getContext('2d'),atlas.avatar,playerAppearance(p),{kit:club.color,goalkeeper:p.primaryPosition==='GK'});return im;});
  return {
+  setScorer(player){if(player)scorer=player;},
   conveyor(ctx,time,matches){
    const frame=conveyorBlocking(matches,time),{match,local:t,index,duration}=frame;
    if(frame.done)return frame;
@@ -174,7 +185,7 @@ export function createFinalePainter(data,club,rank,keeper,clubs=[],fixtures=[]){
     actor(ctx,'shoot',t,CONVEYOR_LAYOUT.shotX,CONVEYOR_LAYOUT.shotY,96);
     const q=Math.max(0,Math.min(1,(t-.35)/.8));football(ctx,CONVEYOR_LAYOUT.shotX+40+q*160,CONVEYOR_LAYOUT.shotY-12-q*55,6-q*2,t*12);
    }else if(frame.scene!=='white'){
-    ctx.drawImage(goal,0,0,960,540);
+    ctx.drawImage(occupiedGoal,0,0,960,540);
     if(frame.scene==='flight'){
      const q=t-1.15,d=Math.max(0,Math.min(1,(q-.55)/.8)),p=Math.max(0,Math.min(1,q/1.55));
      if(kind==='catch')actor(ctx,'catch',q<.55?0:.18,355,385,127.5,keeper,true);
@@ -189,7 +200,7 @@ export function createFinalePainter(data,club,rank,keeper,clubs=[],fixtures=[]){
      actor(ctx,'dive',.25,485,285,127.5,keeper,true);
      const p=Math.min(1,(t-2.7)/1.15);football(ctx,500+p*540,229-p*125+p*p*35,8,t*18);
     }else if(frame.scene==='catch'){
-     actor(ctx,'catch',.6,355,385,127.5,keeper,true);football(ctx,371,333,8,0);
+     actor(ctx,'catch',1,355,385,127.5,keeper,true);
     }
    }
    if(frame.white){ctx.fillStyle=`rgba(255,255,255,${frame.white})`;ctx.fillRect(0,0,960,540);}
@@ -225,45 +236,57 @@ export function createFinalePainter(data,club,rank,keeper,clubs=[],fixtures=[]){
  };
 }
 
-export function playSeasonFinale({app,club,rank,keeper,matches=[],clubs=[],onDone=()=>{}}){
- const fixtures=conveyorMatches(matches,club.id),conveyorDuration=fixtures.length*CONVEYOR_MATCH_SECONDS;
+export function playSeasonFinale({app,club,rank,keeper,matches=[],clubs=[],season=1,onDone=()=>{}}){
+ const fixtures=seasonReelMatches(conveyorMatches(matches,club.id));let conveyorDuration=fixtures.length*CONVEYOR_MATCH_SECONDS;
  const root=document.createElement('section');root.className='season-finale';root.setAttribute('role','dialog');root.setAttribute('aria-modal','true');root.setAttribute('aria-label','シーズン最終演出');
  const canvas=document.createElement('canvas');canvas.setAttribute('aria-hidden','true');
+ const courtHost=document.createElement('div');courtHost.className='finale-three-court';courtHost.hidden=true;courtHost.setAttribute('aria-hidden','true');
  const heading=document.createElement('div');heading.className='finale-heading';heading.hidden=true;
  const team=document.createElement('h1');team.textContent=club.name;
  const placing=document.createElement('p');placing.textContent=rank===1?'優勝':rank===2?'準優勝':`第${rank}位`;heading.append(team,placing);
  const status=document.createElement('p');status.className='finale-loading';status.textContent='シーズン最終演出を準備しています…';status.setAttribute('role','status');
  const button=document.createElement('button');button.className='finale-next';button.textContent='次へ';button.hidden=true;
+ const skip=document.createElement('button');skip.className='finale-skip';skip.textContent='シーズン結果へ';skip.addEventListener('click',()=>finish());
  const scoreboard=document.createElement('div');scoreboard.className='finale-scoreboard';scoreboard.hidden=true;
- const roundLabel=document.createElement('p'),teams=document.createElement('div'),ownName=document.createElement('span'),score=document.createElement('strong'),opponentName=document.createElement('span'),outcome=document.createElement('p');
- ownName.textContent=club.name;teams.append(ownName,score,opponentName);scoreboard.append(roundLabel,teams,outcome);
- root.append(canvas,heading,status,scoreboard,button);document.body.append(root);app.inert=true;
+ const roundLabel=document.createElement('p'),teams=document.createElement('div'),ownName=document.createElement('span'),score=document.createElement('strong'),opponentName=document.createElement('span'),outcome=document.createElement('p'),streak=document.createElement('p');streak.className='finale-streak';
+ ownName.textContent=club.name;teams.append(ownName,score,opponentName);scoreboard.append(roundLabel,teams,outcome,streak);
+ root.append(canvas,courtHost,heading,status,scoreboard,button,skip);document.body.append(root);app.inert=true;
  let dead=false,raf=0,painter,stage=fixtures.length?'conveyor':'cinematic',clock=0,previous=0,lastPaint=0,loadTimer,shownMatch=-1;
  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
- function dispose(){if(dead)return;dead=true;clearTimeout(loadTimer);cancelAnimationFrame(raf);removeEventListener('resize',resize);document.removeEventListener('visibilitychange',visibility);root.remove();app.inert=false;}
+ let reel=null,shotHandoff=false;
+ function dispose(){if(dead)return;dead=true;clearTimeout(loadTimer);cancelAnimationFrame(raf);reel?.dispose();reel=null;removeEventListener('resize',resize);document.removeEventListener('visibilitychange',visibility);root.remove();app.inert=false;}
  function finish(){dispose();onDone();}
  function paint(){
   if(!painter||dead)return;
   const ctx=canvas.getContext('2d'),w=stage==='ceremony'?1672:960,h=stage==='ceremony'?941:540;
   const scale=Math.min(canvas.width/w,canvas.height/h),x=(canvas.width-w*scale)/2,y=(canvas.height-h*scale)/2;
-  if(stage==='conveyor'&&clock>=conveyorDuration){stage='cinematic';clock-=conveyorDuration;scoreboard.hidden=true;}
+  if(stage==='conveyor'&&clock>=conveyorDuration){stage=reel?'three-shoot':'cinematic';clock-=conveyorDuration;scoreboard.hidden=true;if(!reel){courtHost.hidden=true;canvas.hidden=false;}}
+  if(stage==='three-shoot'&&clock>=2.2){stage='cinematic';clock=1.15+(clock-2.2);shotHandoff=true;courtHost.hidden=true;canvas.hidden=false;reel?.dispose();reel=null;}
+  canvas.style.opacity=String(stage==='cinematic'&&shotHandoff?Math.max(0,Math.min(1,(clock-1.15)/.45)):1);
   const frame=finaleFrame(rank,clock),white=stage==='cinematic'&&frame.scene==='white';
   root.classList.toggle('finale-white',white);ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle=white?'#fff':'#07121d';ctx.fillRect(0,0,canvas.width,canvas.height);
   ctx.setTransform(scale,0,0,scale,x,y);
   if(stage==='ceremony')painter.ceremony(ctx,clock);
   else if(stage==='conveyor'){
-   const current=painter.conveyor(ctx,clock,fixtures);
-   scoreboard.hidden=!current.resultReady;scoreboard.style.opacity=String(Math.min(1,(conveyorDuration-clock)/.5));
+   let current;
+   if(reel){try{current=reel.render(clock);}catch(error){console.warn('3D season reel unavailable; continuing with the existing scene',error);reel.dispose();reel=null;courtHost.hidden=true;canvas.hidden=false;clock=Math.min(fixtures.length*CONVEYOR_MATCH_SECONDS-.01,(shownMatch<0?0:shownMatch)*CONVEYOR_MATCH_SECONDS);conveyorDuration=fixtures.length*CONVEYOR_MATCH_SECONDS;current=painter.conveyor(ctx,clock,fixtures);}}
+   else current=painter.conveyor(ctx,clock,fixtures);
+   scoreboard.hidden=false;scoreboard.style.opacity=String(Math.min(1,(conveyorDuration-clock)/.5));
    if(shownMatch!==current.index){shownMatch=current.index;const m=current.match;
-    roundLabel.textContent=`SEASON ${current.index+1} / ${fixtures.length}　·　第${m.round}節`;
+    roundLabel.textContent=`SEASON ${season}　·　${current.index+1} / ${fixtures.length}試合　·　第${m.round}節`;
     score.textContent=`${m.goals} — ${m.against}`;opponentName.textContent=m.opponent?.name||'対戦相手';
-    outcome.textContent=({win:'WIN · ドリブル突破',draw:'DRAW · パスをつなぐ',loss:'LOSE · 奪われてリスタート'})[m.outcome];scoreboard.dataset.outcome=m.outcome;
+    const labels={win:{dribble:'WIN · ドリブル突破',pass:'WIN · パス突破'},draw:{dribble:'DRAW · 抜けずに対面',pass:'DRAW · パスをカバー'},loss:{dribble:'LOSE',pass:'LOSE'}};
+    outcome.textContent=labels[m.outcome][m.type];streak.textContent=m.streak?`${m.streak}連勝`:'連勝数 0';scoreboard.dataset.outcome=m.outcome;
    }
+   score.hidden=outcome.hidden=streak.hidden=!current.resultReady;
+   if(!current.resultReady)delete scoreboard.dataset.outcome;else scoreboard.dataset.outcome=current.match.outcome;
+  }else if(stage==='three-shoot'){
+   try{reel.renderShot(clock,finaleKind(rank));}catch(error){console.warn('3D shot unavailable; using the existing shot',error);reel?.dispose();reel=null;stage='cinematic';clock=0;courtHost.hidden=true;canvas.hidden=false;painter.cinematic(ctx,clock);}
   }else painter.cinematic(ctx,clock);
   root.dataset.scene=stage==='ceremony'?'ceremony':stage==='conveyor'?'conveyor':frame.scene;
   if(stage==='cinematic'&&frame.ready&&button.hidden){button.hidden=false;button.focus({preventScroll:true});}
  }
- function resize(){const dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(innerWidth*dpr);canvas.height=Math.round(innerHeight*dpr);paint();}
+ function resize(){const dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(innerWidth*dpr);canvas.height=Math.round(innerHeight*dpr);reel?.resize(innerWidth,innerHeight);paint();}
  function tick(now){
   if(dead)return;
   if(!document.hidden){if(previous)clock+=Math.min(.1,(now-previous)/1000);previous=now;if(now-lastPaint>1000/30){paint();lastPaint=now;}}
@@ -274,11 +297,16 @@ export function playSeasonFinale({app,club,rank,keeper,matches=[],clubs=[],onDon
  button.addEventListener('click',()=>{
   if(stage==='ceremony'||stage==='error')return finish();
   stage='ceremony';clock=0;previous=0;root.classList.remove('finale-white');heading.hidden=false;button.textContent='シーズン結果へ';paint();button.focus({preventScroll:true});
+  skip.hidden=true;
  });
  addEventListener('resize',resize,{passive:true});document.addEventListener('visibilitychange',visibility);resize();
- Promise.race([loadResources(),new Promise((_,reject)=>{loadTimer=setTimeout(()=>reject(new Error('Finale assets timed out')),20000);})]).then(data=>{
-  if(dead)return;painter=createFinalePainter(data,club,rank,keeper,clubs,fixtures);status.remove();
-  if(reduced){stage='cinematic';clock=finaleKind(rank)==='goal'?5.1:4.4;}
+ Promise.race([loadResources(),new Promise((_,reject)=>{loadTimer=setTimeout(()=>reject(new Error('Finale assets timed out')),20000);})]).then(async data=>{
+  if(dead)return;
+  const finalOpponent=clubs.find(c=>c.id===fixtures.at(-1)?.opponent?.id);
+  painter=createFinalePainter(data,club,rank,startingFive(finalOpponent)[0]||keeper,clubs,fixtures);
+  if(fixtures.length&&!reduced){try{const {createSeasonReel}=await import('./season-three/reel.js');if(dead)return;reel=createSeasonReel({host:courtHost,atlas:data.atlas,club,clubs,fixtures});conveyorDuration=seasonReelFrame(fixtures,0).duration;painter.setScorer(startingFive(club)[4]);courtHost.hidden=false;canvas.hidden=true;}catch(error){console.warn('3D season reel unavailable; using the existing scene',error);courtHost.hidden=true;}}
+  if(dead){reel?.dispose();return;}status.remove();skip.focus({preventScroll:true});
+  if(reduced){stage='cinematic';clock=finaleKind(rank)==='goal'?5.1:finaleKind(rank)==='catch'?5.2:4.4;}
   paint();if(!reduced)raf=requestAnimationFrame(tick);
  }).catch(error=>{
   if(dead)return;console.error('Season finale assets failed to load',error);stage='error';status.textContent='演出を読み込めませんでした。シーズン結果へ進めます。';button.textContent='シーズン結果へ';button.hidden=false;button.focus();
