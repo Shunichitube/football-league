@@ -23,3 +23,7 @@ test('possession changes and loop boundaries do not teleport players',()=>{
  for(const time of [26,52]){const a=homeExhibitionFrame(time-1e-5),b=homeExhibitionFrame(time);
  a.actors.forEach((p,i)=>assert.deepEqual([p.x,p.z],[b.actors[i].x,b.actors[i].z]));}
 });
+
+test('kick direction points to the attacking goal throughout the shot for both teams',()=>{
+ for(const start of [16.5,42.5])for(const dt of [0,.3,.8]){const f=homeExhibitionFrame(start+dt),i=start<26?4:9,p=f.actors[i];assert.equal(p.motion,'shoot');assert.equal(p.x+p.kickX,start<26?18.5:-18.5);assert.equal(p.z+p.kickZ,0);}
+});

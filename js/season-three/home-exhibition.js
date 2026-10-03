@@ -19,7 +19,7 @@ export function homeExhibitionFrame(seconds){
  path(enemy+3,[[1.5,0,0],[4.5,1,.2],[7,1,.2],[10,-1,-1],[13,-1,-1],[16,3,-1],[19,3,-1],[24,0,0]]);
  path(own+1,[[3,0,0],[6,1,-2],[11,1,-2],[14,2,0],[19,2,0],[23,0,0]]);
  path(enemy+1,[[2,0,0],[5,-1,-1],[10,-1,-1],[14,-2,-1],[18,-2,-1],[23,0,0]]);
- const actors=paths.map((points,i)=>{const p=sampleHomePath(points,t),catching=i===enemy&&t>=18.4&&t<20,shooting=i===own+4&&t>=16.5&&t<17.4;return {...p,motion:catching?'catch':shooting?'shoot':Math.hypot(p.vx,p.vz)===0?'idle':i===own+4&&t<9?'dribble':'run',actionTime:catching?t-18.4:shooting?t-16.5:seconds};});
+ const actors=paths.map((points,i)=>{const p=sampleHomePath(points,t),catching=i===enemy&&t>=18.4&&t<20,shooting=i===own+4&&t>=16.5&&t<17.4;return {...p,kickX:sign*18.5-p.x,kickZ:-p.z,motion:catching?'catch':shooting?'shoot':Math.hypot(p.vx,p.vz)===0?'idle':i===own+4&&t<9?'dribble':'run',actionTime:catching?t-18.4:shooting?t-16.5:seconds};});
  const fw=actors[own+4],mf=actors[own+2],near=actors[own+3],gk=actors[enemy];
  const pass=(a,b,p)=>({x:mix(a.x,b.x,p),z:mix(a.z,b.z,p),y:.244,visible:true});
  let ball={x:fw.x+sign*.55,z:fw.z,y:.244,visible:true};

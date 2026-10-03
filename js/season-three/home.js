@@ -19,6 +19,7 @@ export async function mountHomeStadium(host){
    bank[`${motion}-${direction}`]=MOTIONS[motion].frames.map((_,frame)=>{
     const canvas=document.createElement('canvas');canvas.width=canvas.height=256;
     drawMotion(canvas.getContext('2d'),atlas,motion,frame/MOTIONS[motion].fps+.001,{direction,goalkeeper,loop:false,ball:false,kit:i<5?'#42b8e6':'#ee8a53',appearance:{seed:i*197,hairStyle:i*3%20,hairColor:i%10,skinTone:i%3,face:i%3}});
+    if(motion==='shoot'&&direction==='left'){const copy=document.createElement('canvas');copy.width=copy.height=256;copy.getContext('2d').drawImage(canvas,0,0);const ctx=canvas.getContext('2d');ctx.clearRect(0,0,256,256);ctx.save();ctx.translate(256,0);ctx.scale(-1,1);ctx.drawImage(copy,0,0);ctx.restore();}
     const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;textures.push(texture);return texture;
    });
   }
@@ -40,7 +41,7 @@ export async function mountHomeStadium(host){
   actors.forEach((a,i)=>{
    const p=states[i],px=p.x,pz=p.z,motion=p.motion;
    const moving=Math.hypot(p.vx,p.vz)>0;
-   const horizontal=moving?right.x*p.vx+right.z*p.vz:right.x*(football.x-px)+right.z*(football.z-pz);
+   const horizontal=motion==='shoot'?right.x*p.kickX+right.z*p.kickZ:moving?right.x*p.vx+right.z*p.vz:right.x*(football.x-px)+right.z*(football.z-pz);
    if(Math.abs(horizontal)>.01)a.facing=horizontal>0?'right':'left';
    const direction=a.facing||'right',frames=a.bank[`${motion}-${direction}`];
    const seconds=['shoot','catch'].includes(motion)?p.actionTime:t*.7;
