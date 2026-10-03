@@ -1,7 +1,8 @@
 const AUDIO_KEY = 'football-league:audio-settings';
 export const SFX_FILES = {
   button: new URL('../assets/audio/音源/決定16.mp3', import.meta.url).href,
-  lineup: new URL('../assets/audio/音源/選択3.mp3', import.meta.url).href
+  lineup: new URL('../assets/audio/音源/選択3.mp3', import.meta.url).href,
+  training: new URL('../assets/audio/音源/パワーアップ１.mp3', import.meta.url).href
 };
 export function createSfxController({createAudio = src => new Audio(src), storage = globalThis.localStorage, doc = globalThis.document, now = () => Date.now()} = {}) {
   const sounds = new Map();
@@ -27,6 +28,7 @@ export function createSfxController({createAudio = src => new Audio(src), storag
     play('button');
   }
   function beginLineupDrag() { dragging = true; play('lineup'); }
+  function trainingCompleted() { play('training'); }
   function endLineupDrag() {
     if (dragging) suppressUntil = now() + 250;
     dragging = false;
@@ -44,6 +46,7 @@ export function createSfxController({createAudio = src => new Audio(src), storag
   doc?.addEventListener('click', click, true);
   doc?.addEventListener('dragend', endLineupDrag, true);
   doc?.addEventListener('football-league:audio-settings', settings);
+  doc?.addEventListener('football-league:training-completed', trainingCompleted);
   return {
     play, beginLineupDrag, endLineupDrag,
     dispose() {
@@ -51,6 +54,7 @@ export function createSfxController({createAudio = src => new Audio(src), storag
       doc?.removeEventListener('click', click, true);
       doc?.removeEventListener('dragend', endLineupDrag, true);
       doc?.removeEventListener('football-league:audio-settings', settings);
+      doc?.removeEventListener('football-league:training-completed', trainingCompleted);
     }
   };
 }

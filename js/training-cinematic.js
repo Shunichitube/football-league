@@ -68,8 +68,10 @@ const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
    frame=requestAnimationFrame(paint);
   };frame=requestAnimationFrame(paint);
   await fade(false);await wait(5000);
+  if(!layer.isConnected)return;
   document.body.classList.remove('training-results-pending');
   layer.classList.add('training-results-visible');finished=true;
+  document.dispatchEvent(new CustomEvent('football-league:training-completed'));
  }finally{if(!finished)cleanup();}
 }
 
