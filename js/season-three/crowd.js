@@ -2,15 +2,15 @@ import * as THREE from 'three';
 import {drawSpectator,drawSpectatorBack} from '../spectator-art.js';
 
 // Original spectator art, drawn independently of the player avatar assets.
-export function createCrowd(scene,{backNear=false}={}){
+export function createCrowd(scene){
  const colors=['#3f91bb','#dbb86a','#c26967','#5baf96','#7b79b8','#dce4e9','#c76c91','#496ac2','#c69557','#477b70','#9884c2','#e5bd87','#64a3ab','#bb6750','#697f96','#d0a25d','#779d62','#a56184','#dbd4b7','#417eab'];
- const textures=Array.from({length:backNear?40:20},(_,i)=>{
+ const textures=Array.from({length:40},(_,i)=>{
   const c=document.createElement('canvas');c.width=c.height=192;
   (i>=20?drawSpectatorBack:drawSpectator)(c.getContext('2d'),i%20,colors[i%20]);
   const texture=new THREE.CanvasTexture(c);texture.colorSpace=THREE.SRGBColorSpace;return texture;
  });
- const groups=Array.from({length:backNear?40:20},()=>[]);let count=0;
- const add=(x,y,z)=>{const i=count++;groups[(i*7+Math.floor(i/13))%20+(backNear&&z>12?20:0)].push({x,y,z,phase:i*1.73,bounce:i%7===0?1:0});};
+ const groups=Array.from({length:20},()=>[]);let count=0;
+ const add=(x,y,z)=>{const i=count++;groups[(i*7+Math.floor(i/13))%20].push({x,y,z,phase:i*1.73,bounce:i%7===0?1:0});};
  // Match the actual seat layout; stair aisles stay accessible.
  for(const side of [-1,1])for(let row=0;row<8;row++)for(let col=0;col<62;col++){
   if(col%16<2)continue;
@@ -26,21 +26,17 @@ export function createCrowd(scene,{backNear=false}={}){
   const geometry=new THREE.PlaneGeometry(1.05,1.05);geometry.translate(0,.525,0);
   geometry.setAttribute('crowdPhase',new THREE.InstancedBufferAttribute(new Float32Array(people.map(p=>p.phase)),1));
   geometry.setAttribute('crowdBounce',new THREE.InstancedBufferAttribute(new Float32Array(people.map(p=>p.bounce)),1));
-  const material=new THREE.MeshBasicMaterial({map:textures[i],alphaTest:.15,side:THREE.DoubleSide});
+  const material=new THREE.MeshBasicMaterial({map:textures[i],alphaTest:.15,side:THREE.FrontSide});
   material.onBeforeCompile=shader=>{
    shader.uniforms.crowdTime=clock;
    shader.vertexShader='uniform float crowdTime; attribute float crowdPhase; attribute float crowdBounce;\n'+shader.vertexShader;
-   shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>',`
-    vec4 center = instanceMatrix * vec4(0.0,0.0,0.0,1.0);
-    center.y += max(0.0,sin(crowdTime*3.0+crowdPhase))*0.11*crowdBounce;
-    vec4 mvPosition = modelViewMatrix * center;
-    mvPosition.xy += transformed.xy;
-    gl_Position = projectionMatrix * mvPosition;
-   `);
+   shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n transformed.y += max(0.0,sin(crowdTime*3.0+crowdPhase))*0.11*crowdBounce;');
   };
   const mesh=new THREE.InstancedMesh(geometry,material,people.length);
-  people.forEach((p,j)=>{dummy.position.set(p.x,p.y,p.z);dummy.updateMatrix();mesh.setMatrixAt(j,dummy.matrix);});
+  people.forEach((p,j)=>{dummy.position.set(p.x,p.y,p.z);dummy.rotation.y=Math.abs(p.x)>23?(p.x>0?-Math.PI/2:Math.PI/2):(p.z>0?Math.PI:0);dummy.updateMatrix();mesh.setMatrixAt(j,dummy.matrix);});
   mesh.frustumCulled=false;scene.add(mesh);
+  const backMaterial=material.clone();backMaterial.map=textures[i+20];backMaterial.side=THREE.BackSide;backMaterial.onBeforeCompile=material.onBeforeCompile;
+  const back=new THREE.InstancedMesh(geometry,backMaterial,people.length);back.instanceMatrix=mesh.instanceMatrix;back.frustumCulled=false;scene.add(back);
  });
  return time=>{clock.value=time/1000;};
 }

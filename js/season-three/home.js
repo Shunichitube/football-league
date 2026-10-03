@@ -11,7 +11,7 @@ export async function mountHomeStadium(host){
  if(!host.isConnected)return ()=>{};
  const court=createCourt(host,innerWidth,innerHeight),{scene,camera,controls}=court;
  camera.fov=68;camera.updateProjectionMatrix();
- const crowd=createCrowd(scene,{backNear:true}),ball=createFootball();ball.scale.setScalar(.7);scene.add(ball);
+ const crowd=createCrowd(scene),ball=createFootball();ball.scale.setScalar(.7);scene.add(ball);
  const actors=[],textures=[],right=new THREE.Vector3(),pointer=new THREE.Vector2(),smooth=new THREE.Vector2();
  for(let i=0;i<10;i++){
   const goalkeeper=i%5===0,bank={};
@@ -50,7 +50,7 @@ export async function mountHomeStadium(host){
   ball.visible=football.visible;ball.position.set(football.x,football.y,football.z);ball.rotation.z=-t*5;
   crowd(t*1000);court.animate(t*1000);court.render();host.dataset.ready='true';host.dataset.players='10';
  }
- function tick(now){if(dead)return;if(last&&!paused&&!document.hidden&&!reduced.matches)clock+=Math.min((now-last)/1000,.1)*.6;last=now;if(!document.hidden)paint(clock);raf=requestAnimationFrame(tick);}
+ function tick(now){if(dead)return;if(last&&!paused&&!document.hidden&&!reduced.matches)clock+=Math.min((now-last)/1000,.1)*.9;last=now;if(!document.hidden)paint(clock);raf=requestAnimationFrame(tick);}
  function move(e){pointer.set((e.clientX/innerWidth-.5)*2,-(e.clientY/innerHeight-.5)*2);}
  function leave(){pointer.set(0,0);}
  function resize(){court.resize(innerWidth,innerHeight);paint(clock);}

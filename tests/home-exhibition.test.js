@@ -1,27 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {homeExhibitionFrame} from '../js/season-three/home-exhibition.js';
-
-test('players stop exactly at the end of each move and immediately idle',()=>{
- for(const stop of [8,16,24,34,42,50]){
-  const a=homeExhibitionFrame(stop),b=homeExhibitionFrame(stop+.1);
-  a.actors.forEach((p,i)=>{assert.equal(p.x,b.actors[i].x);assert.equal(p.z,b.actors[i].z);assert.equal(p.vx,0);assert.equal(p.vz,0);assert.equal(p.motion,'idle');});
- }
+import {homeExhibitionFrame,sampleHomePath} from '../js/season-three/home-exhibition.js';
+test('a completed move stops exactly and holds its destination without inertia',()=>{
+ const points=[[0,0,0],[2,3,1],[4,3,1]];
+ for(const time of [2,2.1,3.9])assert.deepEqual(sampleHomePath(points,time),{x:3,z:1,vx:0,vz:0});
+ const a=homeExhibitionFrame(16),b=homeExhibitionFrame(16.1);
+ assert.equal(a.actors[4].motion,'idle');assert.equal(a.actors[4].x,b.actors[4].x);
 });
-test('movement is slow and uniform in both directions; keepers stay before the goals',()=>{
- for(const time of [3,14,21,29,40,47]){
-  const a=homeExhibitionFrame(time),b=homeExhibitionFrame(time+.1);
-  assert.equal(a.actors.length,10);
-  a.actors.forEach((p,i)=>{
-   assert.ok(Math.abs((b.actors[i].x-p.x)/.1-p.vx)<1e-10);
-   assert.ok(Math.hypot(p.vx,p.vz)*.6<1.21);
-   if(i%5===0){assert.equal(p.x,i===0?-18.5:18.5);assert.equal(p.z,0);}
-  });
- }
+test('off-ball players move independently and a defender closes the carrier',()=>{
+ const a=homeExhibitionFrame(1.8);
+ assert.ok(a.actors[4].vx>0);assert.ok(a.actors[9].vx<0);assert.equal(a.actors[2].motion,'idle');
+ const initial=homeExhibitionFrame(0),marking=homeExhibitionFrame(2.5);
+ const distance=f=>Math.hypot(f.actors[9].x-f.actors[4].x,f.actors[9].z-f.actors[4].z);
+ assert.ok(distance(marking)<distance(initial));
+});
+test('both keepers remain at their goals and every halted player idles',()=>{
+ for(let time=0;time<52;time+=.25){const f=homeExhibitionFrame(time);assert.equal(f.actors.length,10);
+ for(const i of [0,5]){assert.equal(f.actors[i].x,i===0?-18.5:18.5);assert.equal(f.actors[i].z,0);}
+ for(const p of f.actors)if(!p.vx&&!p.vz&&!['catch','shoot'].includes(p.motion))assert.equal(p.motion,'idle');}
 });
 test('possession changes and loop boundaries do not teleport players',()=>{
- for(const time of [26,52]){
-  const before=homeExhibitionFrame(time-1e-5),after=homeExhibitionFrame(time);
-  before.actors.forEach((p,i)=>assert.deepEqual([p.x,p.z],[after.actors[i].x,after.actors[i].z]));
- }
+ for(const time of [26,52]){const a=homeExhibitionFrame(time-1e-5),b=homeExhibitionFrame(time);
+ a.actors.forEach((p,i)=>assert.deepEqual([p.x,p.z],[b.actors[i].x,b.actors[i].z]));}
 });
