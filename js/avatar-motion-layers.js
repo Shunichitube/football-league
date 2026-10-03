@@ -1,5 +1,5 @@
-import {MOTION_HAIR_LAYOUTS,SHOOT_DRAW_PADDING} from './motion-hair-layout.js?v=motion-ui-v14';
-import {readHairAdjustments,effectiveHairAdjustment,hairAdjustmentRevision} from './motion-hair-adjustments.js?v=motion-ui-v14';
+import {MOTION_HAIR_LAYOUTS,SHOOT_DRAW_PADDING} from './motion-hair-layout.js?v=motion-ui-v15';
+import {readHairAdjustments,effectiveHairAdjustment,hairAdjustmentRevision} from './motion-hair-adjustments.js?v=motion-ui-v15';
 import {avatarProfile,kitColor} from './avatar-profile.js?v=appearance-v29';
 import {createSurface,recolorPixels,drawQuarterMotionLayers} from './avatar-rendering.js?v=hair-editor-v1';
 // Head rectangles are registered to the approved body drawings, in source-cell pixels.
@@ -13,7 +13,7 @@ const HEAD_BOXES={
 const frames=new Map(),sheetIds=new WeakMap();let sheetSerial=0;
 export function renderMotionLayers(atlas,sheet,sourceIndex,columns,value,{kit,goalkeeper=false,baseOnly=false}={}){
  let assets=atlas.avatar;if(!assets)throw new Error('Motion assets are missing');
- const profile=avatarProfile(value),keyName=Object.keys(HEAD_BOXES).find(key=>atlas[key]===sheet);
+ const profile=avatarProfile(value),keyName=sheet===atlas.keeperBase?'base':Object.keys(HEAD_BOXES).find(key=>atlas[key]===sheet);
  const hairMode=keyName==='base'?'idle':keyName==='run'?'run':keyName==='shoot'?'shoot':keyName==='catch'?'catch':keyName==='dive'?'dive':null;
  if(hairMode){const adjustment=effectiveHairAdjustment(readHairAdjustments(hairMode)[profile.hairStyle],sourceIndex),factor=(sheet.width/columns)/627;assets={...assets,motionHairAdjustment:{...adjustment,x:adjustment.x*factor,y:adjustment.y*factor}};}
  const box=HEAD_BOXES[keyName]?.[sourceIndex];if(!box)throw new Error('Motion frame registration is missing');
