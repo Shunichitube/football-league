@@ -1,7 +1,7 @@
 import {avatarProfile} from './avatar-profile.js?v=appearance-v29';
-import {createSurface,recolorPixels,frontMotionHairBox,drawFrontMotionHair,drawFrontMotionFace} from './avatar-rendering.js?v=motion-ui-v11';
-import {MOTION_HAIR_LAYOUTS,SHOOT_DRAW_PADDING} from './motion-hair-layout.js?v=motion-ui-v11';
-import {readHairAdjustments,effectiveHairAdjustment} from './motion-hair-adjustments.js?v=motion-ui-v11';
+import {createSurface,recolorPixels,frontMotionHairBox,drawFrontMotionHair,drawFrontMotionFace} from './avatar-rendering.js?v=motion-ui-v12';
+import {MOTION_HAIR_LAYOUTS,SHOOT_DRAW_PADDING} from './motion-hair-layout.js?v=motion-ui-v12';
+import {readHairAdjustments,effectiveHairAdjustment} from './motion-hair-adjustments.js?v=motion-ui-v12';
 export function celebrationHairBox(assets,profile,head,adjustment){
  const [x,y,w,h]=frontMotionHairBox(assets,profile),[hx,hy,hw,hh]=head;
  const box=[hx+(x-35)*hw/230,hy+(y-20)*hh/220,w*hw/230,h*hh/220],a=adjustment;
