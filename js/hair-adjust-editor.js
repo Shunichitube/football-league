@@ -78,7 +78,7 @@ for(const view of views){
 $('motion').onchange=()=>{
  const next=$('motion').value;$('motion').value=mode;
  if(next===mode)return;
- const url=new URL(location.href);url.searchParams.set('motion',next);url.searchParams.set('v','motion-ui-v8');location.assign(url.href);
+ const url=new URL(location.href);url.searchParams.set('motion',next);url.searchParams.set('v','motion-ui-v9');location.assign(url.href);
 };
 $('hair').onchange=()=>{style=Number($('hair').value);draw();};
 $('together').onchange=draw;$('face').onchange=draw;$('bounds').onchange=draw;
