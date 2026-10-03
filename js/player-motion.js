@@ -1,6 +1,6 @@
 import {drawRareMotion} from './rare-avatar.js?v=cell-cleanup-v1';
 import {loadMotionLayerAssets} from './avatar-rendering.js?v=modular-motion-v2';
-import {renderMotionLayers} from './avatar-motion-layers.js?v=motion-ui-v8';
+import {renderMotionLayers} from './avatar-motion-layers.js?v=motion-ui-v10';
 export const MOTIONS = {
   idle: { label: '待機', frames: [0, 1], fps: 2 },
   run: { label: '走り', frames: [0, 1, 2, 3], fps: 8 },
@@ -19,7 +19,7 @@ export async function loadMotionAtlas() {
   const [base, run, shoot, catchSheet, dive, celebrate, celebrateArms, dejected, avatar] = await Promise.all([
     load('../assets/avatars/player-idle-redrawn-v1.png?v=idle-approved-v5'),
     load('../assets/avatars/player-run-redrawn-v1.png'),
-    load('../assets/avatars/player-shoot-redrawn-v1.png?v=motion-ui-v8'),
+    load('../assets/avatars/player-shoot-redrawn-v1.png?v=motion-ui-v10'),
     load('../assets/avatars/keeper-catch-base-v1.png'),
     load('../assets/avatars/keeper-dive-base-v1.png'),
     load('../assets/avatars/player-celebrate-base-v1.png'),
@@ -55,7 +55,13 @@ export function drawMotion(ctx, atlas, motion, seconds, { direction = 'right', b
   const dx = (width-w)/2 + offsets[0] / 627 * w;
   const dy = (height-h)/2 + offsets[1] / 627 * h + (usesRun ? height*.04 : 0);
   const personalized = renderMotionLayers(atlas, sheet, sourceIndex, columns, appearance ?? 0, {kit, goalkeeper, baseOnly});
-  ctx.drawImage(personalized,0,0,personalized.width,personalized.height,dx,dy,w,h);
+  if(motion==='shoot'&&personalized.motionContentBounds){
+    const b=personalized.motionContentBounds,padding=personalized.motionPadding,margin=Math.min(width,height)*.025;
+    const fitted=Math.min(scale,(width-2*margin)/(b.right-b.left),(height-2*margin)/(b.bottom-b.top));
+    const x=Math.max(margin-b.left*fitted,Math.min(width-margin-b.right*fitted,dx-padding*fitted));
+    const y=Math.max(margin-b.top*fitted,Math.min(height-margin-b.bottom*fitted,dy-padding*fitted));
+    ctx.drawImage(personalized,x,y,personalized.width*fitted,personalized.height*fitted);
+  }else ctx.drawImage(personalized,0,0,personalized.width,personalized.height,dx,dy,w,h);
   if (ball && motion === 'dribble') {
     const x = width * (.82 + Math.sin(seconds * Math.PI * 5) * .025), y = dy + h*.9;
     const r = h*.052;

@@ -1,11 +1,12 @@
-import {MOTION_HAIR_LAYOUTS} from './motion-hair-layout.js?v=motion-ui-v8';
-import {loadMotionAtlas} from './player-motion.js?v=motion-ui-v8';
+import {MOTION_HAIR_LAYOUTS,SHOOT_DRAW_PADDING} from './motion-hair-layout.js?v=motion-ui-v10';
+import {loadMotionAtlas} from './player-motion.js?v=motion-ui-v10';
 import {HAIR_STYLES} from './avatar-profile.js?v=appearance-v29';
 import {drawMotionHair,drawQuarterFace,motionHairBox} from './avatar-rendering.js?v=hair-editor-v1';
-import {readHairAdjustments,saveHairAdjustments,effectiveHairAdjustment,defaultHairAdjustment} from './motion-hair-adjustments.js?v=motion-ui-v8';
+import {readHairAdjustments,saveHairAdjustments,effectiveHairAdjustment,defaultHairAdjustment} from './motion-hair-adjustments.js?v=motion-ui-v10';
 const $=id=>document.getElementById(id),status=$('status');
 const requestedMode=new URLSearchParams(location.search).get('motion');
 const mode=['idle','shoot'].includes(requestedMode)?requestedMode:'run',layout=MOTION_HAIR_LAYOUTS[mode];
+const padding=mode==='shoot'?SHOOT_DRAW_PADDING:0,canvasSize=627+padding*2;
 const modeLabel={idle:'待機',run:'走り・ドリブル',shoot:'シュート'}[mode];
 $('motion').value=mode;
 $('title').textContent=modeLabel+'の髪位置調整';
@@ -25,7 +26,7 @@ source=mode==='idle'?atlas.base:mode==='shoot'?atlas.shoot:atlas.run;factor=627/
 boxes=layout.boxes.map(box=>box.map(n=>n*factor));
 const views=Array.from({length:layout.frames},(_,frame)=>{
  const figure=document.createElement('figure'),caption=document.createElement('figcaption'),canvas=document.createElement('canvas');
- caption.textContent=`コマ ${frame+1}`;canvas.width=627;canvas.height=627;canvas.setAttribute('aria-label',`コマ${frame+1}の髪位置調整`);
+ caption.textContent=`コマ ${frame+1}`;canvas.width=canvasSize;canvas.height=canvasSize;canvas.setAttribute('aria-label',`コマ${frame+1}の髪位置調整`);
  figure.append(caption,canvas);$('views').append(figure);
  return {frame,figure,canvas,ctx:canvas.getContext('2d')};
 });
@@ -33,25 +34,26 @@ function assetsFor(frame){return {...atlas.avatar,motionHairAdjustment:effective
 function rectFor(frame){return motionHairBox(assetsFor(frame),{hairStyle:style},boxes[frame]);}
 function draw(){
  for(const v of views){
-  const {ctx,frame,canvas}=v;ctx.clearRect(0,0,627,627);ctx.imageSmoothingEnabled=false;
+  const {ctx,frame,canvas}=v;ctx.clearRect(0,0,canvasSize,canvasSize);ctx.imageSmoothingEnabled=false;ctx.save();ctx.translate(padding,padding);
   const cw=source.width/layout.columns,ch=source.height/layout.rows;
   ctx.drawImage(source,frame%layout.columns*cw,Math.floor(frame/layout.columns)*ch,cw,ch,0,0,627,627);
   const [x,y,w,h]=boxes[frame];if($('face').checked)drawQuarterFace(ctx,atlas.avatar,[x+w*.13,y+h*.14,w*.78,h*.86]);
   drawMotionHair(ctx,assetsFor(frame),{hairStyle:style,hairColor:0},boxes[frame]);
   v.figure.classList.toggle('selected',selected===frame);
   if($('bounds').checked){
-   const [a,b,c,d]=rectFor(frame),unit=627/canvas.getBoundingClientRect().width;
+   const [a,b,c,d]=rectFor(frame),unit=canvasSize/canvas.getBoundingClientRect().width;
    ctx.strokeStyle='#158164';ctx.lineWidth=2*unit;ctx.setLineDash([7*unit,5*unit]);ctx.strokeRect(a,b,c,d);ctx.setLineDash([]);
    for(const [hx,hy]of [[a,b],[a+c,b],[a,b+d],[a+c,b+d]]){ctx.fillStyle='#f3fffa';ctx.fillRect(hx-6*unit,hy-6*unit,12*unit,12*unit);ctx.strokeRect(hx-6*unit,hy-6*unit,12*unit,12*unit);}
   }
+  ctx.restore();
  }
 }
-function point(event,canvas){const r=canvas.getBoundingClientRect();return [(event.clientX-r.left)*627/r.width,(event.clientY-r.top)*627/r.height];}
+function point(event,canvas){const r=canvas.getBoundingClientRect();return [(event.clientX-r.left)*canvasSize/r.width-padding,(event.clientY-r.top)*canvasSize/r.height-padding];}
 for(const view of views){
  view.canvas.addEventListener('pointerdown',event=>{
   if(event.button!==0||drag)return;
   const frame=view.frame,p=point(event,view.canvas),r=rectFor(frame),[x,y,w,h]=r;
-  selected=frame;const corners=[[x,y],[x+w,y],[x,y+h],[x+w,y+h]],radius=12*627/view.canvas.getBoundingClientRect().width;
+  selected=frame;const corners=[[x,y],[x+w,y],[x,y+h],[x+w,y+h]],radius=12*canvasSize/view.canvas.getBoundingClientRect().width;
   const corner=$('bounds').checked?corners.findIndex(c=>Math.hypot(p[0]-c[0],p[1]-c[1])<radius):-1;
   if(corner<0&&(p[0]<x||p[0]>x+w||p[1]<y||p[1]>y+h)){draw();return;}
   snapshot();drag={frame,start:p,rect:r,corner,before:clone(entry()),together:$('together').checked,pointer:event.pointerId};
@@ -78,7 +80,7 @@ for(const view of views){
 $('motion').onchange=()=>{
  const next=$('motion').value;$('motion').value=mode;
  if(next===mode)return;
- const url=new URL(location.href);url.searchParams.set('motion',next);url.searchParams.set('v','motion-ui-v9');location.assign(url.href);
+ const url=new URL(location.href);url.searchParams.set('motion',next);url.searchParams.set('v','motion-ui-v10');location.assign(url.href);
 };
 $('hair').onchange=()=>{style=Number($('hair').value);draw();};
 $('together').onchange=draw;$('face').onchange=draw;$('bounds').onchange=draw;
