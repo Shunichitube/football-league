@@ -1,6 +1,6 @@
 import {drawRareMotion} from './rare-avatar.js?v=cell-cleanup-v1';
 import {loadMotionLayerAssets} from './avatar-rendering.js?v=modular-motion-v2';
-import {renderMotionLayers} from './avatar-motion-layers.js?v=motion-ui-v12';
+import {renderMotionLayers} from './avatar-motion-layers.js?v=motion-ui-v13';
 export const MOTIONS = {
   idle: { label: '待機', frames: [0, 1], fps: 2 },
   run: { label: '走り', frames: [0, 1, 2, 3], fps: 8 },
@@ -19,10 +19,10 @@ export async function loadMotionAtlas() {
   const [base, run, shoot, catchSheet, dive, celebrate, dejected, avatar] = await Promise.all([
     load('../assets/avatars/player-idle-redrawn-v1.png?v=idle-approved-v5'),
     load('../assets/avatars/player-run-redrawn-v1.png'),
-    load('../assets/avatars/player-shoot-redrawn-v1.png?v=motion-ui-v12'),
-    load('../assets/avatars/keeper-catch-base-v1.png'),
+    load('../assets/avatars/player-shoot-redrawn-v1.png?v=motion-ui-v13'),
+    load('../assets/avatars/keeper-catch-redrawn-v1.png?v=motion-ui-v13'),
     load('../assets/avatars/keeper-dive-base-v1.png'),
-    load('../assets/avatars/player-celebrate-redrawn-v1.png?v=motion-ui-v12'),
+    load('../assets/avatars/player-celebrate-redrawn-v1.png?v=motion-ui-v13'),
     load('../assets/avatars/keeper-dejected-base-v1.png'),
     loadMotionLayerAssets()
   ]);
@@ -48,13 +48,13 @@ export function drawMotion(ctx, atlas, motion, seconds, { direction = 'right', b
   // Align the independently drawn heads; retain the small airborne foot lift.
   const actionOffsets = {
     shoot: [[-50,0],[44,0],[-48,10],[38,10]],
-    catch: [[-35,0],[30,0],[-25,0],[25,0]]
+    catch: [[-30,0],[8,0],[-27,0],[10,0]]
   };
   const offsets = usesRun ? [[-25,0],[8,0],[-25,0],[8,0]][sourceIndex] : motion === 'idle' ? [[-62,0],[63,0]][index] : actionOffsets[motion]?.[index] || [0,0];
   const dx = (width-w)/2 + offsets[0] / 627 * w;
   const dy = (height-h)/2 + offsets[1] / 627 * h + (usesRun ? height*.04 : 0);
   const personalized = renderMotionLayers(atlas, sheet, sourceIndex, columns, appearance ?? 0, {kit, goalkeeper, baseOnly});
-  if(motion==='shoot'&&personalized.motionContentBounds){
+  if(['shoot','catch'].includes(motion)&&personalized.motionContentBounds){
     const b=personalized.motionContentBounds,padding=personalized.motionPadding,margin=Math.min(width,height)*.025;
     const fitted=Math.min(scale,(width-2*margin)/(b.right-b.left),(height-2*margin)/(b.bottom-b.top));
     const x=Math.max(margin-b.left*fitted,Math.min(width-margin-b.right*fitted,dx-padding*fitted));

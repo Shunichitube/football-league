@@ -1,4 +1,4 @@
-import {DEFAULT_RUN_HAIR_ADJUSTMENTS,DEFAULT_IDLE_HAIR_ADJUSTMENTS,DEFAULT_SHOOT_HAIR_ADJUSTMENTS,DEFAULT_CELEBRATE_HAIR_ADJUSTMENTS} from './motion-hair-defaults.js?v=motion-ui-v12';
+import {DEFAULT_RUN_HAIR_ADJUSTMENTS,DEFAULT_IDLE_HAIR_ADJUSTMENTS,DEFAULT_SHOOT_HAIR_ADJUSTMENTS,DEFAULT_CELEBRATE_HAIR_ADJUSTMENTS} from './motion-hair-defaults.js?v=motion-ui-v13';
 // Offsets are in the 627px source frame; scaling is uniform about the hair center.
 export const HAIR_ADJUSTMENT_KEY='football-league:run-hair-adjustments:v1';
 const LEGACY_IDLE_KEY='football-league:idle-hair-adjustments:v1';
@@ -8,6 +8,7 @@ const storageKey=mode=>{
   try{globalThis.localStorage?.removeItem(LEGACY_IDLE_KEY);}catch{}
   return 'football-league:idle-hair-adjustments:v2';
  }
+ if(mode==='catch')return 'football-league:catch-hair-adjustments:v1';
  if(mode==='celebrate')return 'football-league:celebrate-hair-adjustments:v1';
  return mode==='shoot'?'football-league:shoot-hair-adjustments:v1':HAIR_ADJUSTMENT_KEY;
 };

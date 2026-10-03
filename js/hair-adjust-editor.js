@@ -1,14 +1,14 @@
-import {celebrationHairBox,drawCelebrationLayers} from './celebration-layers.js?v=motion-ui-v12';
-import {MOTION_HAIR_LAYOUTS,SHOOT_DRAW_PADDING} from './motion-hair-layout.js?v=motion-ui-v12';
-import {loadMotionAtlas} from './player-motion.js?v=motion-ui-v12';
+import {celebrationHairBox,drawCelebrationLayers} from './celebration-layers.js?v=motion-ui-v13';
+import {MOTION_HAIR_LAYOUTS,SHOOT_DRAW_PADDING} from './motion-hair-layout.js?v=motion-ui-v13';
+import {loadMotionAtlas} from './player-motion.js?v=motion-ui-v13';
 import {HAIR_STYLES} from './avatar-profile.js?v=appearance-v29';
 import {drawMotionHair,drawQuarterFace,motionHairBox} from './avatar-rendering.js?v=hair-editor-v1';
-import {readHairAdjustments,saveHairAdjustments,effectiveHairAdjustment,defaultHairAdjustment} from './motion-hair-adjustments.js?v=motion-ui-v12';
+import {readHairAdjustments,saveHairAdjustments,effectiveHairAdjustment,defaultHairAdjustment} from './motion-hair-adjustments.js?v=motion-ui-v13';
 const $=id=>document.getElementById(id),status=$('status');
 const requestedMode=new URLSearchParams(location.search).get('motion');
-const mode=['idle','shoot','celebrate'].includes(requestedMode)?requestedMode:'run',layout=MOTION_HAIR_LAYOUTS[mode];
-const padding=['shoot','celebrate'].includes(mode)?SHOOT_DRAW_PADDING:0,canvasSize=627+padding*2;
-const modeLabel={idle:'待機',run:'走り・ドリブル',shoot:'シュート',celebrate:'喜ぶ'}[mode];
+const mode=['idle','shoot','celebrate','catch'].includes(requestedMode)?requestedMode:'run',layout=MOTION_HAIR_LAYOUTS[mode];
+const padding=['shoot','celebrate','catch'].includes(mode)?SHOOT_DRAW_PADDING:0,canvasSize=627+padding*2;
+const modeLabel={idle:'待機',run:'走り・ドリブル',shoot:'シュート',celebrate:'喜ぶ',catch:'キャッチ'}[mode];
 $('motion').value=mode;
 $('title').textContent=modeLabel+'の髪位置調整';
 $('together-label').textContent=layout.frames+'コマまとめて調整';
@@ -23,7 +23,7 @@ function changed(){dirty=true;status.textContent='未保存の調整がありま
 HAIR_STYLES.forEach((name,i)=>$('hair').add(new Option(`${String(i+1).padStart(2,'0')} · ${name}`,i)));
 let atlas;
 try{atlas=await loadMotionAtlas();}catch(error){status.textContent='素材を読み込めませんでした。最新のファイルを取得して再読み込みしてください。';throw error;}
-source=mode==='idle'?atlas.base:mode==='shoot'?atlas.shoot:mode==='celebrate'?atlas.celebrate:atlas.run;factor=627/(source.width/layout.columns);
+source=mode==='idle'?atlas.base:mode==='shoot'?atlas.shoot:mode==='celebrate'?atlas.celebrate:mode==='catch'?atlas.catch:atlas.run;factor=627/(source.width/layout.columns);
 boxes=mode==='celebrate'?layout.boxes:layout.boxes.map(box=>box.map(n=>n*factor));
 const views=Array.from({length:layout.frames},(_,frame)=>{
  const figure=document.createElement('figure'),caption=document.createElement('figcaption'),canvas=document.createElement('canvas');
@@ -83,7 +83,7 @@ for(const view of views){
 $('motion').onchange=()=>{
  const next=$('motion').value;$('motion').value=mode;
  if(next===mode)return;
- const url=new URL(location.href);url.searchParams.set('motion',next);url.searchParams.set('v','motion-ui-v12');location.assign(url.href);
+ const url=new URL(location.href);url.searchParams.set('motion',next);url.searchParams.set('v','motion-ui-v13');location.assign(url.href);
 };
 $('hair').onchange=()=>{style=Number($('hair').value);draw();};
 $('together').onchange=draw;$('face').onchange=draw;$('bounds').onchange=draw;
@@ -109,7 +109,7 @@ $('import').onchange=async event=>{
 };
 addEventListener('pageshow',event=>{if(event.persisted&&!dirty){drafts=readHairAdjustments(mode);draw();}});
 addEventListener('storage',event=>{
- const key=mode==='celebrate'?'football-league:celebrate-hair-adjustments:v1':mode==='idle'?'football-league:idle-hair-adjustments:v2':mode==='shoot'?'football-league:shoot-hair-adjustments:v1':'football-league:run-hair-adjustments:v1';
+ const key=mode==='catch'?'football-league:catch-hair-adjustments:v1':mode==='celebrate'?'football-league:celebrate-hair-adjustments:v1':mode==='idle'?'football-league:idle-hair-adjustments:v2':mode==='shoot'?'football-league:shoot-hair-adjustments:v1':'football-league:run-hair-adjustments:v1';
  if(event.key!==key&&event.key!==null)return;
  if(dirty){status.textContent='別の画面で設定が更新されました。現在の調整を保存するか、再読み込みしてください。';return;}
  drafts=readHairAdjustments(mode);history.length=0;draw();status.textContent='保存済みの位置を読み込みました。';
