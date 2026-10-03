@@ -9,3 +9,8 @@
 .room-sync [hidden]{display:none}
 .setup li{margin:.5rem 0}
 @media(max-width:560px){.room-sync{flex-wrap:wrap}}
+
+/* Keep live bidding status in one row so the auction keeps its height. */
+body.auction-hall-active .room-sync{flex-direction:row;flex-wrap:nowrap;align-items:center;gap:.8rem;margin:0 auto;padding:.15rem .75rem;overflow-x:auto;scrollbar-width:thin;line-height:1.4}
+body.auction-hall-active .room-sync-summary{flex:none;justify-content:flex-start;white-space:nowrap}
+body.auction-hall-active .room-participants{flex:none;flex-wrap:nowrap;align-items:center}
