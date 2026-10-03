@@ -64,6 +64,8 @@ test('real HTTP room flow: two humans, barriers, retries, restore, auction, seas
  };
  await mutate(second,'start',{},403);await mutate(first,'start');assert.equal(room.phase,'draft');
  assert.doesNotMatch(JSON.stringify(room),/"(?:accessToken|hiddenGrowth|rngState|seed)":/);
+ assert.ok(room.game.league.clubs.flatMap(club=>club.roster).every(player=>player.growthExpectationKey), 'Online rosters include a displayable growth expectation');
+ assert.ok(room.game.draft.pool.filter(player=>!player.rareCharacter).every(player=>player.growthExpectationKey), 'Draft candidates include their growth expectation');
  const pick=room.game.draft.pool[0].id;
  await mutate(first,'submit',{playerId:pick});assert.equal(room.phase,'draft');
  assert.deepEqual(room.players.map(p=>p.completed),[true,false]);

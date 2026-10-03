@@ -50,6 +50,15 @@ function growthProfile(position, rng, initial) {
   return profile;
 }
 
+export function growthExpectationKey(player) {
+  const keys = player.primaryPosition === 'GK' ? GK_GROWTH_KEYS : ['speed', 'pass', 'dribble', 'shoot', 'defense', 'stamina'];
+  if (player.hiddenGrowth && typeof player.hiddenGrowth === 'object') {
+    return keys.filter(key => Number.isFinite(player.hiddenGrowth[key]) && player.hiddenGrowth[key] > 0)
+      .sort((a, b) => player.hiddenGrowth[b] - player.hiddenGrowth[a])[0] ?? null;
+  }
+  return keys.includes(player.growthExpectationKey) ? player.growthExpectationKey : null;
+}
+
 function weightedTier(distribution, rng) {
   const total = distribution.reduce((sum, [, weight]) => sum + weight, 0);
   let roll = rng.next() * total;

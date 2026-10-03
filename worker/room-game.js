@@ -1,4 +1,5 @@
 import { openLot, raiseBid, passLot, tickLot } from '../js/live-auction.js?v=0.21.1';
+import { growthExpectationKey } from '../js/data.js';
 // Room owns the phase and private inputs. All game rules come from main's modules.
 import { createLeague, standings, simulateRemainingSeason, finalizeSeason, applySeasonFinances, recordDraftAcquisition, startNextSeason } from '../js/league.js?v=0.17.29';
 import { createDraftPool, createAuctionPool, resolveDraftActions } from '../js/market.js?v=0.17.31';
@@ -236,5 +237,11 @@ export function publicRoom(room, owner = null) {
     game.special = {};
   }
   const result = { serverNow: Date.now(), roomId: room.roomId, phase: room.phase, phaseRevision: room.phaseRevision, revision: room.revision, hostPlayerId: room.hostPlayerId, game, players: room.players.map(player => ({ id: player.id, teamName: player.teamName, color: player.color, clubId: player.clubId, completed: Object.hasOwn(room.inputs, player.clubId) })), ownInput: owner ? room.inputs[owner.clubId] || null : null };
-  return JSON.parse(JSON.stringify(result, (key, value) => ['hiddenGrowth','rngState','seed','accessToken','cpuLimits','cpuAt'].includes(key) ? undefined : value));
+  return JSON.parse(JSON.stringify(result, (key, value) => {
+    if (['hiddenGrowth','rngState','seed','accessToken','cpuLimits','cpuAt'].includes(key)) return undefined;
+    if (value?.stats && value.primaryPosition && Object.hasOwn(value, 'hiddenGrowth')) {
+      return { ...value, growthExpectationKey: growthExpectationKey(value) };
+    }
+    return value;
+  }));
 }
