@@ -411,7 +411,7 @@ body.auction-hall-active header{background:#051522e8}
 
 /* The venue and physical hardware are one fixed background plate. Only live UI occupies the display glass. */
 @media (min-width:1100px) and (min-height:700px){
-  #app>main.screen-squad{position:relative;width:100%;height:calc(100dvh - 52px);margin:0;padding:8px 1.2vw;overflow:hidden;background:#071521 url('../assets/arena/squad-clubhouse-devices.webp') center center / 100% 100% no-repeat}
+  #app>main.screen-squad{position:relative;width:100%;height:calc(100dvh - 52px);margin:0;padding:8px 1.2vw;overflow:hidden;background:#071521 url('../assets/arena/squad-clubhouse-halfcourt.webp') center center / 100% 100% no-repeat}
   main.screen-squad .squad-heading-row{position:relative;z-index:3;min-height:30px;margin:0;pointer-events:none}
   main.screen-squad .squad-heading-copy{visibility:hidden}
   main.screen-squad .squad-actions{pointer-events:auto;margin-left:auto}

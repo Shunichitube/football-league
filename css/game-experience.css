@@ -15,3 +15,7 @@
 .results-winner.is-mvp .mvp-joy-avatar{display:block;width:auto;height:clamp(117px,20vh,211px);max-width:100%;object-fit:contain;margin:0 auto;image-rendering:pixelated;filter:drop-shadow(0 4px 4px #0009)}
 .award-card.mvp .mvp-joy-avatar{display:block;width:auto;height:180px;max-width:100%;margin:0 auto;image-rendering:pixelated}
 @media(max-width:760px){.results-winner.is-mvp .mvp-joy-avatar{height:15.2vh}}
+
+#app>header .header-actions {display:flex;align-items:center;gap:8px;flex:none;white-space:nowrap;}
+#app>header .header-actions button {margin:0;}
+#app>header .header-actions .game-settings-button {position:static;z-index:auto;padding:8px 14px;font-size:inherit;flex:none;}

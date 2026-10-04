@@ -75,6 +75,12 @@ export function createGameExperience({dialogs,onExit}){
  function stopAwards(){awardGeneration++;cancelAnimationFrame(awardRaf);awardRaf=0;}
  function stopGrowth(){growthGeneration++;cancelAnimationFrame(growthRaf);growthRaf=0;}
  return {
+  syncHeader(header){
+   if(!header){document.body.append(gear);return;}
+   let actions=header.querySelector('.header-actions');
+   if(!actions){actions=document.createElement('span');actions.className='header-actions';header.append(actions);}
+   actions.append(gear);
+  },
   showDraft(player,won,club){return enqueue({title:won?'獲得しました！':'獲得できませんでした。',player,won,club});},
   showLeagueStart(season,onDone){return enqueue({title:'リーグ戦スタート！',subtitle:`第${season}シーズン · 全10試合`,onDone});},
   reset(){queue=[];active?.dispose();closeSettings();stopGrowth();stopAwards();},

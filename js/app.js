@@ -1,7 +1,7 @@
 import {createSfxController} from './sfx.js?v=training-complete-v1';
 import {createBgmController} from './bgm.js?v=season-bgm-v3';
 import {renderGrandResults,mountGrandFinale} from './grand-finale-ui.js?v=motion-ui-v24';
-import {createGameExperience} from './game-experience.js?v=motion-ui-v24';
+import {createGameExperience} from './game-experience.js?v=header-actions-v1';
 import { playSeasonFinale } from './season-finale.js?v=clubhouse-three-v4';
 import { rareKind, rareAgeLabel } from './rare-characters.js';
 import { playTrainingCinematic } from './training-cinematic.js?v=motion-ui-v24&training-sfx=1';
@@ -67,7 +67,7 @@ function draft(){let d=s.draft,c=me();if(d.completed)return `${head()}<main clas
 function auction(){return renderLiveAuction(s,me(),player,e,head());}
 function table(){let humanId=me().id,rows=standings(s.league).map(r=>`<tr class="${r.club.id===humanId?'you':''}"><td>${r.rank}</td><td><i class="club-color-dot" style="--club:${e(r.club.color)}"></i>${e(r.club.name)}</td><td>${r.played}</td><td>${r.wins}</td><td>${r.draws}</td><td>${r.losses}</td><td>${r.goalsFor}</td><td>${r.goalsAgainst}</td><td>${r.goalDifference}</td><td>${r.points}</td></tr>`).join('');return `${head()}<main><h2>順位表</h2><div class="table-wrap"><table><thead><tr><th>順位</th><th>クラブ</th><th>試合</th><th>勝</th><th>分</th><th>敗</th><th>得点</th><th>失点</th><th>得失</th><th>勝点</th></tr></thead><tbody>${rows}</tbody></table></div><button data-nav="home" class="subtle">戻る</button></main>`}
 function home(){let c=me(),lineup=validateLineup(c),remaining=Math.max(0,11-s.league.currentRound);if(s.league.completed)return seasonResults();return `${head()}<main><section class="hero" style="--club:${c.color}"><p>残り${remaining}節</p><h2>編成と戦術を決めてシーズンを開始</h2>${lineup.ok?'<button data-a="season">シーズンをシミュレート</button>':`<p class="lineup-error">${e(lineup.error)}</p><button data-nav="squad">編成を確認する</button>`}</section><nav><button data-nav="squad">編成</button><button data-nav="table">順位表</button><button data-nav="stats">個人成績</button></nav></main>`}
-function squad(){let c=me();return `${head()}<main style="--club:${e(c.color)}"><div class="squad-heading-row"><div class="squad-heading-copy"><h2>編成</h2></div><div class="squad-actions"><button data-nav="home" class="subtle">戻る</button></div></div>${renderLineupEditor(c,s.selectedLineupPlayerId,s.lineupMessage,s.lineupError,s.benchSort,renderTactics())}</main>`}
+function squad(){let c=me();return `${head()}<main style="--club:${e(c.color)}"><div class="squad-heading-row"><div class="squad-heading-copy"><h2>編成</h2></div></div>${renderLineupEditor(c,s.selectedLineupPlayerId,s.lineupMessage,s.lineupError,s.benchSort,renderTactics())}</main>`}
 function stats(){const c=me();return `${head()}<main><p class="eyebrow">シーズン${s.league.season}</p><h2>所属選手の個人成績</h2>${renderSeasonPlayerStats(c)}<button data-nav="${s.league.completed?'seasonResults':'home'}" class="subtle">戻る</button></main>`}
 function seasonResults(){const c=me();return head()+renderSeasonResults({state:s,club:c,rows:standings(s.league),trophy:awards(s.league),escapeHtml:e,avatar:auctionAvatar,matches:renderSeasonMatchList(s.league.seasonResults||[],c.id),stats:renderSeasonPlayerStats(c),actions:s.mode==='room'?(roomAdapter.room.phase==='season-result'?'<button data-stage4="offseason">結果確認完了</button>':''):renderCompletedSeasonActions()});}
 
@@ -561,8 +561,9 @@ function render() {
   document.querySelectorAll('[data-app-overlay]').forEach(node => node.remove());
   app.innerHTML = (screens[s.view] || home)();
   if (s.league && s.mode !== 'room' && !['loadTitle', 'savePanel'].includes(s.view)) {
-    app.querySelector('header')?.insertAdjacentHTML('beforeend', '<span><button data-stage19="savePanel" class="subtle">セーブ / ロード</button></span>');
+    app.querySelector('header')?.insertAdjacentHTML('beforeend', '<span class="header-actions"><button data-stage19="savePanel" class="subtle">セーブ / ロード</button></span>');
   }
+  experience.syncHeader(app.querySelector('header'));
   classifyScreens(s.view);
   updateRoomStatus();
   renderEntryDialog();
