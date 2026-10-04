@@ -8,7 +8,7 @@ import { playTrainingCinematic } from './training-cinematic.js?v=motion-ui-v24&t
 import { renderSeasonResults } from './season-results-ui.js?v=combined-results-v1';
 import { createInitialState } from './app-state.js';
 import { createAuctionClock } from './auction-clock.js';
-import { draftTurnState, renderDraftTurn } from './draft-status.js';
+import { draftTurnState, renderDraftTurn } from './draft-status.js?v=opaque-panels-v4';
 import { dialogs } from './dialogs.js';
 import { openLot, raiseBid, passLot, tickLot } from './live-auction.js?v=0.21.1';
 import { auctionAvatar, renderLiveAuction } from './auction-ui.js?v=appearance-v29';
