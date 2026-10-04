@@ -30,10 +30,12 @@ test('generation probability boundaries are per player and allow repeated identi
   assert.equal(rollRareCharacter('draft',fixed(.004999)),'golden_egg');
   assert.equal(rollRareCharacter('draft',fixed(.005)),null);
   for(const [i,kind] of ['king_kong','sage','robot','black_hole'].entries()){
-    assert.equal(rollRareCharacter('auction',fixed(i*.001+.0005)),kind);
-    assert.equal(rollRareCharacter('auction',fixed(i*.001+.0005)),kind);
+    assert.equal(rollRareCharacter('auction',fixed(i*.003)),kind);
+    assert.equal(rollRareCharacter('auction',fixed((i+1)*.003-1e-10)),kind);
+    assert.equal(rollRareCharacter('auction',fixed(i*.003+.0015)),kind);
+    assert.equal(rollRareCharacter('auction',fixed(i*.003+.0015)),kind);
   }
-  assert.equal(rollRareCharacter('auction',fixed(.004)),null);
+  assert.equal(rollRareCharacter('auction',fixed(.012)),null);
 });
 test('hatching happens once at 23, preserves identity/contracts and uses 40/40/15/5',()=>{
   for(const [roll,kind] of [[0,'chick'],[.4,'emperor_penguin'],[.8,'phoenix'],[.95,'dragon']]){

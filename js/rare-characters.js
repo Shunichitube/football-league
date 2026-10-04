@@ -31,7 +31,7 @@ export function applyRareCharacter(player, kind, rng) {
 export function rollRareCharacter(source, rng) {
   const roll = rng.next();
   if (source === 'draft') return roll < .005 ? 'golden_egg' : null;
-  if (source === 'auction') return ['king_kong','sage','robot','black_hole'][Math.floor(roll / .001)] || null;
+  if (source === 'auction') return ['king_kong','sage','robot','black_hole'][Math.floor(roll / .003)] || null;
   return null;
 }
 export function hatchEgg(player, rng) {
