@@ -11,10 +11,10 @@ const clubs = [
 
 test('simultaneous draft changes from nomination to waiting and back after a lost lottery in the same round', () => {
   const draft = { mode: 'SIMULTANEOUS', round: 1, pendingClubIds: ['a', 'b', 'c'], history: [], declined: [] };
-  assert.equal(draftTurnState(draft, clubs, 'a').message, '選手を指名してください');
+  assert.equal(draftTurnState(draft, clubs, 'a').message, 'あなたの番です');
   const submitted = draftTurnState(draft, clubs, 'a', true);
   assert.equal(submitted.canPick, false);
-  assert.equal(submitted.message, '他のクラブの指名を待っています');
+  assert.equal(submitted.message, '他のクラブが指名中');
   assert.equal(submitted.order[0].state, 'done');
   draft.history.push({ round: 1, clubId: 'b' }); draft.pendingClubIds = ['a', 'c'];
   const retry = draftTurnState(draft, clubs, 'a');
