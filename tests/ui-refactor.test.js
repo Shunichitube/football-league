@@ -89,7 +89,7 @@ async function screenHarness(controls = {}) {
     click: (key,value) => {render=()=>{};const event={target:{matches:()=>false,closest:selector=>selector==='[data-'+key+']'?{dataset:{[key.replace(/-([a-z])/g,(_,letter)=>letter.toUpperCase())]:value}}:null}};for(const {scope,handler} of clickHandlers)if(scope==='app')handler(event);},
     tick: now => {const previous=Date.now;Date.now=()=>now;try{updateAuction();}finally{Date.now=previous;}}
   })`, {
-    ...bindings, createBgmController: () => ({sync() {},dispose() {}}), createGameExperience: () => ({reset() {}, syncGrowth() {}}), document, addEventListener() {}, configureRename() {}, dialogs: null
+    ...bindings, Date: class extends Date { static now(){return controls.now??super.now();} }, createBgmController: () => ({sync() {},dispose() {}}), createGameExperience: () => ({reset() {}, syncGrowth() {}}), document, addEventListener() {}, configureRename() {}, dialogs: null
   });
 }
 
@@ -199,4 +199,22 @@ test('single player real actions complete a white-club season and proceed to yea
  harness.click('stage4','releasePhase');assert.equal(state.view,'release');
  harness.click('stage4','releaseDone');assert.equal(state.view,'draft');assert.equal(state.league.season,2);
  assert.equal(state.league.clubs[0].color,'#ffffff');
+});
+
+test('auction markup starts at the real remaining time on each rerender, including server offset',async()=>{
+ const controls={now:1000},harness=await screenHarness(controls);
+ const {createLeague}=await import('../js/league.js');
+ const {createAuctionPool}=await import('../js/market.js');
+ const {openLot}=await import('../js/live-auction.js');
+ const league=createLeague({name:'時計確認',seed:'clock-render'}),auction={pool:createAuctionPool('clock-render'),i:0,history:[],completed:false};
+ openLot(auction,league.clubs,league.seed,1000);
+ const state={...createInitialState(),league,auction,view:'auction'};harness.setState(state);
+ harness.setAdapter({clockOffset:2000,statusText:()=>'',draftResultText:()=>'',participantStatuses:()=>[],status:{},client:{pending:null},room:{players:[]}});
+ const clock=()=>harness.screens.auction().match(/data-auction-time>([^<]+)/)[1];
+ controls.now=22000;assert.equal(clock(),'0:09');assert.equal(clock(),'0:09');
+ state.mode='room';assert.equal(clock(),'0:07');
+ controls.now=24000;assert.equal(clock(),'0:05');assert.match(harness.screens.auction(),/auction-timer urgent/);
+ controls.now=28000;assert.equal(clock(),'0:01');
+ auction.live.endAt=controls.now+2000+5000;assert.equal(clock(),'0:05');
+ auction.live.closed=true;assert.equal(clock(),'0:00');
 });
