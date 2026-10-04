@@ -60,8 +60,10 @@ test('box editor and comparison expose symbols without numerical suitability',()
   const club=make();box(club);
   const html=renderLineupEditor(club);
   assert.ok(html.includes('2-0-2'));
-  assert.ok(html.includes('DF2 ○'));
-  assert.ok(html.includes('FW2 ○'));
+  assert.ok(html.includes('DF2</em>'));
+  assert.ok(html.includes('class="formation-fit-badge" data-fit="○"'));
+  assert.ok(html.includes('FW2</em>'));
+  assert.ok(!html.includes('FW2 ○</em>'));
   assert.ok(!html.includes('out-of-position'));
   const compare=renderSquadComparison(club,club.lineup[3]);
   assert.ok(compare.includes('配置適性：DF ○'));

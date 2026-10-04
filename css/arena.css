@@ -1512,3 +1512,20 @@ body.arena-active #app>.arena-popup-overlay{pointer-events:auto}
   top:min(var(--slot-y),calc(100% - var(--formation-avatar-size) / 2 - 26px));
  }
 }
+
+/* Placement suitability is separate from the upper-left position label. */
+#app main.screen-squad .formation-pitch .formation-fit-badge {
+ position:absolute;z-index:4;top:-8px;right:-10px;
+ display:grid;place-items:center;box-sizing:border-box;width:30px;height:30px;
+ padding:0;border:2px solid #fff;border-radius:50%;
+ background:#ffe18a;color:#332400;box-shadow:0 2px 6px #000b;
+ font-size:23px;font-weight:900;font-style:normal;line-height:1;
+ pointer-events:none;text-shadow:none;
+}
+#app main.screen-squad .formation-pitch .formation-fit-badge[data-fit="○"] {
+ background:#a9ddff;color:#092b49;
+}
+#app main.screen-squad .formation-pitch .formation-fit-badge[data-fit="△"],
+#app main.screen-squad .formation-pitch .formation-fit-badge[data-fit="×"] {
+ background:#ffc199;color:#4a2009;
+}

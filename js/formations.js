@@ -1,6 +1,6 @@
 // Slot order is serialized with the lineup. Missing formation means legacy 121.
 export const FORMATIONS = Object.freeze({
-  'BOX': { slots: ['GK','DF','DF','FW','FW'], labels: ['GK','DF1','DF2','FW2','FW1'], points: [[50,86],[28,60],[72,60],[70,20],[30,20]], attackSupport: .05, defenseSupport: .05 },
+  'BOX': { slots: ['GK','DF','DF','FW','FW'], labels: ['GK','DF1','DF2','FW2','FW1'], points: [[50,86],[28,60],[72,60],[72,20],[28,20]], attackSupport: .05, defenseSupport: .05 },
   '121': { slots: ['GK','DF','MF','MF','FW'], labels: ['GK','DF1','MF1','MF2','FW1'], points: [[50,86],[50,50],[26,36],[74,36],[50,16]], attackSupport: .05, defenseSupport: .10 },
   '211': { slots: ['GK','DF','DF','MF','FW'], labels: ['GK','DF1','DF2','MF1','FW1'], points: [[50,86],[28,64],[72,64],[50,46],[50,16]], attackSupport: 0, defenseSupport: .15 },
   '112': { slots: ['GK','DF','MF','FW','FW'], labels: ['GK','DF1','MF1','FW2','FW1'], points: [[50,86],[50,58],[50,30],[70,16],[30,16]], attackSupport: .10, defenseSupport: .05 }

@@ -1,4 +1,4 @@
-import { lineupSlotLabel, formationId, formationLabel } from './formations.js?v=box-v1';
+import { lineupSlotLabel, formationId, formationLabel } from './formations.js?v=box-badges-v2';
 import {createSfxController} from './sfx.js?v=training-complete-v1';
 import {createBgmController} from './bgm.js?v=season-bgm-v3';
 import {renderGrandResults,mountGrandFinale} from './grand-finale-ui.js?v=motion-ui-v24';
@@ -17,7 +17,7 @@ import { applySeasonFinances, awards, clubAchievements, createLeague, finalizeSe
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=formations-v1';
 import { createRandom } from './random.js';
 import { createAuctionPool, createDraftPool, resolveDraftActions } from './market.js?v=box-v1';
-import { renderContractPlayerCard, configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=box-v1';
+import { renderContractPlayerCard, configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=box-badges-v2';
 import { decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=box-v1';
 import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=box-v1';
 import { RoomAdapter } from './room-adapter.js?v=box-v1';
