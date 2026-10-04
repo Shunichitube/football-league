@@ -1,4 +1,4 @@
-import { FORMATIONS, formationId, formationSpec, lineupSlots, lineupSlotLabel } from './formations.js?v=formation-points-v7';
+import { FORMATIONS, formationId, formationSpec, lineupSlots, lineupSlotLabel } from './formations.js?v=formation-points-v8';
 import { rareKind, rarePortraitUrl, rareAgeLabel } from './rare-characters.js';
 import { dialogs } from './dialogs.js';
 import {playerAppearance,kitColor} from './avatar-profile.js?v=appearance-v29';
