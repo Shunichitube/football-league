@@ -34,21 +34,21 @@ test('closing the tab preserves unsubmitted lineup and training; resume checks a
  assert.deepEqual(state.league.clubs[0].lineup,[original[0],original[1],original[3],original[2],original[4]]);
  assert.equal(state.training.get(club.roster[1].id),'pass');assert.equal(state.selectedDraftPlayerId,'candidate');
  const client=new RoomClient(()=>{},()=>{}),calls=[];client.pending={kind:'mutation'};
- client.retry=async()=>{calls.push('retry');client.pending=null;};client.refresh=async()=>calls.push('refresh');client.startPolling=()=>calls.push('poll');
- await client.resume();assert.deepEqual(calls,['retry','refresh','poll']);
+ client.retry=async()=>{calls.push('retry');client.pending=null;};client.refresh=async()=>calls.push('refresh');client.startNotifications=()=>calls.push('notifications');
+ await client.resume();assert.deepEqual(calls,['retry','refresh','notifications']);
  delete globalThis.localStorage;delete globalThis.sessionStorage;
 });
 
-test('server waits for every human start button and forbids host bypass without simulating matches',()=>{
+test('legacy season-ready rooms retain the all-human confirmation barrier',()=>{
  const league=createLeague({name:'Barrier',color:'#4ade80',seed:'barrier-fixed'});
  // An already populated result fixture isolates the barrier from match simulation.
  league.completed=true;
  const players=[{id:'one',clubId:league.clubs[0].id},{id:'two',clubId:league.clubs[1].id}];
  const room={roomId:'BARRIER',phase:'season-ready',phaseRevision:2,revision:3,players,inputs:{},game:{league,events:{}}};
- assert.throws(()=>runSeason(room),/全員のリーグ開始/);
+ assert.throws(()=>runSeason(room),/全員の確定/);
  submitInput(room,players[0],{});assert.equal(room.phase,'season-ready');
  assert.deepEqual(publicRoom(room,players[0]).players.map(p=>p.completed),[true,false]);
- assert.throws(()=>runSeason(room),/全員のリーグ開始/);
+ assert.throws(()=>runSeason(room),/全員の確定/);
  submitInput(room,players[1],{});assert.equal(room.phase,'season-result');assert.equal(room.phaseRevision,3);
  assert.deepEqual(room.inputs,{});assert.equal(league.seasonResults.length,0);
 });

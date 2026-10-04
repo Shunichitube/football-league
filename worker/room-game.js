@@ -158,7 +158,9 @@ function resolveAll(room) {
     case 'auction-complete': return enterPhase(room, 'team-setup');
     case 'team-setup':
       for (const club of league.clubs.filter(club => club.controllerType === 'HUMAN')) Object.assign(club, { lineup: [...room.inputs[club.id].lineup], tactic: room.inputs[club.id].tactic });
-      return enterPhase(room, 'season-ready');
+      // Keep the accepted setup inputs until the simulation barrier is checked.
+      room.phase = 'season-ready';
+      return runSeason(room);
     case 'season-ready': return runSeason(room);
     case 'season-result':
       if (league.season >= 10) return enterPhase(room, 'game-complete');
@@ -214,7 +216,7 @@ export function submitInput(room, player, input) {
 }
 export function runSeason(room) {
   requireValue(room.phase === 'season-ready', '全員の編成完了を待っています。');
-  requireValue(humanIds(room).every(id=>Object.hasOwn(room.inputs,id)), '全員のリーグ開始ボタンを待っています。');
+  requireValue(humanIds(room).every(id=>Object.hasOwn(room.inputs,id)), '全員の確定を待っています。');
   simulateRemainingSeason(room.game.league);
   if (room.game.league.season === 10) finalizeSeason(room.game.league);
   enterPhase(room, 'season-result');

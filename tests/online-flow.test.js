@@ -95,12 +95,10 @@ test('real HTTP room flow: two humans, barriers, retries, restore, auction, seas
  let restored={};const reopened=new RoomAdapter(()=>restored,next=>restored=next,()=>{},()=>{});reopened.active=true;reopened.client.room=room;reopened.receive(room);
  assert.deepEqual(restored.league.clubs.find(c=>c.id===setup.id).lineup,lineup);
  await mutate(first,'submit',{lineup,tactic:setup.tactic});assert.equal(room.phase,'team-setup');
- const setup2=clubFor(second);await mutate(second,'submit',{lineup:setup2.lineup,tactic:setup2.tactic});assert.equal(room.phase,'season-ready');
- await mutate(first,'run-season',{},400);
- await mutate(first,'submit');assert.equal(room.phase,'season-ready');
+ const setup2=clubFor(second);
  // Lose a successful response, retry exactly the same request and prove no second season runs.
  client.session=second;client.room=room;client.pending=null;
- const id=crypto.randomUUID(),pending={kind:'mutation',roomId:room.roomId,path:`/${room.roomId}/submit`,body:{playerId:second.playerId,phaseRevision:room.phaseRevision,requestId:id,input:{}}};
+ const id=crypto.randomUUID(),pending={kind:'mutation',roomId:room.roomId,path:`/${room.roomId}/submit`,body:{playerId:second.playerId,phaseRevision:room.phaseRevision,requestId:id,input:{lineup:setup2.lineup,tactic:setup2.tactic}}};
  let lost=true;
  globalThis.fetch=async(path,options)=>{const result=await realFetch(new URL(path,base),options);if(lost&&options.method==='POST'){lost=false;throw new TypeError('lost response');}return result;};
  await assert.rejects(client.send(pending),/lost response/);assert.equal(client.pending.body.requestId,id);

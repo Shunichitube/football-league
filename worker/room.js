@@ -1,5 +1,6 @@
 // v2's Room/token/private-input model, with serialized authoritative mutations.
 import { advanceAuction, startGame, submitInput, runSeason, renamePlayer, publicRoom } from './room-game.js';
+import { roomPatch } from '../js/room-patch.js';
 
 const META = 'v3-meta';
 const COLORS = ['#ffffff','#60a5fa','#f59e0b','#f472b6','#34d399','#a78bfa'];
@@ -22,9 +23,25 @@ export class RoomObject {
     return operation;
   }
   alarm(){
-    const operation=this.queue.then(async()=>{const room=await this.load();if(room&&advanceAuction(room)){room.revision++;await this.save(room);}});
+    const operation=this.queue.then(async()=>{const room=await this.load();const before=structuredClone(room);if(room&&advanceAuction(room)){room.revision++;await this.save(room);this.notify(before,room);}});
     this.queue=operation.catch(()=>{});return operation;
   }
+  notify(before, room) {
+    for (const socket of this.state.getWebSockets?.() || []) {
+      try {
+        const player = room.players.find(p => p.id === socket.deserializeAttachment()?.playerId);
+        if (!player) { socket.close(1008, 'Participant missing'); continue; }
+        const previous = publicRoom(before, player);
+        // The client needs a fresh time reference when an auction deadline changes.
+        previous.serverNow = null;
+        const changes = roomPatch(previous, publicRoom(room, player));
+        socket.send(JSON.stringify({ type: 'patch', roomId: room.roomId, baseRevision: before.revision, revision: room.revision, changes }));
+      } catch { try { socket.close(1011, 'Reconnect required'); } catch {} }
+    }
+  }
+  webSocketClose(socket, code) { socket.close(code, ''); }
+  webSocketError(socket) { socket.close(1011, 'Reconnect required'); }
+  webSocketMessage(socket) { socket.close(1008, 'Use the action API'); }
   async load() {
     const meta = await this.state.storage.get(META);
     if (!meta) return null;
@@ -55,10 +72,27 @@ export class RoomObject {
     try {
       const url = new URL(request.url), action = url.pathname.slice(1);
       let room = await this.load();
+      let before = structuredClone(room);
+      if (request.method === 'GET' && action === 'events') {
+        assert(room, 'ルームが見つかりません。', 404);
+        assert(request.headers.get('upgrade')?.toLowerCase() === 'websocket', 'WebSocket接続が必要です。', 426);
+        const protocols = (request.headers.get('sec-websocket-protocol') || '').split(',').map(p => p.trim());
+        assert(protocols.includes('room-v1'), '通知プロトコルが不正です。');
+        const token = protocols.find(p => p.startsWith('token.'))?.slice(6);
+        const player = authenticate(room, new Request(request.url, { headers: { 'x-player-token': token || '' } }), url.searchParams.get('playerId'));
+        if (advanceAuction(room)) { room.revision++; await this.save(room); this.notify(before, room); }
+        const [client, server] = Object.values(new WebSocketPair());
+        // Allow multiple tabs; attachments survive hibernation without retaining room snapshots.
+        assert(this.state.getWebSockets(player.id).length < 12, '接続数が多すぎます。', 429);
+        this.state.acceptWebSocket(server, [player.id]);
+        server.serializeAttachment({ playerId: player.id });
+        server.send(JSON.stringify({ type: 'snapshot', room: publicRoom(room, player) }));
+        return new Response(null, { status: 101, webSocket: client, headers: { 'sec-websocket-protocol': 'room-v1' } });
+      }
       if (request.method === 'GET' && action === 'state') {
         assert(room, 'ルームが見つかりません。', 404);
         const player = authenticate(room, request, url.searchParams.get('playerId'));
-        if(advanceAuction(room)){room.revision++;await this.save(room);}
+        if(advanceAuction(room)){room.revision++;await this.save(room);this.notify(before,room);}
         return json({ room: publicRoom(room, player) });
       }
       assert(request.method === 'POST', '未対応のAPIです。', 404);
@@ -94,6 +128,7 @@ export class RoomObject {
         room.joins[body.requestId] = player.id;
         room.revision++;
         await this.save(room);
+        this.notify(before, room);
         return json({ room: publicRoom(room, player), playerId: player.id, playerToken: player.accessToken });
       }
       const player = authenticate(room, request, body.playerId);
@@ -104,7 +139,7 @@ export class RoomObject {
         assert(receipt.signature === signature, '同じリクエストIDの内容が異なります。', 409);
         return json({ room: publicRoom(room, player), replayed: true });
       }
-      if(advanceAuction(room)){room.revision++;await this.save(room);}
+      if(advanceAuction(room)){room.revision++;await this.save(room);this.notify(before,room);before=structuredClone(room);}
       assert(body.phaseRevision === room.phaseRevision, 'フェーズが更新されています。最新状態を確認してください。', 409);
       if (action === 'start' || action === 'run-season') assert(player.id === room.hostPlayerId, 'ホストのみ実行できます。', 403);
       if (action === 'start') startGame(room);
@@ -115,6 +150,7 @@ export class RoomObject {
       room.revision++;
       room.receipts[player.id] = [...receipts, { id: body.requestId, signature }].slice(-32);
       await this.save(room);
+      this.notify(before, room);
       return json({ room: publicRoom(room, player) });
     } catch (error) {
       return json({ error: error.message || 'Roomの処理に失敗しました。' }, error.status || 400);

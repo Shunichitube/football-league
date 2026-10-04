@@ -1,3 +1,4 @@
+import { applyRoomPatch } from './room-patch.js';
 const SESSION_KEY = 'football-league:v3:session';
 const PENDING_KEY = 'football-league:v3:pending';
 const read = key => { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; } };
@@ -9,7 +10,10 @@ export class RoomClient {
     this.onStatus = onStatus;
     this.timer = null;
     this.generation = 0;
-    this.pollGeneration = 0;
+    this.socket = null;
+    this.reconnectAttempt = 0;
+    this.recovering = false;
+    this.reconnectOnOnline = () => { if (this.session) this.startNotifications(true); };
     this.busy = false;
     this.room = null;
     this.pending = read(PENDING_KEY);
@@ -59,7 +63,7 @@ export class RoomClient {
       localStorage.removeItem(PENDING_KEY);
       this.accept(data.room);
       this.onStatus({ busy: false, error: '' });
-      this.startPolling();
+      this.startNotifications();
       return data.room;
     } catch (error) {
       // A network timeout is ambiguous: retain the exact request ID for retry.
@@ -72,7 +76,8 @@ export class RoomClient {
   async retry() {
     if (this.busy) return;
     if (this.pending) return this.send(this.pending);
-    return this.refresh();
+    await this.refresh();
+    this.startNotifications(true);
   }
   async refresh() {
     if (!this.session) return;
@@ -82,16 +87,58 @@ export class RoomClient {
     this.accept(data.room);
     this.onStatus({ error: '', busy: this.busy });
   }
-  startPolling() {
+  startNotifications(force = false) {
+    if (!this.session) return;
+    if (!force && this.socket && this.socket.readyState < 2) return;
     clearTimeout(this.timer);
-    const generation = ++this.pollGeneration;
-    const poll = async () => {
-      if (generation !== this.pollGeneration || !this.session) return;
-      if (!this.busy) { try { await this.refresh(); } catch (error) { this.onStatus({ error: error.message }); } }
-      if (generation === this.pollGeneration) this.timer = setTimeout(poll, this.room?.phase === 'auction' ? 750 : 2500);
+    const old = this.socket;
+    this.socket = null;
+    old?.close();
+    // Node tests have no browser URL or WebSocket. Browsers always use notifications.
+    if (!globalThis.location || typeof globalThis.WebSocket !== 'function') return;
+    globalThis.addEventListener?.('online', this.reconnectOnOnline);
+    const url = new URL(`/api/rooms/${this.session.roomId}/events`, location.href);
+    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+    url.searchParams.set('playerId', this.session.playerId);
+    const socket = this.socket = new WebSocket(url, ['room-v1', `token.${this.session.playerToken}`]);
+    // A stalled handshake must not leave the UI indefinitely without notifications.
+    this.timer = setTimeout(() => { if (this.socket === socket) socket.close(); }, 15000);
+    socket.onmessage = async event => {
+      if (this.socket !== socket) return;
+      try {
+        const message = JSON.parse(event.data);
+        if (message.type === 'snapshot') {
+          clearTimeout(this.timer);
+          this.reconnectAttempt = 0;
+          this.accept(message.room);
+          this.onStatus({ error: '', busy: this.busy });
+        } else if (message.type === 'patch' && message.roomId === this.room?.roomId) {
+          if (message.revision <= this.room.revision) return;
+          if (message.baseRevision === this.room.revision) this.accept(applyRoomPatch(this.room, message.changes));
+          else if (!this.recovering) {
+            this.recovering = true;
+            try { await this.refresh(); } finally { this.recovering = false; }
+          }
+        }
+      } catch { this.onStatus({ error: '通知を再接続しています。', busy: this.busy }); socket.close(); }
     };
-    this.timer = setTimeout(poll, this.room?.phase === 'auction' ? 750 : 2500);
+    socket.onerror = () => { if (this.socket === socket) socket.close(); };
+    socket.onclose = event => {
+      if (this.socket !== socket) return;
+      this.socket = null;
+      clearTimeout(this.timer);
+      this.onStatus({ error: event.code === 1008 ? '参加認証を確認してください。' : '通知を再接続しています。', busy: this.busy });
+      if (event.code !== 1008) {
+        const delay = Math.min(30000, 1000 * 2 ** this.reconnectAttempt++) + Math.random() * 500;
+        this.timer = setTimeout(() => this.startNotifications(), delay);
+      }
+    };
   }
-  stop() { this.generation++; this.pollGeneration++; clearTimeout(this.timer); this.timer = null; }
-  async resume() { if(this.pending)await this.retry(); await this.refresh(); this.startPolling(); }
+  stop() {
+    this.generation++;
+    clearTimeout(this.timer); this.timer = null;
+    const socket = this.socket; this.socket = null; socket?.close();
+    globalThis.removeEventListener?.('online', this.reconnectOnOnline);
+  }
+  async resume() { if(this.pending)await this.retry(); await this.refresh(); this.startNotifications(); }
 }

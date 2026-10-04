@@ -1,4 +1,4 @@
-import { RoomClient } from './room-client.js?v=resume-v1';
+import { RoomClient } from './room-client.js?v=notifications-v1';
 import { clone, applyWork } from './phase-work.js?v=rare-v2';
 
 const VIEW = { lobby: 'roomLobby', draft: 'draft', 'draft-complete': 'draft', auction: 'auction', 'auction-complete': 'auction', 'team-setup': 'squad', 'season-ready': 'squad', 'season-result': 'seasonResults', 'offseason-events': 'offseasonEvents', development: 'development', 'growth-result': 'growth', release: 'release', 'game-complete': 'grandFinal' };
@@ -61,7 +61,7 @@ export class RoomAdapter {
     } else {
       previous.roomRevision = room.revision;
       if(room.phase==='auction'){previous.auction=clone(room.game.auction);previous.league=clone(room.game.league);previous.league.humanClubId=owner.clubId;this.render();return;}
-      // Completion-only polls never replace an in-progress editor or modal.
+      // Completion-only notifications never replace an in-progress editor or modal.
       // Renames are public, independent of uncommitted phase work.
       const names = new Map(room.game.league.clubs.flatMap(club => club.roster.map(p => [p.id, p.name])));
       let renamed = false;
@@ -136,7 +136,7 @@ export class RoomAdapter {
     if (!room) return '';
     if(room.phase==='auction')return '公開入札中・残り5秒以内の入札で5秒に延長';
     if (room.phase === 'game-complete') return '全10シーズンが終了しました。';
-    if (room.phase === 'season-ready') return `${room.players.filter(p=>p.completed).length}/${room.players.length} 開始押下済み・全員が押すとリーグ戦が始まります。`;
+    if (room.phase === 'season-ready') return `${room.players.filter(p=>p.completed).length}/${room.players.length} 確定済み・全員の確定でリーグ戦が始まります。`;
     const players = room.phase === 'draft' ? room.players.filter(p => room.game.draft.pendingClubIds.includes(p.clubId)) : room.players;
     return `${players.filter(p => p.completed).length}/${players.length} 完了${this.player?.completed ? '・他のクラブを待っています' : ''}`;
   }

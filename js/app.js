@@ -18,7 +18,10 @@ import { createAuctionPool, createDraftPool, resolveDraftActions } from './marke
 import { renderContractPlayerCard, configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=growth-expectation-v1';
 import { decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=appearance-v29';
 import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=appearance-v29';
-import { RoomAdapter } from './room-adapter.js?v=online-flow-v2';
+import { RoomAdapter } from './room-adapter.js?v=notifications-v1';
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && roomAdapter?.active) roomAdapter.client.startNotifications(true);
+});
 import { classifyScreens } from './screen-classifier.js';
 import { createContractEvents, createSpecialTrainingOffers, renewalFee, trainingSkills } from './development.js?v=appearance-v29';
 import { exportSave, importSave, loadSlot, saveSlot, slotInfo } from './storage.js?v=0.17.27';
@@ -484,7 +487,7 @@ function updateRoomStatus() {
   });
   document.querySelectorAll('[data-a="season"]').forEach(node=>{
     node.dataset.ruleDisabled ??= String(node.disabled);
-    node.textContent=phase==='season-ready'?(roomAdapter.player?.completed?'リーグ開始待ち':'リーグ戦を開始する'):roomAdapter.player?.completed?'編成完了済み':'編成を確定する';
+    node.textContent=roomAdapter.player?.completed?'編成完了済み':'編成完了';
     node.disabled=node.dataset.ruleDisabled==='true'||roomAdapter.locked||!['team-setup','season-ready'].includes(phase);
   });
   if(phase==='auction-complete')document.querySelectorAll('[data-a="squad"]').forEach(node=>{node.disabled=roomAdapter.locked;});
