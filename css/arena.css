@@ -1443,3 +1443,18 @@ body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
 body.arena-active #app{pointer-events:none}
 body.arena-active #app>.arena-title,
 body.arena-active #app>.arena-popup-overlay{pointer-events:auto}
+
+/* Opaque auction counter and utility buttons stay readable over the venue. */
+#app .auction-scene .auction-topline .auction-lot-count,
+#app .auction-scene .auction-topline button {
+ background:#102136;color:#eff6ff;border:2px solid #6386ad;
+ border-radius:12px;box-shadow:0 4px 12px #0006;text-shadow:none;opacity:1;
+}
+#app .auction-scene .auction-topline .auction-lot-count {
+ display:inline-flex;align-items:center;padding:12px 18px;letter-spacing:.04em;
+}
+#app .auction-scene .auction-topline button:hover {background:#203b59;border-color:#bce9ff;}
+#app .auction-scene .auction-topline button:focus-visible {outline:3px solid #bce9ff;outline-offset:3px;}
+@media(max-width:760px) {
+ #app .auction-scene .auction-topline .auction-lot-count {padding:8px 10px;border-radius:8px;}
+}

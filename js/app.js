@@ -11,7 +11,7 @@ import { createAuctionClock } from './auction-clock.js';
 import { draftTurnState, renderDraftTurn } from './draft-status.js?v=opaque-panels-v4';
 import { dialogs } from './dialogs.js';
 import { openLot, raiseBid, passLot, tickLot } from './live-auction.js?v=0.21.1';
-import { auctionAvatar, renderLiveAuction } from './auction-ui.js?v=appearance-v29';
+import { auctionAvatar, renderLiveAuction } from './auction-ui.js?v=opaque-topline-v1';
 import { applySeasonFinances, awards, clubAchievements, createLeague, finalizeSeason, recordDraftAcquisition, simulateRemainingSeason, standings as singleStandings, startNextSeason } from './league.js?v=0.17.29';
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=appearance-v29';
 import { createRandom } from './random.js';
