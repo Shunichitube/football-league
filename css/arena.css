@@ -1513,19 +1513,20 @@ body.arena-active #app>.arena-popup-overlay{pointer-events:auto}
  }
 }
 
-/* Placement suitability is separate from the upper-left position label. */
+/* Placement suitability shares the board palette and the position label's top edge. */
 #app main.screen-squad .formation-pitch .formation-fit-badge {
- position:absolute;z-index:4;top:-8px;right:-10px;
- display:grid;place-items:center;box-sizing:border-box;width:30px;height:30px;
- padding:0;border:2px solid #fff;border-radius:50%;
- background:#ffe18a;color:#332400;box-shadow:0 2px 6px #000b;
- font-size:23px;font-weight:900;font-style:normal;line-height:1;
+ position:absolute;z-index:4;top:2px;right:-8px;
+ display:grid;place-items:center;box-sizing:border-box;width:28px;height:26px;
+ margin:0;padding:0;border:1px solid #79b4a7;border-radius:5px;
+ background:#092a32;color:#b4f2d8;box-shadow:0 1px 3px #0006;
+ font-family:Arial,"Noto Sans JP",sans-serif;
+ font-size:23px;font-weight:600;font-style:normal;line-height:1;
  pointer-events:none;text-shadow:none;
 }
 #app main.screen-squad .formation-pitch .formation-fit-badge[data-fit="○"] {
- background:#a9ddff;color:#092b49;
+ background:#092a32;color:#d7edf1;border-color:#658b94;
 }
 #app main.screen-squad .formation-pitch .formation-fit-badge[data-fit="△"],
 #app main.screen-squad .formation-pitch .formation-fit-badge[data-fit="×"] {
- background:#ffc199;color:#4a2009;
+ background:#092a32;color:#efba83;border-color:#96724f;
 }
