@@ -1,7 +1,7 @@
-/* DF keeps the existing card skin. Light cards share legible foreground colors. */
-[data-position="GK"] { --position-surface:#dce1e6; --position-ink:#25313d; --position-muted:#445362; --position-line:#82909d; --position-panel:#f0f2f5; }
-[data-position="MF"] { --position-surface:#d8ecdd; --position-ink:#193b27; --position-muted:#365c44; --position-line:#6f9b7c; --position-panel:#eff7f1; }
-[data-position="FW"] { --position-surface:#f2dcde; --position-ink:#48242d; --position-muted:#70414b; --position-line:#b57e89; --position-panel:#fcf0f1; }
+/* DF keeps the existing card skin. Position colors keep the original dark card tone. */
+[data-position="GK"] { --position-surface:#29323c; --position-ink:#f1f5f9; --position-muted:#c4cdd7; --position-line:#718090; --position-panel:#1c252f; }
+[data-position="MF"] { --position-surface:#203b2e; --position-ink:#eff8f1; --position-muted:#c2d9c9; --position-line:#649878; --position-panel:#142a20; }
+[data-position="FW"] { --position-surface:#452830; --position-ink:#fff1f3; --position-muted:#e5c7cd; --position-line:#ad7482; --position-panel:#301c23; }
 #app :is(.player-card,.squad-player,.compare-profile,.season-stat-card):is([data-position="GK"],[data-position="MF"],[data-position="FW"]) {
   background:var(--position-surface); color:var(--position-ink); border-color:var(--position-line);
   --line:var(--position-line); --text:var(--position-ink); --muted:var(--position-muted);
@@ -9,7 +9,7 @@
 #app [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) :is(.player-name,.player-meta b,.growth-expectation b,.squad-identity strong,.compare-profile strong,.season-stat-name,.season-stat-profile b,.ability-grid dd,.squad-abilities dd) { color:var(--position-ink); }
 #app [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) :is(.player-profile p,.player-meta,.growth-expectation,.ability-grid dt,.squad-abilities dt,.squad-identity>span,.compare-profile span,.compare-profile small,.season-stat-profile span,.season-stat-profile small,.special-ability.none,.special-ability-hover em) { color:var(--position-muted); }
 #app [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) :is(.ability-grid div,.squad-abilities div,.squad-special,.special-ability-detail p,.season-stat-metrics div) { background:var(--position-panel); color:var(--position-ink); border-color:var(--position-line); }
-#app [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) :is(.overall-rank,.special-ability-detail>span,.special-ability,.squad-special b,.season-stat-special) { color:#754600; }
+#app [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) :is(.overall-rank,.special-ability-detail>span,.special-ability,.squad-special b,.season-stat-special) { color:#facc15; }
 #app [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) :is(.squad-special>span,.squad-special-description,.season-stat-special-description,.season-stat-metrics dt,.season-stat-metrics dd) { color:var(--position-ink); }
 #app [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) .position-badge { color:var(--position-ink); border-color:var(--position-line); background:var(--position-panel); }
 #app [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) button.subtle { color:var(--position-ink); border-color:var(--position-line); }
