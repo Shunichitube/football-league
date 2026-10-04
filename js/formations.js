@@ -1,8 +1,8 @@
 // Slot order is serialized with the lineup. Missing formation means legacy 121.
 export const FORMATIONS = Object.freeze({
-  '121': { slots: ['GK','DF','MF','MF','FW'], labels: ['GK','DF1','MF1','MF2','FW1'], points: [[52,85],[32,67],[27,38],[75,60],[56,16]], labelSides: ['right','left','right','left','right'], attackSupport: .05, defenseSupport: .10 },
-  '211': { slots: ['GK','DF','DF','MF','FW'], labels: ['GK','DF1','DF2','MF1','FW1'], points: [[52,85],[32,66],[76,62],[44,40],[58,17]], labelSides: ['right','left','left','right','right'], attackSupport: 0, defenseSupport: .15 },
-  '112': { slots: ['GK','DF','MF','FW','FW'], labels: ['GK','DF1','MF1','FW2','FW1'], points: [[52,85],[32,67],[45,45],[31,21],[75,18]], labelSides: ['right','left','right','left','left'], attackSupport: .10, defenseSupport: .05 }
+  '121': { slots: ['GK','DF','MF','MF','FW'], labels: ['GK','DF1','MF1','MF2','FW1'], points: [[50,86],[50,50],[26,36],[74,36],[50,16]], attackSupport: .05, defenseSupport: .10 },
+  '211': { slots: ['GK','DF','DF','MF','FW'], labels: ['GK','DF1','DF2','MF1','FW1'], points: [[50,86],[28,64],[72,64],[50,46],[50,16]], attackSupport: 0, defenseSupport: .15 },
+  '112': { slots: ['GK','DF','MF','FW','FW'], labels: ['GK','DF1','MF1','FW2','FW1'], points: [[50,86],[50,50],[37,45],[30,16],[70,16]], attackSupport: .10, defenseSupport: .05 }
 });
 export const formationId = club => typeof club?.formation === 'string' && Object.hasOwn(FORMATIONS, club.formation) ? club.formation : '121';
 export const formationSpec = club => FORMATIONS[formationId(club)];

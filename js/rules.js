@@ -1,4 +1,4 @@
-import { FORMATIONS, lineupSlots, formationId, remapFormation } from './formations.js?v=formation-layout-v2';
+import { FORMATIONS, lineupSlots, formationId, remapFormation } from './formations.js?v=formation-foot-labels-v3';
 import { rareKind } from './rare-characters.js';
 import { renewalFee } from './development.js?v=rare-v2';
 
