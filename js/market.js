@@ -8,7 +8,8 @@ const DRAFT_COST = 5;
 // 新規に生成する競売選手だけに適用する分布。放出選手は能力を保持したまま戻る。
 const AUCTION_DISTRIBUTION = [['F', 15], ['E', 30], ['D', 30], ['C', 20], ['B', 4], ['A', 1]];
 const RANGE = { G: [50,55], F: [56,60], E: [61,65], D: [66,70], C: [71,75], B: [76,80], A: [81,85], S: [86,90] };
-const POSITION_DISTRIBUTION = [['GK', 10], ['DF', 25], ['MF', 40], ['FW', 25]];
+// ドラフト・新規競売で共通。GKは10%、フィールド3職は均等に30%。
+const POSITION_DISTRIBUTION = [['GK', 10], ['DF', 30], ['MF', 30], ['FW', 30]];
 const BASE_VALUE = { G: 3, F: 6, E: 9, D: 14, C: 19, B: 26, A: 35, S: 48, SS: 62 };
 const REQUIRED_POSITIONS = { GK: 1, DF: 1, MF: 2, FW: 1 };
 const GK_SCOUT_KEYS = ['speed', 'defense', 'pass', 'gk'];
