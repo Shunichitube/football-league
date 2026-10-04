@@ -219,6 +219,11 @@ function ensureMinimumPlayableRoster(league, club) {
 }
 
 export function processLeagueOffseason(league, humanTraining = new Map(), specialTrainingByClub = new Map()) {
+  // Contract/retention departures happen before growth. Process that market pool
+  // now; players released after growth already aged with their former club.
+  const freeAgents = { roster: league.releasedPlayers || [] };
+  processOffseason(freeAgents, new Map(), createRandom(`${league.seed}:offseason:${league.season}:released`), new Set(), yearsPerSeason(league));
+  league.releasedPlayers = freeAgents.roster;
   const summaries = [];
   const humanClubs=league.clubs.filter(club=>club.controllerType==='HUMAN');
   for (const club of league.clubs) {

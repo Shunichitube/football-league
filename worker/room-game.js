@@ -4,7 +4,7 @@ import { growthExpectationKey } from '../js/data.js?v=short-season-v1';
 // Room owns the phase and private inputs. All game rules come from main's modules.
 import { createLeague, standings, simulateRemainingSeason, finalizeSeason, applySeasonFinances, recordDraftAcquisition, startNextSeason } from '../js/league.js?v=short-season-v1';
 import { createDraftPool, createAuctionPool, resolveDraftActions } from '../js/market.js?v=short-season-v1';
-import { decideCpuDraftAction, prepareCpuClubs, manageCpuContracts, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from '../js/cpu.js?v=short-season-v1';
+import { decideCpuDraftAction, prepareCpuClubs, manageCpuContracts, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from '../js/cpu.js?v=released-growth-v1';
 import { createContractEvents, createSpecialTrainingOffers } from '../js/development.js?v=short-season-v1';
 import { ACTION_TYPES } from '../js/rules.js?v=short-season-v1';
 import { createRandom } from '../js/random.js';
