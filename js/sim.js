@@ -1,7 +1,7 @@
 import { lineupSlots, formationId, formationSpec } from './formations.js?v=formation-layout-v2';
 import { rareKind, emperorBonus, effectiveRareStats, rareDuelResult, rareShotResult, blackHoleResult } from './rare-characters.js';
 import { CONFIG } from './config.js';
-import { calculateOverall } from './data.js?v=formations-v1';
+import { calculateOverall } from './data.js?v=slot-overall-v1';
 import { weightedPick } from './random.js';
 import { positionSuitability } from './rules.js?v=formations-v1';
 
@@ -174,7 +174,7 @@ function currentState(matchState, slot) { return matchState.playerState.get(slot
 function decrementRest(matchState) {
   for (const state of matchState.playerState.values()) if (state.currentSlot === null && state.restRemaining > 0) state.restRemaining--;
 }
-function slotEffectiveOverall(player, role, fatigue = 1) { return calculateOverall(player) * positionSuitability(player, role) * fatigue; }
+function slotEffectiveOverall(player, role, fatigue = 1) { return calculateOverall(player, role) * positionSuitability(player, role) * fatigue; }
 function availableBench(matchState, used = new Set()) {
   const keeperId = matchState.keeper?.id;
   return [...matchState.playerState.values()].filter(state => state.player.id !== keeperId && state.currentSlot === null && state.restRemaining <= 0 && !used.has(state.player.id));

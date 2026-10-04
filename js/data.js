@@ -91,8 +91,9 @@ export function createClub({ id, name, color, seed, initial = true, controllerTy
   return { id, name, color, controllerType, funds: 100, roster: players, lineup: players.map(p => p.id), tactic: 'BALANCED', formation: '121' };
 }
 
-export function calculateOverall(player) {
-  const weights = OVERALL_WEIGHTS[player.primaryPosition] || OVERALL_WEIGHTS.MF;
+// Omit position for the displayed native overall; pass a slot to evaluate placement.
+export function calculateOverall(player, position = player.primaryPosition) {
+  const weights = OVERALL_WEIGHTS[position] || OVERALL_WEIGHTS.MF;
   return Math.round(Object.entries(weights).reduce((total, [key, weight]) => total + player.stats[key] * weight, 0));
 }
 

@@ -1,6 +1,6 @@
 import { FORMATIONS, formationId, lineupSlots } from './formations.js?v=formation-layout-v2';
 import {rareKind} from './rare-characters.js';
-import { calculateOverall, createPlayer } from './data.js?v=formations-v1';
+import { calculateOverall, createPlayer } from './data.js?v=slot-overall-v1';
 import { processOffseason, renewalFee } from './development.js?v=rare-v2';
 import { createRandom } from './random.js';
 import { cpuBid, cpuCandidatePick } from './market.js?v=rare-v2';
@@ -31,7 +31,7 @@ function bestFieldAssignment(players, roles, tactic = null) {
     for (const player of available) {
       const fit = positionSuitability(player, role);
       if (!fit) continue;
-      assign(roleIndex + 1, available.filter(candidate => candidate.id !== player.id), [...chosen, player], score + (tactic ? cpuRoleScore(player, role, tactic) : calculateOverall(player)) * fit);
+      assign(roleIndex + 1, available.filter(candidate => candidate.id !== player.id), [...chosen, player], score + (tactic ? cpuRoleScore(player, role, tactic) : calculateOverall(player, role)) * fit);
     }
   }
   assign(0, players, [], 0);
