@@ -1,4 +1,4 @@
-import {mountDisplayFrame} from './display-settings.js?v=fixed-display-v1';
+import {mountDisplayFrame} from './display-settings.js?v=viewport-reference-v2';
 
 if(new URLSearchParams(location.search).get('game-frame')==='1'){
  const entry=document.querySelector('[data-game-entry]');
