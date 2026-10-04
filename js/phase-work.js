@@ -1,8 +1,8 @@
-import { FORMATIONS } from './formations.js?v=formation-points-v8';
+import { FORMATIONS } from './formations.js?v=box-v1';
 import { rareKind } from './rare-characters.js';
 // Shared validation for a private work-in-progress copy and authoritative Room input.
-import { applyClubAction, ACTION_TYPES, validateLineup } from './rules.js?v=formations-v1';
-import { selectBestLineup } from './cpu.js?v=formations-v1';
+import { applyClubAction, ACTION_TYPES, validateLineup } from './rules.js?v=box-v1';
+import { selectBestLineup } from './cpu.js?v=box-v1';
 import { trainingSkills } from './development.js?v=rare-v2';
 
 export const clone = value => JSON.parse(JSON.stringify(value));

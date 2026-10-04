@@ -1,9 +1,9 @@
-import { lineupSlots, formationId, formationSpec } from './formations.js?v=formation-points-v8';
+import { lineupSlots, formationId, formationSpec } from './formations.js?v=box-v1';
 import { rareKind, emperorBonus, effectiveRareStats, rareDuelResult, rareShotResult, blackHoleResult } from './rare-characters.js';
 import { CONFIG } from './config.js';
 import { calculateOverall } from './data.js?v=slot-overall-v1';
 import { weightedPick } from './random.js';
-import { positionSuitability } from './rules.js?v=formations-v1';
+import { positionSuitability } from './rules.js?v=box-v1';
 
 const FIELD_KEYS = ['shoot', 'speed', 'defense', 'dribble', 'pass'];
 const avg = (players, valueOf) => players.reduce((sum, player) => sum + valueOf(player), 0) / Math.max(1, players.length);
@@ -216,7 +216,7 @@ function advanceSubstitutions(matchState, allowChanges = true) {
 }
 const activeFielders = matchState => matchState.slots.map(slot => {
   const state = currentState(matchState, slot);
-  return assignedPlayer(state?.player, slot.role, state ? fatigueMultiplier(state) : 1);
+  const p=assignedPlayer(state?.player, slot.role, state ? fatigueMultiplier(state) : 1); return p ? {...p,_box:formationId(matchState.club)==='BOX',_front:slot.role==='FW'} : p;
 }).filter(Boolean);
 function recordPlayedPhase(matchState) {
   for (const slot of matchState.slots) {
@@ -251,21 +251,21 @@ function weightedAbility(player, tactic, terms) {
 }
 
 const ROLE_WEIGHTS = {
-  passFirstPasser: (p, tactic) => fieldValue(p, 'pass', tactic) * posMul(p, { DF: 1.25, MF: 1.10, FW: .60 }),
-  passReceiver: (p, tactic) => weightedAbility(p, tactic, [['pass', .35], ['dribble', .30], ['speed', .25], ['shoot', .10]]) * posMul(p, { MF: 1.40, FW: .85, DF: .65 }),
-  passSecondReceiver: (p, tactic) => weightedAbility(p, tactic, [['shoot', .35], ['speed', .30], ['dribble', .20], ['pass', .15]]) * posMul(p, { FW: 1.45, MF: .90, DF: .50 }),
-  passSupport: (p, tactic) => weightedAbility(p, tactic, [['pass', .40], ['speed', .25], ['dribble', .20], ['shoot', .15]]) * posMul(p, { MF: 1.25, FW: 1.10, DF: .65 }),
-  passCut: (p, tactic) => weightedAbility(p, tactic, [['defense', .65], ['speed', .35]]) * posMul(p, { MF: 1.25, DF: .90, FW: .55 }),
-  passFinalDefender: (p, tactic) => weightedAbility(p, tactic, [['defense', .75], ['speed', .25]]) * posMul(p, { DF: 1.45, MF: .85, FW: .45 }),
-  dribbler: (p, tactic) => weightedAbility(p, tactic, [['dribble', .55], ['speed', .30], ['shoot', .15]]) * posMul(p, { FW: 1.20, MF: 1.20, DF: .65 }),
-  dribbleSupport: (p, tactic) => weightedAbility(p, tactic, [['pass', .35], ['speed', .25], ['dribble', .20], ['shoot', .20]]) * posMul(p, { FW: 1.20, MF: 1.20, DF: .60 }),
-  dribbleMarker: (p, tactic) => weightedAbility(p, tactic, [['defense', .60], ['speed', .40]]) * posMul(p, { MF: 1.20, DF: 1.00, FW: .55 }),
-  dribbleCover: (p, tactic) => weightedAbility(p, tactic, [['defense', .70], ['speed', .30]]) * posMul(p, { DF: 1.40, MF: .90, FW: .45 }),
-  counterOrigin: (p, tactic) => weightedAbility(p, tactic, [['defense', .35], ['pass', .40], ['speed', .25]]) * posMul(p, { DF: 1.20, MF: 1.25, FW: .70 }),
-  counterRunner: (p, tactic) => weightedAbility(p, tactic, [['speed', .45], ['dribble', .25], ['shoot', .20], ['pass', .10]]) * posMul(p, { FW: 1.40, MF: 1.00, DF: .55 }),
-  counterSupport: (p, tactic) => weightedAbility(p, tactic, [['speed', .35], ['pass', .25], ['shoot', .25], ['dribble', .15]]) * posMul(p, { FW: 1.20, MF: 1.15, DF: .55 }),
-  counterReturnDefender: (p, tactic) => weightedAbility(p, tactic, [['speed', .55], ['defense', .45]]) * posMul(p, { MF: 1.20, DF: 1.10, FW: .65 }),
-  counterFinalDefender: (p, tactic) => weightedAbility(p, tactic, [['defense', .70], ['speed', .30]]) * posMul(p, { DF: 1.45, MF: .85, FW: .45 })
+  passFirstPasser: (p, tactic) => fieldValue(p, 'pass', tactic) * (p._box ? (p._front ? 0.4 : 1.6) : posMul(p, { DF: 1.25, MF: 1.10, FW: .60 })),
+  passReceiver: (p, tactic) => weightedAbility(p, tactic, [['pass', .35], ['dribble', .30], ['speed', .25], ['shoot', .10]]) * (p._box ? (p._front ? 1.6 : 0.4) : posMul(p, { MF: 1.40, FW: .85, DF: .65 })),
+  passSecondReceiver: (p, tactic) => weightedAbility(p, tactic, [['shoot', .35], ['speed', .30], ['dribble', .20], ['pass', .15]]) * (p._box ? (p._front ? 1.6 : 0.4) : posMul(p, { FW: 1.45, MF: .90, DF: .50 })),
+  passSupport: (p, tactic) => weightedAbility(p, tactic, [['pass', .40], ['speed', .25], ['dribble', .20], ['shoot', .15]]) * (p._box ? (p._front ? 1.5 : 0.5) : posMul(p, { MF: 1.25, FW: 1.10, DF: .65 })),
+  passCut: (p, tactic) => weightedAbility(p, tactic, [['defense', .65], ['speed', .35]]) * (p._box ? (p._front ? 1.6 : 0.4) : posMul(p, { MF: 1.25, DF: .90, FW: .55 })),
+  passFinalDefender: (p, tactic) => weightedAbility(p, tactic, [['defense', .75], ['speed', .25]]) * (p._box ? (p._front ? 0.4 : 1.6) : posMul(p, { DF: 1.45, MF: .85, FW: .45 })),
+  dribbler: (p, tactic) => weightedAbility(p, tactic, [['dribble', .55], ['speed', .30], ['shoot', .15]]) * (p._box ? (p._front ? 1.6 : 0.4) : posMul(p, { FW: 1.20, MF: 1.20, DF: .65 })),
+  dribbleSupport: (p, tactic) => weightedAbility(p, tactic, [['pass', .35], ['speed', .25], ['dribble', .20], ['shoot', .20]]) * (p._box ? (p._front ? 1.5 : 0.5) : posMul(p, { FW: 1.20, MF: 1.20, DF: .60 })),
+  dribbleMarker: (p, tactic) => weightedAbility(p, tactic, [['defense', .60], ['speed', .40]]) * (p._box ? (p._front ? 1.6 : 0.4) : posMul(p, { MF: 1.20, DF: 1.00, FW: .55 })),
+  dribbleCover: (p, tactic) => weightedAbility(p, tactic, [['defense', .70], ['speed', .30]]) * (p._box ? (p._front ? 0.4 : 1.6) : posMul(p, { DF: 1.40, MF: .90, FW: .45 })),
+  counterOrigin: (p, tactic) => weightedAbility(p, tactic, [['defense', .35], ['pass', .40], ['speed', .25]]) * (p._box ? (p._front ? 0.4 : 1.6) : posMul(p, { DF: 1.20, MF: 1.25, FW: .70 })),
+  counterRunner: (p, tactic) => weightedAbility(p, tactic, [['speed', .45], ['dribble', .25], ['shoot', .20], ['pass', .10]]) * (p._box ? (p._front ? 1.6 : 0.4) : posMul(p, { FW: 1.40, MF: 1.00, DF: .55 })),
+  counterSupport: (p, tactic) => weightedAbility(p, tactic, [['speed', .35], ['pass', .25], ['shoot', .25], ['dribble', .15]]) * (p._box ? (p._front ? 1.5 : 0.5) : posMul(p, { FW: 1.20, MF: 1.15, DF: .55 })),
+  counterReturnDefender: (p, tactic) => weightedAbility(p, tactic, [['speed', .55], ['defense', .45]]) * (p._box ? (p._front ? 1.6 : 0.4) : posMul(p, { MF: 1.20, DF: 1.10, FW: .65 })),
+  counterFinalDefender: (p, tactic) => weightedAbility(p, tactic, [['defense', .70], ['speed', .30]]) * (p._box ? (p._front ? 0.4 : 1.6) : posMul(p, { DF: 1.45, MF: .85, FW: .45 }))
 };
 
 function buildFirstStageRoles(type, attackers, defenders, attackTactic, defendTactic, rng) {
@@ -287,7 +287,7 @@ function buildFirstStageRoles(type, attackers, defenders, attackTactic, defendTa
   const defender = pickRole(defenders, p => ROLE_WEIGHTS.counterReturnDefender(p, defendTactic), rng);
   return { origin, runner, defender, contributor: origin };
 }
-function firstStageScores(type, roles, attackTactic, defendTactic) {
+function originalFirstStageScores(type, roles, attackTactic, defendTactic) {
   if (type === 'PASS') {
     return {
       offense: roleValue(roles.passer, 'pass', attackTactic, { type, stage: 1, role: 'passFirstPasser' }) * .45
@@ -318,6 +318,17 @@ function firstStageScores(type, roles, attackTactic, defendTactic) {
       + roleValue(roles.defender, 'defense', defendTactic, { type, stage: 1, role: 'counterReturnDefender' }) * .45
   };
 }
+
+function firstStageScores(type,r,at,dt){
+ const out=originalFirstStageScores(type,r,at,dt);
+ if(!(r.passer||r.dribbler||r.origin)?._box)return out;
+ const v=(p,k,role)=>roleValue(p,k,at,{type,stage:1,role});
+ if(type==='PASS')out.offense=v(r.passer,'pass','passFirstPasser')*.50+v(r.receiver,'dribble','passReceiver')*.25+v(r.receiver,'speed','passReceiver')*.15+v(r.receiver,'pass','passReceiver')*.05+v(r.support,'pass','passSupport')*.05;
+ else if(type==='DRIBBLE')out.offense=v(r.dribbler,'dribble','dribbler')*.60+v(r.dribbler,'speed','dribbler')*.25+v(r.dribbler,'pass','dribbler')*.10+v(r.support,'pass','dribbleSupport')*.05;
+ else out.offense=v(r.origin,'pass','counterOrigin')*.45+v(r.origin,'defense','counterOrigin')*.10+v(r.runner,'speed','counterRunner')*.30+v(r.runner,'dribble','counterRunner')*.15;
+ return out;
+}
+
 function buildSecondStageRoles(type, firstAttack, attackers, defenders, attackTactic, defendTactic, rng) {
   const firstRoles = firstAttack?.roles || {};
   if (type === 'PASS') {
@@ -397,11 +408,28 @@ export function secondStageScores(type, roles, attackTactic, defendTactic, goalk
       + av(roles.support,'shoot','counterSupport') * attackSupport;
     defense = dv(roles.defender,'defense','counterFinalDefender') * .45 + dv(roles.defender,'speed','counterFinalDefender') * .45;
   }
-  return {offense,defense: defense + supportDefense + sweeperBonus(goalkeeper)};
+
+  if(attackFormation==='BOX'){
+   if(type==='PASS'){
+    offense=av(roles.passer,'pass','passSecondPasser')*.40+av(roles.receiver,'speed','passSecondReceiver')*.20+av(roles.receiver,'dribble','passSecondReceiver')*.15+av(roles.receiver,'shoot','passSecondReceiver')*.15+av(roles.support,'pass','passSupport')*.05+av(roles.support,'shoot','passSupport')*.05;
+    if(roles.receiver?.specialAbility==='ポストプレーヤー')offense*=1.06;
+   }else if(type==='DRIBBLE')offense=av(roles.dribbler,'dribble','secondDribbler')*.50+av(roles.dribbler,'speed','secondDribbler')*.20+av(roles.dribbler,'shoot','secondDribbler')*.15+av(roles.dribbler,'pass','secondDribbler')*.10+av(roles.support,'speed','dribbleSupport')*.03+av(roles.support,'shoot','dribbleSupport')*.02;
+   else if(type==='SHORT_COUNTER')offense=av(roles.origin,'defense','shortOrigin')*.15+av(roles.origin,'pass','counterOrigin')*.25+av(roles.runner,'speed','shortRunner')*.35+av(roles.runner,'shoot','shortRunner')*.20+av(roles.support,'speed','shortSupport')*.03+av(roles.support,'shoot','shortSupport')*.02;
+   else offense=av(roles.runner,'speed','counterRunner')*.40+av(roles.runner,'dribble','counterRunner')*.25+av(roles.runner,'shoot','counterRunner')*.20+av(roles.support,'speed','counterSupport')*.10+av(roles.support,'pass','passSupport')*.03+av(roles.support,'shoot','counterSupport')*.02;
+  }
+  if(defendFormation==='BOX'){
+   if(type==='PASS')defense=dv(roles.defender,'defense','passFinalDefender')*.70+dv(roles.defender,'speed','passFinalDefender')*.25;
+   else if(type==='DRIBBLE')defense=dv(roles.defender,'defense','dribbleCover')*.70+dv(roles.defender,'speed','dribbleCover')*.25;
+   else if(type==='SHORT_COUNTER')defense=dv(roles.defender,'defense','shortFinalDefender')*.45+dv(roles.defender,'speed','shortFinalDefender')*.40+statValue(goalkeeper,'gk')*.10;
+   else defense=dv(roles.defender,'defense','counterFinalDefender')*.50+dv(roles.defender,'speed','counterFinalDefender')*.45;
+  }
+  let totalDefense=defense+supportDefense+sweeperBonus(goalkeeper);
+  if(defendFormation==='BOX' && type==='SHORT_COUNTER')totalDefense*=.96;
+  return {offense,defense:totalDefense};
 }
 function pickDefenseSupport(defenders, main, tactic, formation, rng) {
   const weights = formation === '211' ? {DF:1.25,MF:.85,FW:.45} : {DF:.85,MF:1.25,FW:.45};
-  return pickRole(defenders,p=>fieldValue(p,'defense',tactic)*posMul(p,weights),rng,[main]);
+  return pickRole(defenders,p=>fieldValue(p,'defense',tactic)*(p._box ? (p._front ? .4 : 1.6) : posMul(p,weights)),rng,[main]);
 }
 function buildShortCounterRoles(origin, attackers, defenders, attackTactic, defendTactic, goalkeeper, rng, longFeed = false) {
   const runner = pickRole(attackers, p => ROLE_WEIGHTS.counterRunner(p, attackTactic), rng, [origin]);
@@ -470,7 +498,7 @@ function pickShooterFromRoles(type, roles, attackers, tactic, rng) {
   const primary = roles.primaryShooter || roles.receiver || roles.dribbler || roles.runner;
   const support = roles.support;
   return weightedPick(attackers, player => {
-    let multiplier = player === primary ? 1 : player === support ? .12 : player.primaryPosition === 'FW' ? .25 : player.primaryPosition === 'MF' ? .12 : .05;
+    let multiplier = player === primary ? 1 : player === support ? .12 : player._box ? (player._front ? .25 : .05) : player.primaryPosition === 'FW' ? .25 : player.primaryPosition === 'MF' ? .12 : .05;
     if (player === support && type === 'PASS' && roles.receiver?.specialAbility === 'ポストプレーヤー') multiplier += .05;
     if (player.specialAbility === 'エース') multiplier *= 1.20;
     return Math.max(.01, fieldValue(player, 'shoot', tactic) * multiplier);

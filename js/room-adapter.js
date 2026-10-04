@@ -1,5 +1,5 @@
 import { RoomClient } from './room-client.js?v=notifications-v1';
-import { clone, applyWork } from './phase-work.js?v=formations-v1';
+import { clone, applyWork } from './phase-work.js?v=box-v1';
 
 const VIEW = { lobby: 'roomLobby', draft: 'draft', 'draft-complete': 'draft', auction: 'auction', 'auction-complete': 'auction', 'team-setup': 'squad', 'season-ready': 'squad', 'season-result': 'seasonResults', 'offseason-events': 'offseasonEvents', development: 'development', 'growth-result': 'growth', release: 'release', 'game-complete': 'grandFinal' };
 const WORK_KEY = 'football-league:v3:work:';

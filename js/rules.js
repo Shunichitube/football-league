@@ -1,4 +1,4 @@
-import { FORMATIONS, lineupSlots, formationId, remapFormation } from './formations.js?v=formation-points-v8';
+import { FORMATIONS, lineupSlots, formationId, remapFormation } from './formations.js?v=box-v1';
 import { rareKind } from './rare-characters.js';
 import { renewalFee } from './development.js?v=rare-v2';
 
@@ -38,7 +38,7 @@ export function validateLineup(club, lineup = club?.lineup) {
   if (invalidKeeper) return { ok: false, error: 'GKはフィールド枠へ配置できません。', warnings: [] };
   const warnings = players.flatMap((player, index) => {
     const slot = slots[index];
-    if (player.primaryPosition === slot) return [];
+    if (player.primaryPosition === slot || (formationId(club) === 'BOX' && player.primaryPosition === 'MF' && slot !== 'GK')) return [];
     return [`${player.name}：本職${positionLabel(player.primaryPosition)}から${positionLabel(slot)}への適性外配置`];
   });
   return { ok: true, warnings };
@@ -107,4 +107,9 @@ export function applyClubAction(club, action, league = null) {
     return { ok: true, player };
   }
   return { ok: false, error: '未対応のActionです。' };
+}
+
+export function positionSuitabilityLabel(player, slotPosition) {
+  const fit = positionSuitability(player, slotPosition);
+  return fit === 1 ? '◎' : fit >= .95 ? '○' : fit > 0 ? '△' : '×';
 }

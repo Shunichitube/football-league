@@ -1,5 +1,6 @@
 // Slot order is serialized with the lineup. Missing formation means legacy 121.
 export const FORMATIONS = Object.freeze({
+  'BOX': { slots: ['GK','DF','DF','FW','FW'], labels: ['GK','DF1','DF2','FW2','FW1'], points: [[50,86],[28,60],[72,60],[70,20],[30,20]], attackSupport: .05, defenseSupport: .05 },
   '121': { slots: ['GK','DF','MF','MF','FW'], labels: ['GK','DF1','MF1','MF2','FW1'], points: [[50,86],[50,50],[26,36],[74,36],[50,16]], attackSupport: .05, defenseSupport: .10 },
   '211': { slots: ['GK','DF','DF','MF','FW'], labels: ['GK','DF1','DF2','MF1','FW1'], points: [[50,86],[28,64],[72,64],[50,46],[50,16]], attackSupport: 0, defenseSupport: .15 },
   '112': { slots: ['GK','DF','MF','FW','FW'], labels: ['GK','DF1','MF1','FW2','FW1'], points: [[50,86],[50,58],[50,30],[70,16],[30,16]], attackSupport: .10, defenseSupport: .05 }
@@ -9,10 +10,12 @@ export const formationSpec = club => FORMATIONS[formationId(club)];
 export const lineupSlots = club => formationSpec(club).slots;
 export const lineupSlotLabel = (club, index) => formationSpec(club).labels[index];
 // Canonical identities: GK, DF1, original MF1, original MF2, FW1.
-const CANONICAL_ORDER = { '121': [0,1,2,3,4], '211': [0,1,3,2,4], '112': [0,1,3,2,4] };
+const CANONICAL_ORDER = { 'BOX': [0,1,3,2,4], '121': [0,1,2,3,4], '211': [0,1,3,2,4], '112': [0,1,3,2,4] };
 export function remapFormation(lineup, from, to) {
   const source = CANONICAL_ORDER[from] || CANONICAL_ORDER['121'];
   const target = CANONICAL_ORDER[to];
   if (!target || !Array.isArray(lineup)) return null;
   return target.map(identity => lineup[source.indexOf(identity)]);
 }
+
+export const formationLabel = id => id === 'BOX' ? '2-0-2（ボックス）' : id.split('').join('-');

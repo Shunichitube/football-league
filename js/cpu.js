@@ -1,10 +1,10 @@
-import { FORMATIONS, formationId, lineupSlots } from './formations.js?v=formation-points-v8';
+import { FORMATIONS, formationId, lineupSlots } from './formations.js?v=box-v1';
 import {rareKind} from './rare-characters.js';
 import { calculateOverall, createPlayer } from './data.js?v=slot-overall-v1';
 import { processOffseason, renewalFee } from './development.js?v=rare-v2';
 import { createRandom } from './random.js';
 import { cpuBid, cpuCandidatePick } from './market.js?v=rare-v2';
-import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=formations-v1';
+import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=box-v1';
 
 
 const REQUIRED = { GK: 1, DF: 1, MF: 2, FW: 1 };
@@ -54,7 +54,7 @@ export function chooseCpuSetup(club) {
   const field = club.roster.filter(p=>p.primaryPosition !== 'GK');
   if (field.length < 4) return null;
   let best = null;
-  for (const formation of ['121','211','112']) for (const tactic of ['BALANCED','POSSESSION','DRIBBLE','COUNTER']) {
+  for (const formation of ['121','211','112','BOX']) for (const tactic of ['BALANCED','POSSESSION','DRIBBLE','COUNTER']) {
     const assignment = bestFieldAssignment(field, FORMATIONS[formation].slots.slice(1), tactic);
     if (!best || assignment.score > best.score) best = {formation,tactic,score:assignment.score,lineup:[keeper.id,...assignment.players.map(p=>p.id)]};
   }

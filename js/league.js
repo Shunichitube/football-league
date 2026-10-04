@@ -1,6 +1,6 @@
 import { calculateOverall, createClub } from './data.js?v=formations-v1';
 import { rankOf } from './config.js';
-import { simulateMatch } from './sim.js?v=formations-v1';
+import { simulateMatch } from './sim.js?v=box-v1';
 import { createRandom } from './random.js';
 
 const CPU_CLUBS = [

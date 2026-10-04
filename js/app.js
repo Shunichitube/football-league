@@ -1,4 +1,4 @@
-import { lineupSlotLabel, formationId } from './formations.js?v=formation-points-v8';
+import { lineupSlotLabel, formationId, formationLabel } from './formations.js?v=box-v1';
 import {createSfxController} from './sfx.js?v=training-complete-v1';
 import {createBgmController} from './bgm.js?v=season-bgm-v3';
 import {renderGrandResults,mountGrandFinale} from './grand-finale-ui.js?v=motion-ui-v24';
@@ -13,14 +13,14 @@ import { draftTurnState, renderDraftTurn } from './draft-status.js?v=opaque-pane
 import { dialogs } from './dialogs.js';
 import { openLot, raiseBid, passLot, tickLot } from './live-auction.js?v=0.21.1';
 import { auctionAvatar, renderLiveAuction } from './auction-ui.js?v=opaque-topline-v1';
-import { applySeasonFinances, awards, clubAchievements, createLeague, finalizeSeason, recordDraftAcquisition, simulateRemainingSeason, standings as singleStandings, startNextSeason } from './league.js?v=formations-v1';
+import { applySeasonFinances, awards, clubAchievements, createLeague, finalizeSeason, recordDraftAcquisition, simulateRemainingSeason, standings as singleStandings, startNextSeason } from './league.js?v=box-v1';
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=formations-v1';
 import { createRandom } from './random.js';
-import { createAuctionPool, createDraftPool, resolveDraftActions } from './market.js?v=rare-text-v3';
-import { renderContractPlayerCard, configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=formation-labels-v9';
-import { decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=formations-v1';
-import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=formations-v1';
-import { RoomAdapter } from './room-adapter.js?v=formations-v1';
+import { createAuctionPool, createDraftPool, resolveDraftActions } from './market.js?v=box-v1';
+import { renderContractPlayerCard, configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=box-v1';
+import { decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=box-v1';
+import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=box-v1';
+import { RoomAdapter } from './room-adapter.js?v=box-v1';
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && roomAdapter?.active) roomAdapter.client.startNotifications(true);
 });
@@ -265,7 +265,7 @@ onGameClick('app', event => {
   const formation = event.target.closest('button[data-formation]')?.dataset.formation;
   if (formation) {
     const result = applyClubAction(me(), {type: ACTION_TYPES.SET_FORMATION, clubId:me().id, formation});
-    s.lineupMessage = result.ok ? `${formation.split('').join('-')}へ切り替えました。${result.warnings.length ? '適性外配置があります。' : ''}` : result.error;
+    s.lineupMessage = result.ok ? `${formationLabel(formation)}へ切り替えました。${result.warnings.length ? '適性外配置があります。' : ''}` : result.error;
     s.lineupError = !result.ok;
     s.selectedLineupPlayerId = null; s.comparisonSourcePlayerId = null;
     render();return;
