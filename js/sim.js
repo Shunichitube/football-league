@@ -1,4 +1,4 @@
-import { lineupSlots, formationId, formationSpec } from './formations.js?v=formation-foot-labels-v3';
+import { lineupSlots, formationId, formationSpec } from './formations.js?v=formation-points-v4';
 import { rareKind, emperorBonus, effectiveRareStats, rareDuelResult, rareShotResult, blackHoleResult } from './rare-characters.js';
 import { CONFIG } from './config.js';
 import { calculateOverall } from './data.js?v=slot-overall-v1';

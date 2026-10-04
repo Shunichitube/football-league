@@ -1,4 +1,4 @@
-import { FORMATIONS } from './formations.js?v=formation-foot-labels-v3';
+import { FORMATIONS } from './formations.js?v=formation-points-v4';
 import { rareKind } from './rare-characters.js';
 // Shared validation for a private work-in-progress copy and authoritative Room input.
 import { applyClubAction, ACTION_TYPES, validateLineup } from './rules.js?v=formations-v1';
