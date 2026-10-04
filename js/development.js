@@ -1,7 +1,7 @@
 import { rareKind, hatchEgg } from './rare-characters.js';
 import { rankOf } from './config.js';
-import { calculateOverall, FIELD_STAT_KEYS, FIELD_PLAYER_STAT_KEYS } from './data.js?v=formations-v1';
-import { SPECIAL_ABILITIES } from './market.js?v=rare-v2';
+import { calculateOverall, FIELD_STAT_KEYS, FIELD_PLAYER_STAT_KEYS } from './data.js?v=short-season-v1';
+import { SPECIAL_ABILITIES } from './market.js?v=short-season-v1';
 import { weightedPick } from './random.js';
 
 const RANKS = ['G', 'F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS'];
@@ -91,7 +91,7 @@ function applySpecialTraining(player, rng) {
   for (const key of skills(player)) if (result.steps && !frozenGrowthSkill(player, key)) player.stats[key] = Math.max(player.stats[key], rankUpValue(player.stats[key], result.steps));
   return { ...result, before, after: Object.fromEntries(skills(player).map(key => [key, rankOf(player.stats[key])])) };
 }
-export function processOffseason(club, training, rng, specialTraining = new Set()) {
+function processOffseasonYear(club, training, rng, specialTraining) {
   const results = [];
   for (const player of [...club.roster]) {
     const before = Object.fromEntries(Object.entries(player.stats).map(([key, value]) => [key, rankOf(value)]));
@@ -156,4 +156,28 @@ export function renewalFee(player) {
   const overall = calculateOverall(player);
   const rating = player.season.appearances ? player.season.ratingTotal / player.season.appearances : 6;
   return Math.max(1, Math.min(20, Math.round((overall - 50) / 2.5) + 1 + (rating >= 7.5 ? 2 : rating >= 7 ? 1 : rating < 6 ? -1 : 0) + (player.age >= 31 ? -2 : 0)));
+}
+
+// Run annual decisions in order; aggregate UI rows and badges by player identity.
+export function processOffseason(club, training, rng, specialTraining = new Set(), years = 1) {
+  if (years === 1) return processOffseasonYear(club, training, rng, specialTraining);
+  const before = new Map(club.roster.map(player => [player.id, {...player.stats}]));
+  const results = new Map();
+  for (let year = 0; year < years; year++) {
+    for (const row of processOffseasonYear(club, training, rng, specialTraining)) {
+      const previous = results.get(row.player.id);
+      if (!previous) { results.set(row.player.id, row); continue; }
+      row.awakeningKeys = [...new Set([...previous.awakeningKeys, ...row.awakeningKeys])];
+      row.learnedAbility ||= previous.learnedAbility;
+      row.hatched ||= previous.hatched;
+      row.focus ||= previous.focus;
+      if (previous.specialTrainingResult && (!row.specialTrainingResult || previous.specialTrainingResult.steps > row.specialTrainingResult.steps)) row.specialTrainingResult = previous.specialTrainingResult;
+      results.set(row.player.id, row);
+    }
+  }
+  return [...results.values()].map(row => {
+    const initial = before.get(row.player.id);
+    row.changes = skills(row.player).filter(key => initial[key] !== row.player.stats[key]).map(key => ({key, from:rankOf(initial[key]), to:rankOf(row.player.stats[key]), fromValue:initial[key], toValue:row.player.stats[key], increased:row.player.stats[key]>initial[key], awakened:row.awakeningKeys.includes(key)}));
+    return row;
+  });
 }

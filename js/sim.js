@@ -1,9 +1,9 @@
 import { lineupSlots, formationId, formationSpec } from './formations.js?v=box-v1';
 import { rareKind, emperorBonus, effectiveRareStats, rareDuelResult, rareShotResult, blackHoleResult } from './rare-characters.js';
 import { CONFIG } from './config.js';
-import { calculateOverall } from './data.js?v=slot-overall-v1';
+import { calculateOverall } from './data.js?v=short-season-v1';
 import { weightedPick } from './random.js';
-import { positionSuitability } from './rules.js?v=box-v1';
+import { positionSuitability } from './rules.js?v=short-season-v1';
 
 const FIELD_KEYS = ['shoot', 'speed', 'defense', 'dribble', 'pass'];
 const avg = (players, valueOf) => players.reduce((sum, player) => sum + valueOf(player), 0) / Math.max(1, players.length);

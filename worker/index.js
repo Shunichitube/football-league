@@ -1,4 +1,4 @@
-export { RoomObject } from './room.js';
+export { RoomObject } from './room.js?v=short-season-v1';
 const json = (body, status) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 export default {
   async fetch(request, env) {
@@ -23,7 +23,7 @@ export default {
     const roomId = (parts[2] || '').toUpperCase();
     if (!/^[A-F0-9]{12}$/.test(roomId)) return json({ error: 'ルームIDは12桁の英数字です。' }, 400);
     const action = parts[3] || 'state';
-    if (!(request.method === 'GET' && ['state', 'events'].includes(action)) && !(request.method === 'POST' && ['join','start','submit','run-season','rename'].includes(action))) return json({ error: 'APIが見つかりません。' }, 404);
+    if (!(request.method === 'GET' && ['state', 'events'].includes(action)) && !(request.method === 'POST' && ['join','start','submit','run-season','rename','configure'].includes(action))) return json({ error: 'APIが見つかりません。' }, 404);
     const headers = new Headers({ 'content-type': 'application/json' });
     if (request.headers.has('x-player-token')) headers.set('x-player-token', request.headers.get('x-player-token'));
     if (action === 'events') {

@@ -1,6 +1,7 @@
-import { calculateOverall, createClub } from './data.js?v=formations-v1';
+import { seasonLimit, seasonMode, setClubSeasonMode } from './season-mode.js?v=short-season-v1';
+import { calculateOverall, createClub } from './data.js?v=short-season-v1';
 import { rankOf } from './config.js';
-import { simulateMatch } from './sim.js?v=box-v1';
+import { simulateMatch } from './sim.js?v=short-season-v1';
 import { createRandom } from './random.js';
 
 const CPU_CLUBS = [
@@ -89,10 +90,12 @@ export function createSchedule(clubIds) {
     .map((fixtures, index) => ({ round: index + 1, fixtures }));
 }
 
-export function createLeague({ name, color, seed }) {
+export function createLeague({ name, color, seed, seasonMode: selectedMode = 'NORMAL' }) {
   const rng = createRandom(`${seed}:clubs`);
   const clubs = [createClub({ id: 1, name, color, seed: rng, controllerType: 'HUMAN' }), ...CPU_CLUBS.map(([cpuName, cpuColor], index) => createClub({ id: index + 2, name: cpuName, color: cpuColor, seed: rng, controllerType: 'CPU' }))];
-  return { seed, season: 1, history: [], careerRecords: [], draftRecords: [], humanClubId: 1, clubs, schedule: createSchedule(clubs.map(c => c.id)), currentRound: 1, records: Object.fromEntries(clubs.map(c => [c.id, blankRecord()])), seasonResults: [], fixtureResults: [], releasedPlayers: [], completed: false };
+  const mode = seasonMode({seasonMode:selectedMode});
+  clubs.forEach(club => setClubSeasonMode(club, mode, true));
+  return { seasonMode: mode, seed, season: 1, history: [], careerRecords: [], draftRecords: [], humanClubId: 1, clubs, schedule: createSchedule(clubs.map(c => c.id)), currentRound: 1, records: Object.fromEntries(clubs.map(c => [c.id, blankRecord()])), seasonResults: [], fixtureResults: [], releasedPlayers: [], completed: false };
 }
 
 export function clubsForController(league, controllerType) { return league.clubs.filter(club => club.controllerType === controllerType); }
@@ -325,7 +328,7 @@ export function applySeasonFinances(league) {
 
 export function startNextSeason(league) {
   recordSeasonHistory(league);
-  if(league.season>=10) return false;
+  if(league.season>=seasonLimit(league)) return false;
   league.previousStandings = standings(league).map(row => ({ clubId: row.club.id, rank: row.rank }));
   league.season++;
   league.schedule=createSchedule(league.clubs.map(c=>c.id));

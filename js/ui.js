@@ -1,11 +1,12 @@
+import { displayedContractYears } from './season-mode.js?v=short-season-v1';
 import { FORMATIONS, formationId, formationSpec, lineupSlots, lineupSlotLabel, formationLabel } from './formations.js?v=box-badges-v2';
 import { rareKind, rarePortraitUrl, rareAgeLabel } from './rare-characters.js';
 import { dialogs } from './dialogs.js';
 import {playerAppearance,kitColor} from './avatar-profile.js?v=appearance-v29';
 import { formatMatchEvents } from './match-log.js?v=appearance-v29';
-import { displayPlayer, growthExpectationKey, POSITION_LABELS, STAT_LABELS } from './data.js?v=formations-v1';
-import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=rare-text-v3';
-import { validateLineup, positionSuitabilityLabel } from './rules.js?v=box-v1';
+import { displayPlayer, growthExpectationKey, POSITION_LABELS, STAT_LABELS } from './data.js?v=short-season-v1';
+import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=short-season-v1';
+import { validateLineup, positionSuitabilityLabel } from './rules.js?v=short-season-v1';
 import { pixelTexture } from './arena-characters.js?v=appearance-v29';
 
 export const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
@@ -224,7 +225,7 @@ export function renderSquadComparison(club, selectedId, targetId = null) {
   const order = ['G','F','E','D','C','B','A','S','SS'];
   const left = displayPlayer(source), right = target ? displayPlayer(target) : null;
   const abilities = publicAbilities(source);
-  const profile = player => player ? `<div class="compare-profile" data-position="${escapeHtml(player.primaryPosition)}">${squadRoleBadge(player, club.lineup || [], club.formation)}<img src="${squadAvatar(player, club.color)}" alt=""><div><strong>${escapeHtml(player.name)}</strong><span>総合 ${escapeHtml(displayPlayer(player).overallRank)} ・ ${escapeHtml(positionLabel(player.primaryPosition))}</span><small>${escapeHtml(rareAgeLabel(player))} ・ 契約${player.contractYears}年</small>${growthExpectation(player)}<small>適性 ◎ 得意 ／ ○ 対応可能 ／ △ 苦手<br>配置適性：${player.primaryPosition === 'GK' ? 'GK ◎' : `DF ${positionSuitabilityLabel(player, 'DF')} ／ MF ${positionSuitabilityLabel(player, 'MF')} ／ FW ${positionSuitabilityLabel(player, 'FW')}`} </small></div></div>` : '<div class="compare-profile compare-placeholder">所属選手にホバーまたは選択</div>';
+  const profile = player => player ? `<div class="compare-profile" data-position="${escapeHtml(player.primaryPosition)}">${squadRoleBadge(player, club.lineup || [], club.formation)}<img src="${squadAvatar(player, club.color)}" alt=""><div><strong>${escapeHtml(player.name)}</strong><span>総合 ${escapeHtml(displayPlayer(player).overallRank)} ・ ${escapeHtml(positionLabel(player.primaryPosition))}</span><small>${escapeHtml(rareAgeLabel(player))} ・ 契約${displayedContractYears(player)}年</small>${growthExpectation(player)}<small>適性 ◎ 得意 ／ ○ 対応可能 ／ △ 苦手<br>配置適性：${player.primaryPosition === 'GK' ? 'GK ◎' : `DF ${positionSuitabilityLabel(player, 'DF')} ／ MF ${positionSuitabilityLabel(player, 'MF')} ／ FW ${positionSuitabilityLabel(player, 'FW')}`} </small></div></div>` : '<div class="compare-profile compare-placeholder">所属選手にホバーまたは選択</div>';
   return `<div class="compare-duel"><section class="compare-person">${profile(source)}<div class="compare-ability-list">${abilities.map(ability => `<div><span>${escapeHtml(ability.label)}</span><b>${escapeHtml(ability.rank)}</b>${squadGrowthBar(ability,null)}</div>`).join('')}</div><p class="compare-special">特能 <b>${escapeHtml(left.specialAbility || '―')}</b>${left.specialAbility ? `<span class="compare-special-description">${escapeHtml(SPECIAL_ABILITY_DESCRIPTIONS[left.specialAbility] || '')}</span>` : ''}</p></section><span class="compare-vs">VS</span><section class="compare-person">${profile(target)}<div class="compare-ability-list">${abilities.map(ability => {
     const rank = right?.ranks[ability.key];
     const change = rank ? Math.sign(order.indexOf(rank) - order.indexOf(ability.rank)) : 0;

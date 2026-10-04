@@ -1,5 +1,6 @@
+import { seasonLimit } from './season-mode.js?v=short-season-v1';
 import { RoomClient } from './room-client.js?v=notifications-v1';
-import { clone, applyWork } from './phase-work.js?v=box-v1';
+import { clone, applyWork } from './phase-work.js?v=short-season-v1';
 
 const VIEW = { lobby: 'roomLobby', draft: 'draft', 'draft-complete': 'draft', auction: 'auction', 'auction-complete': 'auction', 'team-setup': 'squad', 'season-ready': 'squad', 'season-result': 'seasonResults', 'offseason-events': 'offseasonEvents', development: 'development', 'growth-result': 'growth', release: 'release', 'game-complete': 'grandFinal' };
 const WORK_KEY = 'football-league:v3:work:';
@@ -136,7 +137,7 @@ export class RoomAdapter {
     const room = this.room;
     if (!room) return '';
     if(room.phase==='auction')return '公開入札中・残り5秒以内の入札で5秒に延長';
-    if (room.phase === 'game-complete') return '全10シーズンが終了しました。';
+    if (room.phase === 'game-complete') return `全${seasonLimit(room.game.league)}シーズンが終了しました。`;
     if (room.phase === 'season-ready') return `${room.players.filter(p=>p.completed).length}/${room.players.length} 確定済み・全員の確定でリーグ戦が始まります。`;
     const players = room.phase === 'draft' ? room.players.filter(p => room.game.draft.pendingClubIds.includes(p.clubId)) : room.players;
     return `${players.filter(p => p.completed).length}/${players.length} 完了${this.player?.completed ? '・他のクラブを待っています' : ''}`;

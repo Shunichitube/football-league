@@ -1,5 +1,5 @@
 // v2's Room/token/private-input model, with serialized authoritative mutations.
-import { advanceAuction, startGame, submitInput, runSeason, renamePlayer, publicRoom } from './room-game.js';
+import { advanceAuction, startGame, submitInput, runSeason, renamePlayer, publicRoom } from './room-game.js?v=short-season-v1';
 import { roomPatch } from '../js/room-patch.js';
 
 const META = 'v3-meta';
@@ -110,7 +110,7 @@ export class RoomObject {
           return json({ room: publicRoom(room, host), playerId: host.id, playerToken: host.accessToken });
         }
         const host = newPlayer(body.teamName, 0);
-        room = { roomId: body.roomId, creationKey: body.requestId, hostPlayerId: host.id, players: [host], phase: 'lobby', revision: 1, phaseRevision: 1, inputs: {}, receipts: {}, joins: {}, game: null };
+        room = { roomId: body.roomId, creationKey: body.requestId, hostPlayerId: host.id, players: [host], phase: 'lobby', seasonMode: 'NORMAL', revision: 1, phaseRevision: 1, inputs: {}, receipts: {}, joins: {}, game: null };
         await this.save(room);
         return json({ room: publicRoom(room, host), playerId: host.id, playerToken: host.accessToken });
       }
@@ -141,8 +141,13 @@ export class RoomObject {
       }
       if(advanceAuction(room)){room.revision++;await this.save(room);this.notify(before,room);before=structuredClone(room);}
       assert(body.phaseRevision === room.phaseRevision, 'フェーズが更新されています。最新状態を確認してください。', 409);
-      if (action === 'start' || action === 'run-season') assert(player.id === room.hostPlayerId, 'ホストのみ実行できます。', 403);
-      if (action === 'start') startGame(room);
+      if (action === 'start' || action === 'run-season' || action === 'configure') assert(player.id === room.hostPlayerId, 'ホストのみ実行できます。', 403);
+      if (action === 'configure') {
+        assert(room.phase === 'lobby', 'モードは開始前だけ変更できます。', 409);
+        assert(['NORMAL','SHORT'].includes(body.input?.seasonMode), 'モードが不正です。');
+        room.seasonMode = body.input.seasonMode;
+      }
+      else if (action === 'start') startGame(room);
       else if (action === 'submit') submitInput(room, player, body.input);
       else if (action === 'run-season') runSeason(room);
       else if (action === 'rename') renamePlayer(room, player, body.input || {});

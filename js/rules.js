@@ -1,6 +1,7 @@
+import { contractSeasons, yearsPerSeason } from './season-mode.js?v=short-season-v1';
 import { FORMATIONS, lineupSlots, formationId, remapFormation } from './formations.js?v=box-v1';
 import { rareKind } from './rare-characters.js';
-import { renewalFee } from './development.js?v=rare-v2';
+import { renewalFee } from './development.js?v=short-season-v1';
 
 export const ACTION_TYPES = Object.freeze({
   DRAFT_PICK: 'DRAFT_PICK',
@@ -89,7 +90,8 @@ export function applyClubAction(club, action, league = null) {
     const protectedMinimum = action.protectMinimum && (club.roster.length <= 5 || (player.primaryPosition === 'GK' && club.roster.filter(candidate => candidate.primaryPosition === 'GK').length <= 1));
     if (club.funds < fee && !protectedMinimum) return { ok: false, error: '資金が不足しています。' };
     club.funds = Math.max(0, club.funds - fee);
-    player.contractYears = 3;
+    player.contractYears = contractSeasons(club);
+    player.contractYearSpan = yearsPerSeason(club);
     return { ok: true, player, fee };
   }
   if (action.type === ACTION_TYPES.RELEASE_PLAYER) {

@@ -1,10 +1,11 @@
+import { yearsPerSeason, contractSeasons } from './season-mode.js?v=short-season-v1';
 import { FORMATIONS, formationId, lineupSlots } from './formations.js?v=box-v1';
 import {rareKind} from './rare-characters.js';
-import { calculateOverall, createPlayer } from './data.js?v=slot-overall-v1';
-import { processOffseason, renewalFee } from './development.js?v=rare-v2';
+import { calculateOverall, createPlayer } from './data.js?v=short-season-v1';
+import { processOffseason, renewalFee } from './development.js?v=short-season-v1';
 import { createRandom } from './random.js';
-import { cpuBid, cpuCandidatePick } from './market.js?v=rare-v2';
-import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=box-v1';
+import { cpuBid, cpuCandidatePick } from './market.js?v=short-season-v1';
+import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=short-season-v1';
 
 
 const REQUIRED = { GK: 1, DF: 1, MF: 2, FW: 1 };
@@ -201,6 +202,8 @@ function ensureMinimumPlayableRoster(league, club) {
   let serial = 0;
   const add = position => {
     const player = createPlayer(`emergency-${league.season}-${club.id}-${serial++}`, position, rng, { initial: true });
+    player.contractYears = contractSeasons(club);
+    player.contractYearSpan = yearsPerSeason(club);
     club.roster.push(player);
     added.push(player);
   };
@@ -223,7 +226,7 @@ export function processLeagueOffseason(league, humanTraining = new Map(), specia
     const mappedTraining=humanTraining.get?.(club.id);
     const training = isCpu ? selectCpuTraining(club) : mappedTraining instanceof Map ? mappedTraining : club.id===humanClubs[0]?.id ? humanTraining : new Map();
     const specialTraining = specialTrainingByClub.get(club.id) || new Set();
-    const growth = processOffseason(club, training, createRandom(`${league.seed}:offseason:${league.season}:club:${club.id}`), specialTraining);
+    const growth = processOffseason(club, training, createRandom(`${league.seed}:offseason:${league.season}:club:${club.id}`), specialTraining, yearsPerSeason(league));
     const emergencySignings = ensureMinimumPlayableRoster(league, club);
     selectBestLineup(club);
     if (isCpu) autoSetCpuTactic(club);

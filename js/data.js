@@ -1,3 +1,4 @@
+import { displayedContractYears } from './season-mode.js?v=short-season-v1';
 import { rankOf } from './config.js';
 import { createPlayerAppearance } from './avatar-profile.js?v=appearance-v29';
 
@@ -99,7 +100,7 @@ export function calculateOverall(player, position = player.primaryPosition) {
 
 export function displayPlayer(player) {
   const s = player.stats;
-  return { ...player, overallRank: rankOf(calculateOverall(player)), ranks: { shoot: rankOf(s.shoot), speed: rankOf(s.speed), defense: rankOf(s.defense), dribble: rankOf(s.dribble), pass: rankOf(s.pass), stamina: s.stamina ? rankOf(s.stamina) : null, gk: rankOf(s.gk) } };
+  return { ...player, contractYears: displayedContractYears(player), overallRank: rankOf(calculateOverall(player)), ranks: { shoot: rankOf(s.shoot), speed: rankOf(s.speed), defense: rankOf(s.defense), dribble: rankOf(s.dribble), pass: rankOf(s.pass), stamina: s.stamina ? rankOf(s.stamina) : null, gk: rankOf(s.gk) } };
 }
 
 export function playerById(club, id) { return club.roster.find(p => p.id === id); }

@@ -1,7 +1,8 @@
+import { contractSeasons, yearsPerSeason, seasonMode } from './season-mode.js?v=short-season-v1';
 import { applyRareCharacter, rollRareCharacter, rareKind, RARE_CHARACTERS } from './rare-characters.js?v=rare-text-v3';
-import { calculateOverall, createPlayer, displayPlayer, FIELD_STAT_KEYS, STAT_LABELS } from './data.js?v=formations-v1';
+import { calculateOverall, createPlayer, displayPlayer, FIELD_STAT_KEYS, STAT_LABELS } from './data.js?v=short-season-v1';
 import { createRandom, weightedPick } from './random.js';
-import { ACTION_TYPES } from './rules.js?v=formations-v1';
+import { ACTION_TYPES } from './rules.js?v=short-season-v1';
 
 const DRAFT_DISTRIBUTION = [['G', 15], ['F', 25], ['E', 40], ['D', 15], ['C', 4], ['B', 1]];
 const DRAFT_COST = 5;
@@ -119,8 +120,8 @@ export function createScoutComment(player, rng) {
   else if (average >= 1.12 && rng.next() < .18) rare = '非常に高い成長性を感じる';
   return [currentHint, ageHint, growthHint, abilityHint, rare].filter(Boolean).join('。') + '。';
 }
-export function createDraftPool(seed, season = 1) { const rng = createRandom(`${seed}:season:${season}:draft-pool`); return Array.from({ length: 24 }, (_, i) => playerForTier(season * 10000 + 1000 + i, marketPosition(rng), tier(DRAFT_DISTRIBUTION, rng), rng.int(18,22), rng, 'draft')); }
-export function createAuctionPool(seed, season = 1, releasedPlayers = []) {
+export function createDraftPool(seed, season = 1, selectedMode = 'NORMAL') { const rng = createRandom(`${seed}:season:${season}:draft-pool`); return Array.from({ length: 24 }, (_, i) => playerForTier(season * 10000 + 1000 + i, marketPosition(rng), tier(DRAFT_DISTRIBUTION, rng), rng.int(18,22), rng, 'draft')).map(player => marketContract(player, selectedMode)); }
+export function createAuctionPool(seed, season = 1, releasedPlayers = [], selectedMode = 'NORMAL') {
   const rng = createRandom(`${seed}:season:${season}:auction-pool`);
   const returning = [...releasedPlayers]
     .filter(player => {
@@ -138,7 +139,7 @@ export function createAuctionPool(seed, season = 1, releasedPlayers = []) {
     .map(row => ({ ...row.player, marketSource: 'released' }));
   const generatedCount = 18 - returning.length;
   const generated = Array.from({ length: generatedCount }, (_, i) => ({ ...playerForTier(season * 10000 + 2000 + i, marketPosition(rng), tier(AUCTION_DISTRIBUTION, rng), rng.int(22,31), rng, 'auction'), marketSource: 'generated' }));
-  return [...returning, ...generated];
+  return [...returning, ...generated].map(player => marketContract(player, selectedMode));
 }
 export function publicValue(player) { return BASE_VALUE[displayPlayer(player).overallRank]; }
 export function cpuCandidatePick(club, candidates, rng) {
@@ -162,7 +163,7 @@ export function cpuBid(club, player, rng) {
   const value = Math.max(0, Math.round((publicValue(player) + shortage + upgrade + age) * (.75 + rng.next() * .3)));
   return Math.min(value, Math.max(0, club.funds - (upgrade || shortage ? 10 : 50)));
 }
-export function addPlayer(club, player, cost) { if (club.roster.length >= 12) return false; club.roster.push(player); club.funds -= cost; return true; }
+export function addPlayer(club, player, cost) { if (club.roster.length >= 12) return false; if (seasonMode(club) === 'SHORT') player.contractYears = contractSeasons(club); player.contractYearSpan = yearsPerSeason(club); club.roster.push(player); club.funds -= cost; return true; }
 
 export function resolveDraftActions({ clubs, candidates, pendingClubIds, actions, rng }) {
   const eligible = pendingClubIds.filter(id => {
@@ -216,4 +217,8 @@ export function resolveAuctionActions({ clubs, player, actions, rng }) {
   const winner = top[rng.int(0, top.length - 1)];
   if (!addPlayer(winner.club, player, high)) return { winner: null, bid: 0 };
   return { winner: winner.club, bid: high };
+}
+
+function marketContract(player, selectedMode) {
+  return selectedMode === 'SHORT' ? {...player, contractYears:2, contractYearSpan:2} : player;
 }

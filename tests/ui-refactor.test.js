@@ -132,6 +132,32 @@ test('all screen routes render real fixtures without mutating league or auction'
 });
 
 
+test('short setup explanation and final year training lead to the five-season ending', async()=>{
+ const controls={'#name':{value:'短縮クラブ'},'#seed':{value:'short-ui'},'#short-season':{checked:true}};
+ const harness=await screenHarness(controls);
+ assert.match(harness.screens.setup(),/1シーズンで2年経過し、契約の残り年数も2年減ります/);
+ harness.click('a','start');const state=harness.getState();
+ assert.equal(state.league.seasonMode,'SHORT');
+ state.league.season=5;
+ harness.click('a','skipDraft');harness.click('a','toAuction');let now=Date.now();
+ for(let guard=0;!state.auction.completed&&guard<100;guard++){now+=60000;harness.tick(now);}
+ harness.click('a','season');
+ assert.match(harness.screens.seasonResults(),/最後の育成・最終表彰へ/);
+ harness.click('stage4','offseason');
+ for(const p of state.league.clubs[0].roster.filter(p=>p.contractYears<=0))harness.click('renew',p.id);
+ for(const event of [...state.retentionEvents])harness.click('retention-pay',event.playerId);
+ for(const offer of [...state.specialOffers])harness.click('special-skip',offer.playerId);
+ harness.click('stage4','eventsDone');
+ const players=state.league.clubs[0].roster.slice(0,2),age=players[0].age;
+ for(const p of players){harness.click('train',p.id);controls[`[data-focus="${p.id}"]`]={value:p.primaryPosition==='GK'?'gk':'pass'};}
+ harness.click('stage4','confirm');harness.click('stage4','grow');
+ assert.equal(players[0].age,age+2);assert.equal(state.finalYearProcessed,true);
+ const html=harness.screens.growth();assert.match(html,/data-ending="start"/);
+ state.mode='room';assert.doesNotMatch(harness.screens.growth(),/data-ending="start"/);state.mode=undefined;
+ harness.click('ending','start');assert.equal(state.view,'grandFinal');
+ assert.match(harness.screens.grandFinal(),/5シーズンの総合結果/);
+});
+
 test('single player real actions complete a white-club season and proceed to year two', async()=>{
  const controls={'#name':{value:'白いクラブ'},'#seed':{value:'single-ui-flow'}};
  const harness=await screenHarness(controls);
