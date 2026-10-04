@@ -1,4 +1,4 @@
-import { FORMATIONS, formationId, lineupSlots } from './formations.js?v=formations-v1';
+import { FORMATIONS, formationId, lineupSlots } from './formations.js?v=formation-layout-v2';
 import {rareKind} from './rare-characters.js';
 import { calculateOverall, createPlayer } from './data.js?v=formations-v1';
 import { processOffseason, renewalFee } from './development.js?v=rare-v2';

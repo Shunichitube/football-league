@@ -1459,30 +1459,53 @@ body.arena-active #app>.arena-popup-overlay{pointer-events:auto}
  #app .auction-scene .auction-topline .auction-lot-count {padding:8px 10px;border-radius:8px;}
 }
 
-/* Shared avatar dimensions; formation changes only move the five slots. */
-#app main.screen-squad .formation-switch {display:flex;gap:6px;align-items:center;}
-#app main.screen-squad .formation-switch button {margin:0;padding:5px 12px;background:#102b39;border:1px solid #639c9c;color:#e8fff5;font-size:15px;}
+
+/* Formation controls use a vertical rail; large avatars keep compact side labels. */
+#app main.screen-squad .formation-switch {display:flex;flex-direction:column;gap:8px;align-items:stretch;width:100%;}
+#app main.screen-squad .formation-switch button {margin:0;padding:9px 10px;background:#102b39;border:1px solid #639c9c;color:#e8fff5;font-size:18px;}
 #app main.screen-squad .formation-switch button[aria-pressed="true"] {background:#56deb0;color:#06251d;border-color:#a6ffe0;}
 @media(min-width:761px) {
- #app main.screen-squad .formation-pitch {position:relative!important;display:block!important;}
+ #app main.screen-squad .formation-pitch {position:relative!important;display:block!important;--formation-avatar-size:clamp(78px,10.5vh,118px);--formation-info-width:clamp(84px,6vw,110px);}
  #app main.screen-squad .formation-pitch .formation-token,
  #app main.screen-squad .formation-pitch .formation-token:first-child,
  #app main.screen-squad .formation-pitch .formation-token:last-child {
-  position:absolute!important;left:var(--slot-x);top:var(--slot-y);transform:translate(-50%,-50%)!important;
-  width:clamp(120px,10vw,184px);height:clamp(80px,10vh,120px);max-height:none;min-height:0;
-  margin:0!important;padding:0!important;gap:0!important;overflow:visible;
+  position:absolute!important;left:var(--slot-x);top:var(--slot-y);
+  transform:translate(calc(var(--formation-avatar-size) / -2),-50%)!important;
+  display:flex;flex-direction:row;align-items:center;justify-content:flex-start;
+  width:calc(var(--formation-avatar-size) + var(--formation-info-width) + 8px);height:var(--formation-avatar-size);max-height:none;min-height:0;
+  margin:0!important;padding:0!important;gap:8px!important;overflow:visible;
  }
- #app main.screen-squad .formation-pitch .formation-token img {width:clamp(60px,5vw,88px);height:clamp(40px,6.5vh,82px);max-width:none;flex-shrink:0;object-fit:contain;}
- #app main.screen-squad .formation-pitch .formation-token .squad-role-badge {font-size:12px;line-height:1.1;padding:1px 6px;}
- #app main.screen-squad .formation-pitch .formation-token strong {font-size:13px;line-height:1.1;padding:1px 6px;}
- #app main.screen-squad .formation-pitch .formation-token .formation-details {font-size:11px;line-height:1.1;padding:1px 6px;}
+ #app main.screen-squad .formation-pitch .formation-token[data-label-side="left"] {
+  flex-direction:row-reverse;transform:translate(calc(-100% + var(--formation-avatar-size) / 2),-50%)!important;
+ }
+ #app main.screen-squad .formation-pitch .formation-token img {
+  width:var(--formation-avatar-size);height:var(--formation-avatar-size);max-width:none;flex:0 0 var(--formation-avatar-size);object-fit:contain;
+ }
+ #app main.screen-squad .formation-token-info {
+  display:flex;flex-direction:column;align-items:stretch;gap:3px;
+  flex:0 0 var(--formation-info-width);width:var(--formation-info-width);min-width:0;
+  padding:5px 4px;background:#092a32;border:1px solid #558e8177;border-radius:7px;text-align:center;
+ }
+ #app main.screen-squad .formation-pitch .formation-token .squad-role-badge {font-size:12px;line-height:1.1;padding:1px 3px;max-width:100%;}
+ #app main.screen-squad .formation-pitch .formation-token strong {font-size:13px;line-height:1.1;padding:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+ #app main.screen-squad .formation-pitch .formation-token .formation-details {font-size:11px;line-height:1.1;padding:0;white-space:nowrap;}
 }
 @media(min-width:1100px) and (min-height:700px) {
- #app main.screen-squad .formation-board-title {top:8.8%;left:15%;max-width:79%;display:flex;gap:10px;align-items:center;}
+ #app main.screen-squad .formation-board-title {
+  top:13%;left:1.5%;width:clamp(66px,6vw,112px);max-width:none;
+  display:flex;flex-direction:column;gap:9px;align-items:stretch;padding:8px 5px;background:#092a32;border:1px solid #558e81;
+ }
+ #app main.screen-squad .formation-board-title h3 {font-size:clamp(10px,.7vw,13px);line-height:1.3;margin:0;text-align:center;}
  #app main.screen-squad .formation-board-title>span {display:none;}
  #app main.screen-squad .formation-side>.formation-pitch {position:absolute!important;left:15.5%;top:11%;width:79%;height:42%;}
 }
 
+/* Pitch role labels overlay the avatar's upper left, preserving the card's starter badge. */
+#app main.screen-squad .formation-pitch .formation-role-badge {
+ position:absolute;z-index:3;top:2px;left:2px;margin:0;padding:3px 6px;
+ background:#9af0c6;color:#073329;border:1px solid #092a32;border-radius:5px;
+ font-size:12px;font-style:normal;font-weight:800;line-height:1.1;pointer-events:none;
+}
 @media(min-width:761px) {
- #app main.screen-squad .formation-pitch .formation-token[data-lineup-slot="0"] {transform:translate(-50%,-80%)!important;}
+ #app main.screen-squad .formation-pitch .formation-token[data-label-side="left"] .formation-role-badge {left:calc(var(--formation-info-width) + 10px);}
 }

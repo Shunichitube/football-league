@@ -48,7 +48,8 @@ test('12人の所属選手を先発を含めて一覧表示し、既存能力で
   const html=renderLineupEditor(club,club.lineup[0]);
   assert.equal((html.match(/class="squad-player /g)||[]).length,12);
   assert.equal((html.match(/class="squad-special"/g)||[]).length,12);
-  assert.ok((html.match(/class="squad-role-badge /g)||[]).length>=17);
+  assert.equal((html.match(/class="squad-role-badge /g)||[]).length,13); // 12 roster cards plus the selected comparison profile.
+  assert.equal((html.match(/class="formation-role-badge"/g)||[]).length,5);
   assert.equal((html.match(/class="lineup-slot formation-token /g)||[]).length,5);
   assert.match(html,/所属選手 <small>12\/12<\/small>/);
   assert.match(html,/squad-role-badge starter">先発 GK/);
