@@ -1462,7 +1462,7 @@ body.arena-active #app>.arena-popup-overlay{pointer-events:auto}
 
 /* Formation controls use a vertical rail; avatars keep their names and overall rank at their feet. */
 #app main.screen-squad .formation-switch {display:flex;flex-direction:column;gap:8px;align-items:stretch;width:100%;}
-#app main.screen-squad .formation-switch button {margin:0;padding:9px 10px;background:#102b39;border:1px solid #639c9c;color:#e8fff5;font-size:18px;}
+#app main.screen-squad .formation-switch button {margin:0;padding:9px 4px;background:#102b39;border:1px solid #639c9c;color:#e8fff5;font-size:clamp(14px,.95vw,18px);white-space:nowrap;}
 #app main.screen-squad .formation-switch button[aria-pressed="true"] {background:#56deb0;color:#06251d;border-color:#a6ffe0;}
 @media(min-width:761px) {
  #app main.screen-squad .formation-pitch {position:relative!important;display:block!important;--formation-avatar-size:clamp(56px,calc(18vh - 74px),118px);}

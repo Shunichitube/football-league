@@ -17,7 +17,7 @@ import { applySeasonFinances, awards, clubAchievements, createLeague, finalizeSe
 import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=formations-v1';
 import { createRandom } from './random.js';
 import { createAuctionPool, createDraftPool, resolveDraftActions } from './market.js?v=rare-text-v3';
-import { renderContractPlayerCard, configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=formation-points-v8';
+import { renderContractPlayerCard, configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=formation-labels-v9';
 import { decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=formations-v1';
 import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=formations-v1';
 import { RoomAdapter } from './room-adapter.js?v=formations-v1';
@@ -265,7 +265,7 @@ onGameClick('app', event => {
   const formation = event.target.closest('button[data-formation]')?.dataset.formation;
   if (formation) {
     const result = applyClubAction(me(), {type: ACTION_TYPES.SET_FORMATION, clubId:me().id, formation});
-    s.lineupMessage = result.ok ? `${formation}へ切り替えました。${result.warnings.length ? '適性外配置があります。' : ''}` : result.error;
+    s.lineupMessage = result.ok ? `${formation.split('').join('-')}へ切り替えました。${result.warnings.length ? '適性外配置があります。' : ''}` : result.error;
     s.lineupError = !result.ok;
     s.selectedLineupPlayerId = null; s.comparisonSourcePlayerId = null;
     render();return;
