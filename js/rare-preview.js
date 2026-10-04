@@ -2,7 +2,7 @@ import {RARE_CHARACTERS,applyRareCharacter} from './rare-characters.js';
 import {createPlayer} from './data.js?v=formations-v1';
 import {createRandom} from './random.js';
 import {playerAppearance} from './avatar-profile.js?v=rare-v2';
-import {renderPlayerCard,escapeHtml} from './ui.js?v=formation-points-v6';
+import {renderPlayerCard,escapeHtml} from './ui.js?v=formation-points-v7';
 import {loadMotionAtlas,drawMotion} from './player-motion.js?v=rare-fit-v5';
 const players=[createPlayer('normal-size-reference','MF',createRandom('normal-size-reference')),...Object.keys(RARE_CHARACTERS).map(kind=>applyRareCharacter(createPlayer(kind,'MF',createRandom(kind)),kind,createRandom(kind)))];
 const view=document.querySelector('#preview');
