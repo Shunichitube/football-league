@@ -1,0 +1,41 @@
+/* DF keeps the existing card skin. Light cards share legible foreground colors. */
+[data-position="GK"] { --position-surface:#dce1e6; --position-ink:#25313d; --position-muted:#445362; --position-line:#82909d; --position-panel:#f0f2f5; }
+[data-position="MF"] { --position-surface:#d8ecdd; --position-ink:#193b27; --position-muted:#365c44; --position-line:#6f9b7c; --position-panel:#eff7f1; }
+[data-position="FW"] { --position-surface:#f2dcde; --position-ink:#48242d; --position-muted:#70414b; --position-line:#b57e89; --position-panel:#fcf0f1; }
+#app :is(.player-card,.squad-player,.compare-profile,.season-stat-card):is([data-position="GK"],[data-position="MF"],[data-position="FW"]) {
+  background:var(--position-surface); color:var(--position-ink); border-color:var(--position-line);
+  --line:var(--position-line); --text:var(--position-ink); --muted:var(--position-muted);
+}
+#app [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) :is(.player-name,.player-meta b,.growth-expectation b,.squad-identity strong,.compare-profile strong,.season-stat-name,.season-stat-profile b,.ability-grid dd,.squad-abilities dd) { color:var(--position-ink); }
+#app [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) :is(.player-profile p,.player-meta,.growth-expectation,.ability-grid dt,.squad-abilities dt,.squad-identity>span,.compare-profile span,.compare-profile small,.season-stat-profile span,.season-stat-profile small,.special-ability.none,.special-ability-hover em) { color:var(--position-muted); }
+#app [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) :is(.ability-grid div,.squad-abilities div,.squad-special,.special-ability-detail p,.season-stat-metrics div) { background:var(--position-panel); color:var(--position-ink); border-color:var(--position-line); }
+#app [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) :is(.overall-rank,.special-ability-detail>span,.special-ability,.squad-special b,.season-stat-special) { color:#754600; }
+#app [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) :is(.squad-special>span,.squad-special-description,.season-stat-special-description,.season-stat-metrics dt,.season-stat-metrics dd) { color:var(--position-ink); }
+#app [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) .position-badge { color:var(--position-ink); border-color:var(--position-line); background:var(--position-panel); }
+#app [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) button.subtle { color:var(--position-ink); border-color:var(--position-line); }
+#app .squad-player.selected-player[data-position] { outline:3px solid #22c55e; outline-offset:-3px; }
+#app .draft-choice-card.is-selected { border-color:#22c55e; box-shadow:0 0 0 2px #22c55e,0 0 20px #22c55e50; }
+#app .draft-selected-badge { background:#166534; color:#fff; }
+
+.draft-turn-panel { margin:.6rem 0; padding:.65rem .8rem; border:1px solid #64748b; border-radius:12px; background:#102136f2; color:#f1f5f9; }
+.draft-turn-panel.is-your-turn { border-color:#4ade80; box-shadow:inset 4px 0 #4ade80; }
+.draft-turn-heading { display:flex; align-items:center; flex-wrap:wrap; gap:.45rem .8rem; }
+.draft-turn-heading strong { flex:1; font-size:1.2rem; line-height:1.35; }
+.draft-turn-panel.is-your-turn .draft-turn-heading strong { color:#86efac; }
+.draft-round-label { padding:.25rem .5rem; border-radius:6px; background:#263b51; font-weight:800; white-space:nowrap; }
+.draft-turn-heading>span:last-child { font-size:.8rem; color:#cbd5e1; }
+.draft-pick-order { display:flex; flex-wrap:wrap; gap:.35rem; padding:0; margin:.5rem 0 0; list-style:none; }
+.draft-pick-order li { display:grid; grid-template-columns:auto 1fr; align-items:center; gap:.1rem .35rem; flex:1 1 130px; padding:.3rem .45rem; border:1px solid #52657b; border-radius:7px; background:#182b40; min-width:0; }
+.draft-order-number { grid-row:span 2; font-weight:900; color:#cbd5e1; }
+.draft-pick-order b { font-size:.8rem; overflow-wrap:anywhere; }
+.draft-pick-order small { font-size:.7rem; color:#cbd5e1; }
+.draft-pick-order .is-active { border-color:#4ade80; background:#163d2a; }
+.draft-pick-order .is-active small { color:#bbf7d0; }
+.draft-pick-order .is-self b { text-decoration:underline; text-underline-offset:3px; }
+.draft-pick-order .is-done { background:#253747; }
+.draft-pick-order .is-skipped { opacity:.65; }
+@media (min-width:1100px) {
+  main.screen-draft .draft-turn-panel { margin:.3rem 0; padding:.4rem .65rem; }
+  main.screen-draft .draft-turn-heading strong { font-size:1.08rem; }
+  main.screen-draft .draft-pick-order { margin-top:.3rem; }
+}
