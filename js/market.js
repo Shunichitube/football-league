@@ -1,7 +1,7 @@
 import { applyRareCharacter, rollRareCharacter, rareKind, RARE_CHARACTERS } from './rare-characters.js?v=rare-text-v3';
-import { calculateOverall, createPlayer, displayPlayer, FIELD_STAT_KEYS, STAT_LABELS } from './data.js?v=0.22.0';
+import { calculateOverall, createPlayer, displayPlayer, FIELD_STAT_KEYS, STAT_LABELS } from './data.js?v=formations-v1';
 import { createRandom, weightedPick } from './random.js';
-import { ACTION_TYPES } from './rules.js?v=rare-v2';
+import { ACTION_TYPES } from './rules.js?v=formations-v1';
 
 const DRAFT_DISTRIBUTION = [['G', 15], ['F', 25], ['E', 40], ['D', 15], ['C', 4], ['B', 1]];
 const DRAFT_COST = 5;

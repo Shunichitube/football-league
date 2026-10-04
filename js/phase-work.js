@@ -1,7 +1,8 @@
+import { FORMATIONS } from './formations.js?v=formations-v1';
 import { rareKind } from './rare-characters.js';
 // Shared validation for a private work-in-progress copy and authoritative Room input.
-import { applyClubAction, ACTION_TYPES, validateLineup } from './rules.js?v=rare-v2';
-import { selectBestLineup } from './cpu.js?v=rare-v2';
+import { applyClubAction, ACTION_TYPES, validateLineup } from './rules.js?v=formations-v1';
+import { selectBestLineup } from './cpu.js?v=formations-v1';
 import { trainingSkills } from './development.js?v=rare-v2';
 
 export const clone = value => JSON.parse(JSON.stringify(value));
@@ -54,7 +55,8 @@ export function applyWork(league, clubId, events, actions = []) {
 
 export function validateSetup(club, input) {
   requireValue(input && Array.isArray(input.lineup), '編成を入力してください。');
-  const result = validateLineup(club, input.lineup);
+  requireValue(input.formation === undefined || (typeof input.formation === 'string' && Object.hasOwn(FORMATIONS, input.formation)), 'フォーメーションが不正です。');
+  const result = validateLineup({ ...club, formation: input.formation ?? club.formation }, input.lineup);
   requireValue(result.ok, result.error);
   requireValue(['BALANCED', 'POSSESSION', 'DRIBBLE', 'COUNTER'].includes(input.tactic), '戦術が不正です。');
 }

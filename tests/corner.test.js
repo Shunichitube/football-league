@@ -4,7 +4,7 @@ import { simulateMatch } from '../js/sim.js';
 import { LINEUP_SLOTS } from '../js/rules.js';
 
 // Equal skills and zero luck isolate the first shot and its restart.
-function scenario({ shoot = 89, outcome = 0, corner = 0, tactic = 'BALANCED', firstShotLuck = 0 } = {}) {
+function scenario({ shoot = 89, outcome = 0, corner = 0, tactic = 'BALANCED', firstShotLuck = 0, secondShotLuck = 0 } = {}) {
   const club = id => {
     const roster = LINEUP_SLOTS.map((position, i) => ({
       id: `${id}-${i}`, name: `${id}-${i}`, primaryPosition: position,
@@ -15,8 +15,9 @@ function scenario({ shoot = 89, outcome = 0, corner = 0, tactic = 'BALANCED', fi
   const home = club('home'), away = club('away');
   away.tactic = 'BALANCED';
   let calls = 0, luckCalls = 0;
-  const rolls = [...Array(10).fill(.5), ...Array(11).fill(0), outcome, corner];
-  const result = simulateMatch(home, away, { next: () => rolls[calls++] ?? .99, int: () => ++luckCalls === 5 ? firstShotLuck : 0 });
+  // Stage two now draws a separate defensive support player before the shot.
+  const rolls = [...Array(10).fill(.5), ...Array(12).fill(0), outcome, corner];
+  const result = simulateMatch(home, away, { next: () => rolls[calls++] ?? .99, int: () => { luckCalls++; return luckCalls === 5 ? firstShotLuck : luckCalls === 9 ? secondShotLuck : 0; } });
   return result;
 }
 
@@ -49,10 +50,10 @@ test('REBOUND preserves recovery priority and applies 15% only after failed reco
 });
 
 test('corner skips stage one and keeps PASS tactics and fixed +2', () => {
-  // PASS offense is 72.7; BALANCED +2 and corner +2 give diff 6.7 (HARD).
-  // POSSESSION +4 and corner +2 give diff 8.7 (NORMAL); without +2 it is HARD.
+  // PASS offense is 73; BALANCED +2 and corner +2 give diff 7 (HARD).
+  // POSSESSION +4 and corner +2 give diff 9 (NORMAL); without +2 it is HARD.
   for (const [tactic, chance] of [['BALANCED', 'HARD'], ['POSSESSION', 'NORMAL']]) {
-    const events = scenario({ shoot: 97, tactic, firstShotLuck: -8 }).events;
+    const events = scenario({ shoot: 90, tactic, firstShotLuck: -1, secondShotLuck: 8 }).events;
     assert.equal(events[1].kind, 'SAVE');
     assert.equal(events[2].kind, 'CORNER');
     assert.equal(events[3].kind, 'GOAL');

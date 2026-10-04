@@ -1,13 +1,13 @@
 import { openLot, raiseBid, passLot, tickLot } from '../js/live-auction.js?v=0.21.1';
-import { growthExpectationKey } from '../js/data.js';
+import { growthExpectationKey } from '../js/data.js?v=formations-v1';
 // Room owns the phase and private inputs. All game rules come from main's modules.
-import { createLeague, standings, simulateRemainingSeason, finalizeSeason, applySeasonFinances, recordDraftAcquisition, startNextSeason } from '../js/league.js?v=0.17.29';
+import { createLeague, standings, simulateRemainingSeason, finalizeSeason, applySeasonFinances, recordDraftAcquisition, startNextSeason } from '../js/league.js?v=formations-v1';
 import { createDraftPool, createAuctionPool, resolveDraftActions } from '../js/market.js?v=0.17.31';
-import { decideCpuDraftAction, prepareCpuClubs, manageCpuContracts, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from '../js/cpu.js?v=rare-v1';
+import { decideCpuDraftAction, prepareCpuClubs, manageCpuContracts, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from '../js/cpu.js?v=formations-v1';
 import { createContractEvents, createSpecialTrainingOffers } from '../js/development.js?v=0.17.31';
-import { ACTION_TYPES } from '../js/rules.js?v=0.17.2';
+import { ACTION_TYPES } from '../js/rules.js?v=formations-v1';
 import { createRandom } from '../js/random.js';
-import { clone, requireValue, applyWork, validateSetup, validateTraining } from '../js/phase-work.js';
+import { clone, requireValue, applyWork, validateSetup, validateTraining } from '../js/phase-work.js?v=formations-v1';
 
 
 export function enterPhase(room, phase) {
@@ -157,7 +157,7 @@ function resolveAll(room) {
     case 'auction': return advanceAuction(room);
     case 'auction-complete': return enterPhase(room, 'team-setup');
     case 'team-setup':
-      for (const club of league.clubs.filter(club => club.controllerType === 'HUMAN')) Object.assign(club, { lineup: [...room.inputs[club.id].lineup], tactic: room.inputs[club.id].tactic });
+      for (const club of league.clubs.filter(club => club.controllerType === 'HUMAN')) Object.assign(club, { lineup: [...room.inputs[club.id].lineup], tactic: room.inputs[club.id].tactic, formation: room.inputs[club.id].formation || club.formation || '121' });
       // Keep the accepted setup inputs until the simulation barrier is checked.
       room.phase = 'season-ready';
       return runSeason(room);
@@ -198,7 +198,7 @@ export function submitInput(room, player, input) {
     case 'draft':
       requireValue(input.pass === true || (club.funds >= 5 && club.roster.length < 12 && room.game.draft.pool.some(p => p.id === input.playerId)), '指名対象または資金が不正です。');
       accepted = { pass: input.pass === true, playerId: input.pass === true ? null : input.playerId }; break;
-    case 'team-setup': validateSetup(club, input); accepted = { lineup: [...input.lineup], tactic: input.tactic }; break;
+    case 'team-setup': validateSetup(club, input); accepted = { lineup: [...input.lineup], tactic: input.tactic, formation: input.formation || club.formation || '121' }; break;
     case 'development': validateTraining(club, input.selections); accepted = { selections: input.selections.map(row => ({ playerId: row.playerId, focus: row.focus })) }; break;
     case 'offseason-events':
     case 'release': {

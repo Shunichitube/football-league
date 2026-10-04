@@ -91,10 +91,12 @@ test('real HTTP room flow: two humans, barriers, retries, restore, auction, seas
  const setup=clubFor(first),lineup=[...setup.lineup];[lineup[2],lineup[3]]=[lineup[3],lineup[2]];
  localStorage.setItem('football-league:v3:session',JSON.stringify(first));
  let state={};const adapter=new RoomAdapter(()=>state,next=>state=next,()=>{},()=>{});adapter.active=true;adapter.client.room=room;adapter.receive(room);
- state.league.clubs.find(c=>c.id===setup.id).lineup=lineup;adapter.remember();
+ state.league.clubs.find(c=>c.id===setup.id).lineup=lineup;state.league.clubs.find(c=>c.id===setup.id).formation='112';adapter.remember();
  let restored={};const reopened=new RoomAdapter(()=>restored,next=>restored=next,()=>{},()=>{});reopened.active=true;reopened.client.room=room;reopened.receive(room);
  assert.deepEqual(restored.league.clubs.find(c=>c.id===setup.id).lineup,lineup);
- await mutate(first,'submit',{lineup,tactic:setup.tactic});assert.equal(room.phase,'team-setup');
+ assert.equal(restored.league.clubs.find(c=>c.id===setup.id).formation,'112');
+ await mutate(first,'submit',{lineup,tactic:setup.tactic,formation:'999'},400);
+ await mutate(first,'submit',{lineup,tactic:setup.tactic,formation:'112'});assert.equal(room.phase,'team-setup');
  const setup2=clubFor(second);
  // Lose a successful response, retry exactly the same request and prove no second season runs.
  client.session=second;client.room=room;client.pending=null;
@@ -105,6 +107,8 @@ test('real HTTP room flow: two humans, barriers, retries, restore, auction, seas
  const retry=new RoomClient(()=>{},()=>{});clients.push(retry);retry.session=second;
  await retry.resume();retry.stop();room=retry.room;
  assert.equal(room.phase,'season-result');assert.equal(retry.pending,null);
+ assert.equal(clubFor(first).formation,'112');
+ assert.equal(clubFor(second).formation,'121');
  assert.equal(room.game.league.fixtureResults.length,30);
  for(const session of [first,second]){
   const own=clubFor(session);assert.equal(room.game.league.seasonResults.filter(m=>m.fixture.homeId===own.id||m.fixture.awayId===own.id).length,10);

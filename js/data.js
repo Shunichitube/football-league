@@ -88,7 +88,7 @@ export function blankSeason() { return { appearances: 0, goals: 0, assists: 0, s
 
 export function createClub({ id, name, color, seed, initial = true, controllerType = 'CPU' }) {
   const players = POSITIONS.map((position, i) => createPlayer(id * 10 + i, position, seed, { initial }));
-  return { id, name, color, controllerType, funds: 100, roster: players, lineup: players.map(p => p.id), tactic: 'BALANCED' };
+  return { id, name, color, controllerType, funds: 100, roster: players, lineup: players.map(p => p.id), tactic: 'BALANCED', formation: '121' };
 }
 
 export function calculateOverall(player) {

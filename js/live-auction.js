@@ -1,6 +1,6 @@
 import { cpuBid, addPlayer } from './market.js?v=rare-v2';
 import { createRandom } from './random.js';
-import { displayPlayer } from './data.js?v=0.17.2';
+import { displayPlayer } from './data.js?v=formations-v1';
 const MINIMUM_BID={G:1,F:5,E:10,D:15,C:20,B:25,A:30,S:35,SS:40};
 export function minimumAuctionBid(player){return MINIMUM_BID[displayPlayer(player).overallRank]??1;}
 export function openLot(auction,clubs,seed,now=Date.now()){

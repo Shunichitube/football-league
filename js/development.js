@@ -1,6 +1,6 @@
 import { rareKind, hatchEgg } from './rare-characters.js';
 import { rankOf } from './config.js';
-import { calculateOverall, FIELD_STAT_KEYS, FIELD_PLAYER_STAT_KEYS } from './data.js?v=0.17.2';
+import { calculateOverall, FIELD_STAT_KEYS, FIELD_PLAYER_STAT_KEYS } from './data.js?v=formations-v1';
 import { SPECIAL_ABILITIES } from './market.js?v=rare-v2';
 import { weightedPick } from './random.js';
 

@@ -1,3 +1,4 @@
+import { lineupSlotLabel, formationId } from './formations.js?v=formations-v1';
 import {createSfxController} from './sfx.js?v=training-complete-v1';
 import {createBgmController} from './bgm.js?v=season-bgm-v3';
 import {renderGrandResults,mountGrandFinale} from './grand-finale-ui.js?v=motion-ui-v24';
@@ -12,14 +13,14 @@ import { draftTurnState, renderDraftTurn } from './draft-status.js?v=opaque-pane
 import { dialogs } from './dialogs.js';
 import { openLot, raiseBid, passLot, tickLot } from './live-auction.js?v=0.21.1';
 import { auctionAvatar, renderLiveAuction } from './auction-ui.js?v=opaque-topline-v1';
-import { applySeasonFinances, awards, clubAchievements, createLeague, finalizeSeason, recordDraftAcquisition, simulateRemainingSeason, standings as singleStandings, startNextSeason } from './league.js?v=0.17.29';
-import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=appearance-v29';
+import { applySeasonFinances, awards, clubAchievements, createLeague, finalizeSeason, recordDraftAcquisition, simulateRemainingSeason, standings as singleStandings, startNextSeason } from './league.js?v=formations-v1';
+import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=formations-v1';
 import { createRandom } from './random.js';
 import { createAuctionPool, createDraftPool, resolveDraftActions } from './market.js?v=rare-text-v3';
-import { renderContractPlayerCard, configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=position-colors-v1';
-import { decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=appearance-v29';
-import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=appearance-v29';
-import { RoomAdapter } from './room-adapter.js?v=notifications-v1';
+import { renderContractPlayerCard, configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=formations-v1';
+import { decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=formations-v1';
+import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=formations-v1';
+import { RoomAdapter } from './room-adapter.js?v=formations-v1';
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && roomAdapter?.active) roomAdapter.client.startNotifications(true);
 });
@@ -251,8 +252,7 @@ function placeLineupPlayer(playerId, slotIndex) {
   const result = applyClubAction(me(), { type: ACTION_TYPES.SET_LINEUP, clubId: me().id, lineup: nextLineup });
   if (!result.ok) { s.lineupMessage = result.error; s.lineupError = true; }
   else {
-    const slotNames = ['GK', 'DF', 'MF 1', 'MF 2', 'FW'];
-    s.lineupMessage = `${selected.name}を${slotNames[slotIndex]}へ配置しました。${result.warnings.length ? ' 適性外配置があります。' : ''}`;
+    s.lineupMessage = `${selected.name}を${lineupSlotLabel(me(),slotIndex)}へ配置しました。${result.warnings.length ? ' 適性外配置があります。' : ''}`;
     s.lineupError = false;
     s.selectedLineupPlayerId = null;
     s.comparisonSourcePlayerId = null;
@@ -262,6 +262,15 @@ function placeLineupPlayer(playerId, slotIndex) {
 }
 onGameClick('app', event => {
   if (event.target.closest('[data-rename-player]')) return;
+  const formation = event.target.closest('button[data-formation]')?.dataset.formation;
+  if (formation) {
+    const result = applyClubAction(me(), {type: ACTION_TYPES.SET_FORMATION, clubId:me().id, formation});
+    s.lineupMessage = result.ok ? `${formation}へ切り替えました。${result.warnings.length ? '適性外配置があります。' : ''}` : result.error;
+    s.lineupError = !result.ok;
+    s.selectedLineupPlayerId = null; s.comparisonSourcePlayerId = null;
+    render();return;
+  }
+
   const playerId = event.target.closest('[data-lineup-player]')?.dataset.lineupPlayer || event.target.closest('.squad-player[data-compare-player]')?.dataset.comparePlayer;
   const slotValue = event.target.closest('[data-lineup-slot]')?.dataset.lineupSlot;
   if (playerId) {
@@ -482,7 +491,7 @@ function updateRoomStatus() {
   const groups=[
     ['[data-p],[data-a="skipDraft"]',['draft']],
 
-    ['[data-lineup-player],[data-lineup-slot],[data-tactic]',['team-setup']],
+    ['[data-lineup-player],[data-lineup-slot],[data-tactic],button[data-formation]',['team-setup']],
     ['[data-renew],[data-release],[data-retention-pay],[data-retention-release],[data-special-pay],[data-special-skip]',['offseason-events']],
     ['[data-training-card],[data-train],[data-focus],[data-stage4="confirm"],[data-stage4="grow"]',['development']],
     ['[data-release-player],[data-rename-player]',['release']],
@@ -641,14 +650,14 @@ function roomClick(event){
     else if(a==='bid'||a==='pass')sendRoom(roomAdapter.submit({bid:a==='pass'?0:Number(document.querySelector('#bid').value)}));
     else if(a==='season'){
       if(roomAdapter.room.phase==='season-ready')sendRoom(roomAdapter.submit({}));
-      else sendRoom(roomAdapter.submit({lineup:me().lineup,tactic:me().tactic}));
+      else sendRoom(roomAdapter.submit({lineup:me().lineup,tactic:me().tactic,formation:formationId(me())}));
     }
     else if(step==='eventsDone'||step==='releaseDone')sendRoom(roomAdapter.submit({actions:roomAdapter.actions}));
     else if(step==='grow')sendRoom(roomAdapter.submit({selections:[...s.training.keys()].map(playerId=>({playerId,focus:document.querySelector(`[data-focus="${CSS.escape(playerId)}"]`).value}))}));
     else sendRoom(roomAdapter.submit());
     return true;
   }
-  if(target.closest('[data-lineup-player],[data-lineup-slot],[data-tactic]') && (roomAdapter.locked||roomAdapter.room.phase!=='team-setup'))return true;
+  if(target.closest('[data-lineup-player],[data-lineup-slot],[data-tactic],button[data-formation]') && (roomAdapter.locked||roomAdapter.room.phase!=='team-setup'))return true;
   if(target.closest('[data-training-card],[data-train],[data-stage4="confirm"]') && (roomAdapter.locked||roomAdapter.room.phase!=='development'))return true;
   if(target.closest('[data-nav]')?.dataset.nav==='squad'&&!['team-setup','season-ready'].includes(roomAdapter.room.phase))return true;
   return false;

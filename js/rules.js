@@ -1,3 +1,4 @@
+import { FORMATIONS, lineupSlots, formationId, remapFormation } from './formations.js?v=formations-v1';
 import { rareKind } from './rare-characters.js';
 import { renewalFee } from './development.js?v=rare-v2';
 
@@ -5,6 +6,7 @@ export const ACTION_TYPES = Object.freeze({
   DRAFT_PICK: 'DRAFT_PICK',
   AUCTION_BID: 'AUCTION_BID',
   SET_LINEUP: 'SET_LINEUP',
+  SET_FORMATION: 'SET_FORMATION',
   SET_TACTIC: 'SET_TACTIC',
   SELECT_DEVELOPMENT: 'SELECT_DEVELOPMENT',
   RENEW_CONTRACT: 'RENEW_CONTRACT',
@@ -31,10 +33,11 @@ export function validateLineup(club, lineup = club?.lineup) {
   if (new Set(lineup).size !== LINEUP_SLOTS.length) return { ok: false, error: '同一選手を重複配置できません。', warnings: [] };
   const players = lineup.map(id => club.roster.find(player => player.id === id));
   if (players.some(player => !player)) return { ok: false, error: '所属していない選手は配置できません。', warnings: [] };
-  const invalidKeeper = players.find((player, index) => LINEUP_SLOTS[index] !== 'GK' && player.primaryPosition === 'GK');
+  const slots = lineupSlots(club);
+  const invalidKeeper = players.find((player, index) => slots[index] !== 'GK' && player.primaryPosition === 'GK');
   if (invalidKeeper) return { ok: false, error: 'GKはフィールド枠へ配置できません。', warnings: [] };
   const warnings = players.flatMap((player, index) => {
-    const slot = LINEUP_SLOTS[index];
+    const slot = slots[index];
     if (player.primaryPosition === slot) return [];
     return [`${player.name}：本職${positionLabel(player.primaryPosition)}から${positionLabel(slot)}への適性外配置`];
   });
@@ -53,6 +56,15 @@ export function createLineupPlacement(lineup, playerId, slotIndex) {
 
 export function applyClubAction(club, action, league = null) {
   if (!club || action.clubId !== club.id) return { ok: false, error: 'クラブが一致しません。' };
+  if (action.type === ACTION_TYPES.SET_FORMATION) {
+    if (typeof action.formation !== 'string' || !Object.hasOwn(FORMATIONS, action.formation)) return { ok: false, error: 'フォーメーションが不正です。' };
+    const lineup = remapFormation(club.lineup, formationId(club), action.formation);
+    const validation = validateLineup({ ...club, formation: action.formation }, lineup);
+    if (!validation.ok) return validation;
+    club.formation = action.formation;
+    club.lineup = lineup;
+    return { ok: true, formation: club.formation, lineup: [...lineup], warnings: validation.warnings };
+  }
   if (action.type === ACTION_TYPES.SET_LINEUP) {
     const lineup = Array.isArray(action.lineup) ? action.lineup : [];
     const validation = validateLineup(club, lineup);

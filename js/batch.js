@@ -1,4 +1,4 @@
-import { createLeague, playCurrentRound, standings } from './league.js';
+import { createLeague, playCurrentRound, standings } from './league.js?v=formations-v1';
 
 export function runBatch(count = 100) {
   const summary = { leagues: count, goals: 0, matches: 0, champions: new Map(), draws: 0 };

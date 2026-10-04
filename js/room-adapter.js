@@ -1,5 +1,5 @@
 import { RoomClient } from './room-client.js?v=notifications-v1';
-import { clone, applyWork } from './phase-work.js?v=rare-v2';
+import { clone, applyWork } from './phase-work.js?v=formations-v1';
 
 const VIEW = { lobby: 'roomLobby', draft: 'draft', 'draft-complete': 'draft', auction: 'auction', 'auction-complete': 'auction', 'team-setup': 'squad', 'season-ready': 'squad', 'season-result': 'seasonResults', 'offseason-events': 'offseasonEvents', development: 'development', 'growth-result': 'growth', release: 'release', 'game-complete': 'grandFinal' };
 const WORK_KEY = 'football-league:v3:work:';
@@ -22,7 +22,7 @@ export class RoomAdapter {
   remember() {
     if (!this.room?.game || this.getState().mode !== 'room' || !this.getState().league) return;
     const s = this.getState(), club = s.league.clubs.find(row => row.id === this.player.clubId);
-    localStorage.setItem(this.workKey(), JSON.stringify({ actions: this.actions, lineup: club.lineup, tactic: club.tactic, training: [...(s.training || new Map())], selectedDraftPlayerId:s.selectedDraftPlayerId }));
+    localStorage.setItem(this.workKey(), JSON.stringify({ actions: this.actions, lineup: club.lineup, tactic: club.tactic, formation: club.formation || '121', training: [...(s.training || new Map())], selectedDraftPlayerId:s.selectedDraftPlayerId }));
   }
   receive(room) {
     if (!this.active) return;
@@ -50,6 +50,7 @@ export class RoomAdapter {
         const setup = room.ownInput || work;
         if (setup.lineup) club.lineup = setup.lineup;
         if (setup.tactic) club.tactic = setup.tactic;
+        if (setup.formation) club.formation = setup.formation;
       }
       if (room.phase === 'development' && room.ownInput) state.training = new Map(room.ownInput.selections.map(row => [row.playerId, row.focus]));
       this.setState(state);

@@ -1458,3 +1458,31 @@ body.arena-active #app>.arena-popup-overlay{pointer-events:auto}
 @media(max-width:760px) {
  #app .auction-scene .auction-topline .auction-lot-count {padding:8px 10px;border-radius:8px;}
 }
+
+/* Shared avatar dimensions; formation changes only move the five slots. */
+#app main.screen-squad .formation-switch {display:flex;gap:6px;align-items:center;}
+#app main.screen-squad .formation-switch button {margin:0;padding:5px 12px;background:#102b39;border:1px solid #639c9c;color:#e8fff5;font-size:15px;}
+#app main.screen-squad .formation-switch button[aria-pressed="true"] {background:#56deb0;color:#06251d;border-color:#a6ffe0;}
+@media(min-width:761px) {
+ #app main.screen-squad .formation-pitch {position:relative!important;display:block!important;}
+ #app main.screen-squad .formation-pitch .formation-token,
+ #app main.screen-squad .formation-pitch .formation-token:first-child,
+ #app main.screen-squad .formation-pitch .formation-token:last-child {
+  position:absolute!important;left:var(--slot-x);top:var(--slot-y);transform:translate(-50%,-50%)!important;
+  width:clamp(120px,10vw,184px);height:clamp(80px,10vh,120px);max-height:none;min-height:0;
+  margin:0!important;padding:0!important;gap:0!important;overflow:visible;
+ }
+ #app main.screen-squad .formation-pitch .formation-token img {width:clamp(60px,5vw,88px);height:clamp(40px,6.5vh,82px);max-width:none;flex-shrink:0;object-fit:contain;}
+ #app main.screen-squad .formation-pitch .formation-token .squad-role-badge {font-size:12px;line-height:1.1;padding:1px 6px;}
+ #app main.screen-squad .formation-pitch .formation-token strong {font-size:13px;line-height:1.1;padding:1px 6px;}
+ #app main.screen-squad .formation-pitch .formation-token .formation-details {font-size:11px;line-height:1.1;padding:1px 6px;}
+}
+@media(min-width:1100px) and (min-height:700px) {
+ #app main.screen-squad .formation-board-title {top:8.8%;left:15%;max-width:79%;display:flex;gap:10px;align-items:center;}
+ #app main.screen-squad .formation-board-title>span {display:none;}
+ #app main.screen-squad .formation-side>.formation-pitch {position:absolute!important;left:15.5%;top:11%;width:79%;height:42%;}
+}
+
+@media(min-width:761px) {
+ #app main.screen-squad .formation-pitch .formation-token[data-lineup-slot="0"] {transform:translate(-50%,-80%)!important;}
+}

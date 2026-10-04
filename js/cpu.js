@@ -1,11 +1,12 @@
+import { FORMATIONS, formationId, lineupSlots } from './formations.js?v=formations-v1';
 import {rareKind} from './rare-characters.js';
-import { calculateOverall, createPlayer } from './data.js?v=0.17.2';
+import { calculateOverall, createPlayer } from './data.js?v=formations-v1';
 import { processOffseason, renewalFee } from './development.js?v=rare-v2';
 import { createRandom } from './random.js';
 import { cpuBid, cpuCandidatePick } from './market.js?v=rare-v2';
-import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=rare-v2';
+import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=formations-v1';
 
-const LINEUP_ROLES = ['DF', 'MF', 'MF', 'FW'];
+
 const REQUIRED = { GK: 1, DF: 1, MF: 2, FW: 1 };
 const FOCUS_KEYS = {
   GK: ['gk'],
@@ -19,33 +20,58 @@ const TACTIC_ABILITIES = {
   COUNTER: ['スピードスター', 'カウンター起点', 'ハードワーカー']
 };
 
-function bestFieldAssignment(players) {
+function bestFieldAssignment(players, roles, tactic = null) {
   let best = null;
   function assign(roleIndex, available, chosen, score) {
-    if (roleIndex === LINEUP_ROLES.length) {
+    if (roleIndex === roles.length) {
       if (!best || score > best.score) best = { players: [...chosen], score };
       return;
     }
-    const role = LINEUP_ROLES[roleIndex];
+    const role = roles[roleIndex];
     for (const player of available) {
       const fit = positionSuitability(player, role);
       if (!fit) continue;
-      assign(roleIndex + 1, available.filter(candidate => candidate.id !== player.id), [...chosen, player], score + calculateOverall(player) * fit);
+      assign(roleIndex + 1, available.filter(candidate => candidate.id !== player.id), [...chosen, player], score + (tactic ? cpuRoleScore(player, role, tactic) : calculateOverall(player)) * fit);
     }
   }
   assign(0, players, [], 0);
-  return best?.players || [];
+  return best || { players: [], score: -Infinity };
+}
+
+// Evaluate role strengths and tactical skills for every formation without touching humans.
+function cpuRoleScore(player, role, tactic) {
+  const st = player.stats;
+  const attack = tactic === 'POSSESSION' ? st.pass : tactic === 'DRIBBLE' ? st.dribble : tactic === 'COUNTER' ? st.speed : (st.pass + st.dribble + st.speed) / 3;
+  const ability = TACTIC_ABILITIES[tactic]?.includes(player.specialAbility) ? 1.5 : 0;
+  const roleScore = role === 'DF' ? st.defense * .55 + st.speed * .20 + st.pass * .15 + attack * .10
+    : role === 'FW' ? st.shoot * .40 + st.speed * .20 + st.dribble * .15 + attack * .25
+    : attack * .40 + st.speed * .20 + st.defense * .15 + st.pass * .15 + st.shoot * .10;
+  return roleScore * .95 + (st.stamina || 50) * .05 + ability;
+}
+export function chooseCpuSetup(club) {
+  const keeper = club.roster.filter(p => p.primaryPosition === 'GK').sort((a,b)=>b.stats.gk-a.stats.gk)[0];
+  if (!keeper) return null;
+  const field = club.roster.filter(p=>p.primaryPosition !== 'GK');
+  if (field.length < 4) return null;
+  let best = null;
+  for (const formation of ['121','211','112']) for (const tactic of ['BALANCED','POSSESSION','DRIBBLE','COUNTER']) {
+    const assignment = bestFieldAssignment(field, FORMATIONS[formation].slots.slice(1), tactic);
+    if (!best || assignment.score > best.score) best = {formation,tactic,score:assignment.score,lineup:[keeper.id,...assignment.players.map(p=>p.id)]};
+  }
+  return best;
 }
 
 export function chooseBestLineup(club) {
   const keeper = club.roster.filter(player => player.primaryPosition === 'GK').sort((a, b) => calculateOverall(b) - calculateOverall(a))[0];
-  const field = bestFieldAssignment(club.roster.filter(player => player.primaryPosition !== 'GK'));
+  const field = bestFieldAssignment(club.roster.filter(player => player.primaryPosition !== 'GK'), lineupSlots(club).slice(1)).players;
   if (!keeper || field.length < 4) return club.lineup.filter(id => club.roster.some(player => player.id === id)).slice(0, 5);
   return [keeper.id, ...field.map(player => player.id)];
 }
 
 export function selectBestLineup(club) {
-  const lineup = chooseBestLineup(club);
+  const setup = club.controllerType === 'CPU' ? chooseCpuSetup(club) : null;
+  if (setup) { club.formation = setup.formation; club.tactic = setup.tactic; }
+  const lineup = setup?.lineup || chooseBestLineup(club);
   applyClubAction(club, { type: ACTION_TYPES.SET_LINEUP, clubId: club.id, lineup });
   return club.lineup;
 }
@@ -129,9 +155,9 @@ export function prepareCpuClubs(league) {
   const cpuClubs = league.clubs.filter(club => club.controllerType === 'CPU');
   for (const club of cpuClubs) {
     selectBestLineup(club);
-    autoSetCpuTactic(club);
+
   }
-  return cpuClubs.map(club => ({ clubId: club.id, lineup: [...club.lineup], tactic: club.tactic }));
+  return cpuClubs.map(club => ({ clubId: club.id, lineup: [...club.lineup], tactic: club.tactic, formation: formationId(club) }));
 }
 
 export function prepareCpuMarketSpace(league) {
@@ -201,7 +227,7 @@ export function processLeagueOffseason(league, humanTraining = new Map(), specia
     const emergencySignings = ensureMinimumPlayableRoster(league, club);
     selectBestLineup(club);
     if (isCpu) autoSetCpuTactic(club);
-    summaries.push({ clubId: club.id, training: [...training.entries()], growth, emergencySignings, lineup: [...club.lineup], tactic: club.tactic });
+    summaries.push({ clubId: club.id, training: [...training.entries()], growth, emergencySignings, lineup: [...club.lineup], tactic: club.tactic, formation: formationId(club) });
   }
   return summaries;
 }
