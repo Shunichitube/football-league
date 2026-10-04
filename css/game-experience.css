@@ -19,3 +19,5 @@
 #app>header .header-actions {display:flex;align-items:center;gap:8px;flex:none;white-space:nowrap;}
 #app>header .header-actions button {margin:0;}
 #app>header .header-actions .game-settings-button {position:static;z-index:auto;padding:8px 14px;font-size:inherit;flex:none;}
+
+.game-settings-panel .fixed-display-option{display:flex;align-items:center;gap:12px;font-size:18px;line-height:1.5;cursor:pointer}.game-settings-panel .fixed-display-option input{display:inline-block;flex:none;width:20px;height:20px;margin:0;}

@@ -2,6 +2,7 @@ import {loadMotionAtlas} from './player-motion.js?v=motion-ui-v24';
 import {playerAppearance} from './avatar-profile.js?v=appearance-v29';
 import {drawAvatar} from './player-avatar.js?v=modular-motion-v4';
 import {celebrationTexture} from './avatar-celebration.js?v=motion-ui-v24';
+import {fixedDisplayEnabled,setFixedDisplay} from './display-settings.js?v=fixed-display-v1';
 
 const AUDIO_KEY='football-league:audio-settings';
 export function normalizeAudio(value={}){
@@ -64,6 +65,9 @@ export function createGameExperience({dialogs,onExit}){
   if(settings)return;
   const backdrop=document.createElement('div'),panel=document.createElement('section');backdrop.className='settings-backdrop';panel.className='game-settings-panel';panel.dataset.uiDialog='game-settings';panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','ゲーム設定');
   panel.innerHTML='<h2>設定</h2><label>BGM <output data-volume="bgm"></output><input type="range" min="0" max="100" step="1" data-audio="bgm"></label><label>効果音 <output data-volume="se"></output><input type="range" min="0" max="100" step="1" data-audio="se"></label><button type="button" data-settings-return data-dialog-close>ゲームに戻る</button><button type="button" class="subtle" data-settings-exit>ゲーム終了</button><p>ゲーム終了でタイトルへ戻ります。</p>';
+  panel.querySelector('h2').insertAdjacentHTML('afterend','<label class="fixed-display-option"><input type="checkbox" data-fixed-display>画面比率を固定する（16:9）</label><p>2560×1440を基準に、FHD・4Kでも同じ配置で拡大・縮小します。画面に合わせて余白が入ります。</p>');
+  const displayInput=panel.querySelector('[data-fixed-display]');displayInput.checked=fixedDisplayEnabled();
+  displayInput.addEventListener('change',()=>setFixedDisplay(displayInput.checked));
   for(const input of panel.querySelectorAll('[data-audio]')){
    const key=input.dataset.audio;input.value=audio[key];panel.querySelector(`[data-volume="${key}"]`).value=`${audio[key]}%`;
    input.addEventListener('input',()=>{audio=normalizeAudio({...audio,[key]:input.value});panel.querySelector(`[data-volume="${key}"]`).value=`${audio[key]}%`;try{localStorage.setItem(AUDIO_KEY,JSON.stringify(audio));}catch{}document.dispatchEvent(new CustomEvent('football-league:audio-settings',{detail:{...audio}}));});

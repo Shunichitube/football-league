@@ -3,7 +3,7 @@ import { lineupSlotLabel, formationId, formationLabel } from './formations.js?v=
 import {createSfxController} from './sfx.js?v=training-complete-v1';
 import {createBgmController} from './bgm.js?v=season-bgm-v3';
 import {renderGrandResults,mountGrandFinale} from './grand-finale-ui.js?v=short-season-v1';
-import {createGameExperience} from './game-experience.js?v=header-actions-v1';
+import {createGameExperience} from './game-experience.js?v=fixed-display-v1';
 import { playSeasonFinale } from './season-finale.js?v=clubhouse-three-v4';
 import { rareKind, rareAgeLabel } from './rare-characters.js';
 import { playTrainingCinematic } from './training-cinematic.js?v=motion-ui-v24&training-sfx=1';
