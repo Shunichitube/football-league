@@ -97,7 +97,7 @@ function tacticAttackBonus(type, tactic) {
   if (tactic === 'COUNTER' && isCounterType(type)) return 4;
   return 0;
 }
-function tacticDefenseBonus(tactic) { return tactic === 'COUNTER' ? 4 : 0; }
+function tacticDefenseBonus(tactic) { return 0; }
 function tacticCounterTriggerBonus(tactic) { return tactic === 'COUNTER' ? 4 : 0; }
 function pickWeightedType(weights, rng) { return weightedPick(Object.keys(weights), type => weights[type], rng); }
 function restartAttackKind(tactic, restartKind, rng) {
@@ -477,7 +477,7 @@ function pickShooterFromRoles(type, roles, attackers, tactic, rng) {
 }
 function shotBonusForAbility(shooter, type, chance, phase, score, attackSide, defendSide, secondRoles) {
   let bonus = 0;
-  if (shooter.specialAbility === 'カットイン' && type === 'DRIBBLE' && shooter === secondRoles.dribbler) bonus += 8;
+  if (shooter.specialAbility === 'カットイン' && type === 'DRIBBLE' && shooter.id === secondRoles.dribbler?.id) bonus += 8;
   if (shooter.specialAbility === 'フィニッシャー' && ['CLEAR', 'BIG'].includes(chance)) bonus += 10;
   if (shooter.specialAbility === 'ミドルシューター' && chance === 'HARD') bonus += 10;
   if (shooter.specialAbility === '勝負強さ' && latePhase(phase) && (score.home === score.away || score[attackSide] + 1 === score[defendSide])) bonus += 8;

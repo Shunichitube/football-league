@@ -298,7 +298,7 @@ DRIBBLE：
 DRIBBLE +4
 
 COUNTER：
-DEFENSE +4
+DEFENSE +0
 COUNTER +4
 COUNTER_TRIGGER +4
 ```
@@ -306,7 +306,7 @@ COUNTER_TRIGGER +4
 補足：
 
 ```txt
-COUNTERのDEFENSE +4は全守備判定に適用する。
+COUNTERの守備補正は +0（全戦術で同じ守備基準）。
 COUNTER_TRIGGER +4はSHORT_COUNTER発動判定に反映する。
 ```
 
@@ -871,7 +871,7 @@ SHORT_COUNTERでシュートまで行った場合：デバフなし
 スピードスター：COUNTERランナー / SHORT_COUNTERランナー / DRIBBLE仕掛け役で走力 +8%、SHORT_COUNTER発動判定 +8
 ドリブラー：DRIBBLE仕掛け役時、ドリブル成分 +10%
 チャンスメイカー：PASS第2パサー / PASSサポート役時、パス成分 +8%
-カットイン：DRIBBLE第2成功後、仕掛け役がシューターなら shotScore +8%
+カットイン：DRIBBLE第2成功後、仕掛け役とシューターの選手IDが同じなら shotScore +8
 ハードワーカー：攻撃・守備で自身の走力成分 +6%
 万能型：BALANCED戦術時、自身が関与する攻撃・守備の能力成分 +4%
 回復力：既存通り

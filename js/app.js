@@ -193,9 +193,9 @@ onGameClick('app', ev => {
 function renderTactics() {
     const c = me();
     const labels={BALANCED:'バランス',POSSESSION:'ポゼッション',DRIBBLE:'ドリブル',COUNTER:'カウンター'};
-    const descriptions={BALANCED:'通常再開はPASS 50%・DRIBBLE 50%。攻撃全般 +2。守備成功後はCOUNTER 10%。',POSSESSION:'通常再開はPASS 80%・DRIBBLE 20%。PASS攻撃 +4。守備成功後はCOUNTER 10%。',DRIBBLE:'通常再開はPASS 20%・DRIBBLE 80%。DRIBBLE攻撃 +4。守備成功後はCOUNTER 10%。',COUNTER:'通常再開はPASS 50%・DRIBBLE 50%。COUNTER攻撃・守備・速攻発動判定 +4。守備成功後はCOUNTER 30%。'};
+    const descriptions={BALANCED:'通常再開はPASS 50%・DRIBBLE 50%。攻撃全般 +2。守備成功後はCOUNTER 10%。',POSSESSION:'通常再開はPASS 80%・DRIBBLE 20%。PASS攻撃 +4。守備成功後はCOUNTER 10%。',DRIBBLE:'通常再開はPASS 20%・DRIBBLE 80%。DRIBBLE攻撃 +4。守備成功後はCOUNTER 10%。',COUNTER:'通常再開はPASS 50%・DRIBBLE 50%。COUNTER攻撃・速攻発動判定 +4。守備成功後はCOUNTER 30%。'};
     // All figures below are the existing tactic probabilities and modifiers; this is presentation only.
-    const tendency={BALANCED:{pass:50,dribble:50,counter:10,bonus:'攻撃全般 +2'},POSSESSION:{pass:80,dribble:20,counter:10,bonus:'PASS攻撃 +4'},DRIBBLE:{pass:20,dribble:80,counter:10,bonus:'DRIBBLE攻撃 +4'},COUNTER:{pass:50,dribble:50,counter:30,bonus:'COUNTER攻撃・守備・速攻発動判定 +4'}}[c.tactic] || {pass:50,dribble:50,counter:10,bonus:'攻撃全般 +2'};
+    const tendency={BALANCED:{pass:50,dribble:50,counter:10,bonus:'攻撃全般 +2'},POSSESSION:{pass:80,dribble:20,counter:10,bonus:'PASS攻撃 +4'},DRIBBLE:{pass:20,dribble:80,counter:10,bonus:'DRIBBLE攻撃 +4'},COUNTER:{pass:50,dribble:50,counter:30,bonus:'COUNTER攻撃・速攻発動判定 +4'}}[c.tactic] || {pass:50,dribble:50,counter:10,bonus:'攻撃全般 +2'};
     const gauge=(label,value)=>`<div class="tactic-gauge"><span>${label}</span><i role="meter" aria-label="${label}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${value}" style="--meter:${value}%"><b></b></i><strong>${value}%</strong></div>`;
     return `<section class="match-card tactic-panel"><h3>戦術 <small>TACTICS</small></h3><div class="tactic-row">${Object.keys(labels).map(t => `<button data-tactic="${t}" class="${c.tactic===t ? 'active' : 'subtle'}" title="${descriptions[t]}">${labels[t]}</button>`).join('')}</div><div class="tactic-tendencies">${gauge('パス傾向',tendency.pass)}${gauge('ドリブル傾向',tendency.dribble)}${gauge('守備後カウンター',tendency.counter)}</div><p class="tactic-bonus"><span>戦術効果</span><b>${tendency.bonus}</b></p></section>`;
 }
