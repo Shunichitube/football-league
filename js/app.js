@@ -378,7 +378,7 @@ app.addEventListener('dragend', () => {
 // in-place roster and player-detail panels to market screens.
 function renderRosterDialog() {
   if (!s.league || !s.rosterOpen) return;
-  const rosterClub={...me(),roster:sortPlayers(me().roster,s.rosterSort)};document.body.insertAdjacentHTML('beforeend', `<div data-app-overlay class="overlay-backdrop" data-stage10="close"></div>${renderRosterPanel(rosterClub, { allowRelease: Boolean(s.league.releasePhaseOpen), rosterSort: s.rosterSort })}`);
+  const rosterClub={...me(),roster:sortPlayers(me().roster,s.rosterSort)};document.body.insertAdjacentHTML('beforeend', `<div data-app-overlay class="overlay-backdrop" data-stage10="close"></div>${renderRosterPanel(rosterClub, { allowRelease: Boolean(s.league.releasePhaseOpen), allowRename: s.mode!=='room'||['team-setup','release'].includes(roomAdapter.room?.phase), rosterSort: s.rosterSort })}`);
 }
 function renderReleaseConfirmation(){
  if(!s.league||!s.pendingReleaseId)return;
@@ -496,7 +496,8 @@ function updateRoomStatus() {
     ['[data-lineup-player],[data-lineup-slot],[data-tactic],button[data-formation]',['team-setup']],
     ['[data-renew],[data-release],[data-retention-pay],[data-retention-release],[data-special-pay],[data-special-skip]',['offseason-events']],
     ['[data-training-card],[data-train],[data-focus],[data-stage4="confirm"],[data-stage4="grow"]',['development']],
-    ['[data-release-player],[data-rename-player]',['release']],
+    ['[data-release-player]',['release']],
+    ['[data-rename-player]',['team-setup','release']],
     ['[data-stage4="eventsDone"]',['offseason-events']],
     ['[data-stage4="releasePhase"]',['growth-result']],
     ['[data-stage4="releaseDone"]',['release']],

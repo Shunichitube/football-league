@@ -89,6 +89,9 @@ test('real HTTP room flow: two humans, barriers, retries, restore, auction, seas
  assert.equal(room.phase,'team-setup');
  const clubFor=session=>room.game.league.clubs.find(c=>c.id===room.players.find(p=>p.id===session.playerId).clubId);
  const setup=clubFor(first),lineup=[...setup.lineup];[lineup[2],lineup[3]]=[lineup[3],lineup[2]];
+ const renamed=setup.roster[0];await mutate(first,'rename',{playerId:renamed.id,name:'編成時の改名'});
+ assert.equal(clubFor(first).roster.find(p=>p.id===renamed.id).name,'編成時の改名');
+ await mutate(second,'rename',{playerId:renamed.id,name:'他クラブ'},400);
  localStorage.setItem('football-league:v3:session',JSON.stringify(first));
  let state={};const adapter=new RoomAdapter(()=>state,next=>state=next,()=>{},()=>{});adapter.active=true;adapter.client.room=room;adapter.receive(room);
  state.league.clubs.find(c=>c.id===setup.id).lineup=lineup;state.league.clubs.find(c=>c.id===setup.id).formation='112';adapter.remember();
@@ -97,6 +100,7 @@ test('real HTTP room flow: two humans, barriers, retries, restore, auction, seas
  assert.equal(restored.league.clubs.find(c=>c.id===setup.id).formation,'112');
  await mutate(first,'submit',{lineup,tactic:setup.tactic,formation:'999'},400);
  await mutate(first,'submit',{lineup,tactic:setup.tactic,formation:'112'});assert.equal(room.phase,'team-setup');
+ await mutate(first,'rename',{playerId:renamed.id,name:'確定後の改名'},400);
  const setup2=clubFor(second);
  // Lose a successful response, retry exactly the same request and prove no second season runs.
  client.session=second;client.room=room;client.pending=null;

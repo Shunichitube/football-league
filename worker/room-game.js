@@ -224,7 +224,7 @@ export function runSeason(room) {
   enterPhase(room, 'season-result');
 }
 export function renamePlayer(room, owner, input) {
-  requireValue(room.phase === 'release' && !Object.hasOwn(room.inputs, owner.clubId), '名前変更は選手整理の完了前に行ってください。');
+  requireValue(['team-setup','release'].includes(room.phase) && !Object.hasOwn(room.inputs, owner.clubId), '名前変更は編成または選手整理の完了前に行ってください。');
   const name = String(input.name ?? '').replace(/\s+/g, ' ').trim();
   requireValue(name.length > 0 && name.length <= 10 && !/[\r\n]/.test(String(input.name)), '名前は改行なしの1〜10文字です。');
   const player = room.game.league.clubs.find(club => club.id === owner.clubId)?.roster.find(row => row.id === input.playerId);

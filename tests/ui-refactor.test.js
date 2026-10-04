@@ -43,6 +43,19 @@ test('six auction desk anchors stay ordered inside the venue', () => {
   assert.ok(AUCTION_SEATS.every((x,i) => x>0 && x<100 && (!i || x>AUCTION_SEATS[i-1])));
 });
 
+test('multiplayer rename is enabled during setup and release, then locked after confirmation',async()=>{
+ const rename={dataset:{},disabled:false},release={dataset:{},disabled:false};
+ const harness=await screenHarness({queryAll:selector=>selector==='[data-rename-player]'?[rename]:selector==='[data-release-player]'?[release]:[]});
+ const {createLeague}=await import('../js/league.js');
+ const league=createLeague({name:'改名確認',seed:'rename-ui'});
+ const adapter={room:{roomId:'RENAME',phase:'team-setup',players:[],game:{league}},client:{pending:null},status:{busy:false},locked:false,player:null,statusText:()=>'',draftResultText:()=>'',participantStatuses:()=>[]};
+ harness.setState({...createInitialState(),mode:'room',league});harness.setAdapter(adapter);
+ harness.updateRoomStatus();assert.equal(rename.disabled,false);assert.equal(release.disabled,true);
+ adapter.locked=true;harness.updateRoomStatus();assert.equal(rename.disabled,true);
+ adapter.locked=false;adapter.room.phase='release';harness.updateRoomStatus();assert.equal(rename.disabled,false);assert.equal(release.disabled,false);
+ adapter.room.phase='season-result';harness.updateRoomStatus();assert.equal(rename.disabled,true);
+});
+
 // Evaluate the real app's screen functions without publishing test hooks or
 // requiring a browser. Only bitmap drawing is substituted; DOM writes fail.
 async function screenHarness(controls = {}) {
@@ -70,9 +83,9 @@ async function screenHarness(controls = {}) {
   ));
   const app = { dataset: {}, contains: () => false, addEventListener() {} };
   Object.defineProperty(app, 'innerHTML', { set() { throw new Error('Screen function wrote to DOM'); } });
-  const document = { querySelector: selector => controls[selector] || (selector === '#app' ? app : null), addEventListener() {}, querySelectorAll: () => [] };
+  const document = { querySelector: selector => controls[selector] || (selector === '#app' ? app : null), addEventListener() {}, querySelectorAll: selector => controls.queryAll?.(selector)||[] };
   source = source.replace(/^import .+;\r?\n/gm, '').replace(/render\(\);\s*$/, '');
-  return runInNewContext(source + `\n({ screens, setState: value => s=value, getState: () => s, setRoom: room => roomAdapter.client.room=room, startAuction, returnToTitle,
+  return runInNewContext(source + `\n({ screens, setState: value => s=value, getState: () => s, setRoom: room => roomAdapter.client.room=room, setAdapter: value=>roomAdapter=value, updateRoomStatus, startAuction, returnToTitle,
     click: (key,value) => {render=()=>{};const event={target:{matches:()=>false,closest:selector=>selector==='[data-'+key+']'?{dataset:{[key.replace(/-([a-z])/g,(_,letter)=>letter.toUpperCase())]:value}}:null}};for(const {scope,handler} of clickHandlers)if(scope==='app')handler(event);},
     tick: now => {const previous=Date.now;Date.now=()=>now;try{updateAuction();}finally{Date.now=previous;}}
   })`, {
