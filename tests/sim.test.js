@@ -32,9 +32,9 @@ test('同じseedは同じ試合結果になる', () => {
   assert.deepEqual(match('repeatable'), match('repeatable'));
 });
 
-test('1試合は80フェーズを完走し、初期ロスターは5人', () => {
+test('1試合は基本80フェーズと追加時間を完走し、初期ロスターは5人', () => {
   const result = match('complete');
-  assert.equal(result.phases, 80);
+  assert.ok(result.phases >= 80 && result.phases <= 88);
   assert.equal(result.playerResults.length, 10);
   assert.ok(result.score.home >= 0 && result.score.away >= 0);
 });
@@ -396,7 +396,7 @@ test('シーズン結果一覧・試合詳細・個人成績は現行UIで表示
   assert.match(detailHtml, /得点者/);
   assert.match(detailHtml, /試合イベント/);
   const statsHtml = renderSeasonPlayerStats(club);
-  assert.match(statsHtml, /出場 10/);
+  assert.match(statsHtml, /<dt>出場<\/dt><dd>10<\/dd>/);
   assert.match(statsHtml, /平均評価/);
   assert.doesNotMatch(statsHtml, /hiddenGrowth/);
 });

@@ -24,7 +24,8 @@ test('pass, corner, shot and save use the recorded participants', () => {
   assert.deepEqual(rows.map(row => row.text), [
     '中村から鈴木へパスが通る', '中村のコーナーキック',
     '中村のコーナーキックが佐藤につながる', '鈴木がコーナーキックからシュート',
-    '田中が鈴木のシュートを弾き出し、コーナーキック'
+    '田中が鈴木のシュートを弾き出し、コーナーキック',
+    '試合終了　ホーム　0－0　アウェー'
   ]);
   assert.ok(rows.every(row => !row.goal && !row.text.includes('！')));
 });

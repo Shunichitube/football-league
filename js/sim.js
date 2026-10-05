@@ -1,7 +1,7 @@
 import { blankMatchStats } from './match-stats.js';
 import { lineupSlots, formationId, formationSpec } from './formations.js?v=box-v1';
 import { rareKind, emperorBonus, effectiveRareStats, rareDuelResult, rareShotResult, blackHoleResult } from './rare-characters.js';
-import { CONFIG } from './config.js';
+import { CONFIG } from './config.js?v=match-halves-v1';
 import { calculateOverall } from './data.js?v=short-season-v1';
 import { weightedPick } from './random.js';
 import { positionSuitability } from './rules.js?v=short-season-v1';
@@ -145,7 +145,7 @@ function longFeedAttemptRate(diff) {
   return .03;
 }
 function formatTime(phase) { const seconds = phase * CONFIG.phaseSeconds; return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`; }
-function logEvent(phase, kind, player, extra = '', side = null, display = null) { return { time: formatTime(phase), kind, player: player?.name || 'Unknown', extra, side, ...(display ? { display } : {}) }; }
+function logEvent(phase, kind, player, extra = '', side = null, display = null) { return { phase, time: formatTime(phase), kind, player: player?.name || 'Unknown', extra, side, ...(display ? { display } : {}) }; }
 function displayRoles(type, roles, context = {}) {
   return { type, passer: roles.passer?.name || roles.origin?.name, receiver: roles.receiver?.name || roles.runner?.name, dribbler: roles.dribbler?.name, ...context };
 }
@@ -180,7 +180,7 @@ function availableBench(matchState, used = new Set()) {
   const keeperId = matchState.keeper?.id;
   return [...matchState.playerState.values()].filter(state => state.player.id !== keeperId && state.currentSlot === null && state.restRemaining <= 0 && !used.has(state.player.id));
 }
-function returnRecoveredStarters(matchState) {
+function returnRecoveredStarters(matchState, onChange = () => {}) {
   for (const slot of matchState.slots) {
     if (slot.currentId === slot.starterId) continue;
     const starter = matchState.playerState.get(slot.starterId);
@@ -188,9 +188,10 @@ function returnRecoveredStarters(matchState) {
     const current = currentState(matchState, slot);
     if (current) benchState(current);
     enterSlot(matchState, slot, starter);
+    onChange(current?.player, starter.player, slot.role);
   }
 }
-function substituteFatigued(matchState) {
+function substituteFatigued(matchState, onChange = () => {}) {
   const fixedOrder = new Map(matchState.slots.map((slot, index) => [slot.index, index]));
   const needs = matchState.slots.map(slot => {
     const current = currentState(matchState, slot);
@@ -206,14 +207,15 @@ function substituteFatigued(matchState) {
     if (used.has(need.candidate.player.id) || need.candidate.currentSlot !== null || need.candidate.restRemaining > 0) continue;
     benchState(need.current);
     enterSlot(matchState, need.slot, need.candidate);
+    onChange(need.current.player, need.candidate.player, need.slot.role);
     used.add(need.candidate.player.id);
   }
 }
-function advanceSubstitutions(matchState, allowChanges = true) {
+function advanceSubstitutions(matchState, allowChanges = true, onChange = () => {}) {
   decrementRest(matchState);
   if (!allowChanges) return;
-  returnRecoveredStarters(matchState);
-  substituteFatigued(matchState);
+  returnRecoveredStarters(matchState, onChange);
+  substituteFatigued(matchState, onChange);
 }
 const activeFielders = matchState => matchState.slots.map(slot => {
   const state = currentState(matchState, slot);
@@ -453,7 +455,7 @@ function counterIntent({ tactic, chanceStrength, runner, support, origin, attack
   const abilityScore = (origin?.specialAbility === 'カウンター起点' ? 10 : 0) + ([runner?.specialAbility, support?.specialAbility].includes('スピードスター') ? 8 : 0);
   return tacticScore + tacticCounterTriggerBonus(tactic) + chanceScore + runnerScore + supportScore + abilityScore + scoreSituationBonus(attack, home, score, phase);
 }
-function maybeStartShortCounter({ phase, diff, stopper, attack, defend, home, score, homeState, awayState, homeFielders, awayFielders, rng, events }) {
+function maybeStartShortCounter({ phase, regulationPhase = phase, diff, stopper, attack, defend, home, score, homeState, awayState, homeFielders, awayFielders, rng, events }) {
   if (diff > -4) return null;
   const chanceStrength = diff <= -10 ? 'strong' : 'weak';
   const shortAttack = defend;
@@ -462,7 +464,7 @@ function maybeStartShortCounter({ phase, diff, stopper, attack, defend, home, sc
   const defenders = fieldersFor(shortDefend, home, homeFielders, awayFielders);
   const defendState = stateFor(shortDefend, home, homeState, awayState);
   const roles = buildShortCounterRoles(stopper, attackers, defenders, shortAttack.tactic, shortDefend.tactic, defendState.keeper, rng);
-  const intent = counterIntent({ tactic: shortAttack.tactic, chanceStrength, runner: roles.runner, support: roles.support, origin: roles.origin, attack: shortAttack, home, score, phase });
+  const intent = counterIntent({ tactic: shortAttack.tactic, chanceStrength, runner: roles.runner, support: roles.support, origin: roles.origin, attack: shortAttack, home, score, phase: regulationPhase });
   if (intent < 25) return null;
   events.push(logEvent(phase, 'SHORT COUNTER', stopper, `${chanceStrength} / intent ${Math.round(intent)}`, sideKey(shortAttack, home)));
   return { attack: shortAttack, defend: shortDefend, firstType: 'SHORT_COUNTER', type: 'SHORT_COUNTER', stage: 2, roles, shortCounter: true };
@@ -568,186 +570,228 @@ export function simulateMatch(home, away, rng) {
   };
   let activeAttack = null;
   let nextRestart = { club: null, kind: 'normal' };
+  let elapsedPhases = 0;
+  const halves = [];
+  const halfLength = CONFIG.phaseCount / 2;
+  const substitutionLogger = (phase, club) => (out, incoming, role) => {
+    events.push(logEvent(phase, 'SUBSTITUTION', incoming, `${out?.name || '選手'} OUT → ${incoming.name} IN / ${role}`, sideKey(club, home), {
+      outgoing: out?.name, incoming: incoming.name, outgoingId: out?.id, incomingId: incoming.id, position: role
+    }));
+  };
 
-  for (let phase = 1; phase <= CONFIG.phaseCount; phase++) {
-    const allowSubstitutions = !activeAttack;
-    advanceSubstitutions(homeState, allowSubstitutions); advanceSubstitutions(awayState, allowSubstitutions);
-    refreshKeeper(homeState); refreshKeeper(awayState);
-    const homeBonus = emperorBonus([...activeFielders(homeState), homeState.keeper]);
-    const awayBonus = emperorBonus([...activeFielders(awayState), awayState.keeper]);
-    homeState.keeper = effectiveRareStats(homeState.keeper, homeBonus, keeperDebuffs.get(home.id));
-    awayState.keeper = effectiveRareStats(awayState.keeper, awayBonus, keeperDebuffs.get(away.id));
-    const homeFielders = activeFielders(homeState).map(p => effectiveRareStats(p, homeBonus));
-    const awayFielders = activeFielders(awayState).map(p => effectiveRareStats(p, awayBonus));
+  for (let half = 1; half <= 2; half++) {
+    const halfStart = elapsedPhases, eventStart = events.length;
+    let extensionClub = null;
+    for (let halfPhase = 1; halfPhase <= halfLength + CONFIG.maxAddedPhases; halfPhase++) {
+      // Added time completes this possession only, including rebounds/corners.
+      // A turnover, goal or counter by the opponent ends the half immediately.
+      if (halfPhase > halfLength && (!activeAttack || activeAttack.attack !== extensionClub)) break;
+      const phase = ++elapsedPhases;
+      const regulationPhase = (half - 1) * halfLength + Math.min(halfPhase, halfLength);
+      const allowSubstitutions = !activeAttack;
+      advanceSubstitutions(homeState, allowSubstitutions, substitutionLogger(phase - 1, home));
+      advanceSubstitutions(awayState, allowSubstitutions, substitutionLogger(phase - 1, away));
+      refreshKeeper(homeState); refreshKeeper(awayState);
+      const homeBonus = emperorBonus([...activeFielders(homeState), homeState.keeper]);
+      const awayBonus = emperorBonus([...activeFielders(awayState), awayState.keeper]);
+      homeState.keeper = effectiveRareStats(homeState.keeper, homeBonus, keeperDebuffs.get(home.id));
+      awayState.keeper = effectiveRareStats(awayState.keeper, awayBonus, keeperDebuffs.get(away.id));
+      const homeFielders = activeFielders(homeState).map(p => effectiveRareStats(p, homeBonus));
+      const awayFielders = activeFielders(awayState).map(p => effectiveRareStats(p, awayBonus));
 
-    if (!activeAttack) {
-      const attackClub = nextRestart.club || pickNeutralAttacker(home, away, homeFielders, awayFielders, rng);
-      const type = restartAttackKind(attackClub.tactic, nextRestart.kind, rng);
-      activeAttack = { attack: attackClub, defend: opponent(attackClub, home, away), firstType: type, type, stage: 1, roles: null };
-      nextRestart = { club: null, kind: 'normal' };
-    }
-
-    const attack = activeAttack.attack, defend = activeAttack.defend;
-    const attackState = stateFor(attack, home, homeState, awayState), defendState = stateFor(defend, home, homeState, awayState);
-    const attackers = fieldersFor(attack, home, homeFielders, awayFielders), defenders = fieldersFor(defend, home, homeFielders, awayFielders);
-    const type = activeAttack.type;
-    const phaseStats = teamStats[sideKey(attack, home)];
-    phaseStats.possessionPhases++;
-    const isPowerPlay = powerPlayActive(attack, attackState.keeper, home, score, phase);
-    const ppBonus = isPowerPlay ? powerPlayBonus(attackState.keeper) : 0;
-
-    if (activeAttack.stage === 1) {
-      const roles = buildFirstStageRoles(type, attackers, defenders, attack.tactic, defend.tactic, rng);
-      const duel = resolveDuel(phase, type, roles, attack, defend, attackState, defendState);
-      if (duel === 'own_goal') { recordAction(sideKey(attack, home), type, false); activeAttack=null; nextRestart={club:opponent(lastSpecialScoringClub, home, away), kind:'normal'}; finishPhase(); continue; }
-      const scores = firstStageScores(type, roles, attack.tactic, defend.tactic);
-      if (isPowerPlay) events.push(logEvent(phase, 'POWER PLAY', attackState.keeper, `${type} / +${ppBonus.toFixed(1)}`, sideKey(attack, home)));
-      const offense = scores.offense + tacticAttackBonus(type, attack.tactic) + ppBonus + luck(rng, CONFIG.attackLuck);
-      const pendingDebuff = defenseDebuff.get(defend.id) || 0;
-      const defense = scores.defense + tacticDefenseBonus(defend.tactic) + pendingDebuff + luck(rng, CONFIG.attackLuck);
-      if (pendingDebuff) defenseDebuff.set(defend.id, 0);
-      const diff = offense - defense;
-      const succeeded = duel === 'success' || (duel !== 'stop' && diff > -2);
-      recordAction(sideKey(attack, home), type, succeeded);
-      if (succeeded) {
-        const contributor = roles.contributor || attackers[0];
-        stat.get(contributor.id).attackContributions++; ratings[contributor.id] += .05;
-        if (type === 'DRIBBLE') stat.get(contributor.id).breakthroughs++;
-        const nextType = secondStageKind(activeAttack.firstType, rng);
-        events.push(logEvent(phase, 'STAGE 1 SUCCESS', contributor, `${type} → ${nextType} / ${roleDescription(type, 1, roles)}`, sideKey(attack, home), displayRoles(type, roles, { stage: 1, keeper: isPowerPlay ? attackState.keeper.name : null })));
-        activeAttack = { ...activeAttack, type: nextType, stage: 2, roles, powerPlay: isPowerPlay };
-      } else {
-        const stopper = roles.defender || pickRole(defenders, p => fieldValue(p, 'defense', defend.tactic), rng);
-        stat.get(stopper.id).defensiveStops++; ratings[stopper.id] += .15;
-        events.push(logEvent(phase, 'DEFENSIVE STOP', stopper, `${type} 第1阻止 / ${roleDescription(type, 1, roles)}`, sideKey(defend, home), displayRoles(type, roles)));
-        if (isPowerPlay) { powerPlayRisk.set(attack.id, 1); events.push(logEvent(phase, 'POWER PLAY RISK', attackState.keeper, '第1攻撃失敗 / 戻り遅れ', sideKey(attack, home))); }
-        if (powerPlayRisk.get(defend.id)) { powerPlayRisk.set(defend.id, 0); events.push(logEvent(phase, 'POWER PLAY RISK CLEARED', defendState.keeper, '第1守備で解除', sideKey(defend, home))); }
-        activeAttack = maybeStartShortCounter({ phase, diff, stopper, attack, defend, home, score, homeState, awayState, homeFielders, awayFielders, rng, events });
-        if (!activeAttack) nextRestart = { club: defend, kind: 'defense' };
+      if (!activeAttack) {
+        const attackClub = nextRestart.club || pickNeutralAttacker(home, away, homeFielders, awayFielders, rng);
+        const type = restartAttackKind(attackClub.tactic, nextRestart.kind, rng);
+        activeAttack = { attack: attackClub, defend: opponent(attackClub, home, away), firstType: type, type, stage: 1, roles: null };
+        nextRestart = { club: null, kind: 'normal' };
       }
-      recordPlayedPhase(homeState); recordPlayedPhase(awayState);
-      continue;
-    }
 
-    // Carried actors use this phase's fatigue and live emperor bonus.
-    if (all.some(rareKind) && activeAttack.roles) for (const key of Object.keys(activeAttack.roles)) {
-      const actor = activeAttack.roles[key];
-      if (actor?.id) activeAttack.roles[key] = [...attackers, ...defenders].find(p => p.id === actor.id) || actor;
-    }
-    const secondRoles = activeAttack.shortCounter ? activeAttack.roles : buildSecondStageRoles(type, activeAttack, attackers, defenders, attack.tactic, defend.tactic, rng);
-    secondRoles.defenseSupport = pickDefenseSupport(defenders, secondRoles.defender, defend.tactic, formationId(defend), rng);
-    const duel = resolveDuel(phase, type, secondRoles, attack, defend, attackState, defendState);
-    if (duel === 'own_goal') { recordAction(sideKey(attack, home), type, false); activeAttack=null; nextRestart={club:opponent(lastSpecialScoringClub, home, away),kind:'normal'}; finishPhase(); continue; }
-    const scores = secondStageScores(type, secondRoles, attack.tactic, defend.tactic, defendState.keeper, formationId(attack), formationId(defend));
-    const offense = scores.offense + tacticAttackBonus(type, attack.tactic) + (activeAttack.corner ? 2 : 0) + ppBonus + luck(rng, CONFIG.attackLuck);
-    const defense = scores.defense + tacticDefenseBonus(defend.tactic) + luck(rng, CONFIG.attackLuck);
-    const diff = offense - defense;
+      const attack = activeAttack.attack, defend = activeAttack.defend;
+      if (halfPhase === halfLength) extensionClub = attack;
+      const attackState = stateFor(attack, home, homeState, awayState), defendState = stateFor(defend, home, homeState, awayState);
+      const attackers = fieldersFor(attack, home, homeFielders, awayFielders), defenders = fieldersFor(defend, home, homeFielders, awayFielders);
+      const type = activeAttack.type;
+      const phaseStats = teamStats[sideKey(attack, home)];
+      phaseStats.possessionPhases++;
+      const isPowerPlay = powerPlayActive(attack, attackState.keeper, home, score, regulationPhase);
+      const ppBonus = isPowerPlay ? powerPlayBonus(attackState.keeper) : 0;
 
-    const stopped = duel === 'stop' || (duel !== 'success' && diff <= 0);
-    recordAction(sideKey(attack, home), type, !stopped);
-    if (stopped) {
-      const stopper = secondRoles.defender || pickRole(defenders, p => fieldValue(p, 'defense', defend.tactic), rng);
-      stat.get(stopper.id).defensiveStops++; ratings[stopper.id] += .18;
-      events.push(logEvent(phase, 'DEFENSIVE STOP', stopper, `${type} 第2阻止 / ${roleDescription(type, 2, secondRoles)}`, sideKey(defend, home), displayRoles(type, secondRoles, { corner: !!activeAttack.corner, longFeed: !!activeAttack.longFeed })));
-      if (activeAttack.longFeed) events.push(logEvent(phase, 'LONG FEED FAIL', stopper, roleDescription(type, 2, secondRoles), sideKey(defend, home), displayRoles(type, secondRoles)));
-      else if (type === 'COUNTER' || type === 'SHORT_COUNTER') defenseDebuff.set(attack.id, -4);
-      if (activeAttack.powerPlay || isPowerPlay) { powerPlayRisk.set(attack.id, 1); events.push(logEvent(phase, 'POWER PLAY RISK', attackState.keeper, '第2攻撃失敗 / 戻り遅れ', sideKey(attack, home))); }
-      if (powerPlayRisk.get(defend.id)) { powerPlayRisk.set(defend.id, 0); events.push(logEvent(phase, 'POWER PLAY RISK CLEARED', defendState.keeper, '第2守備で解除', sideKey(defend, home))); }
-      nextRestart = { club: defend, kind: activeAttack.longFeed ? 'normal' : 'defense' };
-      activeAttack = null;
-      recordPlayedPhase(homeState); recordPlayedPhase(awayState);
-      continue;
-    }
+      if (activeAttack.stage === 1) {
+        const roles = buildFirstStageRoles(type, attackers, defenders, attack.tactic, defend.tactic, rng);
+        const duel = resolveDuel(phase, type, roles, attack, defend, attackState, defendState);
+        if (duel === 'own_goal') { recordAction(sideKey(attack, home), type, false); activeAttack=null; nextRestart={club:opponent(lastSpecialScoringClub, home, away), kind:'normal'}; finishPhase(); continue; }
+        const scores = firstStageScores(type, roles, attack.tactic, defend.tactic);
+        if (isPowerPlay) events.push(logEvent(phase, 'POWER PLAY', attackState.keeper, `${type} / +${ppBonus.toFixed(1)}`, sideKey(attack, home)));
+        const offense = scores.offense + tacticAttackBonus(type, attack.tactic) + ppBonus + luck(rng, CONFIG.attackLuck);
+        const pendingDebuff = defenseDebuff.get(defend.id) || 0;
+        const defense = scores.defense + tacticDefenseBonus(defend.tactic) + pendingDebuff + luck(rng, CONFIG.attackLuck);
+        if (pendingDebuff) defenseDebuff.set(defend.id, 0);
+        const diff = offense - defense;
+        const succeeded = duel === 'success' || (duel !== 'stop' && diff > -2);
+        recordAction(sideKey(attack, home), type, succeeded);
+        if (succeeded) {
+          const contributor = roles.contributor || attackers[0];
+          stat.get(contributor.id).attackContributions++; ratings[contributor.id] += .05;
+          if (type === 'DRIBBLE') stat.get(contributor.id).breakthroughs++;
+          const nextType = secondStageKind(activeAttack.firstType, rng);
+          events.push(logEvent(phase, 'STAGE 1 SUCCESS', contributor, `${type} → ${nextType} / ${roleDescription(type, 1, roles)}`, sideKey(attack, home), displayRoles(type, roles, { stage: 1, keeper: isPowerPlay ? attackState.keeper.name : null })));
+          activeAttack = { ...activeAttack, type: nextType, stage: 2, roles, powerPlay: isPowerPlay };
+        } else {
+          const stopper = roles.defender || pickRole(defenders, p => fieldValue(p, 'defense', defend.tactic), rng);
+          stat.get(stopper.id).defensiveStops++; ratings[stopper.id] += .15;
+          events.push(logEvent(phase, 'DEFENSIVE STOP', stopper, `${type} 第1阻止 / ${roleDescription(type, 1, roles)}`, sideKey(defend, home), displayRoles(type, roles)));
+          if (isPowerPlay) { powerPlayRisk.set(attack.id, 1); events.push(logEvent(phase, 'POWER PLAY RISK', attackState.keeper, '第1攻撃失敗 / 戻り遅れ', sideKey(attack, home))); }
+          if (powerPlayRisk.get(defend.id)) { powerPlayRisk.set(defend.id, 0); events.push(logEvent(phase, 'POWER PLAY RISK CLEARED', defendState.keeper, '第1守備で解除', sideKey(defend, home))); }
+          activeAttack = halfPhase < halfLength ? maybeStartShortCounter({ phase, regulationPhase, diff, stopper, attack, defend, home, score, homeState, awayState, homeFielders, awayFielders, rng, events }) : null;
+          if (!activeAttack) nextRestart = { club: defend, kind: 'defense' };
+        }
+        recordPlayedPhase(homeState); recordPlayedPhase(awayState);
+        continue;
+      }
 
-    const chance = finalDefenseChance(stageChance(diff), secondRoles.defender);
-    const contributor = secondRoles.contributor || attackers[0];
-    stat.get(contributor.id).attackContributions++; ratings[contributor.id] += .08;
-    if (type === 'DRIBBLE') stat.get(contributor.id).breakthroughs++;
-    const shooter = pickShooterFromRoles(type, secondRoles, attackers, attack.tactic, rng);
-    phaseStats.shots++;
-    stat.get(shooter.id).shots++; ratings[shooter.id] += .05;
-    const attackSide = sideKey(attack, home), defendSide = sideKey(defend, home);
-    const shotDisplay = displayRoles(type, secondRoles, { stage: 2, chance, shooter: shooter.name, corner: !!activeAttack.corner, longFeed: !!activeAttack.longFeed, keeper: isPowerPlay ? attackState.keeper.name : null });
-    const counterShotBonus = type === 'COUNTER' ? 5 : type === 'SHORT_COUNTER' ? 8 : 0;
-    const abilityShotBonus = shotBonusForAbility(shooter, type, chance, phase, score, attackSide, defendSide, secondRoles);
-    const shooterScore = fieldValue(shooter, 'shoot', attack.tactic) + CONFIG.chanceBonus[chance.toLowerCase()] + counterShotBonus + abilityShotBonus + luck(rng, CONFIG.shotLuck);
-    const gk = defendState.keeper;
-    if (rareKind(shooter) === 'dragon' && !dragonUsed.has(shooter.id)) {
-      dragonUsed.add(shooter.id); keeperDebuffs.set(defend.id, keeperDebuffs.get(defend.id) + 10);
-      gk.stats.gk = Math.max(50, gk.stats.gk - 10);
-      events.push(logEvent(phase, 'RARE ABILITY', shooter, 'ドラゴンシュート / 相手GK能力−10', attackSide));
-    }
-    const baseGoalieScore = gk.stats.gk * .80 + gk.stats.defense * .10 + gk.stats.speed * .10 + CONFIG.gkBaseAdvantage;
-    let gkMultiplier = 1;
-    if (gk.specialAbility === 'セービング' && chance === 'NORMAL') gkMultiplier *= 1.06;
-    if (gk.specialAbility === 'セービング' && ['CLEAR', 'BIG'].includes(chance)) gkMultiplier *= 1.08;
-    if (gk.specialAbility === '守護神' && latePhase(phase) && oneGoalGame(score)) gkMultiplier *= 1.08;
-    if (powerPlayRisk.get(defend.id)) { gkMultiplier *= .95; powerPlayRisk.set(defend.id, 0); events.push(logEvent(phase, 'POWER PLAY RISK TRIGGERED', gk, 'シュート到達 / GK能力低下', defendSide)); }
-    const goalieScore = baseGoalieScore * gkMultiplier + luck(rng, gk.specialAbility === '安定感' ? 7 : CONFIG.shotLuck);
-    const forced = rareShotResult(shooter, rng);
-    const margin = goalieScore - shooterScore;
-    const normalSaved = forced === null && shooterScore <= goalieScore && (margin >= 12 || margin < 4 || rng.next() < .55);
-    let result = forced || (shooterScore > goalieScore ? 'goal' : normalSaved ? 'save' : 'miss');
-    if (result === 'goal' || result === 'save') phaseStats.shotsOnTarget++;
-    const defendingKeeper = result === 'own_goal' ? attackState.keeper : gk;
-    const rewritten = blackHoleResult(defendingKeeper, result === 'own_goal' ? 'goal' : result, rng);
-    if (result === 'own_goal' || rewritten === 'transfer') {
-      const scoringClub = result === 'own_goal' ? (rewritten === 'transfer' ? attack : defend) : defend;
-      const scoringKeeper = scoringClub === attack ? gk : attackState.keeper;
-      specialGoal(phase, scoringClub, rewritten === 'transfer' ? defendingKeeper : shooter, scoringKeeper,
-        rewritten === 'transfer' ? 'ブラックホール / 転送得点' : '獣の王 / オウンゴール', shotDisplay, rewritten !== 'transfer');
-      nextRestart = {club: opponent(scoringClub, home, away), kind:'normal'};
-      activeAttack=null;
-    } else if (rewritten === 'goal') {
-      score[attackSide]++; stat.get(shooter.id).goals++; ratings[shooter.id] += 1.2; stat.get(gk.id).conceded++; ratings[gk.id] -= .15;
-      let assist = null; const rate = type === 'PASS' ? .8 : isCounterType(type) ? .6 : .35;
-      if (contributor !== shooter && rng.next() < rate) { assist = contributor; stat.get(assist.id).assists++; ratings[assist.id] += .7; }
-      events.push(logEvent(phase, 'GOAL', shooter, `${type} / ${chance} / ${roleDescription(type, 2, secondRoles)}${assist ? ` / Assist ${assist.name}` : ''}`, attackSide, { ...shotDisplay, assist: assist?.name || null, ...(forced || result === 'save' ? {special:result === 'save' ? 'ブラックホール / 自爆失点' : shooter.specialAbility} : {}) }));
-      nextRestart = { club: defend, kind: 'normal' };
-      activeAttack = null;
-    } else {
-      if (rewritten === 'miss') {
-        events.push(logEvent(phase, 'MISS', shooter, `${type} / ${chance} / ${forced ? '精密プレー未搭載' : '枠外'}`, attackSide, shotDisplay));
-        nextRestart={club:defend,kind:'normal'}; activeAttack=null;
-      } else if (margin >= 12) {
-        stat.get(gk.id).saves++; ratings[gk.id] += .12;
-        events.push(logEvent(phase, 'GK CATCH', gk, `${type} / ${chance} / ${shooter.name} shot`, defendSide, shotDisplay));
-        activeAttack = maybeStartLongFeed({ phase, keeper: gk, attack: defend, defend: attack, home, homeState, awayState, homeFielders, awayFielders, rng, events });
-        if (!activeAttack) nextRestart = { club: defend, kind: 'normal' };
-      } else if (margin >= 4) {
-        const saved = normalSaved;
-        if (saved) { stat.get(gk.id).saves++; ratings[gk.id] += .10; }
-        events.push(logEvent(phase, saved ? 'SAVE' : 'MISS', saved ? gk : shooter, `${type} / ${chance} / ${shooter.name} shot`, saved ? defendSide : attackSide, shotDisplay));
+      // Carried actors use this phase's fatigue and live emperor bonus.
+      if (all.some(rareKind) && activeAttack.roles) for (const key of Object.keys(activeAttack.roles)) {
+        const actor = activeAttack.roles[key];
+        if (actor?.id) activeAttack.roles[key] = [...attackers, ...defenders].find(p => p.id === actor.id) || actor;
+      }
+      const secondRoles = activeAttack.shortCounter ? activeAttack.roles : buildSecondStageRoles(type, activeAttack, attackers, defenders, attack.tactic, defend.tactic, rng);
+      secondRoles.defenseSupport = pickDefenseSupport(defenders, secondRoles.defender, defend.tactic, formationId(defend), rng);
+      const duel = resolveDuel(phase, type, secondRoles, attack, defend, attackState, defendState);
+      if (duel === 'own_goal') { recordAction(sideKey(attack, home), type, false); activeAttack=null; nextRestart={club:opponent(lastSpecialScoringClub, home, away),kind:'normal'}; finishPhase(); continue; }
+      const scores = secondStageScores(type, secondRoles, attack.tactic, defend.tactic, defendState.keeper, formationId(attack), formationId(defend));
+      const offense = scores.offense + tacticAttackBonus(type, attack.tactic) + (activeAttack.corner ? 2 : 0) + ppBonus + luck(rng, CONFIG.attackLuck);
+      const defense = scores.defense + tacticDefenseBonus(defend.tactic) + luck(rng, CONFIG.attackLuck);
+      const diff = offense - defense;
+
+      const stopped = duel === 'stop' || (duel !== 'success' && diff <= 0);
+      recordAction(sideKey(attack, home), type, !stopped);
+      if (stopped) {
+        const stopper = secondRoles.defender || pickRole(defenders, p => fieldValue(p, 'defense', defend.tactic), rng);
+        stat.get(stopper.id).defensiveStops++; ratings[stopper.id] += .18;
+        events.push(logEvent(phase, 'DEFENSIVE STOP', stopper, `${type} 第2阻止 / ${roleDescription(type, 2, secondRoles)}`, sideKey(defend, home), displayRoles(type, secondRoles, { corner: !!activeAttack.corner, longFeed: !!activeAttack.longFeed })));
+        if (activeAttack.longFeed) events.push(logEvent(phase, 'LONG FEED FAIL', stopper, roleDescription(type, 2, secondRoles), sideKey(defend, home), displayRoles(type, secondRoles)));
+        else if (type === 'COUNTER' || type === 'SHORT_COUNTER') defenseDebuff.set(attack.id, -4);
+        if (activeAttack.powerPlay || isPowerPlay) { powerPlayRisk.set(attack.id, 1); events.push(logEvent(phase, 'POWER PLAY RISK', attackState.keeper, '第2攻撃失敗 / 戻り遅れ', sideKey(attack, home))); }
+        if (powerPlayRisk.get(defend.id)) { powerPlayRisk.set(defend.id, 0); events.push(logEvent(phase, 'POWER PLAY RISK CLEARED', defendState.keeper, '第2守備で解除', sideKey(defend, home))); }
+        nextRestart = { club: defend, kind: activeAttack.longFeed ? 'normal' : 'defense' };
+        activeAttack = null;
+        recordPlayedPhase(homeState); recordPlayedPhase(awayState);
+        continue;
+      }
+
+      const chance = finalDefenseChance(stageChance(diff), secondRoles.defender);
+      const contributor = secondRoles.contributor || attackers[0];
+      stat.get(contributor.id).attackContributions++; ratings[contributor.id] += .08;
+      if (type === 'DRIBBLE') stat.get(contributor.id).breakthroughs++;
+      const shooter = pickShooterFromRoles(type, secondRoles, attackers, attack.tactic, rng);
+      phaseStats.shots++;
+      stat.get(shooter.id).shots++; ratings[shooter.id] += .05;
+      const attackSide = sideKey(attack, home), defendSide = sideKey(defend, home);
+      const shotDisplay = displayRoles(type, secondRoles, { stage: 2, chance, shooter: shooter.name, corner: !!activeAttack.corner, longFeed: !!activeAttack.longFeed, keeper: isPowerPlay ? attackState.keeper.name : null });
+      const counterShotBonus = type === 'COUNTER' ? 5 : type === 'SHORT_COUNTER' ? 8 : 0;
+      const abilityShotBonus = shotBonusForAbility(shooter, type, chance, regulationPhase, score, attackSide, defendSide, secondRoles);
+      const shooterScore = fieldValue(shooter, 'shoot', attack.tactic) + CONFIG.chanceBonus[chance.toLowerCase()] + counterShotBonus + abilityShotBonus + luck(rng, CONFIG.shotLuck);
+      const gk = defendState.keeper;
+      if (rareKind(shooter) === 'dragon' && !dragonUsed.has(shooter.id)) {
+        dragonUsed.add(shooter.id); keeperDebuffs.set(defend.id, keeperDebuffs.get(defend.id) + 10);
+        gk.stats.gk = Math.max(50, gk.stats.gk - 10);
+        events.push(logEvent(phase, 'RARE ABILITY', shooter, 'ドラゴンシュート / 相手GK能力−10', attackSide));
+      }
+      const baseGoalieScore = gk.stats.gk * .80 + gk.stats.defense * .10 + gk.stats.speed * .10 + CONFIG.gkBaseAdvantage;
+      let gkMultiplier = 1;
+      if (gk.specialAbility === 'セービング' && chance === 'NORMAL') gkMultiplier *= 1.06;
+      if (gk.specialAbility === 'セービング' && ['CLEAR', 'BIG'].includes(chance)) gkMultiplier *= 1.08;
+      if (gk.specialAbility === '守護神' && latePhase(regulationPhase) && oneGoalGame(score)) gkMultiplier *= 1.08;
+      if (powerPlayRisk.get(defend.id)) { gkMultiplier *= .95; powerPlayRisk.set(defend.id, 0); events.push(logEvent(phase, 'POWER PLAY RISK TRIGGERED', gk, 'シュート到達 / GK能力低下', defendSide)); }
+      const goalieScore = baseGoalieScore * gkMultiplier + luck(rng, gk.specialAbility === '安定感' ? 7 : CONFIG.shotLuck);
+      const forced = rareShotResult(shooter, rng);
+      const margin = goalieScore - shooterScore;
+      const normalSaved = forced === null && shooterScore <= goalieScore && (margin >= 12 || margin < 4 || rng.next() < .55);
+      let result = forced || (shooterScore > goalieScore ? 'goal' : normalSaved ? 'save' : 'miss');
+      if (result === 'goal' || result === 'save') phaseStats.shotsOnTarget++;
+      const defendingKeeper = result === 'own_goal' ? attackState.keeper : gk;
+      const rewritten = blackHoleResult(defendingKeeper, result === 'own_goal' ? 'goal' : result, rng);
+      if (result === 'own_goal' || rewritten === 'transfer') {
+        const scoringClub = result === 'own_goal' ? (rewritten === 'transfer' ? attack : defend) : defend;
+        const scoringKeeper = scoringClub === attack ? gk : attackState.keeper;
+        specialGoal(phase, scoringClub, rewritten === 'transfer' ? defendingKeeper : shooter, scoringKeeper,
+          rewritten === 'transfer' ? 'ブラックホール / 転送得点' : '獣の王 / オウンゴール', shotDisplay, rewritten !== 'transfer');
+        nextRestart = {club: opponent(scoringClub, home, away), kind:'normal'};
+        activeAttack=null;
+      } else if (rewritten === 'goal') {
+        score[attackSide]++; stat.get(shooter.id).goals++; ratings[shooter.id] += 1.2; stat.get(gk.id).conceded++; ratings[gk.id] -= .15;
+        let assist = null; const rate = type === 'PASS' ? .8 : isCounterType(type) ? .6 : .35;
+        if (contributor !== shooter && rng.next() < rate) { assist = contributor; stat.get(assist.id).assists++; ratings[assist.id] += .7; }
+        events.push(logEvent(phase, 'GOAL', shooter, `${type} / ${chance} / ${roleDescription(type, 2, secondRoles)}${assist ? ` / Assist ${assist.name}` : ''}`, attackSide, { ...shotDisplay, assist: assist?.name || null, ...(forced || result === 'save' ? {special:result === 'save' ? 'ブラックホール / 自爆失点' : shooter.specialAbility} : {}) }));
         nextRestart = { club: defend, kind: 'normal' };
         activeAttack = null;
-        if (saved && rng.next() < .20) {
-          activeAttack = startCorner(attack, defend, phase, gk, home, events);
-          nextRestart = { club: null, kind: 'normal' };
-        }
       } else {
-        stat.get(gk.id).saves++; ratings[gk.id] += .08;
-        const recovered = rng.next() < reboundRecoveryRate(chance, gk);
-        events.push(logEvent(phase, 'REBOUND', recovered ? shooter : gk, `${type} / ${chance} / ${recovered ? 'attack recovers' : 'cleared'}`, recovered ? attackSide : defendSide, { ...shotDisplay, rebound: recovered ? 'attack' : 'cleared' }));
-        if (recovered) {
-          const reboundType = pickWeightedType({ PASS: 50, DRIBBLE: 50 }, rng);
-          activeAttack = { attack, defend, firstType: 'REBOUND', type: reboundType, stage: 2, roles: null, rebound: true };
-          nextRestart = { club: null, kind: 'normal' };
-        } else if (rng.next() < .15) {
-          activeAttack = startCorner(attack, defend, phase, gk, home, events);
-          nextRestart = { club: null, kind: 'normal' };
-        } else {
+        if (rewritten === 'miss') {
+          events.push(logEvent(phase, 'MISS', shooter, `${type} / ${chance} / ${forced ? '精密プレー未搭載' : '枠外'}`, attackSide, shotDisplay));
+          nextRestart={club:defend,kind:'normal'}; activeAttack=null;
+        } else if (margin >= 12) {
+          stat.get(gk.id).saves++; ratings[gk.id] += .12;
+          events.push(logEvent(phase, 'GK CATCH', gk, `${type} / ${chance} / ${shooter.name} shot`, defendSide, shotDisplay));
+          activeAttack = halfPhase < halfLength ? maybeStartLongFeed({ phase, keeper: gk, attack: defend, defend: attack, home, homeState, awayState, homeFielders, awayFielders, rng, events }) : null;
+          if (!activeAttack) nextRestart = { club: defend, kind: 'normal' };
+        } else if (margin >= 4) {
+          const saved = normalSaved;
+          if (saved) { stat.get(gk.id).saves++; ratings[gk.id] += .10; }
+          events.push(logEvent(phase, saved ? 'SAVE' : 'MISS', saved ? gk : shooter, `${type} / ${chance} / ${shooter.name} shot`, saved ? defendSide : attackSide, shotDisplay));
           nextRestart = { club: defend, kind: 'normal' };
           activeAttack = null;
+          if (saved && rng.next() < .20) {
+            activeAttack = startCorner(attack, defend, phase, gk, home, events);
+            nextRestart = { club: null, kind: 'normal' };
+          }
+        } else {
+          stat.get(gk.id).saves++; ratings[gk.id] += .08;
+          const recovered = rng.next() < reboundRecoveryRate(chance, gk);
+          events.push(logEvent(phase, 'REBOUND', recovered ? shooter : gk, `${type} / ${chance} / ${recovered ? 'attack recovers' : 'cleared'}`, recovered ? attackSide : defendSide, { ...shotDisplay, rebound: recovered ? 'attack' : 'cleared' }));
+          if (recovered) {
+            const reboundType = pickWeightedType({ PASS: 50, DRIBBLE: 50 }, rng);
+            activeAttack = { attack, defend, firstType: 'REBOUND', type: reboundType, stage: 2, roles: null, rebound: true };
+            nextRestart = { club: null, kind: 'normal' };
+          } else if (rng.next() < .15) {
+            activeAttack = startCorner(attack, defend, phase, gk, home, events);
+            nextRestart = { club: null, kind: 'normal' };
+          } else {
+            nextRestart = { club: defend, kind: 'normal' };
+            activeAttack = null;
+          }
         }
       }
+      recordPlayedPhase(homeState); recordPlayedPhase(awayState);
     }
-    recordPlayedPhase(homeState); recordPlayedPhase(awayState);
+    const playedInHalf = elapsedPhases - halfStart;
+    halves.push({ half, phases: playedInHalf, addedPhases: playedInHalf - halfLength });
+    activeAttack = null;
+    nextRestart = { club: null, kind: 'normal' };
+    if (half === 1) {
+      events.push(logEvent(elapsedPhases, 'HALF TIME', null, '前半終了 / 全選手の疲労回復'));
+      for (const matchState of [homeState, awayState]) {
+        for (const state of matchState.playerState.values()) { state.activePhases = 0; state.restRemaining = 0; }
+        returnRecoveredStarters(matchState, substitutionLogger(elapsedPhases, matchState.club));
+        // The break also rests players replaced by the returning starters.
+        for (const state of matchState.playerState.values()) { state.activePhases = 0; state.restRemaining = 0; }
+        defenseDebuff.set(matchState.club.id, 0);
+        powerPlayRisk.set(matchState.club.id, 0);
+      }
+    } else events.push(logEvent(elapsedPhases, 'FULL TIME', null));
+    for (let i = eventStart; i < events.length; i++) {
+      const event = events[i], localPhase = event.phase - halfStart;
+      event.half = half;
+      event.halfPhase = localPhase;
+      event.time = localPhase > halfLength
+        ? `${formatTime(half * halfLength)}+${formatTime(localPhase - halfLength)}`
+        : formatTime((half - 1) * halfLength + localPhase);
+    }
   }
   const played = new Map([...homeState.playerState.values(), ...awayState.playerState.values()].filter(state => state.playedPhases > 0).map(state => [state.player.id, state.playedPhases]));
   const keeperIds = [homeState.keeper?.id, awayState.keeper?.id].filter(Boolean);
-  for (const id of keeperIds) played.set(id, CONFIG.phaseCount);
+  for (const id of keeperIds) played.set(id, elapsedPhases);
   const homeIds = new Set(matchPlayerPool(home).map(player => player.id));
   const playerResults = all.filter(player => played.has(player.id)).map(player => ({ player, teamId: homeIds.has(player.id) ? home.id : away.id, rating: Math.max(4, Math.min(10, Math.round(ratings[player.id] * 10) / 10)), playedPhases: played.get(player.id), ...stat.get(player.id) }));
   all.forEach(player => { player.stats = originalStats.get(player.id); });
-  return { score, events, playerResults, phases: CONFIG.phaseCount, forms, teamStats };
+  return { score, events, playerResults, phases: elapsedPhases, phaseSeconds: CONFIG.phaseSeconds, halves, forms, teamStats };
 }

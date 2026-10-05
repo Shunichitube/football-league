@@ -4,7 +4,7 @@ import { FORMATIONS, formationId, formationSpec, lineupSlots, lineupSlotLabel, f
 import { rareKind, rarePortraitUrl, rareAgeLabel } from './rare-characters.js';
 import { dialogs } from './dialogs.js';
 import {playerAppearance,kitColor} from './avatar-profile.js?v=appearance-v29';
-import { formatMatchEvents } from './match-log.js?v=appearance-v29';
+import { formatMatchEvents } from './match-log.js?v=match-halves-v1';
 import { displayPlayer, growthExpectationKey, POSITION_LABELS, STAT_LABELS } from './data.js?v=short-season-v1';
 import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=short-season-v1';
 import { validateLineup, positionSuitabilityLabel } from './rules.js?v=short-season-v1';
@@ -301,7 +301,12 @@ export function renderMatchDetail(match) {
   const midpoint = Math.ceil(rows.length / 2);
   const homeRows = (hasTeamIds ? rows.filter(row => row.teamId === homeId) : rows.slice(0, midpoint)).sort(compareMatchRows);
   const awayRows = (hasTeamIds ? rows.filter(row => row.teamId === awayId) : rows.slice(midpoint)).sort(compareMatchRows);
-  const resultCard = row => { const clubColor = row.teamId === awayId ? match.fixture.away.color : match.fixture.home.color; return `<article class="candidate match-player-result">${renderPlayerCard(row.player,{clubColor,showPortrait:false})}<div class="match-player-avatar"><img src="${squadAvatar(row.player,clubColor)}" alt="${escapeHtml(row.player.name)}"></div><p><b>調子 ${match.result.forms[row.player.id] || '−'}</b>・評価 ${row.rating.toFixed(1)}</p><p>得点 ${row.goals}・アシスト ${row.assists}・シュート ${row.shots}</p><p>攻撃貢献 ${row.attackContributions}・守備成功 ${row.defensiveStops}・セーブ ${row.saves}</p></article>`; };
+  const playedTime = row => {
+    if (!Number.isFinite(row.playedPhases)) return '未記録';
+    const seconds = row.playedPhases * (match.result.phaseSeconds || 30);
+    return `${Math.floor(seconds / 60)}分${seconds % 60 ? `${seconds % 60}秒` : ''}`;
+  };
+  const resultCard = row => { const clubColor = row.teamId === awayId ? match.fixture.away.color : match.fixture.home.color; return `<article class="candidate match-player-result">${renderPlayerCard(row.player,{clubColor,showPortrait:false})}<div class="match-player-avatar"><img src="${squadAvatar(row.player,clubColor)}" alt="${escapeHtml(row.player.name)}"></div><p><b>調子 ${match.result.forms[row.player.id] || '−'}</b>・評価 ${row.rating.toFixed(1)}</p><p>出場時間 ${playedTime(row)}</p><p>得点 ${row.goals}・アシスト ${row.assists}・シュート ${row.shots}</p><p>攻撃貢献 ${row.attackContributions}・守備成功 ${row.defensiveStops}・セーブ ${row.saves}</p></article>`; };
   return `<main class="match-detail"><div class="match-detail-topbar"><p class="eyebrow">第${match.round}節 試合詳細</p><button type="button" data-nav="seasonResults" class="match-results-back">← シーズン結果に戻る</button></div>
     <div class="scoreboard"><span><i class="club-color-dot" style="--club:${escapeHtml(match.fixture.home.color)}"></i>${escapeHtml(match.fixture.home.name)}</span><b>${match.result.score.home} - ${match.result.score.away}</b><span><i class="club-color-dot" style="--club:${escapeHtml(match.fixture.away.color)}"></i>${escapeHtml(match.fixture.away.name)}</span></div>
     ${renderMatchTeamStats(match, escapeHtml)}

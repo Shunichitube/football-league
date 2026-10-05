@@ -74,7 +74,7 @@ test('all formation matchups finish deterministically without mutating lineup or
  for(const homeFormation of Object.keys(FORMATIONS))for(const awayFormation of Object.keys(FORMATIONS)) {
   const home=make(),away=make(2);change(home,homeFormation);change(away,awayFormation);
   const before=JSON.stringify([home,away]);const seed=`${homeFormation}:${awayFormation}`;
-  const result=simulateMatch(home,away,createRandom(seed));assert.equal(result.phases,80);
+  const result=simulateMatch(home,away,createRandom(seed));assert.ok(result.phases >= 80 && result.phases <= 88);
   assert.deepEqual(result,simulateMatch(home,away,createRandom(seed)));assert.equal(JSON.stringify([home,away]),before);
  }
 });
@@ -85,8 +85,11 @@ test('long feed skips stage one and follows the ordinary counter path',()=>{
   const events=simulateMatch(home,away,createRandom(`feed:${i}`)).events;
   for(let j=0;j<events.length;j++)if(events[j].kind==='LONG FEED') {
    seen++;assert.equal(events[j].display.type,'COUNTER');
-   const next=events.slice(j+1).find(e=>e.kind!=='LONG FEED'&&e.display?.longFeed);
-   if (!next) { assert.equal(j,events.length-1); continue; }
+   const next=events.slice(j+1).find(e=>e.half===events[j].half&&e.kind!=='LONG FEED'&&e.display?.longFeed);
+   if (!next) {
+    const end=events.slice(j+1).find(e=>e.half===events[j].half&&['HALF TIME','FULL TIME'].includes(e.kind));
+    assert.ok(end);assert.equal(end.phase,events[j].phase);continue;
+   }
    assert.equal(next.display.type,'COUNTER');assert.notEqual(next.kind,'STAGE 1 SUCCESS');
   }
  }

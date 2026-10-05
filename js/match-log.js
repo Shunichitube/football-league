@@ -14,7 +14,14 @@ export function formatMatchEvents(events, clubs, nameOf = name => name) {
   };
   events.forEach((event, index) => {
     const { kind, side } = event, p = name(event.player);
-    const d = event.display || {};
+    // Older saves store participants only in the readable extra field.
+    const legacyPass = event.extra?.match(/\/\s*([^/→+]+)→([^/+]+)(?:\+([^/]+))?/);
+    const legacyAssist = event.extra?.match(/\bAssist\s+([^/]+)/);
+    const d = {
+      ...(legacyPass ? { type: 'PASS', passer: legacyPass[1].trim(), receiver: legacyPass[2].trim() } : {}),
+      ...(legacyAssist ? { assist: legacyAssist[1].trim() } : {}),
+      ...event.display
+    };
     const next = events[index + 1], previous = events[index - 1];
     const toCorner = next?.kind === 'CORNER' && next.time === event.time;
     if (d.stage === 2 && d.shooter) {
@@ -31,6 +38,11 @@ export function formatMatchEvents(events, clubs, nameOf = name => name) {
       add(event, `${name(d.shooter)}が${d.corner ? 'コーナーキックから' : ''}シュート`, false, attackSide);
     }
     switch (kind) {
+      case 'SUBSTITUTION':
+        add(event, `${name(d.outgoing)} OUT → ${name(d.incoming || event.player)} IN${d.position ? `（${d.position}）` : ''}`);
+        break;
+      case 'HALF TIME': add(event, '前半終了・ハーフタイム　全選手の疲労回復'); break;
+      case 'FULL TIME': break; // The final score is appended once below.
       case 'STAGE 1 SUCCESS':
         add(event, attackText(d, 1) || `${p}が攻撃をつなぐ`);
         if (d.keeper) add(event, `${name(d.keeper)}も加わり、攻撃を組み立てる`);
@@ -93,4 +105,3 @@ export function formatMatchEvents(events, clubs, nameOf = name => name) {
   });
   return rows;
 }
-

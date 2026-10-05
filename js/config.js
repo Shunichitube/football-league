@@ -1,5 +1,6 @@
 export const CONFIG = Object.freeze({
   phaseCount: 80,
+  maxAddedPhases: 4,
   phaseSeconds: 30,
   gkBaseAdvantage: 15,
   attackLuck: 10,
