@@ -1,3 +1,4 @@
+import { renderMatchTeamStats } from './match-stats.js';
 import { displayedContractYears } from './season-mode.js?v=short-season-v1';
 import { FORMATIONS, formationId, formationSpec, lineupSlots, lineupSlotLabel, formationLabel } from './formations.js?v=box-badges-v2';
 import { rareKind, rarePortraitUrl, rareAgeLabel } from './rare-characters.js';
@@ -303,6 +304,7 @@ export function renderMatchDetail(match) {
   const resultCard = row => { const clubColor = row.teamId === awayId ? match.fixture.away.color : match.fixture.home.color; return `<article class="candidate match-player-result">${renderPlayerCard(row.player,{clubColor,showPortrait:false})}<div class="match-player-avatar"><img src="${squadAvatar(row.player,clubColor)}" alt="${escapeHtml(row.player.name)}"></div><p><b>調子 ${match.result.forms[row.player.id] || '−'}</b>・評価 ${row.rating.toFixed(1)}</p><p>得点 ${row.goals}・アシスト ${row.assists}・シュート ${row.shots}</p><p>攻撃貢献 ${row.attackContributions}・守備成功 ${row.defensiveStops}・セーブ ${row.saves}</p></article>`; };
   return `<main class="match-detail"><div class="match-detail-topbar"><p class="eyebrow">第${match.round}節 試合詳細</p><button type="button" data-nav="seasonResults" class="match-results-back">← シーズン結果に戻る</button></div>
     <div class="scoreboard"><span><i class="club-color-dot" style="--club:${escapeHtml(match.fixture.home.color)}"></i>${escapeHtml(match.fixture.home.name)}</span><b>${match.result.score.home} - ${match.result.score.away}</b><span><i class="club-color-dot" style="--club:${escapeHtml(match.fixture.away.color)}"></i>${escapeHtml(match.fixture.away.name)}</span></div>
+    ${renderMatchTeamStats(match, escapeHtml)}
     <section class="match-summary"><p><b>得点者：</b>${scorers}</p><p><b>アシスト：</b>${assists}</p><p><b>試合MVP：</b>${escapeHtml(mvp.player.name)}（評価 ${mvp.rating.toFixed(1)}）</p></section>
     <section class="match-team-results"><h2><i class="club-color-dot" style="--club:${escapeHtml(match.fixture.home.color)}"></i>${escapeHtml(match.fixture.home.name)}（ホーム）</h2><div class="candidate-grid">${homeRows.map(resultCard).join('')}</div></section>
     <section class="match-team-results"><h2><i class="club-color-dot" style="--club:${escapeHtml(match.fixture.away.color)}"></i>${escapeHtml(match.fixture.away.name)}（アウェー）</h2><div class="candidate-grid">${awayRows.map(resultCard).join('')}</div></section>

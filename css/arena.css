@@ -805,7 +805,7 @@ body.season-results-hall-active{height:100svh;min-height:0;overflow:hidden;}
   .results-season-grid td,.results-season-grid th {padding:clamp(5px,.7vh,10px) 5px;}
   .results-matches {display:flex;flex-direction:column;}
   .results-matches .season-match-list {
-    flex:1;min-height:0;display:grid;grid-template-rows:repeat(10,minmax(0,1fr));
+    flex:1;min-height:0;display:grid;grid-template-rows:repeat(10,minmax(32px,1fr));overflow:auto;
     gap:4px;margin:0;
   }
   #app .results-matches .season-match-row {
@@ -1546,3 +1546,18 @@ body.arena-active #app>.arena-popup-overlay{pointer-events:auto}
 #app main.screen-squad .formation-pitch .formation-fit-badge[data-fit="×"]::before {
  -webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2028%2028%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%222.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M5%205%20L23%2023%20M23%205%20L5%2023%22%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2028%2028%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%222.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M5%205%20L23%2023%20M23%205%20L5%2023%22%2F%3E%3C%2Fsvg%3E");
 }
+/* Compact season totals; match rows remain score-only. */
+.season-team-stats{flex:none;margin:0 0 8px;padding:8px;border:1px solid #7bf4c344;border-radius:8px;background:#102b32;}
+.team-stats-heading{display:flex;flex-wrap:wrap;align-items:center;gap:3px 8px;font-size:12px;}
+.team-stats-heading small{color:#c6ddd9;font-size:10px;}
+.season-team-stats dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:6px 0 0;}
+.season-team-stats dl>div{min-width:0;}
+.season-team-stats dt{font-size:11px;color:#c6ddd9;}
+.season-team-stats dd{margin:2px 0 0;font-size:15px;font-weight:700;color:#7bf4c3;}
+.season-team-stats dd small{font-size:10px;font-weight:400;color:#e3f4ef;white-space:nowrap;}
+.match-team-stats{width:min(960px,100%);margin:12px auto;padding:12px;border:1px solid #7bf4c344;border-radius:10px;background:#102b32;}
+.match-team-stats table{width:100%;min-width:0;table-layout:fixed;text-align:center;}
+.match-team-stats th,.match-team-stats td{padding:7px 4px;text-align:center;overflow-wrap:anywhere;}
+.match-team-stats td{font-weight:700;color:#7bf4c3;}
+.match-team-stats td small{font-weight:400;color:#e3f4ef;white-space:nowrap;}
+.match-team-stats p{margin:8px 0 0;font-size:11px;color:#c6ddd9;}

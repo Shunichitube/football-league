@@ -1,7 +1,7 @@
 import { seasonLimit, seasonMode, setClubSeasonMode } from './season-mode.js?v=short-season-v1';
 import { calculateOverall, createClub } from './data.js?v=short-season-v1';
 import { rankOf } from './config.js';
-import { simulateMatch } from './sim.js?v=short-season-v1';
+import { simulateMatch } from './sim.js?v=formation-team-stats-v1';
 import { createRandom } from './random.js';
 
 const CPU_CLUBS = [
@@ -177,6 +177,7 @@ function snapshotMatch(round, match) {
     fixture: { ...match.fixture, home: { ...match.fixture.home }, away: { ...match.fixture.away } },
     result: {
       score: { ...match.result.score },
+      teamStats: match.result.teamStats ? { home: { ...match.result.teamStats.home }, away: { ...match.result.teamStats.away } } : undefined,
       phases: match.result.phases,
       forms: { ...match.result.forms },
       summary: cloneSummary(summary),

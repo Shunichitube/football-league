@@ -1,3 +1,4 @@
+import { blankMatchStats } from './match-stats.js';
 import { lineupSlots, formationId, formationSpec } from './formations.js?v=box-v1';
 import { rareKind, emperorBonus, effectiveRareStats, rareDuelResult, rareShotResult, blackHoleResult } from './rare-characters.js';
 import { CONFIG } from './config.js';
@@ -521,6 +522,13 @@ export function simulateMatch(home, away, rng) {
   refreshKeeper(homeState); refreshKeeper(awayState);
   const ratings = Object.fromEntries(all.map(player => [player.id, 6])), stat = new Map(all.map(player => [player.id, { shots: 0, goals: 0, assists: 0, attackContributions: 0, breakthroughs: 0, defensiveStops: 0, saves: 0, conceded: 0 }]));
   const score = { home: 0, away: 0 }, events = [];
+  const teamStats = { home: blankMatchStats(), away: blankMatchStats() };
+  const recordAction = (side, type, success) => {
+    const prefix = type === 'PASS' ? 'pass' : type === 'DRIBBLE' ? 'dribble' : null;
+    if (!prefix) return;
+    teamStats[side][`${prefix}Attempts`]++;
+    if (success) teamStats[side][`${prefix}Successes`]++;
+  };
   const defenseDebuff = new Map([[home.id, 0], [away.id, 0]]);
   const powerPlayRisk = new Map([[home.id, 0], [away.id, 0]]);
   const keeperDebuffs = new Map([[home.id, 0], [away.id, 0]]);
@@ -583,13 +591,15 @@ export function simulateMatch(home, away, rng) {
     const attackState = stateFor(attack, home, homeState, awayState), defendState = stateFor(defend, home, homeState, awayState);
     const attackers = fieldersFor(attack, home, homeFielders, awayFielders), defenders = fieldersFor(defend, home, homeFielders, awayFielders);
     const type = activeAttack.type;
+    const phaseStats = teamStats[sideKey(attack, home)];
+    phaseStats.possessionPhases++;
     const isPowerPlay = powerPlayActive(attack, attackState.keeper, home, score, phase);
     const ppBonus = isPowerPlay ? powerPlayBonus(attackState.keeper) : 0;
 
     if (activeAttack.stage === 1) {
       const roles = buildFirstStageRoles(type, attackers, defenders, attack.tactic, defend.tactic, rng);
       const duel = resolveDuel(phase, type, roles, attack, defend, attackState, defendState);
-      if (duel === 'own_goal') { activeAttack=null; nextRestart={club:opponent(lastSpecialScoringClub, home, away), kind:'normal'}; finishPhase(); continue; }
+      if (duel === 'own_goal') { recordAction(sideKey(attack, home), type, false); activeAttack=null; nextRestart={club:opponent(lastSpecialScoringClub, home, away), kind:'normal'}; finishPhase(); continue; }
       const scores = firstStageScores(type, roles, attack.tactic, defend.tactic);
       if (isPowerPlay) events.push(logEvent(phase, 'POWER PLAY', attackState.keeper, `${type} / +${ppBonus.toFixed(1)}`, sideKey(attack, home)));
       const offense = scores.offense + tacticAttackBonus(type, attack.tactic) + ppBonus + luck(rng, CONFIG.attackLuck);
@@ -597,7 +607,9 @@ export function simulateMatch(home, away, rng) {
       const defense = scores.defense + tacticDefenseBonus(defend.tactic) + pendingDebuff + luck(rng, CONFIG.attackLuck);
       if (pendingDebuff) defenseDebuff.set(defend.id, 0);
       const diff = offense - defense;
-      if (duel === 'success' || (duel !== 'stop' && diff > -2)) {
+      const succeeded = duel === 'success' || (duel !== 'stop' && diff > -2);
+      recordAction(sideKey(attack, home), type, succeeded);
+      if (succeeded) {
         const contributor = roles.contributor || attackers[0];
         stat.get(contributor.id).attackContributions++; ratings[contributor.id] += .05;
         if (type === 'DRIBBLE') stat.get(contributor.id).breakthroughs++;
@@ -625,13 +637,15 @@ export function simulateMatch(home, away, rng) {
     const secondRoles = activeAttack.shortCounter ? activeAttack.roles : buildSecondStageRoles(type, activeAttack, attackers, defenders, attack.tactic, defend.tactic, rng);
     secondRoles.defenseSupport = pickDefenseSupport(defenders, secondRoles.defender, defend.tactic, formationId(defend), rng);
     const duel = resolveDuel(phase, type, secondRoles, attack, defend, attackState, defendState);
-    if (duel === 'own_goal') { activeAttack=null; nextRestart={club:opponent(lastSpecialScoringClub, home, away),kind:'normal'}; finishPhase(); continue; }
+    if (duel === 'own_goal') { recordAction(sideKey(attack, home), type, false); activeAttack=null; nextRestart={club:opponent(lastSpecialScoringClub, home, away),kind:'normal'}; finishPhase(); continue; }
     const scores = secondStageScores(type, secondRoles, attack.tactic, defend.tactic, defendState.keeper, formationId(attack), formationId(defend));
     const offense = scores.offense + tacticAttackBonus(type, attack.tactic) + (activeAttack.corner ? 2 : 0) + ppBonus + luck(rng, CONFIG.attackLuck);
     const defense = scores.defense + tacticDefenseBonus(defend.tactic) + luck(rng, CONFIG.attackLuck);
     const diff = offense - defense;
 
-    if (duel === 'stop' || (duel !== 'success' && diff <= 0)) {
+    const stopped = duel === 'stop' || (duel !== 'success' && diff <= 0);
+    recordAction(sideKey(attack, home), type, !stopped);
+    if (stopped) {
       const stopper = secondRoles.defender || pickRole(defenders, p => fieldValue(p, 'defense', defend.tactic), rng);
       stat.get(stopper.id).defensiveStops++; ratings[stopper.id] += .18;
       events.push(logEvent(phase, 'DEFENSIVE STOP', stopper, `${type} 第2阻止 / ${roleDescription(type, 2, secondRoles)}`, sideKey(defend, home), displayRoles(type, secondRoles, { corner: !!activeAttack.corner, longFeed: !!activeAttack.longFeed })));
@@ -650,6 +664,7 @@ export function simulateMatch(home, away, rng) {
     stat.get(contributor.id).attackContributions++; ratings[contributor.id] += .08;
     if (type === 'DRIBBLE') stat.get(contributor.id).breakthroughs++;
     const shooter = pickShooterFromRoles(type, secondRoles, attackers, attack.tactic, rng);
+    phaseStats.shots++;
     stat.get(shooter.id).shots++; ratings[shooter.id] += .05;
     const attackSide = sideKey(attack, home), defendSide = sideKey(defend, home);
     const shotDisplay = displayRoles(type, secondRoles, { stage: 2, chance, shooter: shooter.name, corner: !!activeAttack.corner, longFeed: !!activeAttack.longFeed, keeper: isPowerPlay ? attackState.keeper.name : null });
@@ -673,6 +688,7 @@ export function simulateMatch(home, away, rng) {
     const margin = goalieScore - shooterScore;
     const normalSaved = forced === null && shooterScore <= goalieScore && (margin >= 12 || margin < 4 || rng.next() < .55);
     let result = forced || (shooterScore > goalieScore ? 'goal' : normalSaved ? 'save' : 'miss');
+    if (result === 'goal' || result === 'save') phaseStats.shotsOnTarget++;
     const defendingKeeper = result === 'own_goal' ? attackState.keeper : gk;
     const rewritten = blackHoleResult(defendingKeeper, result === 'own_goal' ? 'goal' : result, rng);
     if (result === 'own_goal' || rewritten === 'transfer') {
@@ -733,5 +749,5 @@ export function simulateMatch(home, away, rng) {
   const homeIds = new Set(matchPlayerPool(home).map(player => player.id));
   const playerResults = all.filter(player => played.has(player.id)).map(player => ({ player, teamId: homeIds.has(player.id) ? home.id : away.id, rating: Math.max(4, Math.min(10, Math.round(ratings[player.id] * 10) / 10)), playedPhases: played.get(player.id), ...stat.get(player.id) }));
   all.forEach(player => { player.stats = originalStats.get(player.id); });
-  return { score, events, playerResults, phases: CONFIG.phaseCount, forms };
+  return { score, events, playerResults, phases: CONFIG.phaseCount, forms, teamStats };
 }
