@@ -1,7 +1,7 @@
 import { rareKind, hatchEgg } from './rare-characters.js';
 import { rankOf } from './config.js';
-import { calculateOverall, FIELD_STAT_KEYS, FIELD_PLAYER_STAT_KEYS } from './data.js?v=short-season-v1';
-import { SPECIAL_ABILITIES } from './market.js?v=short-season-v1';
+import { calculateOverall, FIELD_STAT_KEYS, FIELD_PLAYER_STAT_KEYS } from './data.js?v=regrowth-v1';
+import { SPECIAL_ABILITIES } from './market.js?v=regrowth-v1';
 import { weightedPick } from './random.js';
 
 const RANKS = ['G', 'F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS'];
@@ -13,6 +13,9 @@ const CONTRACT_EVENTS = {
 };
 const SPECIAL_TRAINING_COST = { E: 8, F: 5, G: 2 };
 const ageBase = age => age <= 19 ? 2.4 : age <= 21 ? 2 : age <= 23 ? 1.6 : age <= 25 ? 1 : age <= 28 ? .6 : 0;
+const isRegrowing = player => Number.isInteger(player.regrowthStartAge)
+  && player.regrowthStartAge >= 25 && player.regrowthStartAge <= 30
+  && player.age >= player.regrowthStartAge && player.age < player.regrowthStartAge + 3;
 const highModifier = value => value <= 75 ? 1 : value <= 80 ? .8 : value <= 85 ? .65 : value <= 90 ? .45 : .25;
 const appearanceModifier = player => player.season.appearances >= 7 ? 1 : player.season.appearances >= 3 ? .85 : .7;
 const skills = player => player.primaryPosition === 'GK' ? [...FIELD_STAT_KEYS, 'gk'] : FIELD_PLAYER_STAT_KEYS;
@@ -107,20 +110,21 @@ function processOffseasonYear(club, training, rng, specialTraining) {
       continue;
     }
     const grew = [];
+    const regrowing = isRegrowing(player);
     for (const key of skills(player)) {
       const value = player.stats[key]; let delta = 0;
       if (!frozenGrowthSkill(player, key)) {
-        if (player.age < 30) delta = Math.min(3, Math.round(ageBase(player.age) * growthFor(player, key) * appearanceModifier(player) * (focus === key ? 1.4 : 1) * highModifier(value) * (.75 + rng.next() * .5)));
-        if (player.age === 29 && ['speed', 'stamina'].includes(key) && rng.next() < .3) delta = -1;
-        if (player.age === 30) {
+        if (regrowing || player.age < 30) delta = Math.min(3, Math.round((regrowing ? 2 : ageBase(player.age)) * growthFor(player, key) * appearanceModifier(player) * (focus === key ? 1.4 : 1) * highModifier(value) * (.75 + rng.next() * .5)));
+        if (!regrowing && player.age === 29 && ['speed', 'stamina'].includes(key) && rng.next() < .3) delta = -1;
+        if (!regrowing && player.age === 30) {
           if (['speed', 'stamina'].includes(key)) delta = -rng.int(1, 2);
           else if (key !== 'gk' && rng.next() < .2) delta = -1;
         }
-        if (player.age >= 31 && player.age <= 32) {
+        if (!regrowing && player.age >= 31 && player.age <= 32) {
           if (['speed', 'stamina'].includes(key)) delta = -rng.int(1, 2);
           else if (key === 'gk' ? rng.next() < .2 : rng.next() < .35) delta = -1;
         }
-        if (player.age >= 33 && player.age <= 34) {
+        if (!regrowing && player.age >= 33 && player.age <= 34) {
           if (['speed', 'stamina'].includes(key)) delta = -rng.int(2, 3);
           else if (key === 'gk' ? rng.next() < .4 : rng.next() < .5) delta = -1;
         }
@@ -129,7 +133,7 @@ function processOffseasonYear(club, training, rng, specialTraining) {
       if (player.stats[key] > value) grew.push(key);
     }
     // 32〜34歳のGKは、GK能力だけを毎年ちょうど1表示ランク下げる。
-    if (player.primaryPosition === 'GK' && player.age >= 32 && player.age <= 34) {
+    if (!regrowing && player.primaryPosition === 'GK' && player.age >= 32 && player.age <= 34) {
       const nextRankCap = { SS: 90, S: 85, A: 80, B: 75, C: 70, D: 65, E: 60, F: 55, G: 50 };
       player.stats.gk = nextRankCap[rankOf(gkBefore)];
     }

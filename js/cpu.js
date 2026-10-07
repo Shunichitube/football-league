@@ -1,10 +1,10 @@
 import { yearsPerSeason, contractSeasons } from './season-mode.js?v=short-season-v1';
 import { FORMATIONS, formationId, lineupSlots } from './formations.js?v=box-v1';
 import {rareKind} from './rare-characters.js';
-import { calculateOverall, createPlayer } from './data.js?v=short-season-v1';
-import { processOffseason, renewalFee } from './development.js?v=short-season-v1';
+import { calculateOverall, createPlayer } from './data.js?v=regrowth-v1';
+import { processOffseason, renewalFee } from './development.js?v=regrowth-v1';
 import { createRandom } from './random.js';
-import { cpuBid, cpuCandidatePick } from './market.js?v=short-season-v1';
+import { cpuBid, cpuCandidatePick } from './market.js?v=regrowth-v1';
 import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=short-season-v1';
 
 

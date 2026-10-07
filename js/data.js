@@ -82,7 +82,10 @@ export function createPlayer(id, position, rng, options = {}) {
   const stats = { shoot: ability(), speed: ability(), defense: ability(), dribble: ability(), pass: ability(), gk: position === 'GK' ? ability() : 50 };
   if (position === 'GK') stats.gk = options.initial ? rng.int(50, 55) : rng.int(55, 70);
   if (position !== 'GK') stats.stamina = staminaValue(rng);
-  return { id: `p-${id}`, name: `${last} ${first}`, age: 25, nationality: '日本', primaryPosition: position, stats, avatar: createAvatarProfile(id, position), isInitial: Boolean(options.initial), specialAbility: null, contractYears: 3, hiddenGrowth: growthProfile(position, rng, Boolean(options.initial)), honors: { mvp: 0, best5: 0 }, season: blankSeason(), career: blankSeason() };
+  const hiddenGrowth = growthProfile(position, rng, Boolean(options.initial));
+  // A second growth period is hidden and fixed at generation, never rolled annually.
+  const regrowthStartAge = rng.next() < .05 ? rng.int(25, 30) : null;
+  return { id: `p-${id}`, name: `${last} ${first}`, age: 25, nationality: '日本', primaryPosition: position, stats, avatar: createAvatarProfile(id, position), isInitial: Boolean(options.initial), specialAbility: null, contractYears: 3, hiddenGrowth, regrowthStartAge, honors: { mvp: 0, best5: 0 }, season: blankSeason(), career: blankSeason() };
 }
 
 export function blankSeason() { return { appearances: 0, goals: 0, assists: 0, shots: 0, attackContributions: 0, defensiveStops: 0, saves: 0, conceded: 0, ratingTotal: 0, playedPhases: 0 }; }

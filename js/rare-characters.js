@@ -23,6 +23,7 @@ export function applyRareCharacter(player, kind, rng) {
   player.rareCharacter = kind; player.name = def.name; player.primaryPosition = def.position;
   player.stats = Object.fromEntries(['shoot','speed','defense','dribble','pass','gk','stamina'].map(key => [key, rankMaximum(def[key] || def.rank)]));
   player.hiddenGrowth = Object.fromEntries(Object.keys(player.stats).map(key => [key, 0]));
+  delete player.regrowthStartAge;
   player.specialAbility = kind === 'robot' ? ['精密パス','精密ドリブル','精密シュート'][Math.floor(rng.next() * 3)] : def.ability;
   if (def.age !== undefined) player.age = def.age;
   player.scoutComment = def.scout; player.isInitial = false;

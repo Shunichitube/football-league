@@ -14,19 +14,19 @@ import { draftTurnState, renderDraftTurn } from './draft-status.js?v=opaque-pane
 import { dialogs } from './dialogs.js';
 import { openLot, raiseBid, passLot, tickLot } from './live-auction.js?v=short-season-v1';
 import { auctionAvatar, renderLiveAuction, auctionRemaining } from './auction-ui.js?v=auction-clock-v2';
-import { applySeasonFinances, awards, clubAchievements, createLeague, finalizeSeason, recordDraftAcquisition, simulateRemainingSeason, standings as singleStandings, startNextSeason } from './league.js?v=match-halves-v1';
-import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=short-season-v1';
+import { applySeasonFinances, awards, clubAchievements, createLeague, finalizeSeason, recordDraftAcquisition, simulateRemainingSeason, standings as singleStandings, startNextSeason } from './league.js?v=regrowth-v1';
+import { displayPlayer, POSITION_LABELS, STAT_LABELS } from './data.js?v=regrowth-v1';
 import { createRandom } from './random.js';
-import { createAuctionPool, createDraftPool, resolveDraftActions } from './market.js?v=auction-rare-v1';
+import { createAuctionPool, createDraftPool, resolveDraftActions } from './market.js?v=regrowth-v1';
 import { renderContractPlayerCard, configureRename, escapeHtml as e, renderLineupEditor, renderSquadComparison, renderMatchDetail, renderPlayerCard, renderRosterPanel, renderSeasonMatchList, renderSeasonPlayerStats } from './ui.js?v=match-halves-v1';
-import { decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=released-growth-v1';
+import { decideCpuDraftAction, manageCpuContracts, prepareCpuClubs, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from './cpu.js?v=regrowth-v1';
 import { ACTION_TYPES, applyClubAction, createLineupPlacement, validateLineup } from './rules.js?v=short-season-v1';
 import { RoomAdapter } from './room-adapter.js?v=short-season-v1';
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && roomAdapter?.active) roomAdapter.client.startNotifications(true);
 });
 import { classifyScreens } from './screen-classifier.js';
-import { createContractEvents, createSpecialTrainingOffers, renewalFee, trainingSkills } from './development.js?v=short-season-v1';
+import { createContractEvents, createSpecialTrainingOffers, renewalFee, trainingSkills } from './development.js?v=regrowth-v1';
 import { exportSave, importSave, loadSlot, saveSlot, slotInfo } from './storage.js?v=0.17.27';
 const clickHandlers=[];
 const onGameClick=(scope,handler)=>clickHandlers.push({scope,handler});
