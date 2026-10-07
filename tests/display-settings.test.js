@@ -50,7 +50,7 @@ test('host resizes one live frame, accepts only its messages and preserves the g
  assert.equal(displayReference({getItem:()=>JSON.stringify({width:0,height:1})}),null);
  });
 
-test('phone keeps one QHD frame, keeps every phase in the PC layout and respects safe areas',()=>{
+test('phone keeps one QHD frame, uses native scrolling only for draft and respects safe areas',()=>{
  const listeners={},frame={style:{},contentWindow:{}},values=new Map([[DISPLAY_REFERENCE_KEY,JSON.stringify({width:1920,height:1000})]]);
  const storage={getItem:key=>values.get(key)||null,setItem:(key,value)=>values.set(key,value)};
  const win={innerWidth:932,innerHeight:430,localStorage:storage,matchMedia:()=>({matches:true}),location:{href:'https://example.test/?room=PHONE',origin:'https://example.test'},addEventListener:(key,fn)=>listeners[key]=fn,
@@ -62,8 +62,8 @@ test('phone keeps one QHD frame, keeps every phase in the PC layout and respects
  assert.equal(frame.style.width,'2560px');assert.equal(frame.style.height,'1440px');
  const message={source:frame.contentWindow,origin:win.location.origin,data:{type:'football-league:display-view',view:'draft'}};
  listeners.message({...message,origin:'https://other.test'});assert.equal(frame.style.width,'2560px');
- listeners.message(message);assert.equal(frame.style.width,'2560px');assert.equal(frame.style.height,'1440px');assert.equal(frame.style.transform,`scale(${420/1440})`);
- win.innerWidth=844;win.innerHeight=390;listeners.resize();assert.equal(frame.style.width,'2560px');assert.equal(frame.style.transform,`scale(${380/1440})`);
+ listeners.message(message);assert.equal(frame.style.width,'892px');assert.equal(frame.style.height,'420px');assert.equal(frame.style.transform,'scale(1)');
+ win.innerWidth=844;win.innerHeight=390;listeners.resize();assert.equal(frame.style.width,'804px');assert.equal(frame.style.height,'380px');
  listeners.message({...message,data:{type:'football-league:display-view',view:'qhd'}});assert.equal(frame.style.width,'2560px');
  assert.equal(frame.src,src);assert.deepEqual(displayReference(storage),{width:1920,height:1000});
 });

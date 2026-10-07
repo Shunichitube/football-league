@@ -1,5 +1,4 @@
 import {mobileRendering} from './render-budget.js?v=mobile-memory-v1';
-import { mountDraftHall } from './draft-hall.js?v=mobile-auction-v2';
 const mountArena=host=>import('./season-three/home.js?v=mobile-memory-v1').then(module=>module.mountHomeStadium(host));
 
 // A screen lifetime owns every animation/listener. Navigation destroys it.
@@ -12,7 +11,7 @@ export function draftVenueAnchors(width,height){
 }
 function alignDraftVenue(){
  const grid=app.querySelector(':scope > main.screen-draft .draft-card-grid');
- if(!grid)return;
+ if(!grid||mobileRendering())return;
  const {podiumY,cardsY}=draftVenueAnchors(innerWidth,innerHeight);
  document.body.style.setProperty('--draft-podium-y',`${podiumY}px`);
  // Measure normal flow without the existing margin so repeated renders do not drift.
@@ -52,10 +51,11 @@ function sync(){
     if(title==='title')document.body.classList.add('arena-fallback');
     return;
   }
-  // The auction has its own full-viewport venue image; the draft canvas belongs to the draft screen.
-  if(title==='auction'||title==='season-results'||title==='contract'||title==='development')return;
-  const canvas=document.createElement(title==='title'?'div':'canvas');canvas.id='arena-background';canvas.setAttribute('aria-hidden','true');document.body.prepend(canvas);
-  (title!=='title'?mountDraftHall(canvas):mountArena(canvas)).then(cleanup=>{if(token!==generation)cleanup();else dispose=cleanup;}).catch(error=>{
+  // Every management screen already has CSS venue art. Do not create a
+  // second, hidden draft canvas behind it. Only the title owns a 3D host.
+  if(title!=='title')return;
+  const canvas=document.createElement('div');canvas.id='arena-background';canvas.setAttribute('aria-hidden','true');document.body.prepend(canvas);
+  mountArena(canvas).then(cleanup=>{if(token!==generation)cleanup();else dispose=cleanup;}).catch(error=>{
     if(token!==generation)return;
     canvas.remove();document.body.classList.add('arena-fallback');
     console.error('Arena art could not load; game controls remain available.',error);

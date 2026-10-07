@@ -24,5 +24,5 @@ test('phone title and draft use static venue art without allocating a canvas or 
  assert.ok(classes.has('arena-active'));assert.ok(classes.has('arena-fallback'));
  phase='draft';events['football-league:view-rendered']();
  assert.ok(classes.has('draft-hall-active'));assert.ok(!classes.has('arena-fallback'));
- assert.ok(properties.has('--draft-podium-y'));assert.ok(properties.has('--draft-grid-height'));
+ assert.ok(!properties.has('--draft-podium-y'));assert.ok(!properties.has('--draft-grid-height'));
 });

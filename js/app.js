@@ -1,3 +1,5 @@
+import {mobileRendering} from './render-budget.js?v=mobile-memory-v1';
+import {saveDraftCheckpoint,restoreDraftCheckpoint} from './draft-checkpoint.js?v=mobile-draft-v4';
 import { seasonLimit, yearsPerSeason, seasonMode } from './season-mode.js?v=short-season-v1';
 import { lineupSlotLabel, formationId, formationLabel } from './formations.js?v=box-badges-v2';
 import {createSfxController} from './sfx.js?v=training-complete-v1';
@@ -33,7 +35,7 @@ const onGameClick=(scope,handler)=>clickHandlers.push({scope,handler});
 let roomAdapter=null;
 const standings=league=>roomAdapter?.active?roomAdapter.standings(league,singleStandings):singleStandings(league);
 const app = document.querySelector('#app');
-let s = createInitialState();
+let s = (mobileRendering()&&restoreDraftCheckpoint()) || createInitialState();
 const bgm=createBgmController();
 const sfx=createSfxController();
 const experience=createGameExperience({dialogs,onExit:()=>{returnToTitle();render();}});
@@ -571,6 +573,7 @@ function render() {
   dialogs.beforeRender();
   if (renderedView !== s.view) document.querySelectorAll('.rename-modal-backdrop,.rename-modal-panel').forEach(node => node.remove());
   document.querySelectorAll('[data-app-overlay]').forEach(node => node.remove());
+  if(mobileRendering())saveDraftCheckpoint(s);
   app.innerHTML = (screens[s.view] || home)();
   if (s.league && s.mode !== 'room' && !['loadTitle', 'savePanel'].includes(s.view)) {
     app.querySelector('header')?.insertAdjacentHTML('beforeend', '<span class="header-actions"><button data-stage19="savePanel" class="subtle">セーブ / ロード</button></span>');

@@ -1,4 +1,4 @@
-/* Phones use the same QHD layout throughout, including the draft. */
+/* Phone draft uses its native viewport; other screens retain the QHD layout. */
 html.mobile-layout .fixed-display-option {display:none!important;}
 /* Keep the auction scenery static to avoid hundreds of animated compositor layers. */
 html.mobile-layout .auction-spectator,
@@ -23,3 +23,68 @@ html.mobile-layout .arena-popup-overlay,
 html.mobile-layout #app .arena-title button.subtle {backdrop-filter:none;-webkit-backdrop-filter:none;}
 html.mobile-layout .draft-stage-avatar img,
 html.mobile-layout .draft-stage-avatar::before {filter:none;}
+
+/* Native phone draft: normal flow, scrollable cards, readable touch controls. */
+html.mobile-layout:has(main.screen-draft .draft-card-grid) {height:auto;min-height:100%;overflow-x:hidden;overflow-y:auto;}
+html.mobile-layout body:has(main.screen-draft .draft-card-grid) {height:auto;min-height:100dvh;overflow-x:hidden;overflow-y:visible;touch-action:pan-y;}
+html.mobile-layout #app:has(main.screen-draft .draft-card-grid) {height:auto;min-height:100dvh;overflow:visible;padding-bottom:90px;}
+html.mobile-layout #app:has(main.screen-draft .draft-card-grid)>header {padding:8px 12px;gap:8px;flex-wrap:wrap;}
+html.mobile-layout #app:has(main.screen-draft .draft-card-grid)>header h1 {font-size:18px;line-height:1.2;}
+html.mobile-layout #app:has(main.screen-draft .draft-card-grid)>header button {font-size:13px;min-height:36px;padding:6px 10px;}
+html.mobile-layout #app main.screen-draft {width:calc(100% - 24px)!important;max-width:none;margin:12px;padding:0;height:auto;min-height:0;}
+html.mobile-layout #app main.screen-draft .eyebrow,
+html.mobile-layout #app main.screen-draft>p,
+html.mobile-layout #app main.screen-draft>.hint {font-size:13px!important;line-height:1.5!important;margin:8px 0!important;overflow-wrap:anywhere;}
+html.mobile-layout #app main.screen-draft .screen-heading h2 {font-size:20px!important;line-height:1.3;}
+html.mobile-layout #app main.screen-draft .draft-stage-avatar {display:none;}
+html.mobile-layout #app main.screen-draft .phase-sort-heading {position:static;display:flex;justify-content:flex-end;margin:8px 0;}
+html.mobile-layout #app main.screen-draft .phase-sort-heading label {font-size:13px;}
+html.mobile-layout #app main.screen-draft select {font-size:14px;padding:8px;}
+html.mobile-layout #app main.screen-draft .draft-card-grid {
+ display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr))!important;
+ grid-template-rows:none!important;grid-auto-rows:auto!important;gap:12px!important;
+ height:auto!important;min-height:0;max-height:none!important;overflow:visible!important;
+ margin:12px 0!important;padding:0!important;align-content:start;
+}
+html.mobile-layout #app main.screen-draft .draft-card-grid .candidate {height:auto!important;min-height:0;padding:8px!important;box-sizing:border-box;}
+html.mobile-layout #app main.screen-draft .draft-card-grid .player-card.has-card-avatar {
+ display:grid!important;height:auto!important;min-height:0;box-sizing:border-box;
+ grid-template-columns:64px minmax(0,1fr)!important;grid-template-rows:auto auto auto!important;
+ gap:8px!important;padding:8px!important;align-items:start!important;overflow:visible;
+}
+html.mobile-layout #app main.screen-draft .player-card-avatar {grid-column:1!important;grid-row:1!important;align-self:start;}
+html.mobile-layout #app main.screen-draft .player-card-avatar img {width:64px!important;height:100px!important;max-height:none;object-fit:contain;}
+html.mobile-layout #app main.screen-draft .has-card-avatar .player-profile {grid-column:2!important;grid-row:1!important;}
+html.mobile-layout #app main.screen-draft .has-card-avatar .player-abilities {grid-column:1/-1!important;grid-row:2!important;}
+html.mobile-layout #app main.screen-draft .has-card-avatar .player-special-row {grid-column:1/-1!important;grid-row:3!important;}
+html.mobile-layout #app main.screen-draft .player-title {display:flex;flex-wrap:wrap;align-items:baseline;gap:4px!important;}
+html.mobile-layout #app main.screen-draft .player-name-box {flex:1 1 110px;}
+html.mobile-layout #app main.screen-draft .player-name {font-size:16px!important;line-height:1.3!important;white-space:normal!important;overflow-wrap:anywhere;}
+html.mobile-layout #app main.screen-draft .overall-rank {font-size:15px!important;line-height:1.3;white-space:nowrap;}
+html.mobile-layout #app main.screen-draft .player-profile p {font-size:12px!important;line-height:1.5!important;margin:3px 0!important;}
+html.mobile-layout #app main.screen-draft .position-badge {font-size:12px!important;padding:3px 7px!important;margin:4px 0;}
+html.mobile-layout #app main.screen-draft .ability-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:4px!important;}
+html.mobile-layout #app main.screen-draft .ability-grid div {grid-template-columns:46px minmax(0,1fr)!important;padding:3px!important;gap:3px!important;}
+html.mobile-layout #app main.screen-draft .ability-grid dt {font-size:11px!important;white-space:normal;line-height:1.3;}
+html.mobile-layout #app main.screen-draft .ability-grid dd {font-size:13px!important;grid-template-columns:20px minmax(0,1fr)!important;gap:3px!important;}
+html.mobile-layout #app main.screen-draft .rank-bar {height:6px!important;min-width:0!important;}
+html.mobile-layout #app main.screen-draft .special-ability-visible,
+html.mobile-layout #app main.screen-draft .special-ability-visible>span,
+html.mobile-layout #app main.screen-draft .special-ability-visible>p,
+html.mobile-layout #app main.screen-draft .special-ability {font-size:12px!important;line-height:1.5!important;white-space:normal!important;overflow-wrap:anywhere;max-height:none!important;}
+html.mobile-layout #app main.screen-draft .draft-selected-badge {position:static;align-self:flex-start;font-size:11px;line-height:1.3;}
+html.mobile-layout #app main.screen-draft .draft-action-dock {
+ position:fixed;left:12px;right:12px;bottom:8px;transform:none;width:auto!important;
+ display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:8px;z-index:100;box-sizing:border-box;
+}
+html.mobile-layout #app main.screen-draft .draft-action-dock button {font-size:13px!important;line-height:1.3;min-height:44px;padding:6px!important;white-space:normal;}
+
+html.mobile-layout #app main.screen-draft .draft-turn-anchor {position:static;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(250px,100%),1fr));gap:8px;width:100%;margin:8px 0;}
+html.mobile-layout #app main.screen-draft .draft-turn-current,
+html.mobile-layout #app main.screen-draft .draft-turn-reception {position:static;width:auto;min-width:0;padding:8px 10px;}
+html.mobile-layout #app main.screen-draft .draft-turn-current strong {font-size:17px;line-height:1.4;}
+html.mobile-layout #app main.screen-draft .draft-turn-current p,
+html.mobile-layout #app main.screen-draft .draft-turn-caption,
+html.mobile-layout #app main.screen-draft .draft-reception-list {font-size:12px;line-height:1.4;}
+html.mobile-layout #app main.screen-draft .draft-reception-list b,
+html.mobile-layout #app main.screen-draft .draft-reception-list span {overflow-wrap:anywhere;}
