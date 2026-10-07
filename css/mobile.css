@@ -14,3 +14,12 @@ html.mobile-layout .auction-award strong,
 html.mobile-layout .auction-award-light::before,
 html.mobile-layout .auction-award-light::after {filter:none;}
 html.mobile-layout .auction-confetti {display:none;}
+
+/* A single static venue layer; no offscreen blur surfaces in the scaled frame. */
+html.mobile-layout body.draft-hall-active::before {display:none;}
+html.mobile-layout body.draft-hall-active #app>header,
+html.mobile-layout .draft-action-dock,
+html.mobile-layout .arena-popup-overlay,
+html.mobile-layout #app .arena-title button.subtle {backdrop-filter:none;-webkit-backdrop-filter:none;}
+html.mobile-layout .draft-stage-avatar img,
+html.mobile-layout .draft-stage-avatar::before {filter:none;}

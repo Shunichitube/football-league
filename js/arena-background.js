@@ -1,3 +1,4 @@
+import {mobileRendering} from './render-budget.js?v=mobile-memory-v1';
 import { mountDraftHall } from './draft-hall.js?v=mobile-auction-v2';
 const mountArena=host=>import('./season-three/home.js?v=mobile-memory-v1').then(module=>module.mountHomeStadium(host));
 
@@ -45,6 +46,12 @@ function sync(){
   document.body.classList.toggle('contract-office-active',title==='contract');
   document.body.classList.toggle('development-room-active',title==='development');
   if(!title)return;
+  // The phone keeps the PC layout but uses CSS venue art. A hidden draft
+  // canvas still consumes memory, and a 3D title adds a large transition peak.
+  if(mobileRendering()){
+    if(title==='title')document.body.classList.add('arena-fallback');
+    return;
+  }
   // The auction has its own full-viewport venue image; the draft canvas belongs to the draft screen.
   if(title==='auction'||title==='season-results'||title==='contract'||title==='development')return;
   const canvas=document.createElement(title==='title'?'div':'canvas');canvas.id='arena-background';canvas.setAttribute('aria-hidden','true');document.body.prepend(canvas);
