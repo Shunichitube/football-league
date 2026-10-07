@@ -1,48 +1,16 @@
-/* Only the draft uses the phone viewport; other phases retain the QHD canvas. */
+/* Phones use the same QHD layout throughout, including the draft. */
 html.mobile-layout .fixed-display-option {display:none!important;}
-html.mobile-layout:has(main.screen-draft .draft-card-grid) {height:auto;min-height:100%;overflow-x:hidden;overflow-y:auto;}
-html.mobile-layout body:has(main.screen-draft .draft-card-grid) {height:auto;min-height:100dvh;overflow-x:hidden;overflow-y:visible;touch-action:pan-y;}
-html.mobile-layout #app:has(main.screen-draft .draft-card-grid) {height:auto;min-height:100dvh;overflow:visible;padding-bottom:88px;}
-html.mobile-layout #app:has(main.screen-draft .draft-card-grid)>header {padding:10px 12px;gap:8px;flex-wrap:wrap;}
-html.mobile-layout #app:has(main.screen-draft .draft-card-grid)>header h1 {font-size:18px;}
-html.mobile-layout #app main.screen-draft {width:calc(100% - 24px)!important;max-width:none;min-height:0;height:auto;margin:12px;padding:0 0 12px;}
-html.mobile-layout #app main.screen-draft .draft-stage-avatar {display:none!important;}
-html.mobile-layout #app main.screen-draft .screen-heading h2 {font-size:20px;}
-html.mobile-layout #app main.screen-draft>.hint {font-size:13px;line-height:1.5;}
-html.mobile-layout #app main.screen-draft .draft-card-grid {
- display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(290px,100%),1fr))!important;
- grid-template-rows:none!important;grid-auto-rows:auto!important;gap:12px!important;
- height:auto!important;min-height:0;max-height:none!important;overflow:visible!important;
- margin:14px 0!important;padding:0!important;align-content:start;
-}
-html.mobile-layout #app main.screen-draft .draft-card-grid .candidate {height:auto!important;min-height:0;padding:8px!important;}
-html.mobile-layout #app main.screen-draft .draft-card-grid .player-card.has-card-avatar {
- height:auto!important;min-height:0;grid-template-columns:64px minmax(0,1fr)!important;
- grid-template-rows:auto auto auto!important;gap:8px!important;padding:8px!important;align-items:start!important;
-}
-html.mobile-layout #app main.screen-draft .player-card-avatar {grid-column:1;grid-row:1;}
-html.mobile-layout #app main.screen-draft .player-card-avatar img {width:64px;height:86px;max-height:none;}
-html.mobile-layout #app main.screen-draft .player-profile {grid-column:2!important;grid-row:1!important;}
-html.mobile-layout #app main.screen-draft .player-abilities {grid-column:1/-1!important;grid-row:2!important;}
-html.mobile-layout #app main.screen-draft .player-special-row {grid-column:1/-1!important;grid-row:3!important;}
-html.mobile-layout #app main.screen-draft .player-name {font-size:17px!important;line-height:1.2;}
-html.mobile-layout #app main.screen-draft .overall-rank {font-size:18px!important;}
-html.mobile-layout #app main.screen-draft .player-profile p,
-html.mobile-layout #app main.screen-draft .player-meta,
-html.mobile-layout #app main.screen-draft .growth-expectation {font-size:13px!important;line-height:1.4!important;}
-html.mobile-layout #app main.screen-draft .position-badge {font-size:13px!important;padding:3px 7px!important;}
-html.mobile-layout #app main.screen-draft .ability-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px!important;}
-html.mobile-layout #app main.screen-draft .ability-grid div {grid-template-columns:48px minmax(0,1fr)!important;padding:3px!important;}
-html.mobile-layout #app main.screen-draft .ability-grid dt {font-size:12px!important;}
-html.mobile-layout #app main.screen-draft .ability-grid dd {font-size:15px!important;grid-template-columns:18px minmax(0,1fr)!important;}
-html.mobile-layout #app main.screen-draft .rank-bar {height:6px!important;}
-html.mobile-layout #app main.screen-draft .special-ability-visible,
-html.mobile-layout #app main.screen-draft .special-ability-visible>span,
-html.mobile-layout #app main.screen-draft .special-ability-visible>p,
-html.mobile-layout #app main.screen-draft .special-ability {font-size:13px!important;line-height:1.4!important;}
-html.mobile-layout #app main.screen-draft .draft-selected-badge {font-size:12px;}
-html.mobile-layout #app main.screen-draft .draft-action-dock {
- position:fixed;left:12px;right:12px;bottom:8px;transform:none;width:auto!important;
- grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:8px;z-index:100;
-}
-html.mobile-layout #app main.screen-draft .draft-action-dock button {font-size:14px!important;min-height:44px;padding:8px!important;}
+/* Keep the auction scenery static to avoid hundreds of animated compositor layers. */
+html.mobile-layout .auction-spectator,
+html.mobile-layout .auction-staff,
+html.mobile-layout .auction-host,
+html.mobile-layout .auction-console-screen,
+html.mobile-layout .auction-ring-track,
+html.mobile-layout .auction-light-beam {animation:none!important;}
+html.mobile-layout .auction-staff,
+html.mobile-layout .auction-host,
+html.mobile-layout .auction-operator,
+html.mobile-layout .auction-award strong,
+html.mobile-layout .auction-award-light::before,
+html.mobile-layout .auction-award-light::after {filter:none;}
+html.mobile-layout .auction-confetti {display:none;}

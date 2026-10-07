@@ -4,6 +4,8 @@ import { STAGE } from './stage-layout.js';
 export async function mountDraftHall(canvas){
   const ctx=canvas.getContext('2d',{alpha:false}),base=new Image();
   await new Promise((resolve,reject)=>{base.onload=resolve;base.onerror=reject;base.src=new URL('../assets/arena/draft-stage-podium.png',import.meta.url).href;});
+  // Navigation can finish while the image is still loading.
+  if(canvas.isConnected===false){base.src='';canvas.width=canvas.height=1;return ()=>{};}
   const reduce=matchMedia('(prefers-reduced-motion: reduce)');
   let frame=0,dead=false,last=0,time=0,previous=0;
   function draw(){
@@ -30,5 +32,5 @@ export async function mountDraftHall(canvas){
   function tick(now){if(dead||document.hidden||reduce.matches)return;if(previous)time+=Math.min((now-previous)/1000,.1);previous=now;if(now-last>50){draw();last=now;}frame=requestAnimationFrame(tick);}
   function schedule(){cancelAnimationFrame(frame);previous=0;draw();if(!document.hidden&&!reduce.matches)frame=requestAnimationFrame(tick);}
   addEventListener('resize',resize);document.addEventListener('visibilitychange',schedule);reduce.addEventListener('change',schedule);resize();schedule();
-  return ()=>{dead=true;cancelAnimationFrame(frame);removeEventListener('resize',resize);document.removeEventListener('visibilitychange',schedule);reduce.removeEventListener('change',schedule);};
+  return ()=>{dead=true;cancelAnimationFrame(frame);removeEventListener('resize',resize);document.removeEventListener('visibilitychange',schedule);reduce.removeEventListener('change',schedule);canvas.width=canvas.height=1;base.onload=base.onerror=null;base.src='';};
 }

@@ -1,12 +1,7 @@
 export const DISPLAY_KEY='football-league:fixed-display';
 export const DISPLAY_EVENT='football-league:fixed-display';
-export const DISPLAY_VIEW_EVENT='football-league:display-view';
 export function mobileDisplayEnabled(win=window){
  return !!win.matchMedia?.('(pointer: coarse)').matches && Math.min(win.innerWidth,win.innerHeight)<=768;
-}
-export function reportDisplayView(win=window,doc=document){
- const view=doc.querySelector('main.screen-draft .draft-card-grid')?'draft':'qhd';
- win.parent.postMessage({type:DISPLAY_VIEW_EVENT,view},win.location.origin);
 }
 export const DISPLAY_REFERENCE_KEY='football-league:display-reference';
 export function displayReference(storage=globalThis.localStorage){
@@ -29,7 +24,6 @@ export function displayGeometry(width,height,fixed,reference={width:2560,height:
 }
 export function mountDisplayFrame(win=window,doc=document){
  const mobile=mobileDisplayEnabled(win);
- let view='qhd';
  let enabled=fixedDisplayEnabled(win.localStorage);
  let reference=displayReference(win.localStorage);
  const capture=()=>{
@@ -51,17 +45,13 @@ export function mountDisplayFrame(win=window,doc=document){
   const inset=key=>parseFloat(style?.[key])||0;
   const left=inset('paddingLeft'),top=inset('paddingTop');
   const width=win.innerWidth-left-inset('paddingRight'),height=win.innerHeight-top-inset('paddingBottom');
-  const size=mobile?displayGeometry(width,height,view!=='draft'):displayGeometry(width,height,enabled,reference||undefined);
+  const size=mobile?displayGeometry(width,height,true):displayGeometry(width,height,enabled,reference||undefined);
   size.left+=left;size.top+=top;
   Object.assign(frame.style,{width:`${size.width}px`,height:`${size.height}px`,left:`${size.left}px`,top:`${size.top}px`,transform:`scale(${size.scale})`});
  };
  win.addEventListener('resize',resize);
  win.addEventListener('message',event=>{
   if(event.source!==frame.contentWindow||event.origin!==win.location.origin)return;
-  if(event.data?.type===DISPLAY_VIEW_EVENT){
-   if(mobile&&['draft','qhd'].includes(event.data.view)){view=event.data.view;resize();}
-   return;
-  }
   if(event.data?.type!==DISPLAY_EVENT)return;
   if(mobile)return;
   if(event.data.enabled===true&&!enabled)capture();
