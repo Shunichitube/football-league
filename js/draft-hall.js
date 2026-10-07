@@ -1,3 +1,4 @@
+import {renderPixelRatio} from './render-budget.js?v=mobile-memory-v1';
 import { STAGE } from './stage-layout.js';
 // Decorative only; the current draft venue does not read game state or DOM data.
 export async function mountDraftHall(canvas){
@@ -8,7 +9,7 @@ export async function mountDraftHall(canvas){
   function draw(){
     ctx.globalCompositeOperation='source-over';
     const scale=Math.max(innerWidth/STAGE.width,innerHeight/STAGE.height),dx=(innerWidth-STAGE.width*scale)/2;
-    const dpr=Math.min(devicePixelRatio||1,2);ctx.setTransform(dpr*scale,0,0,dpr*scale,dpr*dx,0);
+    const dpr=renderPixelRatio(innerWidth,innerHeight);ctx.setTransform(dpr*scale,0,0,dpr*scale,dpr*dx,0);
     ctx.drawImage(base,0,0,STAGE.width,STAGE.height);ctx.imageSmoothingEnabled=false;
     ctx.fillStyle='rgba(2,8,18,.28)';ctx.fillRect(0,0,STAGE.width,STAGE.height);
     ctx.globalCompositeOperation='screen';
@@ -25,7 +26,7 @@ export async function mountDraftHall(canvas){
     ctx.fillStyle=glow;ctx.beginPath();ctx.ellipse(836,238,220,90,0,0,Math.PI*2);ctx.fill();
     ctx.globalCompositeOperation='source-over';canvas.dataset.ready='true';
   }
-  function resize(){const dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(innerWidth*dpr);canvas.height=Math.round(innerHeight*dpr);draw();}
+  function resize(){const dpr=renderPixelRatio(innerWidth,innerHeight);canvas.width=Math.round(innerWidth*dpr);canvas.height=Math.round(innerHeight*dpr);draw();}
   function tick(now){if(dead||document.hidden||reduce.matches)return;if(previous)time+=Math.min((now-previous)/1000,.1);previous=now;if(now-last>50){draw();last=now;}frame=requestAnimationFrame(tick);}
   function schedule(){cancelAnimationFrame(frame);previous=0;draw();if(!document.hidden&&!reduce.matches)frame=requestAnimationFrame(tick);}
   addEventListener('resize',resize);document.addEventListener('visibilitychange',schedule);reduce.addEventListener('change',schedule);resize();schedule();

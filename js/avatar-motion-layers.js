@@ -1,3 +1,4 @@
+import {mobileRendering} from './render-budget.js?v=mobile-memory-v1';
 import {MOTION_HAIR_LAYOUTS,SHOOT_DRAW_PADDING} from './motion-hair-layout.js?v=motion-ui-v24';
 import {readHairAdjustments,effectiveHairAdjustment,hairAdjustmentRevision} from './motion-hair-adjustments.js?v=motion-ui-v24';
 import {avatarProfile,kitColor} from './avatar-profile.js?v=appearance-v29';
@@ -32,5 +33,6 @@ export function renderMotionLayers(atlas,sheet,sourceIndex,columns,value,{kit,go
   for(let y=0;y<surface.height;y++)for(let x=0;x<surface.width;x++)if(pixels[(y*surface.width+x)*4+3]>16){left=Math.min(left,x);top=Math.min(top,y);right=Math.max(right,x+1);bottom=Math.max(bottom,y+1);}
   surface.motionPadding=padding;surface.motionContentBounds={left,top,right,bottom};
  }
- if(frames.size>=48)frames.delete(frames.keys().next().value);frames.set(key,surface);return surface;
+ const mobile=mobileRendering(),limit=mobile?8:48;
+ while(frames.size>=limit){const oldest=frames.keys().next().value,cached=frames.get(oldest);frames.delete(oldest);if(mobile){cached.width=1;cached.height=1;}}frames.set(key,surface);return surface;
 }

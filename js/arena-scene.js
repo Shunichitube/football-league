@@ -1,3 +1,4 @@
+import {renderPixelRatio} from './render-budget.js?v=mobile-memory-v1';
 import {loadMotionAtlas,drawMotion} from './player-motion.js?v=motion-ui-v24';
 import { pixelTexture } from './arena-characters.js?v=appearance-v29';
 // Presentation only: no game, random-generator or storage imports.
@@ -69,7 +70,7 @@ export async function mountArena(canvas){
   const W=ARENA.width,H=ARENA.height;
   let view;
   function resize(){
-    const dpr=Math.min(devicePixelRatio||1,2);
+    const dpr=renderPixelRatio(innerWidth,innerHeight);
     canvas.width=Math.round(innerWidth*dpr);canvas.height=Math.round(innerHeight*dpr);
     view=arenaTransform(innerWidth,innerHeight);
     document.documentElement.style.setProperty('--arena-scale',view.scale);

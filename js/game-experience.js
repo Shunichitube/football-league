@@ -1,4 +1,4 @@
-import {loadMotionAtlas} from './player-motion.js?v=motion-ui-v24';
+import {loadMotionAtlas} from './player-motion.js?v=mobile-memory-v1';
 import {playerAppearance} from './avatar-profile.js?v=appearance-v29';
 import {drawAvatar} from './player-avatar.js?v=modular-motion-v4';
 import {celebrationTexture} from './avatar-celebration.js?v=motion-ui-v24';

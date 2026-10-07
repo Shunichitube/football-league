@@ -1,5 +1,6 @@
+import {renderPixelRatio} from './render-budget.js?v=mobile-memory-v1';
 import {footballTexture} from './arena-scene.js?v=idle-approved-v5';
-import {loadMotionAtlas,drawMotion} from './player-motion.js?v=motion-ui-v24';
+import {loadMotionAtlas,drawMotion} from './player-motion.js?v=mobile-memory-v1';
 import {playerAppearance} from './avatar-profile.js?v=appearance-v29';
 import {drawAvatar} from './player-avatar.js?v=season-finale-v1';
 import {celebrationTexture,drawCelebration} from './avatar-celebration.js?v=motion-ui-v24';
@@ -286,7 +287,7 @@ export function playSeasonFinale({app,club,rank,keeper,matches=[],clubs=[],seaso
   root.dataset.scene=stage==='ceremony'?'ceremony':stage==='conveyor'?'conveyor':frame.scene;
   if(stage==='cinematic'&&frame.ready&&button.hidden){button.hidden=false;button.focus({preventScroll:true});}
  }
- function resize(){const dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(innerWidth*dpr);canvas.height=Math.round(innerHeight*dpr);reel?.resize(innerWidth,innerHeight);paint();}
+ function resize(){const dpr=renderPixelRatio(innerWidth,innerHeight);canvas.width=Math.round(innerWidth*dpr);canvas.height=Math.round(innerHeight*dpr);reel?.resize(innerWidth,innerHeight);paint();}
  function tick(now){
   if(dead)return;
   if(!document.hidden){if(previous)clock+=Math.min(.1,(now-previous)/1000);previous=now;if(now-lastPaint>1000/30){paint();lastPaint=now;}}
@@ -304,7 +305,7 @@ export function playSeasonFinale({app,club,rank,keeper,matches=[],clubs=[],seaso
   if(dead)return;
   const finalOpponent=clubs.find(c=>c.id===fixtures.at(-1)?.opponent?.id);
   painter=createFinalePainter(data,club,rank,startingFive(finalOpponent)[0]||keeper,clubs,fixtures);
-  if(fixtures.length&&!reduced){try{const {createSeasonReel}=await import('./season-three/reel.js');if(dead)return;reel=createSeasonReel({host:courtHost,atlas:data.atlas,club,clubs,fixtures});conveyorDuration=seasonReelFrame(fixtures,0).duration;painter.setScorer(startingFive(club)[4]);courtHost.hidden=false;canvas.hidden=true;}catch(error){console.warn('3D season reel unavailable; using the existing scene',error);courtHost.hidden=true;}}
+  if(fixtures.length&&!reduced){try{const {createSeasonReel}=await import('./season-three/reel.js?v=mobile-memory-v1');if(dead)return;reel=createSeasonReel({host:courtHost,atlas:data.atlas,club,clubs,fixtures});conveyorDuration=seasonReelFrame(fixtures,0).duration;painter.setScorer(startingFive(club)[4]);courtHost.hidden=false;canvas.hidden=true;}catch(error){console.warn('3D season reel unavailable; using the existing scene',error);courtHost.hidden=true;}}
   if(dead){reel?.dispose();return;}status.remove();skip.focus({preventScroll:true});
   if(reduced){stage='cinematic';clock=finaleKind(rank)==='goal'?5.1:finaleKind(rank)==='catch'?5.2:4.4;}
   paint();if(!reduced)raf=requestAnimationFrame(tick);

@@ -1,3 +1,4 @@
+import {mobileRendering,renderPixelRatio} from '../render-budget.js?v=mobile-memory-v1';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -11,7 +12,8 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 export function createCourt(host,width,height){
 let innerWidth=width,innerHeight=height;
 const scene=new THREE.Scene();scene.background=new THREE.Color('#080e18');scene.fog=new THREE.Fog('#080e18',75,150);
-const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;host.append(renderer.domElement);
+const mobile=mobileRendering();
+const renderer=new THREE.WebGLRenderer({antialias:!mobile,powerPreference:mobile?'low-power':'default'});renderer.setPixelRatio(renderPixelRatio(innerWidth,innerHeight));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=!mobile;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;host.append(renderer.domElement);
 const camera=new THREE.PerspectiveCamera(43,innerWidth/innerHeight,.1,220);camera.position.set(49,38,52);
 const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(-2,0,0);controls.enableDamping=true;controls.minDistance=5;controls.maxDistance=100;controls.maxPolarAngle=Math.PI/2-.03;controls.autoRotateSpeed=.4;
 scene.add(new THREE.HemisphereLight(0xb8dfff,0x182330,2));
@@ -84,9 +86,10 @@ for(const side of [-1,1])for(let i=0;i<1;i++){
  for(const dz of [-.13,.13])rod([x,.18,z+dz],[x,.75,z+dz],.09,navy);
 }
 const animateLuxury = dressArena(scene);
-const composer=new EffectComposer(renderer);composer.addPass(new RenderPass(scene,camera));composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.25,.5,1.15));composer.addPass(new OutputPass());
+// Mobile avoids multiple floating-point postprocessing buffers.
+const composer=mobile?null:new EffectComposer(renderer);if(composer){composer.addPass(new RenderPass(scene,camera));composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.25,.5,1.15));composer.addPass(new OutputPass());}
 
 controls.enabled=false;
 let contextLost=false;renderer.domElement.addEventListener('webglcontextlost',()=>{contextLost=true;});
-return {scene,camera,controls,render(){if(contextLost)throw new Error('WebGL context lost');composer.render();},resize(w,h){renderer.setSize(w,h);composer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();},dispose(){controls.dispose();composer.passes.forEach(p=>p.dispose?.());composer.dispose();const geometries=new Set(),materials=new Set(),textures=new Set();scene.traverse(o=>{if(o.geometry)geometries.add(o.geometry);for(const m of (Array.isArray(o.material)?o.material:[o.material]).filter(Boolean)){materials.add(m);for(const v of Object.values(m))if(v?.isTexture)textures.add(v);}});geometries.forEach(g=>g.dispose());textures.forEach(t=>t.dispose());materials.forEach(m=>m.dispose());renderer.dispose();renderer.domElement.remove();},animate:animateLuxury};
+return {scene,camera,controls,render(){if(contextLost)throw new Error('WebGL context lost');if(composer)composer.render();else renderer.render(scene,camera);},resize(w,h){const ratio=renderPixelRatio(w,h);renderer.setPixelRatio(ratio);renderer.setSize(w,h);composer?.setPixelRatio(ratio);composer?.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();},dispose(){controls.dispose();composer?.passes.forEach(p=>p.dispose?.());composer?.dispose();const geometries=new Set(),materials=new Set(),textures=new Set();scene.traverse(o=>{if(o.geometry)geometries.add(o.geometry);for(const m of (Array.isArray(o.material)?o.material:[o.material]).filter(Boolean)){materials.add(m);for(const v of Object.values(m))if(v?.isTexture)textures.add(v);}});geometries.forEach(g=>g.dispose());textures.forEach(t=>t.dispose());materials.forEach(m=>m.dispose());renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();},animate:animateLuxury};
 }

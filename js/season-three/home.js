@@ -1,9 +1,10 @@
+import {mobileRendering} from '../render-budget.js?v=mobile-memory-v1';
 import * as THREE from 'three';
-import {createCourt} from './court.js';
+import {createCourt} from './court.js?v=mobile-memory-v1';
 import {createCrowd} from './crowd.js';
 import {createFootball} from './football.js';
 import {homeExhibitionFrame} from './home-exhibition.js';
-import {loadMotionAtlas,drawMotion,MOTIONS} from '../player-motion.js';
+import {loadMotionAtlas,drawMotion,MOTIONS} from '../player-motion.js?v=mobile-memory-v1';
 
 // A looping exhibition, entirely independent of league state and match RNG.
 export async function mountHomeStadium(host){
@@ -17,9 +18,9 @@ export async function mountHomeStadium(host){
   const goalkeeper=i%5===0,bank={};
   for(const motion of goalkeeper?['idle','catch']:['idle','run','dribble','shoot'])for(const direction of ['left','right']){
    bank[`${motion}-${direction}`]=MOTIONS[motion].frames.map((_,frame)=>{
-    const canvas=document.createElement('canvas');canvas.width=canvas.height=256;
+    const canvas=document.createElement('canvas');canvas.width=canvas.height=mobileRendering()?128:256;
     drawMotion(canvas.getContext('2d'),atlas,motion,frame/MOTIONS[motion].fps+.001,{direction,goalkeeper,loop:false,ball:false,kit:i<5?'#42b8e6':'#ee8a53',appearance:{seed:i*197,hairStyle:i*3%20,hairColor:i%10,skinTone:i%3,face:i%3}});
-    if(motion==='shoot'&&direction==='left'){const copy=document.createElement('canvas');copy.width=copy.height=256;copy.getContext('2d').drawImage(canvas,0,0);const ctx=canvas.getContext('2d');ctx.clearRect(0,0,256,256);ctx.save();ctx.translate(256,0);ctx.scale(-1,1);ctx.drawImage(copy,0,0);ctx.restore();}
+    if(motion==='shoot'&&direction==='left'){const copy=document.createElement('canvas');copy.width=copy.height=canvas.width;copy.getContext('2d').drawImage(canvas,0,0);const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);ctx.save();ctx.translate(canvas.width,0);ctx.scale(-1,1);ctx.drawImage(copy,0,0);ctx.restore();}
     const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;textures.push(texture);return texture;
    });
   }

@@ -1,5 +1,6 @@
+import {mobileRendering} from '../render-budget.js?v=mobile-memory-v1';
 import * as THREE from 'three';
-import {createCourt} from './court.js';
+import {createCourt} from './court.js?v=mobile-memory-v1';
 import {createCrowd} from './crowd.js';
 import {createFootball} from './football.js';
 import {drawMotion,MOTIONS} from '../player-motion.js?v=motion-ui-v17';
@@ -22,9 +23,9 @@ export function createSeasonReel({host,atlas,club,clubs,fixtures}){
   const bank={};
   for(const motion of (active?['idle','run','dribble','shoot']:keeper?['idle']:['idle','run']))for(const direction of ['left','right']){
    bank[`${motion}-${direction}`]=MOTIONS[motion].frames.map((_,frame)=>{
-    const canvas=document.createElement('canvas');canvas.width=canvas.height=256;
+    const canvas=document.createElement('canvas');canvas.width=canvas.height=mobileRendering()?128:256;
     drawMotion(canvas.getContext('2d'),atlas,motion,frame/MOTIONS[motion].fps+.001,{direction,ball:false,appearance:playerAppearance(player||{id:'reel-fallback',primaryPosition:keeper?'GK':'MF'}),kit,goalkeeper:keeper});
-    if(motion==='shoot'&&direction==='left'){const ctx=canvas.getContext('2d'),copy=document.createElement('canvas');copy.width=copy.height=256;copy.getContext('2d').drawImage(canvas,0,0);ctx.clearRect(0,0,256,256);ctx.save();ctx.translate(256,0);ctx.scale(-1,1);ctx.drawImage(copy,0,0);ctx.restore();}
+    if(motion==='shoot'&&direction==='left'){const ctx=canvas.getContext('2d'),copy=document.createElement('canvas');copy.width=copy.height=canvas.width;copy.getContext('2d').drawImage(canvas,0,0);ctx.clearRect(0,0,canvas.width,canvas.height);ctx.save();ctx.translate(canvas.width,0);ctx.scale(-1,1);ctx.drawImage(copy,0,0);ctx.restore();}
     const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;allTextures.add(texture);return texture;
    });
   }
@@ -45,7 +46,7 @@ export function createSeasonReel({host,atlas,club,clubs,fixtures}){
   });
  }
  // Bake all fixture opponents before playback to avoid pauses at scene cuts.
- try{fixtures.forEach(setOpponent);if(fixtures.length)setOpponent(fixtures[0]);}
+ try{if(!mobileRendering())fixtures.forEach(setOpponent);if(fixtures.length)setOpponent(fixtures[0]);}
  catch(error){court.dispose();allTextures.forEach(t=>t.dispose());throw error;}
  return {render(time){
   const f=seasonReelFrame(fixtures,time);if(f.done)return f;
