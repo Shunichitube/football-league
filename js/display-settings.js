@@ -46,7 +46,11 @@ export function mountDisplayFrame(win=window,doc=document){
  doc.documentElement.style.cssText='width:100%;height:100%;overflow:hidden;background:#07121c;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);';
  doc.body.style.cssText='width:100%;height:100%;margin:0;overflow:hidden;background:#07121c;';
  doc.body.replaceChildren(frame);
+ let laidOut=false;
  const resize=()=>{
+  // Pinch zoom changes the visual viewport, not the game layout. Rebuilding
+  // large iframe surfaces during a gesture can cause a mobile rendering spike.
+  if(laidOut&&mobile&&win.visualViewport?.scale>1.01)return;
   const style=win.getComputedStyle?.(doc.documentElement);
   const inset=key=>parseFloat(style?.[key])||0;
   const left=inset('paddingLeft'),top=inset('paddingTop');
@@ -54,8 +58,10 @@ export function mountDisplayFrame(win=window,doc=document){
   const size=mobile?displayGeometry(width,height,view!=='draft'):displayGeometry(width,height,enabled,reference||undefined);
   size.left+=left;size.top+=top;
   Object.assign(frame.style,{width:`${size.width}px`,height:`${size.height}px`,left:`${size.left}px`,top:`${size.top}px`,transform:`scale(${size.scale})`});
+  laidOut=true;
  };
  win.addEventListener('resize',resize);
+ win.visualViewport?.addEventListener('resize',resize);
  win.addEventListener('message',event=>{
   if(event.source!==frame.contentWindow||event.origin!==win.location.origin)return;
   if(event.data?.type===DISPLAY_VIEW_EVENT){

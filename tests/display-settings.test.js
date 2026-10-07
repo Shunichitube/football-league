@@ -67,3 +67,20 @@ test('phone keeps one QHD frame, uses native scrolling only for draft and respec
  listeners.message({...message,data:{type:'football-league:display-view',view:'qhd'}});assert.equal(frame.style.width,'2560px');
  assert.equal(frame.src,src);assert.deepEqual(displayReference(storage),{width:1920,height:1000});
 });
+
+
+test('pinch zoom preserves the live frame and defers layout resizing until zoom is reset',()=>{
+ const listeners={},visualListeners={},frame={style:{},contentWindow:{}};let mounts=0;
+ const win={innerWidth:932,innerHeight:430,localStorage:{getItem:()=>null},matchMedia:()=>({matches:true}),
+ location:{href:'https://example.test/',origin:'https://example.test'},addEventListener:(key,fn)=>listeners[key]=fn,
+ visualViewport:{scale:1,addEventListener:(key,fn)=>visualListeners[key]=fn}};
+ const doc={createElement:()=>frame,querySelectorAll:()=>[],documentElement:{style:{}},body:{style:{},replaceChildren(){mounts++;}}};
+ mountDisplayFrame(win,doc);const src=frame.src;
+ listeners.message({source:frame.contentWindow,origin:win.location.origin,data:{type:'football-league:display-view',view:'draft'}});
+ assert.equal(frame.style.width,'932px');
+ win.visualViewport.scale=2;win.innerWidth=466;win.innerHeight=215;listeners.resize();visualListeners.resize();
+ assert.equal(frame.style.width,'932px');assert.equal(frame.style.height,'430px');
+ assert.equal(frame.src,src);assert.equal(mounts,1);
+ win.visualViewport.scale=1;win.innerWidth=844;win.innerHeight=390;visualListeners.resize();
+ assert.equal(frame.style.width,'844px');assert.equal(frame.style.height,'390px');assert.equal(frame.src,src);
+});

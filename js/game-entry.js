@@ -1,4 +1,4 @@
-import {mountDisplayFrame,reportDisplayView} from './display-settings.js?v=mobile-draft-v4';
+import {mountDisplayFrame,reportDisplayView} from './display-settings.js?v=mobile-zoom-v5';
 
 if(new URLSearchParams(location.search).get('game-frame')==='1'){
  if(new URLSearchParams(location.search).get('mobile-layout')==='1'){
