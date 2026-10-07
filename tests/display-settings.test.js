@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {DISPLAY_KEY,DISPLAY_EVENT,DISPLAY_REFERENCE_KEY,displayReference,displayGeometry,fixedDisplayEnabled,setFixedDisplay,mountDisplayFrame} from '../js/display-settings.js';
+import {DISPLAY_KEY,DISPLAY_EVENT,DISPLAY_VIEW_EVENT,DISPLAY_REFERENCE_KEY,displayReference,displayGeometry,fixedDisplayEnabled,setFixedDisplay,mountDisplayFrame} from '../js/display-settings.js';
 
 test('FHD, QHD and 4K share exactly the same 2560x1440 layout',()=>{
  for(const [width,height,scale] of [[1920,1080,.75],[2560,1440,1],[3840,2160,1.5]]){
@@ -49,3 +49,21 @@ test('host resizes one live frame, accepts only its messages and preserves the g
  assert.equal(displayReference({getItem:()=>'{broken'}),null);
  assert.equal(displayReference({getItem:()=>JSON.stringify({width:0,height:1})}),null);
  });
+
+test('phone keeps one QHD frame, switches only draft to its native viewport and respects safe areas',()=>{
+ const listeners={},frame={style:{},contentWindow:{}},values=new Map([[DISPLAY_REFERENCE_KEY,JSON.stringify({width:1920,height:1000})]]);
+ const storage={getItem:key=>values.get(key)||null,setItem:(key,value)=>values.set(key,value)};
+ const win={innerWidth:932,innerHeight:430,localStorage:storage,matchMedia:()=>({matches:true}),location:{href:'https://example.test/?room=PHONE',origin:'https://example.test'},addEventListener:(key,fn)=>listeners[key]=fn,
+ getComputedStyle:()=>({paddingLeft:'20px',paddingRight:'20px',paddingTop:'0px',paddingBottom:'10px'})};
+ const doc={createElement:()=>frame,querySelectorAll:()=>[],documentElement:{style:{}},body:{style:{},replaceChildren(){}}};
+ mountDisplayFrame(win,doc);
+ const src=frame.src;
+ assert.equal(new URL(src).searchParams.get('mobile-layout'),'1');
+ assert.equal(frame.style.width,'2560px');assert.equal(frame.style.height,'1440px');
+ const message={source:frame.contentWindow,origin:win.location.origin,data:{type:DISPLAY_VIEW_EVENT,view:'draft'}};
+ listeners.message({...message,origin:'https://other.test'});assert.equal(frame.style.width,'2560px');
+ listeners.message(message);assert.equal(frame.style.width,'892px');assert.equal(frame.style.height,'420px');assert.equal(frame.style.transform,'scale(1)');
+ win.innerWidth=844;win.innerHeight=390;listeners.resize();assert.equal(frame.style.width,'804px');
+ listeners.message({...message,data:{type:DISPLAY_VIEW_EVENT,view:'qhd'}});assert.equal(frame.style.width,'2560px');
+ assert.equal(frame.src,src);assert.deepEqual(displayReference(storage),{width:1920,height:1000});
+});

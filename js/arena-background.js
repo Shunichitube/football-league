@@ -12,6 +12,11 @@ export function draftVenueAnchors(width,height){
 function alignDraftVenue(){
  const grid=app.querySelector(':scope > main.screen-draft .draft-card-grid');
  if(!grid)return;
+ if(document.documentElement.classList.contains('mobile-layout')){
+  document.body.style.removeProperty('--draft-grid-height');
+  document.body.style.removeProperty('--draft-grid-gap');
+  return;
+ }
  const {podiumY,cardsY}=draftVenueAnchors(innerWidth,innerHeight);
  document.body.style.setProperty('--draft-podium-y',`${podiumY}px`);
  // Measure normal flow without the existing margin so repeated renders do not drift.

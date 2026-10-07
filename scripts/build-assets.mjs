@@ -8,4 +8,4 @@ if (relative(root, output) !== 'dist') throw new Error('Invalid asset output dir
 // Rebuild the generated directory so removed source assets cannot remain shipped.
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
-for (const path of ['index.html', 'css', 'js', 'assets']) await cp(resolve(root, path), resolve(output, path), { recursive: true });
+for (const path of ['index.html', 'manifest.webmanifest', 'css', 'js', 'assets']) await cp(resolve(root, path), resolve(output, path), { recursive: true });
