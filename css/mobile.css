@@ -88,3 +88,183 @@ html.mobile-layout #app main.screen-draft .draft-turn-caption,
 html.mobile-layout #app main.screen-draft .draft-reception-list {font-size:12px;line-height:1.4;}
 html.mobile-layout #app main.screen-draft .draft-reception-list b,
 html.mobile-layout #app main.screen-draft .draft-reception-list span {overflow-wrap:anywhere;}
+
+/* Native phone screens. These overrides never apply to the PC renderer. */
+html.mobile-layout {box-sizing:border-box;min-height:100%;height:auto!important;overflow-x:hidden;overflow-y:auto!important;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);-webkit-text-size-adjust:100%;}
+html.mobile-layout body {box-sizing:border-box;width:100%;height:auto!important;min-height:100dvh!important;overflow-x:hidden;overflow-y:visible!important;touch-action:pan-x pan-y pinch-zoom;}
+html.mobile-layout #app {height:auto!important;min-height:100dvh;overflow:visible!important;}
+html.mobile-layout #app>header {height:auto!important;min-height:44px;padding:8px 12px!important;display:flex;flex-wrap:wrap;gap:8px;font-size:13px!important;}
+html.mobile-layout #app>header .brand {font-size:18px!important;}
+html.mobile-layout #app>header .header-season,
+html.mobile-layout #app>header .header-club {font-size:13px!important;overflow-wrap:anywhere;}
+html.mobile-layout #app button {font-size:14px;line-height:1.35;min-height:40px;padding:8px 12px;white-space:normal;}
+html.mobile-layout #app input,
+html.mobile-layout #app select {font-size:16px;}
+html.mobile-layout #app>main {box-sizing:border-box;position:relative!important;inset:auto!important;transform:none!important;width:calc(100% - 24px)!important;max-width:none!important;height:auto!important;max-height:none!important;min-height:0!important;margin:12px!important;padding:12px!important;overflow:visible!important;}
+html.mobile-layout #app h2 {font-size:20px;line-height:1.35;}
+html.mobile-layout #app h3 {font-size:17px;line-height:1.35;}
+html.mobile-layout #app .table-wrap,
+html.mobile-layout #app .draft-history-table-wrap {max-width:100%;overflow-x:auto;}
+html.mobile-layout #app table {font-size:13px;}
+html.mobile-layout #app th,
+html.mobile-layout #app td {padding:7px;}
+html.mobile-layout #app .candidate-grid {grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr))!important;grid-template-rows:none!important;grid-auto-rows:auto!important;height:auto!important;max-height:none!important;overflow:visible!important;gap:12px!important;}
+html.mobile-layout #app .candidate {height:auto!important;min-height:0!important;}
+html.mobile-layout #app .player-card {height:auto!important;min-height:0!important;padding:10px!important;gap:8px!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+html.mobile-layout #app .player-title {display:flex;flex-wrap:wrap;gap:4px!important;}
+html.mobile-layout #app .player-name {font-size:16px!important;line-height:1.35!important;white-space:normal!important;overflow-wrap:anywhere;}
+html.mobile-layout #app .overall-rank {font-size:15px!important;}
+html.mobile-layout #app .player-profile p,
+html.mobile-layout #app .position-badge,
+html.mobile-layout #app .special-ability,
+html.mobile-layout #app .special-ability-visible>span,
+html.mobile-layout #app .special-ability-visible>p {font-size:12px!important;line-height:1.5!important;white-space:normal!important;overflow-wrap:anywhere;}
+html.mobile-layout #app .ability-grid dt {font-size:11px!important;}
+html.mobile-layout #app .ability-grid dd {font-size:14px!important;}
+html.mobile-layout #app .player-special-row {grid-column:1/-1!important;}
+html.mobile-layout #app .arena-motion {display:none;}
+html.mobile-layout #app>main.arena-title {width:min(360px,calc(100% - 24px))!important;margin:20px 12px!important;background:#061b28dd;border-radius:14px;text-align:center;}
+html.mobile-layout #app .arena-title h1 {font-size:42px;line-height:.95;margin:8px 0 16px;}
+html.mobile-layout #app .arena-title .arena-crest {font-size:20px;margin:0;}
+html.mobile-layout #app .arena-title button {width:100%;font-size:15px;min-height:42px;}
+html.mobile-layout .arena-popup-overlay {position:fixed;inset:0;padding:12px;overflow:auto;align-items:flex-start;}
+html.mobile-layout .arena-popup {box-sizing:border-box;width:min(560px,100%);max-width:100%;max-height:calc(100dvh - 24px);height:auto;overflow:auto;margin:auto;padding:16px;}
+html.mobile-layout .arena-popup main {width:100%;margin:0;padding:0;}
+html.mobile-layout .overlay-panel,
+html.mobile-layout .settings-panel {box-sizing:border-box;inset:12px!important;width:auto!important;max-width:none!important;max-height:calc(100dvh - 24px)!important;overflow:auto!important;padding:12px!important;}
+html.mobile-layout #app .phase-complete-screen {display:flex;align-items:center;justify-content:center;min-height:65dvh!important;}
+html.mobile-layout #app .phase-complete-modal {width:min(480px,100%);max-width:100%;padding:20px;}
+html.mobile-layout #app .phase-complete-modal h2 {font-size:23px;}
+
+/* Auction: readable monitor and bids in document flow, scenery behind them. */
+html.mobile-layout #app .auction-scene {position:relative;inset:auto;transform:none;width:100%;aspect-ratio:auto;background:#071c30ec;border:1px solid #3d718b;border-radius:12px;padding:12px;box-sizing:border-box;}
+html.mobile-layout #app .auction-crowd,
+html.mobile-layout #app .auction-foreground,
+html.mobile-layout #app .auction-ring-ticker,
+html.mobile-layout #app .auction-banner-label,
+html.mobile-layout #app .auction-host,
+html.mobile-layout #app .auction-staff,
+html.mobile-layout #app .auction-furniture-front,
+html.mobile-layout #app .auction-light-beam,
+html.mobile-layout #app .auction-award-light {display:none;}
+html.mobile-layout #app .auction-scene .auction-topline,
+html.mobile-layout #app .auction-scene .auction-monitor,
+html.mobile-layout #app .auction-scene .auction-controls,
+html.mobile-layout #app .auction-scene .auction-desks {position:relative;inset:auto;transform:none;width:100%;height:auto;min-height:0;margin:0 0 12px;box-sizing:border-box;}
+html.mobile-layout #app .auction-scene .auction-topline {display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;}
+html.mobile-layout #app .auction-topline button,
+html.mobile-layout #app .auction-lot-count {font-size:13px!important;min-height:36px;padding:6px 10px!important;}
+html.mobile-layout #app .auction-scene .auction-monitor {display:grid;grid-template-columns:72px minmax(0,1fr) 120px;gap:12px;padding:12px;overflow:visible;}
+html.mobile-layout #app .auction-scene .auction-avatar img {width:64px;height:100px;filter:none;}
+html.mobile-layout #app .auction-scene .auction-avatar>span {font-size:14px;padding:4px;}
+html.mobile-layout #app .auction-scene .auction-player {overflow:visible;min-width:0;}
+html.mobile-layout #app .auction-scene .auction-player .player-card {font-size:13px;}
+html.mobile-layout #app .auction-scene .auction-player .scout-comment {font-size:12px;line-height:1.5;max-height:none;}
+html.mobile-layout #app .auction-scene .auction-live {padding-left:8px;}
+html.mobile-layout #app .auction-scene .auction-live>span,
+html.mobile-layout #app .auction-scene .auction-live p {font-size:12px;line-height:1.4;}
+html.mobile-layout #app .auction-scene .auction-timer {font-size:30px;margin:4px 0 12px;}
+html.mobile-layout #app .auction-scene .auction-price {font-size:25px;}
+html.mobile-layout #app .auction-scene .auction-leader {font-size:13px;overflow-wrap:anywhere;}
+html.mobile-layout #app .auction-scene .auction-controls {padding:12px;}
+html.mobile-layout #app .auction-scene .auction-controls>div:first-child {font-size:16px;gap:12px;margin-bottom:10px;}
+html.mobile-layout #app .auction-scene .auction-bid-buttons {display:flex;flex-wrap:wrap;gap:8px;}
+html.mobile-layout #app .auction-scene .auction-bid-buttons button {font-size:14px!important;min-height:44px;padding:8px!important;}
+html.mobile-layout #app .auction-scene .auction-bid-buttons small {font-size:12px;margin-left:4px;}
+html.mobile-layout #app .auction-scene .auction-controls>p {font-size:13px;line-height:1.5;margin-top:8px;}
+html.mobile-layout #app .auction-scene .auction-desks {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;pointer-events:auto;}
+html.mobile-layout #app .auction-scene .auction-desks article {position:static;width:auto;height:auto;min-height:56px;padding:8px;}
+html.mobile-layout #app .auction-scene .auction-desks b {font-size:13px;white-space:normal;overflow-wrap:anywhere;}
+html.mobile-layout #app .auction-scene .auction-desks strong {font-size:17px;}
+html.mobile-layout #app .auction-scene:has(.auction-award)::after {display:none;}
+html.mobile-layout #app .auction-award strong {font-size:23px;}
+
+/* Squad: board and comparison first, followed by scrollable player cards. */
+html.mobile-layout #app .formation-editor {display:flex!important;flex-direction:column;gap:12px;height:auto!important;min-height:0;overflow:visible;}
+html.mobile-layout #app .formation-side {position:relative;display:grid!important;grid-template-columns:1fr;gap:12px;height:auto!important;padding:12px!important;min-height:0;overflow:visible;transform:none;}
+html.mobile-layout #app .formation-board-title {position:static;display:flex;flex-wrap:wrap;gap:8px;}
+html.mobile-layout #app .formation-switch {display:flex;flex-wrap:wrap;gap:8px;}
+html.mobile-layout #app main.screen-squad .formation-side>.formation-pitch {position:relative!important;left:auto!important;top:auto!important;width:min(440px,100%)!important;height:400px!important;margin:0 auto!important;--formation-avatar-size:64px;}
+html.mobile-layout #app .formation-token {min-height:0!important;padding:0!important;}
+html.mobile-layout #app .formation-token strong {font-size:12px!important;}
+html.mobile-layout #app .formation-side>.squad-tablet {position:relative!important;inset:auto!important;width:100%!important;height:auto!important;transform:none!important;clip-path:none;overflow:visible;padding:12px;}
+html.mobile-layout #app .squad-tablet-tactics,
+html.mobile-layout #app .squad-compare {height:auto;min-height:0;overflow:visible;padding:8px;}
+html.mobile-layout #app .tactic-row {display:flex;flex-wrap:wrap;gap:8px;}
+html.mobile-layout #app .tactic-row button {font-size:13px!important;min-height:40px;}
+html.mobile-layout #app .compare-duel {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;}
+html.mobile-layout #app .compare-vs {display:none;}
+html.mobile-layout #app .compare-person {min-width:0;height:auto;overflow:visible;}
+html.mobile-layout #app .compare-profile {height:auto;display:flex;flex-wrap:wrap;gap:8px;}
+html.mobile-layout #app .compare-profile img {width:60px;height:90px;object-fit:contain;}
+html.mobile-layout #app .compare-profile strong {font-size:15px;overflow-wrap:anywhere;}
+html.mobile-layout #app .compare-profile span,
+html.mobile-layout #app .compare-profile small,
+html.mobile-layout #app .compare-ability-list,
+html.mobile-layout #app .compare-special {font-size:12px;line-height:1.5;}
+html.mobile-layout #app .formation-cards {position:relative;inset:auto;height:auto;overflow:visible;}
+html.mobile-layout #app .bench-heading {display:flex;flex-wrap:wrap;gap:8px;}
+html.mobile-layout #app .bench-heading h3 {font-size:18px;}
+html.mobile-layout #app .bench-heading select {font-size:16px;}
+html.mobile-layout #app .squad-player {height:auto!important;min-height:0!important;display:grid!important;grid-template-columns:64px minmax(0,1fr)!important;grid-template-rows:auto auto auto!important;padding:10px!important;gap:8px!important;overflow:visible;}
+html.mobile-layout #app .squad-avatar {grid-column:1!important;grid-row:1!important;}
+html.mobile-layout #app .squad-avatar img {width:60px!important;height:94px!important;max-height:none!important;filter:none;}
+html.mobile-layout #app .squad-identity {grid-column:2!important;grid-row:1!important;font-size:12px!important;line-height:1.5!important;overflow:visible;}
+html.mobile-layout #app .squad-identity strong {font-size:15px!important;}
+html.mobile-layout #app .squad-identity button {font-size:12px!important;min-height:36px!important;padding:6px 10px!important;}
+html.mobile-layout #app .squad-abilities {grid-column:1/-1!important;grid-row:2!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;}
+html.mobile-layout #app .squad-abilities dt {font-size:11px!important;}
+html.mobile-layout #app .squad-abilities dd {font-size:14px!important;}
+html.mobile-layout #app .squad-special {grid-column:1/-1!important;grid-row:3!important;font-size:12px!important;line-height:1.5!important;white-space:normal;}
+html.mobile-layout #app .squad-special-description {font-size:12px!important;line-height:1.5!important;max-height:none!important;overflow:visible;}
+html.mobile-layout #app .squad-season-action {position:static;width:auto;margin:12px 0;}
+
+/* Results and roster phases keep all content in flow rather than one PC scene. */
+html.mobile-layout #app .results-title {height:auto;font-size:24px;margin:8px 0;}
+html.mobile-layout #app .results-content {height:auto!important;max-height:none;overflow:visible;}
+html.mobile-layout #app .results-season-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr));height:auto;gap:12px;}
+html.mobile-layout #app .results-standing-column,
+html.mobile-layout #app .results-awards-column,
+html.mobile-layout #app .results-panel {height:auto!important;max-height:none!important;overflow:visible!important;padding:12px;}
+html.mobile-layout #app .results-award-info {grid-template-columns:repeat(auto-fit,minmax(120px,1fr));}
+html.mobile-layout #app .results-podium-players {position:static;transform:none;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));width:100%;height:auto;margin:16px 0;gap:6px;}
+html.mobile-layout #app .results-winner {position:static;width:auto;min-width:0;}
+html.mobile-layout #app .results-winner img,
+html.mobile-layout #app .results-winner.is-mvp img {height:90px;max-width:100%;}
+html.mobile-layout #app .results-winner-name {position:static;transform:none;width:auto;}
+html.mobile-layout #app .results-winner-name strong {font-size:12px;white-space:normal;overflow-wrap:anywhere;}
+html.mobile-layout #app .results-winner-name small {display:none;}
+html.mobile-layout #app .results-dock {position:static;display:flex;flex-wrap:wrap;gap:8px;width:auto;height:auto;transform:none;padding:12px 0;}
+html.mobile-layout #app .results-dock button {font-size:14px;}
+html.mobile-layout #app .results-confetti {display:none;}
+html.mobile-layout #app .phase-topbar,
+html.mobile-layout #app .phase-action-dock,
+html.mobile-layout #app .season-result-actions {position:static!important;transform:none!important;width:auto!important;height:auto!important;display:flex;flex-wrap:wrap;gap:8px;margin:12px 0!important;}
+html.mobile-layout #app .growth-result {height:auto!important;min-height:0;overflow:visible;}
+html.mobile-layout #app .growth-result .squad-player {height:auto!important;}
+html.mobile-layout #app .training-drills {grid-template-columns:repeat(auto-fit,minmax(200px,1fr));width:100%;margin:16px 0;}
+@media(max-width:599px){
+ html.mobile-layout #app .auction-scene .auction-monitor {grid-template-columns:64px minmax(0,1fr);}
+ html.mobile-layout #app .auction-scene .auction-live {grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-left:0;border-top:1px solid #608ec366;padding:8px 0 0;}
+ html.mobile-layout #app .auction-scene .auction-live p {width:100%;}
+ html.mobile-layout #app .auction-scene .auction-timer {margin:0;}
+ html.mobile-layout #app .auction-scene .auction-desks {grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+
+/* Resolve the desktop selectors with higher specificity at landscape widths. */
+html.mobile-layout #app main.screen-squad .formation-cards .bench-grid {grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr))!important;grid-template-rows:none!important;grid-auto-rows:auto!important;height:auto!important;overflow:visible!important;}
+html.mobile-layout #app .auction-scene .auction-player .player-name {font-size:16px!important;line-height:1.35!important;}
+html.mobile-layout #app .auction-scene .auction-player .overall-rank {font-size:15px!important;}
+html.mobile-layout #app .auction-scene .auction-player .player-meta,
+html.mobile-layout #app .auction-scene .auction-player .growth-expectation,
+html.mobile-layout #app .auction-scene .auction-player .position-badge {font-size:12px!important;line-height:1.5!important;}
+html.mobile-layout #app .auction-scene .auction-player .ability-grid div {grid-template-columns:48px minmax(0,1fr)!important;padding:3px!important;}
+html.mobile-layout #app .auction-scene .auction-player .ability-grid dt {font-size:11px!important;}
+html.mobile-layout #app .auction-scene .auction-player .ability-grid dd {font-size:14px!important;grid-template-columns:20px minmax(0,1fr)!important;}
+html.mobile-layout #app>main.season-results-dashboard {display:block!important;padding:12px!important;}
+html.mobile-layout #app main.screen-squad .squad-compare-content {height:auto;overflow:visible;}
+html.mobile-layout .game-settings-panel,
+html.mobile-layout .experience-popup {box-sizing:border-box;inset:12px!important;transform:none!important;width:auto!important;max-width:560px!important;height:auto;max-height:calc(100dvh - 24px)!important;overflow:auto!important;margin:auto;padding:16px!important;}
+html.mobile-layout .game-settings-panel label,
+html.mobile-layout .game-settings-panel button {font-size:16px;}
+html.mobile-layout .experience-popup .experience-avatar {max-height:120px;}

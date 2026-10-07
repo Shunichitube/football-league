@@ -84,3 +84,14 @@ test('pinch zoom preserves the live frame and defers layout resizing until zoom 
  win.visualViewport.scale=1;win.innerWidth=844;win.innerHeight=390;visualListeners.resize();
  assert.equal(frame.style.width,'844px');assert.equal(frame.style.height,'390px');assert.equal(frame.src,src);
 });
+
+test('phones launch the game directly, while desktop retains its fixed display host',async()=>{
+ const {gameEntryMode}=await import('../js/display-settings.js');
+ const phone={innerWidth:932,innerHeight:430,matchMedia:()=>({matches:true}),location:{href:'https://example.test/?pwa=1&room=PHONE'}};
+ assert.equal(gameEntryMode(phone),'game');
+ const desktop={...phone,innerWidth:2560,innerHeight:1440,matchMedia:()=>({matches:false})};
+ assert.equal(gameEntryMode(desktop),'host');
+ assert.equal(gameEntryMode({...desktop,location:{href:'https://example.test/?game-frame=1'}}),'game');
+ // Zooming or rotating never sends an already running phone game to a new host.
+ assert.equal(gameEntryMode({...phone,innerWidth:430,innerHeight:932}),'game');
+});

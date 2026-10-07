@@ -4,6 +4,9 @@ export const DISPLAY_EVENT='football-league:fixed-display';
 export function mobileDisplayEnabled(win=window){
  return !!win.matchMedia?.('(pointer: coarse)').matches && Math.min(win.innerWidth,win.innerHeight)<=768;
 }
+export function gameEntryMode(win=window){
+ return mobileDisplayEnabled(win)||new URL(win.location.href).searchParams.get('game-frame')==='1'?'game':'host';
+}
 export function reportDisplayView(win=window,doc=document){
  const view=doc.querySelector('main.screen-draft .draft-card-grid')?'draft':'qhd';
  win.parent.postMessage({type:DISPLAY_VIEW_EVENT,view},win.location.origin);
