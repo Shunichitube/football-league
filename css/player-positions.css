@@ -2,20 +2,20 @@
 [data-position="GK"] { --position-surface:#29323c; --position-ink:#f1f5f9; --position-muted:#c4cdd7; --position-line:#718090; --position-panel:#1c252f; }
 [data-position="MF"] { --position-surface:#203b2e; --position-ink:#eff8f1; --position-muted:#c2d9c9; --position-line:#649878; --position-panel:#142a20; }
 [data-position="FW"] { --position-surface:#452830; --position-ink:#fff1f3; --position-muted:#e5c7cd; --position-line:#ad7482; --position-panel:#301c23; }
-#app :is(.player-card,.squad-player,.compare-profile,.season-stat-card):is([data-position="GK"],[data-position="MF"],[data-position="FW"]) {
+:is(#app,.roster-panel) :is(.player-card,.squad-player,.compare-profile,.season-stat-card):is([data-position="GK"],[data-position="MF"],[data-position="FW"]) {
   background:var(--position-surface); color:var(--position-ink); border-color:var(--position-line);
   --line:var(--position-line); --text:var(--position-ink); --muted:var(--position-muted);
 }
-#app [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) :is(.player-name,.player-meta b,.growth-expectation b,.squad-identity strong,.compare-profile strong,.season-stat-name,.season-stat-profile b,.ability-grid dd,.squad-abilities dd) { color:var(--position-ink); }
-#app [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) :is(.player-profile p,.player-meta,.growth-expectation,.ability-grid dt,.squad-abilities dt,.squad-identity>span,.compare-profile span,.compare-profile small,.season-stat-profile span,.season-stat-profile small,.special-ability.none,.special-ability-hover em) { color:var(--position-muted); }
-#app [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) :is(.ability-grid div,.squad-abilities div,.squad-special,.special-ability-detail p,.season-stat-metrics div) { background:var(--position-panel); color:var(--position-ink); border-color:var(--position-line); }
-#app [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) :is(.overall-rank,.special-ability-detail>span,.special-ability,.squad-special b,.season-stat-special) { color:#facc15; }
-#app [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) :is(.squad-special>span,.squad-special-description,.season-stat-special-description,.season-stat-metrics dt,.season-stat-metrics dd) { color:var(--position-ink); }
-#app [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) .position-badge { color:var(--position-ink); border-color:var(--position-line); background:var(--position-panel); }
-#app [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) button.subtle { color:var(--position-ink); border-color:var(--position-line); }
-#app .squad-player.selected-player[data-position] { outline:3px solid #22c55e; outline-offset:-3px; }
-#app .draft-choice-card.is-selected { border-color:#22c55e; box-shadow:0 0 0 2px #22c55e,0 0 20px #22c55e50; }
-#app .draft-selected-badge { background:#166534; color:#fff; }
+:is(#app,.roster-panel) [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) :is(.player-name,.player-meta b,.growth-expectation b,.squad-identity strong,.compare-profile strong,.season-stat-name,.season-stat-profile b,.ability-grid dd,.squad-abilities dd) { color:var(--position-ink); }
+:is(#app,.roster-panel) [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) :is(.player-profile p,.player-meta,.growth-expectation,.ability-grid dt,.squad-abilities dt,.squad-identity>span,.compare-profile span,.compare-profile small,.season-stat-profile span,.season-stat-profile small,.special-ability.none,.special-ability-hover em) { color:var(--position-muted); }
+:is(#app,.roster-panel) [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) :is(.ability-grid div,.squad-abilities div,.squad-special,.special-ability-detail p,.season-stat-metrics div) { background:var(--position-panel); color:var(--position-ink); border-color:var(--position-line); }
+:is(#app,.roster-panel) [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) :is(.overall-rank,.special-ability-detail>span,.special-ability,.squad-special b,.season-stat-special) { color:#facc15; }
+:is(#app,.roster-panel) [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) :is(.squad-special>span,.squad-special-description,.season-stat-special-description,.season-stat-metrics dt,.season-stat-metrics dd) { color:var(--position-ink); }
+:is(#app,.roster-panel) [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) .position-badge { color:var(--position-ink); border-color:var(--position-line); background:var(--position-panel); }
+:is(#app,.roster-panel) [data-position]:is([data-position="GK"],[data-position="MF"],[data-position="FW"]) button.subtle { color:var(--position-ink); border-color:var(--position-line); }
+:is(#app,.roster-panel) .squad-player.selected-player[data-position] { outline:3px solid #22c55e; outline-offset:-3px; }
+:is(#app,.roster-panel) .draft-choice-card.is-selected { border-color:#22c55e; box-shadow:0 0 0 2px #22c55e,0 0 20px #22c55e50; }
+:is(#app,.roster-panel) .draft-selected-badge { background:#166534; color:#fff; }
 
 /* Opaque, non-blocking panels: turn notice on the left, reception on the right. */
 #app main.screen-draft { position:relative; }
@@ -36,9 +36,16 @@
 @media(max-width:1000px) { .draft-turn-anchor { right:12px; width:260px; } .draft-turn-current { width:240px; } }
 
 /* Overall rating has one color, independently of the position card skin. */
-#app [data-position] .overall-rating,
-#app [data-position] .overall-rank,
-#app .overall-rating,
-#app .overall-rank {color:#facc15!important;}
-#app .overall-rating>.ability-direction.up {color:#6effac!important;}
-#app .overall-rating>.ability-direction.down {color:#ff7676!important;}
+:is(#app,.roster-panel) [data-position] .overall-rating,
+:is(#app,.roster-panel) [data-position] .overall-rank,
+:is(#app,.roster-panel) .overall-rating,
+:is(#app,.roster-panel) .overall-rank {color:#facc15!important;}
+:is(#app,.roster-panel) .overall-rating>.ability-direction.up {color:#6effac!important;}
+:is(#app,.roster-panel) .overall-rating>.ability-direction.down {color:#ff7676!important;}
+
+/* Roster dialogs live beside #app, so they share the same card palette explicitly. */
+.roster-panel .squad-player[data-position="DF"] {
+ --position-surface:#111f32;--position-panel:#0f172a;--position-line:#68849b60;
+ background:var(--position-surface);border-color:var(--position-line);
+}
+.roster-panel .squad-player[data-position="DF"] :is(.squad-abilities>div,.squad-special) {background:var(--position-panel);}
