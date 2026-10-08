@@ -1,5 +1,5 @@
 import { contractSeasons, yearsPerSeason, seasonMode } from './season-mode.js?v=short-season-v1';
-import { applyRareCharacter, rollRareCharacter, rareKind, RARE_CHARACTERS } from './rare-characters.js?v=regrowth-v1';
+import { applyRareCharacter, rollRareCharacter, rareKind, RARE_CHARACTERS } from './rare-characters.js?v=dragon-a-v1';
 import { calculateOverall, createPlayer, displayPlayer, FIELD_STAT_KEYS, STAT_LABELS } from './data.js?v=regrowth-v1';
 import { createRandom, weightedPick } from './random.js';
 import { ACTION_TYPES } from './rules.js?v=short-season-v1';

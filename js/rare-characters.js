@@ -5,7 +5,7 @@ export const RARE_CHARACTERS = Object.freeze({
   chick: { name:'ひよこ', position:'MF', rank:'F', ability:null, description:'特殊能力なし。', scout:'大きな期待を背負って生まれた、小さなひよこ。本人は元気いっぱいなので、責めないであげてほしい。' },
   emperor_penguin: { name:'皇帝ペンギン', position:'DF', rank:'B', stamina:'A', ability:'皇帝', description:'出場中、味方全員の守備力を上げる', scout:'皇帝の風格で味方の守備を引き締める。本人は何も指示していないが、周りが勝手に姿勢を正す。' },
   phoenix: { name:'フェニックス', position:'MF', rank:'A', stamina:'SS', ability:'不死鳥', description:'対戦相手を大きく消耗させる', scout:'尽きることのない体力を持つ伝説の鳥。相手だけが疲れていくので、対戦後はだいたい嫌われる。' },
-  dragon: { name:'ドラゴン', position:'FW', rank:'S', stamina:'G', ability:'ドラゴンシュート', description:'シュート後試合終了まで相手GK能力を下げる', scout:'圧倒的な力を秘めた龍。そのシュートはキーパーの自信まで吹き飛ばす。ただし、長く働くつもりはない。' },
+  dragon: { name:'ドラゴン', position:'FW', rank:'A', shoot:'S', dribble:'B', pass:'C', speed:'B', defense:'F', stamina:'G', ability:'ドラゴンシュート', description:'シュート後試合終了まで相手GK能力を下げる', scout:'圧倒的な力を秘めた龍。そのシュートはキーパーの自信まで吹き飛ばす。ただし、長く働くつもりはない。' },
   king_kong: { name:'キングコング', position:'FW', rank:'D', shoot:'SS', age:120, ability:'獣の王', description:'強力シュート。時々オウンゴールする', scout:'豪快なシュートでゴールを粉砕する獣の王。どちらのゴールを狙っているかは、本人にも分からない。' },
   sage: { name:'仙人', position:'DF', rank:'C', ageLabel:'????歳', ability:'千里眼', description:'攻撃を高確率で阻止。時々オウンゴールする', scout:'何千年と生きてきて、未来を見通す力がある。と言われているが、そろそろボケてきた。' },
   robot: { name:'ロボット', position:'MF', rank:'C', ageLabel:'不詳', ability:'精密パス', description:'3種のプレーから1種だけ必ず成功。他2種は失敗。', scout:'超精密な機械。精密すぎてメモリー不足だった。' },
