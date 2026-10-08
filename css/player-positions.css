@@ -34,3 +34,11 @@
 .draft-reception-list span { display:inline-block; width:40%; color:#b8d0df; }
 .draft-reception-list li[aria-current="step"] b,.draft-reception-list li[aria-current="step"] span { color:#86efac; }
 @media(max-width:1000px) { .draft-turn-anchor { right:12px; width:260px; } .draft-turn-current { width:240px; } }
+
+/* Overall rating has one color, independently of the position card skin. */
+#app [data-position] .overall-rating,
+#app [data-position] .overall-rank,
+#app .overall-rating,
+#app .overall-rank {color:#facc15!important;}
+#app .overall-rating>.ability-direction.up {color:#6effac!important;}
+#app .overall-rating>.ability-direction.down {color:#ff7676!important;}
