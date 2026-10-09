@@ -2,7 +2,7 @@ import { FORMATIONS } from './formations.js?v=box-v1';
 import { rareKind } from './rare-characters.js';
 // Shared validation for a private work-in-progress copy and authoritative Room input.
 import { applyClubAction, ACTION_TYPES, validateLineup } from './rules.js?v=short-season-v1';
-import { selectBestLineup } from './cpu.js?v=short-season-v1';
+import { selectBestLineup } from './cpu.js?v=twenty-year-v1';
 import { trainingSkills } from './development.js?v=short-season-v1';
 
 export const clone = value => JSON.parse(JSON.stringify(value));

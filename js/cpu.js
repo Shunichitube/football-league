@@ -1,10 +1,10 @@
-import { yearsPerSeason, contractSeasons } from './season-mode.js?v=short-season-v1';
+import { yearsPerSeason, contractSeasons } from './season-mode.js?v=twenty-year-v1';
 import { FORMATIONS, formationId, lineupSlots } from './formations.js?v=box-v1';
 import {rareKind} from './rare-characters.js';
 import { calculateOverall, createPlayer } from './data.js?v=regrowth-v1';
 import { processOffseason, renewalFee } from './development.js?v=regrowth-v1';
 import { createRandom } from './random.js';
-import { cpuBid, cpuCandidatePick } from './market.js?v=regrowth-v1';
+import { cpuBid, cpuCandidatePick } from './market.js?v=twenty-year-v1';
 import { ACTION_TYPES, applyClubAction, positionSuitability } from './rules.js?v=short-season-v1';
 
 
@@ -216,6 +216,23 @@ function ensureMinimumPlayableRoster(league, club) {
     add(target);
   }
   return added;
+}
+
+// Retire before renewal, requests and paid training; rare characters remain ageless.
+export function retireBeforeContractEvents(league) {
+  league.retirements = [];
+  const cutoff = 35 - yearsPerSeason(league);
+  for (const club of league.clubs) {
+    const retired = club.roster.filter(player => !rareKind(player) && player.age >= cutoff);
+    league.retirements.push(...retired.map(player => ({clubId:club.id, player})));
+    const ids = new Set(retired.map(player => player.id));
+    club.roster = club.roster.filter(player => !ids.has(player.id));
+    club.lineup = club.lineup.filter(id => !ids.has(id));
+    ensureMinimumPlayableRoster(league, club);
+    selectBestLineup(club);
+  }
+  league.releasedPlayers = (league.releasedPlayers || []).filter(player => rareKind(player) || player.age < cutoff);
+  return league.retirements;
 }
 
 export function processLeagueOffseason(league, humanTraining = new Map(), specialTrainingByClub = new Map()) {

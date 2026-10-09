@@ -1,5 +1,5 @@
 // v2's Room/token/private-input model, with serialized authoritative mutations.
-import { advanceAuction, startGame, submitInput, runSeason, renamePlayer, publicRoom } from './room-game.js?v=short-season-v1';
+import { advanceAuction, startGame, submitInput, runSeason, renamePlayer, publicRoom } from './room-game.js?v=twenty-year-v1';
 import { roomPatch } from '../js/room-patch.js';
 
 const META = 'v3-meta';
@@ -144,7 +144,7 @@ export class RoomObject {
       if (action === 'start' || action === 'run-season' || action === 'configure') assert(player.id === room.hostPlayerId, 'ホストのみ実行できます。', 403);
       if (action === 'configure') {
         assert(room.phase === 'lobby', 'モードは開始前だけ変更できます。', 409);
-        assert(['NORMAL','SHORT'].includes(body.input?.seasonMode), 'モードが不正です。');
+        assert(['NORMAL','SHORT','TWENTY'].includes(body.input?.seasonMode), 'モードが不正です。');
         room.seasonMode = body.input.seasonMode;
       }
       else if (action === 'start') startGame(room);

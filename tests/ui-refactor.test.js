@@ -145,13 +145,13 @@ test('all screen routes render real fixtures without mutating league or auction'
 });
 
 
-test('short setup explanation and final year training lead to the five-season ending', async()=>{
- const controls={'#name':{value:'短縮クラブ'},'#seed':{value:'short-ui'},'#short-season':{checked:true}};
+for(const [mode,limit,control] of [['SHORT',5,'#short-season'],['TWENTY',10,'#twenty-season']]) test(`${mode} final training leads to the ${limit}-season ending`, async()=>{
+ const controls={'#name':{value:'短縮クラブ'},'#seed':{value:'short-ui'},[control]:{checked:true}};
  const harness=await screenHarness(controls);
  assert.match(harness.screens.setup(),/1シーズンで2年経過し、契約の残り年数も2年減ります/);
  harness.click('a','start');const state=harness.getState();
- assert.equal(state.league.seasonMode,'SHORT');
- state.league.season=5;
+ assert.equal(state.league.seasonMode,mode);
+ state.league.season=limit;
  harness.click('a','skipDraft');harness.click('a','toAuction');let now=Date.now();
  for(let guard=0;!state.auction.completed&&guard<100;guard++){now+=60000;harness.tick(now);}
  harness.click('a','season');
@@ -168,7 +168,7 @@ test('short setup explanation and final year training lead to the five-season en
  const html=harness.screens.growth();assert.match(html,/data-ending="start"/);
  state.mode='room';assert.doesNotMatch(harness.screens.growth(),/data-ending="start"/);state.mode=undefined;
  harness.click('ending','start');assert.equal(state.view,'grandFinal');
- assert.match(harness.screens.grandFinal(),/5シーズンの総合結果/);
+ assert.match(harness.screens.grandFinal(),new RegExp(`${limit}シーズンの総合結果`));
 });
 
 test('single player real actions complete a white-club season and proceed to year two', async()=>{

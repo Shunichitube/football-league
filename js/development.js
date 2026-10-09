@@ -1,7 +1,7 @@
 import { rareKind, hatchEgg } from './rare-characters.js';
 import { rankOf } from './config.js';
 import { calculateOverall, FIELD_STAT_KEYS, FIELD_PLAYER_STAT_KEYS } from './data.js?v=regrowth-v1';
-import { SPECIAL_ABILITIES } from './market.js?v=regrowth-v1';
+import { SPECIAL_ABILITIES } from './market.js?v=twenty-year-v1';
 import { weightedPick } from './random.js';
 
 const RANKS = ['G', 'F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS'];

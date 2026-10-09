@@ -1,10 +1,10 @@
-import { seasonLimit, seasonMode } from '../js/season-mode.js?v=short-season-v1';
+import { seasonLimit, seasonMode } from '../js/season-mode.js?v=twenty-year-v1';
 import { openLot, raiseBid, passLot, tickLot } from '../js/live-auction.js?v=short-season-v1';
 import { growthExpectationKey } from '../js/data.js?v=regrowth-v1';
 // Room owns the phase and private inputs. All game rules come from main's modules.
 import { createLeague, standings, simulateRemainingSeason, finalizeSeason, applySeasonFinances, recordDraftAcquisition, startNextSeason } from '../js/league.js?v=regrowth-v1';
-import { createDraftPool, createAuctionPool, resolveDraftActions } from '../js/market.js?v=regrowth-v1';
-import { decideCpuDraftAction, prepareCpuClubs, manageCpuContracts, prepareCpuMarketSpace, processLeagueOffseason, selectBestLineup } from '../js/cpu.js?v=regrowth-v1';
+import { createDraftPool, createAuctionPool, resolveDraftActions } from '../js/market.js?v=twenty-year-v1';
+import { decideCpuDraftAction, prepareCpuClubs, manageCpuContracts, prepareCpuMarketSpace, processLeagueOffseason, retireBeforeContractEvents, selectBestLineup } from '../js/cpu.js?v=twenty-year-v1';
 import { createContractEvents, createSpecialTrainingOffers } from '../js/development.js?v=regrowth-v1';
 import { ACTION_TYPES } from '../js/rules.js?v=short-season-v1';
 import { createRandom } from '../js/random.js';
@@ -114,6 +114,7 @@ export function advanceAuction(room,now=Date.now()) {
 function beginOffseason(room) {
   const game = room.game, league = game.league;
   game.financeSummary = applySeasonFinances(league);
+  retireBeforeContractEvents(league);
   game.events = {};
   game.special = {};
   for (const club of league.clubs) {
@@ -164,7 +165,7 @@ function resolveAll(room) {
       return runSeason(room);
     case 'season-ready': return runSeason(room);
     case 'season-result':
-      if (league.season >= seasonLimit(league) && seasonMode(league) !== 'SHORT') return enterPhase(room, 'game-complete');
+      if (league.season >= seasonLimit(league) && seasonMode(league) === 'NORMAL') return enterPhase(room, 'game-complete');
       return beginOffseason(room);
     case 'offseason-events': return resolveOffseason(room);
     case 'development': {

@@ -1,4 +1,4 @@
-import { cpuBid, addPlayer } from './market.js?v=short-season-v1';
+import { cpuBid, addPlayer } from './market.js?v=twenty-year-v1';
 import { createRandom } from './random.js';
 import { displayPlayer } from './data.js?v=short-season-v1';
 const MINIMUM_BID={G:1,F:5,E:10,D:15,C:20,B:25,A:30,S:35,SS:40};

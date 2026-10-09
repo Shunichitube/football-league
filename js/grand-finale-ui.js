@@ -1,4 +1,4 @@
-import { seasonLimit } from './season-mode.js?v=short-season-v1';
+import { seasonLimit } from './season-mode.js?v=twenty-year-v1';
 import {grandResults,formatPt} from './grand-results.js';
 import {loadMotionAtlas} from './player-motion.js?v=motion-ui-v24';
 import {playerAppearance} from './avatar-profile.js?v=appearance-v29';

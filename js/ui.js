@@ -1,12 +1,12 @@
 import { renderMatchTeamStats } from './match-stats.js';
-import { displayedContractYears } from './season-mode.js?v=short-season-v1';
+import { displayedContractYears } from './season-mode.js?v=twenty-year-v1';
 import { FORMATIONS, formationId, formationSpec, lineupSlots, lineupSlotLabel, formationLabel } from './formations.js?v=box-badges-v2';
 import { rareKind, rarePortraitUrl, rareAgeLabel } from './rare-characters.js';
 import { dialogs } from './dialogs.js';
 import {playerAppearance,kitColor} from './avatar-profile.js?v=appearance-v29';
 import { formatMatchEvents } from './match-log.js?v=match-halves-v1';
 import { calculateOverall, displayPlayer, growthExpectationKey, POSITION_LABELS, STAT_LABELS } from './data.js?v=short-season-v1';
-import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=short-season-v1';
+import { SPECIAL_ABILITY_DESCRIPTIONS } from './market.js?v=twenty-year-v1';
 import { validateLineup, positionSuitabilityLabel } from './rules.js?v=short-season-v1';
 import { pixelTexture } from './arena-characters.js?v=appearance-v29';
 

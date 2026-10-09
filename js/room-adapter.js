@@ -1,4 +1,4 @@
-import { seasonLimit } from './season-mode.js?v=short-season-v1';
+import { seasonLimit } from './season-mode.js?v=twenty-year-v1';
 import { RoomClient } from './room-client.js?v=notifications-v1';
 import { clone, applyWork } from './phase-work.js?v=short-season-v1';
 

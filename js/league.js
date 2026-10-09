@@ -1,4 +1,4 @@
-import { seasonLimit, seasonMode, setClubSeasonMode } from './season-mode.js?v=short-season-v1';
+import { seasonLimit, seasonMode, setClubSeasonMode } from './season-mode.js?v=twenty-year-v1';
 import { calculateOverall, createClub } from './data.js?v=regrowth-v1';
 import { rankOf } from './config.js';
 import { simulateMatch } from './sim.js?v=match-halves-v1';

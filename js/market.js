@@ -1,4 +1,4 @@
-import { contractSeasons, yearsPerSeason, seasonMode } from './season-mode.js?v=short-season-v1';
+import { contractSeasons, yearsPerSeason, seasonMode } from './season-mode.js?v=twenty-year-v1';
 import { applyRareCharacter, rollRareCharacter, rareKind, RARE_CHARACTERS } from './rare-characters.js?v=dragon-a-v1';
 import { calculateOverall, createPlayer, displayPlayer, FIELD_STAT_KEYS, STAT_LABELS } from './data.js?v=regrowth-v1';
 import { createRandom, weightedPick } from './random.js';
@@ -163,7 +163,7 @@ export function cpuBid(club, player, rng) {
   const value = Math.max(0, Math.round((publicValue(player) + shortage + upgrade + age) * (.75 + rng.next() * .3)));
   return Math.min(value, Math.max(0, club.funds - (upgrade || shortage ? 10 : 50)));
 }
-export function addPlayer(club, player, cost) { if (club.roster.length >= 12) return false; if (seasonMode(club) === 'SHORT') player.contractYears = contractSeasons(club); player.contractYearSpan = yearsPerSeason(club); club.roster.push(player); club.funds -= cost; return true; }
+export function addPlayer(club, player, cost) { if (club.roster.length >= 12) return false; if (seasonMode(club) !== 'NORMAL') player.contractYears = contractSeasons(club); player.contractYearSpan = yearsPerSeason(club); club.roster.push(player); club.funds -= cost; return true; }
 
 export function resolveDraftActions({ clubs, candidates, pendingClubIds, actions, rng }) {
   const eligible = pendingClubIds.filter(id => {
@@ -220,5 +220,5 @@ export function resolveAuctionActions({ clubs, player, actions, rng }) {
 }
 
 function marketContract(player, selectedMode) {
-  return selectedMode === 'SHORT' ? {...player, contractYears:2, contractYearSpan:2} : player;
+  return selectedMode !== 'NORMAL' ? {...player, contractYears:2, contractYearSpan:2} : player;
 }

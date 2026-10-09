@@ -1,8 +1,8 @@
 // Legacy saves without a mode retain the normal ten-season rules.
-export const seasonMode = source => source?.seasonMode === 'SHORT' ? 'SHORT' : 'NORMAL';
+export const seasonMode = source => ['SHORT', 'TWENTY'].includes(source?.seasonMode) ? source.seasonMode : 'NORMAL';
 export const seasonLimit = source => seasonMode(source) === 'SHORT' ? 5 : 10;
-export const yearsPerSeason = source => seasonMode(source) === 'SHORT' ? 2 : 1;
-export const contractSeasons = source => seasonMode(source) === 'SHORT' ? 2 : 3;
+export const yearsPerSeason = source => seasonMode(source) !== 'NORMAL' ? 2 : 1;
+export const contractSeasons = source => seasonMode(source) !== 'NORMAL' ? 2 : 3;
 export function setClubSeasonMode(club, mode, reset = false) {
   club.seasonMode = mode;
   for (const player of club.roster) {

@@ -1,4 +1,4 @@
-import { displayedContractYears } from './season-mode.js?v=short-season-v1';
+import { displayedContractYears } from './season-mode.js?v=twenty-year-v1';
 import { rankOf } from './config.js';
 import { createPlayerAppearance } from './avatar-profile.js?v=appearance-v29';
 

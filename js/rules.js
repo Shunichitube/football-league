@@ -1,4 +1,4 @@
-import { contractSeasons, yearsPerSeason } from './season-mode.js?v=short-season-v1';
+import { contractSeasons, yearsPerSeason } from './season-mode.js?v=twenty-year-v1';
 import { FORMATIONS, lineupSlots, formationId, remapFormation } from './formations.js?v=box-v1';
 import { rareKind } from './rare-characters.js';
 import { renewalFee } from './development.js?v=short-season-v1';
