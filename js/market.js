@@ -26,8 +26,9 @@ const POSITION_PROFILES = {
     { shoot: -9, speed: 9, defense: 7, dribble: -3, pass: 2 }
   ],
   MF: [
-    { shoot: 2, speed: 11, defense: -12, dribble: 4, pass: 0 },
-    { shoot: 0, speed: 2, defense: -10, dribble: 6, pass: 9 },
+    // 守備型・バランス型・攻撃型。総合ランクは後段の共通補正で維持する。
+    { shoot: -5, speed: 2, defense: 10, dribble: -3, pass: 4 },
+    { shoot: 0, speed: 0, defense: 0, dribble: 0, pass: 0 },
     { shoot: 9, speed: 2, defense: -12, dribble: 7, pass: -1 }
   ],
   FW: [
